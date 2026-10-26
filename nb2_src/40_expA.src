@@ -1,0 +1,181 @@
+#%%MARKDOWN
+## Experiment A — Nordland headline suite (robust, clean GT)
+
+Reference map = one season; queries = the other season(s). Because tracks are row-aligned, GT place = identity.
+- **A1** multi-condition comparison (single-image / fixed filter / CCBF) — recall + ECE.
+- **A2** reliability diagrams.
+- **A3** **ECE vs sequence length** — the direct test of *Theorem 1*: a single-τ filter should grow miscalibrated as
+  it accumulates frames; CCBF (per-condition τ) should stay flat.
+- **A4** **open-set / off-map AUROC** — map = first 70% of the route; queries entering the last 30% are off-map and
+  must be flagged (CCBF null posterior vs fixed-filter null vs SUE/L2).
+- **A5** **label-free TTA** — condition-belief accuracy and condition-drift tracking.
+
+#%%CODE
+# === A.0 — Condition model + episode helpers ==========================================
+RESULTS2 = OrderedDict()
+RUN_A = len(DESC) >= 2
+if RUN_A:
+    COND = fit_condition_model(DESC, TRACKS)
+    SEASONS = list(DESC.keys())
+    REF = "summer" if "summer" in SEASONS else SEASONS[0]
+    QUERIES = [s for s in SEASONS if s != REF]
+    print(f"ref map = {REF} | query conditions = {QUERIES}")
+    print("per-condition tau:", {n: round(float(t), 4) for n, t in zip(COND["names"], COND["tau"])})
+    log("A.0", "ok", f"ref={REF}, queries={QUERIES}, K={len(COND['names'])}")
+else:
+    log("A.0", "fail", "need >=2 seasons for Experiment A")
+
+def episode(ref, qs):
+    sim = cosine_sim(DESC[qs], DESC[ref])
+    gt = gt_match_index(TRACKS[qs], TRACKS[ref])
+    return sim, gt, np.asarray(TRACKS[qs].frame_ids), np.asarray(TRACKS[ref].frame_ids)
+
+def fit_global_tau(ref, queries):
+    S, G = [], []
+    for qs in queries:
+        sim, gt, _, _ = episode(ref, qs); tr = (np.arange(len(gt)) % 2 == 0) & (gt >= 0)
+        S.append(sim[tr]); G.append(gt[tr])
+    return fit_temperature(np.concatenate(S), np.concatenate(G))[0]
+
+#%%CODE
+# === A.1 / A.2 — Multi-condition comparison + reliability =============================
+def exp_A1(ref, queries, COND):
+    tau_g = fit_global_tau(ref, queries)
+    pools = {m: {"conf": [], "corr": []} for m in ["single_image", "fixed_filter", "ccbf"]}
+    recall_rows = {m: [] for m in pools}
+    for qs in queries:
+        sim, gt, qid, rid = episode(ref, qs); ev = (np.arange(len(gt)) % 2 == 1) & (gt >= 0)
+        # single-image
+        lp = sim / tau_g; pr = np.exp(lp - _logsumexp(lp, axis=1)[:, None])
+        corr = pred_correct(pr.argmax(1), qid, rid, CONFIG.PLACE_TOL)
+        pools["single_image"]["conf"].append(pr.max(1)[ev]); pools["single_image"]["corr"].append(corr[ev])
+        recall_rows["single_image"].append(recall_at_k(sim[ev], qid[ev], rid, CONFIG.RECALL_KS, CONFIG.PLACE_TOL))
+        # fixed filter
+        p, c, n = run_place_filter(sim, tau_g); corr = pred_correct(p, qid, rid, CONFIG.PLACE_TOL)
+        pools["fixed_filter"]["conf"].append(c[ev]); pools["fixed_filter"]["corr"].append(corr[ev])
+        recall_rows["fixed_filter"].append({1: float(corr[ev].mean())})
+        # ccbf
+        p, c, n = run_ccbf(sim, DESC[qs], COND); corr = pred_correct(p, qid, rid, CONFIG.PLACE_TOL)
+        pools["ccbf"]["conf"].append(c[ev]); pools["ccbf"]["corr"].append(corr[ev])
+        recall_rows["ccbf"].append({1: float(corr[ev].mean())})
+    out = {}
+    curves = {}
+    for m in pools:
+        conf = np.concatenate(pools[m]["conf"]); corr = np.concatenate(pools[m]["corr"])
+        ece, _ = ece_from_conf(conf, corr, CONFIG.ECE_BINS)
+        r1 = float(np.mean([r[1] for r in recall_rows[m]]))
+        out[m] = {"R@1": r1, "ECE": ece, "acc": float(corr.mean())}
+        curves[m] = (conf, corr)
+    return out, curves
+
+if RUN_A:
+    a1, curves = exp_A1(REF, QUERIES, COND); RESULTS2["A1_comparison"] = a1
+    print(f"{'method':<16}{'R@1':>8}{'ECE':>8}{'acc':>8}")
+    for m, v in a1.items(): print(f"{m:<16}{v['R@1']:>8.3f}{v['ECE']:>8.3f}{v['acc']:>8.3f}")
+    plot_reliability(curves, f"Reliability — Nordland (ref={REF}, {len(QUERIES)} query conds)", "A2_reliability.png")
+    log("A.1", "ok", f"CCBF ECE={a1['ccbf']['ECE']:.3f} vs fixed ECE={a1['fixed_filter']['ECE']:.3f}")
+
+#%%CODE
+# === A.3 — ECE vs sequence length (Theorem 1 test) ====================================
+def exp_A3_ece_vs_T(ref, queries, COND, n_windows=None):
+    """Fresh-window design: for each sequence length T, run many length-T windows (filter reset each time)
+    and compute ECE from the window's final-step (confidence, correctness). Theorem 1 predicts the fixed
+    single-tau filter's ECE rises with T while CCBF stays flat. (Full-scale uses fewer windows; the per-step
+    Python filter is vectorized to GPU in NB3.)"""
+    n_windows = n_windows or (120 if CONFIG.SMOKE_TEST else 40)
+    tau_g = fit_global_tau(ref, queries)
+    curve = {"fixed_filter": [], "ccbf": []}
+    for T in CONFIG.T_GRID:
+        pools = {m: {"conf": [], "corr": []} for m in curve}
+        for qs in queries:
+            sim, gt, qid, rid = episode(ref, qs); L = len(gt)
+            if L <= T: continue
+            starts = sorted(set(np.linspace(0, L - T, min(n_windows, L - T + 1)).astype(int).tolist()))
+            for st in starts:
+                e = st + T - 1
+                pf, cf, _ = run_place_filter(sim[st:st + T], tau_g)
+                pc, cc, _ = run_ccbf(sim[st:st + T], DESC[qs][st:st + T], COND)
+                pools["fixed_filter"]["conf"].append(cf[-1])
+                pools["fixed_filter"]["corr"].append(float(abs(rid[pf[-1]] - qid[e]) <= CONFIG.PLACE_TOL))
+                pools["ccbf"]["conf"].append(cc[-1])
+                pools["ccbf"]["corr"].append(float(abs(rid[pc[-1]] - qid[e]) <= CONFIG.PLACE_TOL))
+        for m in curve:
+            conf = np.asarray(pools[m]["conf"]); corr = np.asarray(pools[m]["corr"])
+            curve[m].append(ece_from_conf(conf, corr, max(5, CONFIG.ECE_BINS // 2))[0] if len(conf) > 10 else np.nan)
+    print("T       :", CONFIG.T_GRID)
+    for m in curve: print(f"ECE[{m:<13}]:", [round(x, 3) if np.isfinite(x) else None for x in curve[m]])
+    try:
+        import matplotlib.pyplot as plt
+        fig, ax = plt.subplots(figsize=(6, 4))
+        for m, style in [("fixed_filter", "o-r"), ("ccbf", "s-b")]:
+            ax.plot(CONFIG.T_GRID, curve[m], style, label=m)
+        ax.set_xscale("log"); ax.set_xlabel("sequence length T"); ax.set_ylabel("ECE (final step)")
+        ax.set_title("ECE vs sequence length  (Theorem 1: fixed grows, CCBF flat)"); ax.legend()
+        out = os.path.join(CONFIG.WORKING_DIR, "A3_ece_vs_T.png"); fig.tight_layout(); fig.savefig(out, dpi=110)
+        print("saved", out); plt.show()
+    except Exception as e:
+        print("(plot skipped:", repr(e)[:60], ")")
+    return curve
+
+if RUN_A:
+    RESULTS2["A3_ece_vs_T"] = exp_A3_ece_vs_T(REF, QUERIES, COND)
+    log("A.3", "ok", "ECE-vs-T computed (see plot)")
+
+#%%CODE
+# === A.4 — Open-set / off-map AUROC ===================================================
+def exp_A4_offmap(ref, queries, COND, frac=None):
+    frac = frac or CONFIG.OFFMAP_MAP_FRACTION
+    rows = {}
+    agg = {m: {"score": [], "label": []} for m in ["ccbf_null", "fixed_null", "sue"]}
+    for qs in queries:
+        full = DESC[qs]; M = DESC[ref].shape[0]; Mmap = int(M * frac)
+        ref_map = DESC[ref][:Mmap]
+        sim = cosine_sim(full, ref_map)                       # (T, Mmap)
+        label = (np.arange(len(full)) >= Mmap).astype(int)    # off-map if true place beyond the map
+        _, _, nc = run_ccbf(sim, full, COND)
+        _, _, nf = run_place_filter(sim, fit_global_tau(ref, queries))
+        sue = sue_uncertainty(sim)
+        for m, sc in [("ccbf_null", nc), ("fixed_null", nf), ("sue", sue)]:
+            agg[m]["score"].append(sc); agg[m]["label"].append(label)
+        rows[qs] = {"ccbf_null": auroc(nc, label), "fixed_null": auroc(nf, label), "sue": auroc(sue, label)}
+    overall = {}
+    for m in agg:
+        s = np.concatenate(agg[m]["score"]); l = np.concatenate(agg[m]["label"])
+        overall[m] = {"AUROC": auroc(s, l), "AUPR": average_precision(s, l)}
+    print("off-map detection (map = first {:.0%} of route):".format(frac))
+    for m, v in overall.items(): print(f"  {m:<12} AUROC={v['AUROC']:.3f}  AUPR={v['AUPR']:.3f}")
+    return {"overall": overall, "per_season": rows}
+
+if RUN_A:
+    RESULTS2["A4_offmap"] = exp_A4_offmap(REF, QUERIES, COND)
+    log("A.4", "ok", f"CCBF off-map AUROC={RESULTS2['A4_offmap']['overall']['ccbf_null']['AUROC']:.3f}")
+
+#%%CODE
+# === A.5 — Label-free test-time domain adaptation ====================================
+def exp_A5_tta(ref, queries, COND):
+    names = COND["names"]
+    # (a) per-condition belief accuracy (query is a single condition -> belief should pick it)
+    accs = {}
+    for qs in queries:
+        sim, gt, _, _ = episode(ref, qs)
+        _, _, _, traj = run_ccbf(sim, DESC[qs], COND, return_traj=True)
+        if qs in names:
+            accs[qs] = float((traj.argmax(1) == names.index(qs)).mean())
+    print("condition-belief accuracy (label-free):", {k: round(v, 3) for k, v in accs.items()})
+    # (b) condition-drift tracking: concat two conditions, expect a sharp belief switch
+    drift = None
+    if len(queries) >= 1 and ref in names:
+        A, B = ref, queries[0]
+        if A in names and B in names and A in DESC and B in DESC:
+            dA, dB = DESC[A], DESC[B]; M = dA.shape[0]; H = M // 2
+            qd = np.concatenate([dA[:H], dB[H:]], 0)
+            true_c = np.array([names.index(A)] * H + [names.index(B)] * (M - H))
+            sim = cosine_sim(qd, DESC[A])
+            _, _, _, traj = run_ccbf(sim, qd, COND, return_traj=True)
+            drift = float((traj.argmax(1) == true_c).mean())
+            print(f"drift tracking acc = {drift:.3f} (chance={1/len(names):.3f})")
+    return {"belief_acc": accs, "drift_acc": drift}
+
+if RUN_A:
+    RESULTS2["A5_tta"] = exp_A5_tta(REF, QUERIES, COND)
+    log("A.5", "ok", f"drift_acc={RESULTS2['A5_tta']['drift_acc']}")

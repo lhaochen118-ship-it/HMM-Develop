@@ -1,0 +1,160 @@
+#%%MARKDOWN
+## Phase 4 — Core method: Calibrated Condition-Belief Filtering (CCBF)
+
+CCBF runs a **factored Bayes filter** over `(place p_t, condition c_t)`:
+
+- **Condition `c_t`** is a latent appearance state (K clusters). Its belief `b(c_t)` is updated online from the
+  **visual descriptor only** (responsibility to condition centroids) + a **sticky** temporal prior
+  (`P(c_{t+1}=c_t)=ρ`, because appearance drifts slowly). *This is label-free online domain inference.*
+- **Place `p_t`** uses a band **motion model** and a **condition-conditional, calibrated** observation
+  likelihood: `p(d_t | p_t=j) = Σ_k b(c_t=k) · exp(sim[t,j]/τ_k)`, where `τ_k` is a per-condition temperature
+  fit to be calibrated. In easy conditions `τ_k` is small (sharp); in hard conditions it is large (humble) —
+  which is exactly what prevents the miscalibration that a single global τ propagates over the sequence.
+- A **null / off-map** state gives principled "lost" detection.
+
+Mean-field factorization keeps it `O(M·K)` per step — negligible on top of descriptor extraction.
+Removing the condition latent (K=1) collapses CCBF back to the fixed-observation baseline — a built-in ablation.
+
+#%%CODE
+# === P4.1 — Condition model (centroids + per-condition calibrated temperature) =========
+def _pairwise_sq_dists(X, C):
+    """(T,D),(K,D) -> (T,K) squared L2 distances via ||x||^2+||c||^2-2x·c (memory-safe)."""
+    xn = (X * X).sum(1)[:, None]; cn = (C * C).sum(1)[None, :]
+    return np.maximum(xn + cn - 2.0 * (X @ C.T), 0.0)
+
+def fit_condition_model():
+    """Returns dict(names, C(K,D), sigma, tau(K,)). Labels mode uses per-season mean descriptors as
+    centroids; otherwise KMeans. Per-condition tau is fit against a DIFFERENT season (non-degenerate)."""
+    names = list(DESC.keys())
+    if CONFIG.USE_TRAIN_CONDITION_LABELS and len(names) >= 2:
+        C = np.stack([DESC[s].mean(0) for s in names]).astype(np.float32)
+    else:
+        # unsupervised KMeans (Lloyd) on a pooled sample
+        pool = np.concatenate([DESC[s] for s in names], 0)
+        K = max(2, CONFIG.K_CONDITIONS)
+        rng = np.random.default_rng(CONFIG.SEED)
+        C = pool[rng.choice(len(pool), K, replace=False)].copy()
+        for _ in range(25):
+            a = np.argmin(_pairwise_sq_dists(pool, C), 1)
+            newC = np.stack([pool[a == k].mean(0) if (a == k).any() else C[k] for k in range(K)])
+            if np.allclose(newC, C, atol=1e-5): C = newC; break
+            C = newC
+        names = [f"cond{k}" for k in range(K)]
+    # sigma: typical distance of points to their nearest centroid (controls responsibility sharpness)
+    pool = np.concatenate([DESC[s] for s in DESC], 0)
+    d2 = _pairwise_sq_dists(pool, C).min(1)
+    sigma = float(np.sqrt(np.median(d2)) + 1e-6)
+    # per-condition temperature, fit against a different season to avoid identical-image degeneracy
+    tau = []
+    season_list = list(DESC.keys())
+    for i, s in enumerate(names):
+        src = season_list[i] if s in DESC else season_list[i % len(season_list)]
+        others = [o for o in season_list if o != src] or [src]
+        ref = others[0]
+        sims = cosine_sim(DESC[src], DESC[ref])
+        gt = gt_match_index(TRACKS[src], TRACKS[ref]) if src in TRACKS and ref in TRACKS else \
+             np.arange(sims.shape[0])
+        tr = (np.arange(sims.shape[0]) % 2 == 0) & (gt >= 0)
+        if tr.sum() < 5: tr = (gt >= 0)
+        tau_s, _ = fit_temperature(sims[tr], gt[tr])
+        tau.append(tau_s)
+    COND = dict(names=names, C=C, sigma=sigma, tau=np.asarray(tau, np.float32))
+    return COND
+
+if len(DESC) >= 2:
+    COND = fit_condition_model()
+    print("Conditions:", COND["names"])
+    print("  tau per condition:", {n: round(float(t), 4) for n, t in zip(COND["names"], COND["tau"])})
+    print(f"  sigma={COND['sigma']:.4f}, centroids={COND['C'].shape}")
+    log("P4.1.condmodel", "ok", f"K={len(COND['names'])}, tau={np.round(COND['tau'],3).tolist()}")
+else:
+    COND = None
+    log("P4.1.condmodel", "fail", "need >=2 seasons to build a condition model")
+
+#%%CODE
+# === P4.2 — Condition responsibilities (visual-only; used at test time) ================
+def cond_log_resp(desc, COND):
+    """(T,D) -> (T,K) log appearance-responsibility to condition centroids. No labels used here."""
+    d2 = _pairwise_sq_dists(desc.astype(np.float32), COND["C"])
+    logr = -0.5 * d2 / (COND["sigma"] ** 2)
+    logr -= _logsumexp(logr, axis=1)[:, None]
+    return logr
+
+def _sticky_predict(bc, rho, K):
+    return rho * bc + (1.0 - rho) * (1.0 - bc) / max(K - 1, 1)
+
+#%%CODE
+# === P4.3 — The CCBF filter ============================================================
+def run_ccbf(sim, query_desc, COND, null_quantile=0.98, exit_prob=0.01, return_traj=False):
+    """Factored (place, condition) Bayes filter. Returns preds, confs, null_post, and (optional)
+    the condition-belief trajectory bc_traj (T,K)."""
+    T, M = sim.shape; K = len(COND["tau"])
+    inv_tau = (1.0 / np.maximum(COND["tau"], 1e-4)).astype(np.float64)          # (K,)
+    appear_logr = cond_log_resp(query_desc, COND)                               # (T,K)
+    offs, w = make_motion_kernel(CONFIG.MOTION_VELOCITY, CONFIG.MOTION_STD)
+
+    place = np.full(M, (1 - CONFIG.NULL_PRIOR) / M); null = CONFIG.NULL_PRIOR
+    bc = np.full(K, 1.0 / K)
+    preds = np.empty(T, np.int64); confs = np.empty(T); nulls = np.empty(T)
+    bc_traj = np.empty((T, K)) if return_traj else None
+
+    for t in range(T):
+        # --- condition update (sticky prior x visual appearance evidence) ---
+        bc = _sticky_predict(bc, CONFIG.STICKY_RHO, K)
+        logbc = np.log(bc + 1e-30) + appear_logr[t]
+        logbc -= _logsumexp(logbc); bc = np.exp(logbc)
+
+        # --- place predict ---
+        pred_place = (1 - exit_prob) * predict_place(place, offs, w, CONFIG.MOTION_LEAK) \
+                     + null * (1 - CONFIG.NULL_SELF) / M
+        pred_null = CONFIG.NULL_SELF * null + exit_prob * place.sum()
+
+        # --- condition-mixture, calibrated observation likelihood (log) ---
+        # ll_place[j] = logsumexp_k( log b_c[k] + sim[t,j] * inv_tau[k] )
+        A = sim[t][None, :] * inv_tau[:, None] + np.log(bc + 1e-30)[:, None]     # (K,M)
+        ll_place = _logsumexp(A, axis=0)                                        # (M,)
+        snull = np.quantile(sim[t], null_quantile)
+        ll_null = _logsumexp(np.log(bc + 1e-30) + snull * inv_tau)              # scalar
+
+        logb = np.empty(M + 1)
+        logb[:M] = np.log(pred_place + 1e-30) + ll_place
+        logb[M] = np.log(pred_null + 1e-30) + ll_null
+        logb -= _logsumexp(logb)
+        b = np.exp(logb)
+        place, null = b[:M], b[M]
+        s = place.sum() + null; place, null = place / s, null / s
+
+        preds[t] = int(np.argmax(place)); confs[t] = float(place.max()); nulls[t] = float(null)
+        if return_traj: bc_traj[t] = bc
+    return (preds, confs, nulls, bc_traj) if return_traj else (preds, confs, nulls)
+
+#%%CODE
+# === P4.4 — Evaluate CCBF on the episode ==============================================
+def eval_ccbf(ep, COND):
+    q_desc = DESC[ep["query_season"]]
+    preds, confs, nulls = run_ccbf(ep["sim"], q_desc, COND)
+    ev = ep["eval_mask"]
+    corr = pred_correct(preds[ev], ep["q_ids"][ev], ep["r_ids"], CONFIG.PLACE_TOL)
+    ece, _ = ece_from_conf(confs[ev], corr, CONFIG.ECE_BINS)
+    return {1: float(corr.mean()), "ECE": ece, "acc": float(corr.mean())}
+
+# Ablation: K=1 (no condition latent) must collapse toward the fixed-observation filter.
+def eval_ccbf_k1(ep):
+    q_desc = DESC[ep["query_season"]]
+    tau1, _ = fit_temperature(ep["sim"][ep["train_mask"]], ep["gt"][ep["train_mask"]])
+    COND1 = dict(names=["all"], C=q_desc.mean(0, keepdims=True).astype(np.float32),
+                 sigma=1.0, tau=np.asarray([tau1], np.float32))
+    preds, confs, nulls = run_ccbf(ep["sim"], q_desc, COND1)
+    ev = ep["eval_mask"]
+    corr = pred_correct(preds[ev], ep["q_ids"][ev], ep["r_ids"], CONFIG.PLACE_TOL)
+    ece, _ = ece_from_conf(confs[ev], corr, CONFIG.ECE_BINS)
+    return {1: float(corr.mean()), "ECE": ece, "acc": float(corr.mean())}
+
+if "EPISODE" in globals() and COND is not None:
+    RESULTS["ccbf"] = eval_ccbf(EPISODE, COND)
+    RESULTS["ccbf_K1_ablation"] = eval_ccbf_k1(EPISODE)
+    print("ccbf:         ", {k: round(v, 4) for k, v in RESULTS["ccbf"].items()})
+    print("ccbf_K1 (abl):", {k: round(v, 4) for k, v in RESULTS["ccbf_K1_ablation"].items()})
+    log("P4.4.ccbf", "ok", f"R@1={RESULTS['ccbf'][1]:.3f}, ECE={RESULTS['ccbf']['ECE']:.3f}")
+else:
+    log("P4.4.ccbf", "warn", "CCBF not evaluated (missing episode or condition model)")

@@ -1,0 +1,63 @@
+#%%MARKDOWN
+## Summary & health gate
+
+#%%CODE
+# === Summary ===========================================================================
+def _save_results():
+    try:
+        import pickle
+        path = os.path.join(CONFIG.ckpt_dir, "nb2_results.pkl")
+        pickle.dump({"results": RESULTS2, "report": REPORT, "extractor": EXTRACTOR_INFO,
+                     "config": asdict(CONFIG)}, open(path, "wb"))
+        print("saved results ->", path)
+    except Exception as e:
+        print("(save skipped:", repr(e)[:60], ")")
+
+print("=" * 66); print("NB2 HEADLINE RESULTS"); print("=" * 66)
+if "A1_comparison" in RESULTS2:
+    print("\n[A1] Multi-condition localization (Nordland):")
+    print(f"  {'method':<16}{'R@1':>8}{'ECE':>8}")
+    for m, v in RESULTS2["A1_comparison"].items():
+        print(f"  {m:<16}{v['R@1']:>8.3f}{v['ECE']:>8.3f}")
+    a = RESULTS2["A1_comparison"]
+    if "fixed_filter" in a and "ccbf" in a:
+        print(f"  -> ECE improvement (fixed - ccbf): {a['fixed_filter']['ECE']-a['ccbf']['ECE']:+.3f}")
+if "A4_offmap" in RESULTS2 and RESULTS2["A4_offmap"]:
+    print("\n[A4] Open-set / off-map AUROC:")
+    for m, v in RESULTS2["A4_offmap"]["overall"].items():
+        print(f"  {m:<12} AUROC={v['AUROC']:.3f}  AUPR={v['AUPR']:.3f}")
+if "A5_tta" in RESULTS2:
+    print("\n[A5] Label-free TTA: drift_acc =", RESULTS2["A5_tta"].get("drift_acc"))
+if "B_robotcar" in RESULTS2 and RESULTS2["B_robotcar"] and RESULTS2["B_robotcar"].get("per_condition"):
+    print("\n[B] RobotCar hard-condition single-image recall:")
+    for c, v in RESULTS2["B_robotcar"]["per_condition"].items():
+        print(f"  {c:<12} R@1={v['R@1']:.3f} ECE={v['ECE']:.3f}")
+
+n_ok = sum(1 for v in REPORT.values() if v["status"] == "ok")
+n_warn = sum(1 for v in REPORT.values() if v["status"] == "warn")
+n_fail = sum(1 for v in REPORT.values() if v["status"] == "fail")
+print("\n" + "=" * 66)
+print(f"REPORT: {n_ok} ok / {n_warn} warn / {n_fail} fail  | extractor={EXTRACTOR_INFO['name']}")
+for s, v in REPORT.items():
+    if v["status"] in ("warn", "fail"): print(f"  [{v['status']}] {s}: {v['msg']}")
+_save_results()
+print("""
+Next steps:
+  - If Experiment A shows CCBF ECE < fixed_filter ECE and a rising ECE-vs-T curve for the fixed filter,
+    that is the empirical signature of Theorem 1 -> the paper's core claim is supported.
+  - Paste the [B] RobotCar probe lines + [C] CMU pose-head lines so the pose loaders can be finalized (NB3),
+    adding real hard-condition sequence/pose results.
+  - For full scale: set CONFIG.SMOKE_TEST=False (caches all 4 Nordland seasons; the per-step Python filter
+    will be vectorized to GPU in NB3 for the 143k-frame run).
+""")
+
+#%%MARKDOWN
+### What NB2 establishes
+- The **four headline experiments** on clean, multi-condition Nordland: calibration (ECE + reliability),
+  **Theorem 1** signature (ECE-vs-T), **open-set AUROC**, and **label-free TTA**.
+- A **self-probing** entry point for RobotCar / CMU hard conditions, honest about what is verified vs. deferred.
+
+### Report back for NB3
+Paste the **[B] RobotCar probe** lines, the **[C] CMU pose-head** lines, and the **A1/A3/A4** numbers (or the
+executed `.ipynb`). That finalizes the pose loaders and tells us whether the calibration story holds on real
+hard conditions — the last piece before writing the experiments section.

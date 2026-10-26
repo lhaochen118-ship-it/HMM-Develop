@@ -1,0 +1,295 @@
+#%%MARKDOWN
+## Phase 1 — Data pipeline
+
+A **Track** is one ordered traversal (a season/condition) = a list of `(frame_id, path)` sorted by the
+**numeric** frame id (never lexical). For Nordland, two tracks that share a frame id depict the **same place**
+under different conditions — this exact-filename correspondence is our ground truth. Condition labels come from
+the folder name and are used **only at train time**; the test-time filter never reads them.
+
+#%%CODE
+# === P1.1 — Track abstraction & ground-truth correspondence ============================
+class Track:
+    """One ordered traversal under a single (train-time) condition label."""
+    def __init__(self, name, condition, image_dir):
+        self.name = name
+        self.condition = condition           # train-time label only
+        self.image_dir = image_dir
+        files = [f for f in os.listdir(image_dir) if f.lower().endswith((".png", ".jpg", ".jpeg"))]
+        pairs = [(_frame_id(f), f) for f in files]
+        pairs = [(fid, f) for fid, f in pairs if fid is not None]
+        pairs.sort(key=lambda x: x[0])       # numeric ordering
+        self.frame_ids = [fid for fid, _ in pairs]
+        self.paths = [os.path.join(image_dir, f) for _, f in pairs]
+
+    def __len__(self): return len(self.paths)
+
+    def subsample(self, max_frames):
+        """Evenly subsample to <= max_frames while preserving order & frame-id spacing."""
+        n = len(self.paths)
+        if max_frames is None or n <= max_frames:
+            return
+        idx = np.linspace(0, n - 1, max_frames).round().astype(int)
+        idx = sorted(set(idx.tolist()))
+        self.frame_ids = [self.frame_ids[i] for i in idx]
+        self.paths = [self.paths[i] for i in idx]
+
+def _restrict_to_ids(track, keep_ids):
+    pos = {fid: j for j, fid in enumerate(track.frame_ids)}
+    idx = [pos[f] for f in keep_ids if f in pos]
+    track.frame_ids = [track.frame_ids[j] for j in idx]
+    track.paths = [track.paths[j] for j in idx]
+
+def build_nordland_tracks():
+    """Build season tracks ROW-ALIGNED on the common frame-id grid, so row i depicts the
+    same place across every season (clean GT; place-motion velocity == 1)."""
+    raw = {}
+    for s in NORDLAND_SEASONS:
+        if s in season_dirs:
+            t = Track(name=f"nordland_{s}", condition=s, image_dir=season_dirs[s])
+            if len(t) > 0:
+                raw[s] = t
+    if len(raw) < 2:
+        return raw
+    common = sorted(set.intersection(*[set(t.frame_ids) for t in raw.values()]))
+    if CONFIG.SMOKE_TEST and len(common) > CONFIG.SMOKE_MAX_FRAMES:
+        sel = np.linspace(0, len(common) - 1, CONFIG.SMOKE_MAX_FRAMES).round().astype(int)
+        common = [common[i] for i in sorted(set(sel.tolist()))]
+    for t in raw.values():
+        _restrict_to_ids(t, common)
+    return raw
+
+def gt_match_index(query_track, ref_track):
+    """For each query frame, the index into ref_track with the same frame id (or -1 if absent)."""
+    ref_pos = {fid: j for j, fid in enumerate(ref_track.frame_ids)}
+    return np.array([ref_pos.get(fid, -1) for fid in query_track.frame_ids], dtype=np.int64)
+
+TRACKS = build_nordland_tracks()
+print("Tracks:", {s: len(t) for s, t in TRACKS.items()})
+if len(TRACKS) >= 2:
+    a, b = list(TRACKS)[0], list(TRACKS)[1]
+    gt = gt_match_index(TRACKS[a], TRACKS[b])
+    log("P1.1.tracks", "ok", f"{len(TRACKS)} tracks; GT coverage {a}->{b}: {(gt>=0).mean()*100:.1f}%")
+else:
+    log("P1.1.tracks", "fail", "need >=2 Nordland tracks for NB1 smoke")
+
+#%%CODE
+# === P1.2 — Image dataset & transforms =================================================
+from PIL import Image
+try:
+    import torchvision.transforms as T
+    _IMAGENET_MEAN = (0.485, 0.456, 0.406); _IMAGENET_STD = (0.229, 0.224, 0.225)
+    def build_transform(size):
+        return T.Compose([T.Resize((size, size), antialias=True),
+                          T.ToTensor(),
+                          T.Normalize(_IMAGENET_MEAN, _IMAGENET_STD)])
+    _HAS_TV = True
+except Exception:
+    _HAS_TV = False
+    def build_transform(size):
+        mean = np.array([0.485, 0.456, 0.406], np.float32); std = np.array([0.229, 0.224, 0.225], np.float32)
+        def _tx(img):
+            img = img.resize((size, size)).convert("RGB")
+            arr = (np.asarray(img, np.float32) / 255.0 - mean) / std
+            return torch.from_numpy(arr.transpose(2, 0, 1).copy())
+        return _tx
+
+class ImageList(torch.utils.data.Dataset):
+    def __init__(self, paths, size):
+        self.paths = paths; self.tx = build_transform(size)
+    def __len__(self): return len(self.paths)
+    def __getitem__(self, i):
+        try:
+            img = Image.open(self.paths[i]).convert("RGB")
+        except Exception:
+            img = Image.new("RGB", (self.tx_size if hasattr(self, "tx_size") else 322,) * 2)
+        return self.tx(img), i
+
+if not _HAS_TV:
+    CONFIG.NUM_WORKERS = 0            # closure transform isn't picklable for worker processes
+log("P1.2.transform", "ok", f"img_size={CONFIG.IMG_SIZE}, torchvision={_HAS_TV}, workers={CONFIG.NUM_WORKERS}")
+
+#%%MARKDOWN
+## Phase 2 — Feature extraction + disk cache
+
+Global descriptors are produced by a **pluggable extractor** with graceful fallback:
+`SALAD` (from the bundle) → `DINOv2-GeM` (vendored ViT-B/14) → `placeholder` (hand-crafted, always works).
+CCBF is descriptor-agnostic, so the whole pipeline — filter, calibration, metrics — is validated regardless
+of which extractor loads. Descriptors are L2-normalized, cached to disk, and the cache is resumable.
+
+#%%CODE
+# === P2.1 — Pluggable feature extractor (SALAD -> DINOv2-GeM -> placeholder) ===========
+EXTRACTOR_INFO = {"name": None, "dim": None, "detail": ""}
+
+def _gem_pool(x, p=3.0, eps=1e-6):           # x: (B, N, C) patch tokens
+    x = x.clamp(min=eps).pow(p).mean(dim=1).pow(1.0 / p)
+    return x
+
+def _try_build_salad():
+    """Load SALAD (serizba/salad, CVPR'24) from the bundle. We build backbone+aggregator directly via
+    `helper.get_*` with the released dino_salad.ckpt configs, bypassing VPRModel (so no PyTorch-Lightning /
+    pytorch_metric_learning deps). dim = token_dim + num_clusters*cluster_dim = 256 + 64*128 = 8448."""
+    if not PATHS["bundle"]:
+        return None
+    ck = os.path.join(PATHS["bundle"], "checkpoints", "dino_salad.ckpt")
+    salad_dir = os.path.join(PATHS["bundle"], "sources", "salad")
+    if not (os.path.isfile(ck) and os.path.isdir(salad_dir)):
+        return None
+    try:
+        if salad_dir not in sys.path:
+            sys.path.insert(0, salad_dir)
+        from models import helper                                   # salad/models/helper.py
+        backbone = helper.get_backbone("dinov2_vitb14",
+            {"num_trainable_blocks": 4, "return_token": True, "norm_layer": True})
+        aggregator = helper.get_aggregator("SALAD",
+            {"num_channels": 768, "num_clusters": 64, "cluster_dim": 128, "token_dim": 256})
+        sd = torch.load(ck, map_location="cpu"); sd = sd.get("state_dict", sd)
+        bb = {k[len("backbone."):]: v for k, v in sd.items() if k.startswith("backbone.")}
+        ag = {k[len("aggregator."):]: v for k, v in sd.items() if k.startswith("aggregator.")}
+        mb, ub = backbone.load_state_dict(bb, strict=False)
+        ma, ua = aggregator.load_state_dict(ag, strict=False)
+        print(f"  SALAD: backbone(missing={len(mb)},unexpected={len(ub)}) agg(missing={len(ma)},unexpected={len(ua)})")
+        model = torch.nn.Module(); model.backbone = backbone; model.aggregator = aggregator
+        model.eval().to(DEVICE)
+        @torch.no_grad()
+        def fwd(x):
+            return model.aggregator(model.backbone(x))
+        with torch.no_grad():
+            d = fwd(torch.zeros(2, 3, CONFIG.IMG_SIZE, CONFIG.IMG_SIZE, device=DEVICE))
+        if not torch.isfinite(d).all() or d.ndim != 2 or d.shape[1] < 1000:
+            print("  SALAD: sanity forward failed, dim", tuple(d.shape)); return None
+        return fwd, d.shape[1]
+    except Exception:
+        import traceback; print("  SALAD error:"); traceback.print_exc(); return None
+
+def _try_build_dinov2():
+    """Vendored DINOv2 ViT-B/14 + GeM pooling of patch tokens. Returns (fwd, dim) or None."""
+    pth = os.path.join(PATHS["bundle"], "checkpoints", "dinov2_vitb14_pretrain.pth") if PATHS["bundle"] else None
+    vit = None
+    for import_fn in (
+        lambda: __import__("dinov2.models.vision_transformer", fromlist=["vit_base"]).vit_base,
+    ):
+        try:
+            vit_base = import_fn()
+            vit = vit_base(patch_size=14, img_size=518, init_values=1.0, block_chunks=0)
+            break
+        except Exception as e:
+            print("  DINOv2: vit_base build failed ->", repr(e)[:140])
+    if vit is None:
+        return None
+    try:
+        if pth and os.path.isfile(pth):
+            sd = torch.load(pth, map_location="cpu"); sd = sd.get("state_dict", sd)
+            m, u = vit.load_state_dict(sd, strict=False)
+            print(f"  DINOv2: weights loaded (missing={len(m)}, unexpected={len(u)})")
+        else:
+            print("  DINOv2: WARNING pretrain .pth not found; random init (degraded)")
+        vit.eval().to(DEVICE)
+        @torch.no_grad()
+        def fwd(x):
+            feats = vit.forward_features(x)
+            # DINOv2 tokens are SIGNED (LayerNorm output) -> use CLS + signed mean pooling.
+            # (GeM/clamp would discard the negative half-space and collapse descriptors to a narrow cone.)
+            if isinstance(feats, dict):
+                parts = []
+                cls = feats.get("x_norm_clstoken")
+                pt = feats.get("x_norm_patchtokens")
+                if cls is not None: parts.append(cls)
+                if pt is not None:  parts.append(pt.mean(dim=1))
+                g = torch.cat(parts, dim=1) if parts else feats
+            else:
+                g = feats.mean(dim=1) if feats.dim() == 3 else feats
+            return g
+        with torch.no_grad():
+            d = fwd(torch.zeros(2, 3, CONFIG.IMG_SIZE, CONFIG.IMG_SIZE, device=DEVICE))
+        if not torch.isfinite(d).all():
+            print("  DINOv2: non-finite forward"); return None
+        return fwd, d.shape[1]
+    except Exception as e:
+        print("  DINOv2: error ->", repr(e)[:160]); return None
+
+def _build_placeholder():
+    """Dependency-free global descriptor (tiled RGB+gradient histogram). DEGRADED: pipeline validation only."""
+    GRID = 4; BINS = 8
+    @torch.no_grad()
+    def fwd(x):                               # x: (B,3,H,W) normalized; undo roughly for stats
+        B, C, H, W = x.shape
+        gh, gw = H // GRID, W // GRID
+        feats = []
+        for i in range(GRID):
+            for j in range(GRID):
+                tile = x[:, :, i*gh:(i+1)*gh, j*gw:(j+1)*gw]
+                feats.append(tile.mean(dim=(2, 3)))                    # (B,3) mean color
+                feats.append(tile.std(dim=(2, 3)))                     # (B,3) contrast
+                gx = (tile[:, :, :, 1:] - tile[:, :, :, :-1]).abs().mean(dim=(2, 3))
+                feats.append(gx)                                       # (B,3) gradient energy
+        return torch.cat(feats, dim=1)
+    dim = GRID * GRID * 9
+    return fwd, dim
+
+def build_extractor():
+    order = [("salad", _try_build_salad), ("dinov2", _try_build_dinov2)]
+    for name, builder in order:
+        if PATHS["bundle"]:
+            print(f"Trying extractor: {name} ...")
+            res = builder()
+            if res is not None:
+                fwd, dim = res
+                EXTRACTOR_INFO.update(name=name, dim=dim, detail="loaded from bundle")
+                log("P2.1.extractor", "ok", f"{name} (dim={dim})")
+                return fwd
+    fwd, dim = _build_placeholder()
+    EXTRACTOR_INFO.update(name="placeholder", dim=dim, detail="DEGRADED — real models unavailable")
+    log("P2.1.extractor", "warn", f"placeholder descriptor (dim={dim}) — results NOT publication-grade")
+    return fwd
+
+EXTRACT_FWD = build_extractor()
+
+#%%CODE
+# === P2.2 — Batched extraction + resumable disk cache ==================================
+def _cache_path(tag): return os.path.join(CONFIG.cache_dir, f"{tag}.npy")
+def _manifest_path(tag): return os.path.join(CONFIG.cache_dir, f"{tag}.json")
+
+@torch.no_grad()
+def extract_track(track, tag, force=False):
+    """Return (N, D) float32 L2-normalized descriptors for a Track, using a resumable cache."""
+    cp, mp = _cache_path(tag), _manifest_path(tag)
+    if (not force) and os.path.isfile(cp) and os.path.isfile(mp):
+        man = json.load(open(mp))
+        if man.get("extractor") == EXTRACTOR_INFO["name"] and man.get("n") == len(track) \
+           and man.get("frame_ids") == track.frame_ids:
+            arr = np.load(cp)
+            print(f"  cache hit: {tag} -> {arr.shape}")
+            return arr.astype(np.float32)
+
+    loader = torch.utils.data.DataLoader(
+        ImageList(track.paths, CONFIG.IMG_SIZE), batch_size=CONFIG.BATCH_SIZE,
+        shuffle=False, num_workers=CONFIG.NUM_WORKERS, pin_memory=(DEVICE == "cuda"))
+    feats = np.empty((len(track), EXTRACTOR_INFO["dim"]), dtype=np.float32)
+    amp_dtype = torch.bfloat16 if CONFIG.USE_BF16 else torch.float16
+    use_amp = (DEVICE == "cuda")
+    t0 = time.time()
+    for imgs, idx in loader:
+        imgs = imgs.to(DEVICE, non_blocking=True)
+        if use_amp:
+            with torch.autocast(device_type="cuda", dtype=amp_dtype):
+                d = EXTRACT_FWD(imgs)
+        else:
+            d = EXTRACT_FWD(imgs)
+        d = torch.nn.functional.normalize(d.float(), dim=1)   # L2-normalize in fp32
+        feats[idx.numpy()] = d.detach().cpu().numpy()
+    dt = time.time() - t0
+    np.save(cp, feats)
+    json.dump({"extractor": EXTRACTOR_INFO["name"], "dim": int(EXTRACTOR_INFO["dim"]),
+               "n": len(track), "frame_ids": track.frame_ids}, open(mp, "w"))
+    print(f"  extracted {tag}: {feats.shape} in {dt:.1f}s ({len(track)/max(dt,1e-6):.1f} img/s)")
+    assert np.isfinite(feats).all(), f"non-finite descriptors in {tag}"
+    return feats
+
+DESC = {}
+for s, t in TRACKS.items():
+    DESC[s] = extract_track(t, tag=f"nordland_{'smoke' if CONFIG.SMOKE_TEST else 'full'}_{s}")
+if DESC:
+    dims = {s: v.shape for s, v in DESC.items()}
+    log("P2.2.cache", "ok", f"descriptors cached: {dims}")
+else:
+    log("P2.2.cache", "fail", "no descriptors extracted")

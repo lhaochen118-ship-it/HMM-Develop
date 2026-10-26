@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Secrets và cấu hình cá nhân
+.env
+.env.*
+*.pem
+*.key
+kaggle.json
+
+# Hệ điều hành
+Thumbs.db
+desktop.ini

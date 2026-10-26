@@ -1,0 +1,320 @@
+#%%MARKDOWN
+# DIVE-HMM · CCBF — Notebook 1 (Foundation + Core Method)
+
+**CCBF = Calibrated Condition-Belief Filtering** — a lightweight, descriptor-agnostic probabilistic
+layer for sequential Visual Place Recognition under extreme appearance change (seasons / weather / day-night).
+
+### The research thesis (why this can be A*-level)
+Prior sequential-VPR filters (FAB-MAP, HM4, Xu et al. 2021) plug **raw retrieval similarities** into a Bayes
+filter with a **fixed, condition-agnostic observation model** and track **place only**. We argue the real
+bottleneck in hard conditions is **miscalibration that *compounds* over the sequence**, not descriptor quality.
+
+CCBF instead tracks the **appearance condition as a latent variable jointly with place**, and uses the
+inferred condition to produce a **calibrated, condition-conditional observation likelihood**
+`p(descriptor | place, condition)`. Consequences:
+1. **Label-free online domain adaptation** — the condition belief is updated by pure Bayesian filtering (no labels, no gradients at test time).
+2. **Better-calibrated place posteriors** — lower ECE, principled "lost / off-map" detection.
+3. **Descriptor-agnostic** — it is a thin layer on top of *any* global descriptor (SALAD, DINOv2, BoQ, MixVPR…).
+
+### What this notebook (NB1) does — Phases 0→5
+- **P0** Environment & dataset validation (offline, Kaggle, bundle introspection).
+- **P1** Data pipeline (Nordland / RobotCar loaders; numeric frame-ID ordering).
+- **P2** Feature extraction + disk cache (SALAD → DINOv2 → placeholder fallback).
+- **P3** Baselines (single-image retrieval; fixed-observation Bayes filter).
+- **P4** **Core CCBF** (condition model, calibrated likelihood, factored (place, condition) filter, null state).
+- **P5** Small-scale end-to-end validation on **Nordland Short** (smoke test) + checkpoint save/load.
+
+> **How to use:** run top-to-bottom. `CONFIG.SMOKE_TEST = True` (default) runs on the tiny Nordland Short
+> subset (3,500 images) so you can verify the whole pipeline in minutes. Flip to `False` only after smoke passes.
+> Everything is designed for Kaggle **Internet OFF** using the offline `bundle`.
+
+#%%MARKDOWN
+## Phase 0 — Environment & Dataset Validation
+
+We (0.0) import & set seeds, (0.1) define a single `CONFIG`, (0.2) set offline env + wire the bundle into
+`sys.path`, (0.3) **introspect the bundle** (so if model loading later fails we can see the real API), and
+(0.4) **validate datasets** without trusting folder names at test time. A global `REPORT` collects pass/fail
+for every step so the final summary tells you exactly what is healthy.
+
+#%%CODE
+# === P0.0 — Imports, device, reproducibility ===========================================
+import os, sys, json, time, glob, math, hashlib, warnings, traceback
+from dataclasses import dataclass, field, asdict
+from collections import defaultdict, OrderedDict
+
+import numpy as np
+
+# REPORT: a single source of truth for what passed / failed in this run.
+REPORT = OrderedDict()
+def log(step, status, msg=""):
+    REPORT[step] = {"status": status, "msg": msg}
+    tag = {"ok": "[ OK ]", "warn": "[WARN]", "fail": "[FAIL]", "info": "[info]"}.get(status, "[????]")
+    print(f"{tag} {step}: {msg}")
+
+def _seed_everything(seed=0):
+    import random
+    random.seed(seed); np.random.seed(seed)
+    try:
+        import torch
+        torch.manual_seed(seed)
+        if torch.cuda.is_available():
+            torch.cuda.manual_seed_all(seed)
+    except Exception:
+        pass
+
+try:
+    import torch
+    _HAS_TORCH = True
+except Exception as e:  # pragma: no cover - torch always present on Kaggle
+    _HAS_TORCH = False
+    print("WARNING: torch not importable yet:", e)
+
+_seed_everything(0)
+
+if _HAS_TORCH:
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    print("torch", torch.__version__, "| device:", DEVICE)
+    if DEVICE == "cuda":
+        p = torch.cuda.get_device_properties(0)
+        print(f"GPU: {p.name} | VRAM: {p.total_memory/1e9:.1f} GB")
+        # BF16 is safe & fast on Blackwell (RTX PRO 6000); gate on capability.
+        BF16_OK = torch.cuda.is_bf16_supported()
+    else:
+        BF16_OK = False
+    log("P0.0.torch", "ok", f"{torch.__version__} on {DEVICE} (bf16={BF16_OK})")
+else:
+    DEVICE = "cpu"; BF16_OK = False
+    log("P0.0.torch", "fail", "torch not importable")
+print("numpy", np.__version__)
+
+#%%CODE
+# === P0.1 — CONFIG (single place to control everything) ================================
+@dataclass
+class Config:
+    # --- run mode ---
+    SMOKE_TEST: bool = True          # True => tiny subset, fast. Flip to False for full scale.
+    SEED: int = 0
+
+    # --- Kaggle roots to search for datasets & bundle (auto-discovery handles layout) ---
+    INPUT_ROOTS: tuple = ("/kaggle/input",)
+    WORKING_DIR: str = "/kaggle/working/dive_hmm"
+    CACHE_SUBDIR: str = "features"
+    CKPT_SUBDIR: str = "ckpt"
+
+    # --- image preprocessing ---
+    IMG_SIZE: int = 322              # multiple of 14 for DINOv2 ViT-B/14 (23*14). 224 also valid.
+    RESIZE_SHORTER: bool = False     # False => square resize to (IMG_SIZE, IMG_SIZE)
+
+    # --- extraction ---
+    BATCH_SIZE: int = 64             # raised automatically on big-VRAM GPUs below
+    NUM_WORKERS: int = 2
+    USE_BF16: bool = True
+
+    # --- smoke-test sizing (per season) ---
+    SMOKE_MAX_FRAMES: int = 600      # cap frames/season in smoke so a run takes minutes
+
+    # --- CCBF model ---
+    K_CONDITIONS: int = 2            # latent appearance conditions (e.g. summer/winter -> >=2)
+    USE_TRAIN_CONDITION_LABELS: bool = True  # fit calibration with known train labels; infer at test
+    STICKY_RHO: float = 0.97         # P(cond stays) — condition drifts slowly
+    MOTION_STD: float = 2.0          # std (in place-index units) of the place motion kernel
+    MOTION_VELOCITY: float = 1.0     # expected places advanced per step (same-route traversal)
+    MOTION_LEAK: float = 1e-3        # uniform leak in the place transition
+    NULL_PRIOR: float = 0.02         # prior mass on the off-map/null place state
+    NULL_SELF: float = 0.9           # null self-transition probability
+
+    # --- evaluation ---
+    RECALL_KS: tuple = (1, 5, 10)
+    PLACE_TOL: int = 2               # a prediction is correct if within +/- this many frame-indices
+    ECE_BINS: int = 15
+
+    @property
+    def cache_dir(self): return os.path.join(self.WORKING_DIR, self.CACHE_SUBDIR)
+    @property
+    def ckpt_dir(self):  return os.path.join(self.WORKING_DIR, self.CKPT_SUBDIR)
+
+CONFIG = Config()
+
+# Exploit large VRAM when available (never trade correctness for it).
+if _HAS_TORCH and DEVICE == "cuda":
+    total_gb = torch.cuda.get_device_properties(0).total_memory / 1e9
+    if total_gb >= 70:
+        CONFIG.BATCH_SIZE = 256
+    elif total_gb >= 40:
+        CONFIG.BATCH_SIZE = 128
+CONFIG.USE_BF16 = CONFIG.USE_BF16 and BF16_OK
+
+os.makedirs(CONFIG.cache_dir, exist_ok=True)
+os.makedirs(CONFIG.ckpt_dir, exist_ok=True)
+print(json.dumps({k: v for k, v in asdict(CONFIG).items()}, indent=2, default=str))
+log("P0.1.config", "ok", f"SMOKE_TEST={CONFIG.SMOKE_TEST}, batch={CONFIG.BATCH_SIZE}, bf16={CONFIG.USE_BF16}")
+
+#%%CODE
+# === P0.2 — Offline environment + path discovery =======================================
+# Force every library into offline mode (Kaggle Internet OFF; the bundle provides assets).
+for k, v in {
+    "HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "HF_DATASETS_OFFLINE": "1",
+    "PIP_NO_INDEX": "1", "WANDB_MODE": "offline", "TOKENIZERS_PARALLELISM": "false",
+}.items():
+    os.environ.setdefault(k, v)
+
+def _find_dir(markers_any, markers_all=(), roots=None, max_depth=4):
+    """Breadth-first search under roots for a directory that contains all `markers_all`
+    sub-names and at least one of `markers_any`. Returns the first match or None."""
+    roots = roots or CONFIG.INPUT_ROOTS
+    seen = set()
+    for root in roots:
+        if not os.path.isdir(root):
+            continue
+        frontier = [(root, 0)]
+        while frontier:
+            d, depth = frontier.pop(0)
+            if d in seen or depth > max_depth:
+                continue
+            seen.add(d)
+            try:
+                entries = set(os.listdir(d))
+            except Exception:
+                continue
+            ok_all = all(any(m.lower() in e.lower() for e in entries) for m in markers_all) if markers_all else True
+            ok_any = any(any(m.lower() in e.lower() for e in entries) for m in markers_any) if markers_any else True
+            if ok_all and ok_any:
+                return d
+            for e in sorted(entries):
+                sub = os.path.join(d, e)
+                if os.path.isdir(sub):
+                    frontier.append((sub, depth + 1))
+    return None
+
+PATHS = {}
+PATHS["bundle"]         = _find_dir(markers_any=["checkpoints"], markers_all=["checkpoints", "sources"])
+PATHS["nordland_short"] = _find_dir(markers_any=["summer", "winter"], markers_all=["summer", "winter"])
+PATHS["nordland_full"]  = _find_dir(markers_any=["data"], markers_all=["data", "annotations"])
+PATHS["robotcar"]       = _find_dir(markers_any=["images"], markers_all=["images", "3D-models"])
+PATHS["cmu"]            = _find_dir(markers_any=["slice2", "slice3", "slice6"])
+
+for name, p in PATHS.items():
+    if p:
+        log(f"P0.2.path.{name}", "ok", p)
+    else:
+        log(f"P0.2.path.{name}", "warn", "not found (ok if you don't need it in NB1)")
+
+# Wire bundle source code into sys.path so vendored SALAD/DINOv2/HLoc import offline.
+if PATHS["bundle"]:
+    srcroot = os.path.join(PATHS["bundle"], "sources")
+    for sub in ["salad", "dinov2", "Hierarchical-Localization", "LightGlue", ""]:
+        p = os.path.join(srcroot, sub) if sub else srcroot
+        if os.path.isdir(p) and p not in sys.path:
+            sys.path.insert(0, p)
+    log("P0.2.syspath", "ok", f"added bundle sources from {srcroot}")
+else:
+    log("P0.2.syspath", "warn", "bundle not found; model loading will use fallbacks")
+
+#%%CODE
+# === P0.3 — Bundle introspection (so we can SEE the real API if loading fails) =========
+def _tree(root, max_entries=40, max_depth=3):
+    out = []
+    root = os.path.abspath(root)
+    for cur, dirs, files in os.walk(root):
+        depth = cur[len(root):].count(os.sep)
+        if depth > max_depth:
+            dirs[:] = []
+            continue
+        rel = os.path.relpath(cur, root)
+        indent = "  " * depth
+        out.append(f"{indent}{'' if rel == '.' else os.path.basename(cur) + '/'}")
+        for f in sorted(files)[:max_entries]:
+            out.append(f"{indent}  {f}")
+        dirs.sort()
+    return "\n".join(out[:300])
+
+if PATHS["bundle"]:
+    b = PATHS["bundle"]
+    ck = os.path.join(b, "checkpoints")
+    if os.path.isdir(ck):
+        print("checkpoints/:", sorted(os.listdir(ck)))
+    # Show the salad / dinov2 source layout — key for adapting the loader to YOUR bundle.
+    for sub in ["sources/salad", "sources/dinov2"]:
+        p = os.path.join(b, sub)
+        if os.path.isdir(p):
+            print(f"\n--- {sub} ---")
+            print(_tree(p, max_entries=20, max_depth=2))
+    log("P0.3.bundle", "ok", "introspected (checkpoints + salad/dinov2 sources printed above)")
+else:
+    log("P0.3.bundle", "warn", "no bundle to introspect")
+
+#%%CODE
+# === P0.4 — Dataset validation =========================================================
+def _list_images(d, exts=(".png", ".jpg", ".jpeg")):
+    if not d or not os.path.isdir(d):
+        return []
+    return [f for f in os.listdir(d) if f.lower().endswith(exts)]
+
+def _frame_id(fname):
+    """Extract the numeric frame id from names like images-00251.png. Returns int or None."""
+    digits = "".join(ch for ch in os.path.splitext(fname)[0] if ch.isdigit())
+    return int(digits) if digits else None
+
+def _find_season_dir(root, season):
+    """Nordland Short nests as <root>/nordland-part-2020/<season>/; Full as <root>/data/<season>/<season>/."""
+    cands = []
+    for cur, dirs, files in os.walk(root):
+        base = os.path.basename(cur).lower()
+        if base == season and any(f.lower().endswith((".png", ".jpg")) for f in files):
+            cands.append(cur)
+    # prefer the deepest (handles data/winter/winter/)
+    return sorted(cands, key=lambda p: -p.count(os.sep))[0] if cands else None
+
+NORDLAND_ROOT = PATHS["nordland_short"] if CONFIG.SMOKE_TEST else (PATHS["nordland_full"] or PATHS["nordland_short"])
+NORDLAND_SEASONS = ["summer", "winter"] if (CONFIG.SMOKE_TEST or not PATHS["nordland_full"]) else ["spring", "summer", "fall", "winter"]
+
+season_dirs, season_counts = {}, {}
+if NORDLAND_ROOT:
+    for s in NORDLAND_SEASONS:
+        sd = _find_season_dir(NORDLAND_ROOT, s)
+        if sd:
+            imgs = _list_images(sd)
+            season_dirs[s] = sd
+            season_counts[s] = len(imgs)
+    print("Nordland root:", NORDLAND_ROOT)
+    for s in NORDLAND_SEASONS:
+        print(f"  {s:7s}: {season_counts.get(s, 0):6d} imgs  @ {season_dirs.get(s, 'MISSING')}")
+
+    # Cross-season frame-ID synchronization check (the key correspondence signal).
+    if len(season_dirs) >= 2:
+        id_sets = {s: set(_frame_id(f) for f in _list_images(d)) - {None} for s, d in season_dirs.items()}
+        common = set.intersection(*id_sets.values())
+        union = set.union(*id_sets.values())
+        jacc = len(common) / max(1, len(union))
+        print(f"  shared frame-IDs across {list(season_dirs)}: {len(common)} (Jaccard={jacc:.3f})")
+        log("P0.4.nordland", "ok" if jacc > 0.9 else "warn",
+            f"{len(season_dirs)} seasons, {len(common)} synced frame-IDs (Jaccard={jacc:.3f})")
+    else:
+        log("P0.4.nordland", "warn", f"only {len(season_dirs)} season dir(s) found")
+else:
+    log("P0.4.nordland", "fail", "no Nordland root found — NB1 smoke needs Nordland Short")
+
+# Dark-frame flagging (flag, never delete — may be a valid low-information location).
+def dark_frame_fraction(image_dir, sample=60, thr_mean=12.0):
+    try:
+        from PIL import Image
+    except Exception:
+        return None
+    files = sorted(_list_images(image_dir))[:sample]
+    if not files:
+        return None
+    dark = 0
+    for f in files:
+        try:
+            arr = np.asarray(Image.open(os.path.join(image_dir, f)).convert("L"), dtype=np.float32)
+            if arr.mean() < thr_mean:
+                dark += 1
+        except Exception:
+            pass
+    return dark / max(1, len(files))
+
+if season_dirs:
+    s0 = list(season_dirs)[0]
+    frac = dark_frame_fraction(season_dirs[s0])
+    if frac is not None:
+        log("P0.4.darkframes", "ok", f"~{frac*100:.1f}% near-black in sampled '{s0}' (flagged, not deleted)")
