@@ -57,5 +57,17 @@ realistic data** (CMU 0.23 ≪ random-ish). SUE and CRSG are the robust instanta
 CRSG fixes calibration for both (ECE 0.03–0.06 vs softmax/temperature 0.2–0.7) and wins open-set for both. Its
 *discrimination* edge over raw softmax ranking is larger for the stronger descriptor (clear SALAD, ~parity DINOv2).
 
-## Conformal risk control (RobotCar)  ⏳ NB12 in flight
-_(to be filled: C1 risk control + coverage, C2 shift breaks marginal guarantee, C3 Mondrian restores per-group control)_
+## Conformal risk control (RobotCar, tol 2 m, δ=0.1)  ✅ NB12
+
+**C1 — selective risk control (exchangeable): CRSG is a far better conformity score.**
+
+| target α | softmax risk / cov | CRSG risk / cov |
+|---|---|---|
+| 0.10 | — / **0.00** (abstains all) | 0.11 / **0.615** |
+| 0.20 | 0.21 / 0.97 | 0.22 / 0.98 |
+
+**C2 — marginal guarantee breaks under appearance shift** (calibrate benign → deploy hard): realized hard-risk
+0.115 (α=0.10), 0.304 (α=0.20) — exceeds target.
+
+**C3 — Mondrian per-condition conformal restores control** (α=0.10): worst-condition risk marginal **0.221** →
+Mondrian **0.000** (every condition ≤ target).

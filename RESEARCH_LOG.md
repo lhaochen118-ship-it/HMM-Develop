@@ -23,6 +23,24 @@ Honest state at handoff:
 
 ---
 
+## Entry 9 — NB12 conformal risk control (RobotCar)  →  distribution-free guarantees, all 3 claims hold
+
+Selective predictor on the CRSG reliability score with an RCPS/Hoeffding upper bound so realized selective-risk ≤
+target α (finite-sample, δ=0.1). Pose tol 2 m.
+
+- **C1 risk control + coverage.** At α=0.10, **CRSG certifies 61.5% coverage** (realized risk 0.11) while
+  **softmax certifies 0%** (must abstain entirely) — CRSG is a far better conformity score. At α=0.20 both ~control
+  (CRSG 0.22/0.98 cov, softmax 0.21/0.97).
+- **C2 shift breaks the marginal guarantee.** Calibrate on benign, deploy on night/night-rain: realized hard-risk
+  exceeds target (α=0.20 → 0.304; α=0.10 → 0.115), a cautionary result for reliability calibrated on easy data.
+- **C3 Mondrian restores per-group control.** Marginal per-condition risk varies 0.05–0.22 (worst 0.221 ≫ target
+  0.10); **Mondrian per-condition thresholds drive every condition's risk to ≤ target (worst 0.221 → 0.000)**.
+
+**Core A* package complete:** reality-check (3 datasets) + CRSG method (realistic-dominant, descriptor-agnostic) +
+conformal guarantees (better score, shift-aware via Mondrian).
+
+---
+
 ## Entry 8 — NB11 third dataset: Extended-CMU-Seasons  →  reinforces regime-dependence + CRSG dominance
 
 CMU slice as a single route, 10 date-conditions (camera c0), pose-GT, same CRSG protocol (N=1335). Headline

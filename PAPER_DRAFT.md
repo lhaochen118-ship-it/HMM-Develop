@@ -143,6 +143,14 @@ softmax ranking is **larger for stronger descriptors** (clear with SALAD, ~parit
 only as informative as the descriptor. The calibration and open-set gains are descriptor-agnostic; the
 discrimination dominance is stated for strong descriptors.
 
+**5.6 Conformal risk control.** ✅ (NB12) Turning CRSG into a selective predictor with a finite-sample
+(RCPS/Hoeffding, δ=0.1) selective-risk guarantee: **(C1)** at target risk α=0.10, CRSG certifies **61.5%
+coverage** while the softmax score certifies **0%** (must abstain entirely) — CRSG is a far stronger conformity
+score. **(C2)** The marginal guarantee **breaks under appearance shift** (calibrate benign → deploy night: realized
+risk 0.30 vs target 0.20). **(C3)** **Mondrian (per-condition) conformal restores per-group control** (worst-
+condition risk 0.221 → 0.000 at α=0.10). This gives distribution-free deployment guarantees and a principled,
+shift-aware abstention rule.
+
 ## 6. Contributions
 
 1. A **reliability evaluation protocol** for VPR (calibration + selective risk via AURC + open-set, swept over
@@ -154,8 +162,13 @@ discrimination dominance is stated for strong descriptors.
    **mechanism** (filtering destroys the single-image margin signal; calibrating its posterior cannot regenerate
    discrimination, NB8). A cautionary result against Nordland-only evaluation.
 3. **CRSG**, a trivial descriptor-agnostic, stream-free per-frame calibrator on retrieval-score geometry that is
-   the **regime-robust default**: it beats softmax and temperature scaling on both datasets, dominates all methods
-   on realistic RobotCar, and stays competitive on Nordland where the filter also works.
+   the **regime-robust default**: it beats softmax and temperature scaling on all three datasets, dominates all
+   methods on the two realistic benchmarks (RobotCar, CMU), and stays competitive on Nordland where the filter
+   also works.
+4. **Conformal risk control** on the CRSG score: a finite-sample selective-prediction guarantee that is a far
+   stronger conformity score than softmax (certifies real coverage where softmax abstains entirely), a
+   demonstration that the marginal guarantee breaks under appearance shift, and a Mondrian per-condition remedy —
+   distribution-free, shift-aware deployment guarantees.
 
 ## 7. Honesty / limitations
 
