@@ -1,0 +1,210 @@
+#%%MARKDOWN
+## RobotCar reliability experiments (gating the pivot)
+
+Does the sequential Bayes filter deliver **reliability** where single-image temperature scaling fails, on
+RobotCar's hard conditions? Three questions, pose-GT, route-indexed map:
+
+- **E1 Calibration.** Per condition: single-image vs fixed-filter vs CCBF — R@1 (pose), **ECE**, accuracy.
+  Hypothesis: the filter sharply cuts the single-image ECE (as on Nordland), CCBF ≈ fixed (τ's are equal).
+- **E2 Open-set / off-map.** Map = first 70% of the route; queries in the last 30% are off-map. **AUROC** of
+  filter-null vs CCBF-null vs **SUE** (Zaffar'24). Hypothesis: filter-null ≫ SUE (as on Nordland 0.99 vs 0.94).
+- **E3 ECE-vs-T.** Final-step ECE over fresh length-T windows (Theorem-1 style): does the filter stay calibrated
+  as the sequence grows, and does CCBF differ from fixed?
+
+The query stream for a condition is ordered along the route (sorted by GT route index) → a controlled in-order
+traversal (same framing as the Nordland aligned testbed), so the motion model (velocity≈1) is valid.
+
+#%%CODE
+# === E.0 — route ordering, map, pose-GT episode, condition model ======================
+def pose_dist_mat(A, Bx): return np.sqrt(((A[:, None, :] - Bx[None, :, :]) ** 2).sum(-1))
+
+def build_route_order(xyz):
+    """NN-chain from the point farthest from the centroid → a 1-D traversal order of the map."""
+    n = len(xyz)
+    if n <= 2: return np.arange(n)
+    start = int(np.argmax(((xyz - xyz.mean(0)) ** 2).sum(1)))
+    D = pose_dist_mat(xyz, xyz); np.fill_diagonal(D, 1e18)
+    order = [start]; used = np.zeros(n, bool); used[start] = True
+    for _ in range(n - 1):
+        last = order[-1]; d = D[last].copy(); d[used] = 1e18
+        nxt = int(np.argmin(d)); order.append(nxt); used[nxt] = True
+    return np.array(order)
+
+def make_map(B):
+    order = build_route_order(COND[B]["xyz"])
+    return dict(desc=DESC[B][order], xyz=COND[B]["xyz"][order], M=len(order))
+
+def rc_episode(Q, MAP):
+    """Order condition-Q frames into an in-route traversal; pose-GT = route index of pose-NN map image."""
+    D = pose_dist_mat(COND[Q]["xyz"], MAP["xyz"])          # [Nq, M]
+    gt = D.argmin(1); gtd = D[np.arange(len(D)), gt]
+    srt = np.argsort(gt, kind="stable")
+    qd = DESC[Q][srt]; q_xyz = COND[Q]["xyz"][srt]; gt = gt[srt]; gtd = gtd[srt]
+    sim = cosine_sim(qd, MAP["desc"])
+    return dict(sim=sim, qd=qd, q_xyz=q_xyz, gt=gt, gtd=gtd)
+
+def pose_correct(pred_ranks, q_xyz, map_xyz, tol):
+    return (np.sqrt(((q_xyz - map_xyz[pred_ranks]) ** 2).sum(1)) <= tol).astype(float)
+
+def pose_recall_at_k(sim, q_xyz, map_xyz, ks, tol):
+    kmax = min(max(ks), sim.shape[1]); topk = np.argsort(-sim, 1)[:, :kmax]; out = {}
+    for k in ks:
+        kk = min(k, sim.shape[1])
+        d = np.sqrt(((q_xyz[:, None, :] - map_xyz[topk[:, :kk]]) ** 2).sum(-1))
+        out[k] = float((d <= tol).any(1).mean())
+    return out
+
+def fit_global_tau_rc(qconds, MAP):
+    S, G = [], []
+    for q in qconds:
+        ep = rc_episode(q, MAP); keep = ep["gtd"] <= CONFIG.POSE_TOL_M
+        S.append(ep["sim"][keep]); G.append(ep["gt"][keep])
+    return fit_temperature(np.concatenate(S), np.concatenate(G))[0]
+
+def build_cond_model_rc(conds, B, MAP):
+    """Condition centroids = per-condition mean descriptor; τ_c via pose-NN match to B (diagnostic method)."""
+    names = list(conds)
+    C = np.stack([DESC[c].mean(0) for c in names]).astype(np.float32)
+    pool = np.concatenate([DESC[c] for c in names], 0)
+    sig = float(np.sqrt(np.median(_pairwise_sq_dists(pool, C).min(1))) + 1e-6)
+    tau = []
+    for c in names:
+        if c == B: tau.append(fit_global_tau_rc([x for x in conds if x != B], MAP)); continue
+        ep = rc_episode(c, MAP); keep = ep["gtd"] <= CONFIG.POSE_TOL_M
+        tau.append(fit_temperature(ep["sim"][keep], ep["gt"][keep])[0] if keep.sum() >= 5 else 0.03)
+    return dict(names=names, C=C, sigma=sig, tau=np.asarray(tau, np.float32))
+
+avail = list(DESC.keys())
+B = next((p for p in ["overcast-summer", "sun", "overcast-winter", "dusk"] if p in avail), avail[0])
+MAP = make_map(B)
+QCONDS = [c for c in ["night", "night-rain", "rain", "snow", "dawn", "dusk"] if c in avail and c != B]
+TAU_G = fit_global_tau_rc(QCONDS, MAP)
+CONDM = build_cond_model_rc(avail, B, MAP)
+print(f"map (ref) = {B} | M={MAP['M']} | query conds = {QCONDS}")
+print(f"global τ = {TAU_G:.4f} | per-cond τ = {dict(zip(CONDM['names'], np.round(CONDM['tau'],4)))}")
+RES4 = OrderedDict()
+log("E.0", "ok", f"ref={B} M={MAP['M']} qconds={QCONDS}")
+
+#%%CODE
+# === E.1 — calibration: single-image vs fixed-filter vs CCBF =========================
+def exp_calibration():
+    methods = ["single_image", "fixed_filter", "ccbf"]
+    pools = {m: {"conf": [], "corr": []} for m in methods}
+    per_cond = {}
+    for q in QCONDS:
+        ep = rc_episode(q, MAP); sim = ep["sim"]; q_xyz = ep["q_xyz"]; tol = CONFIG.POSE_TOL_M
+        row = {}
+        # single-image (temperature-scaled softmax over the map)
+        lp = sim / TAU_G; pr = np.exp(lp - _logsumexp(lp, 1)[:, None])
+        pred = pr.argmax(1); conf = pr.max(1); corr = pose_correct(pred, q_xyz, MAP["xyz"], tol)
+        r = pose_recall_at_k(sim, q_xyz, MAP["xyz"], CONFIG.RECALL_KS, tol)
+        pools["single_image"]["conf"].append(conf); pools["single_image"]["corr"].append(corr)
+        row["single_image"] = {"R@1": r[1], "ECE": ece_from_conf(conf, corr, CONFIG.ECE_BINS)[0], "acc": float(corr.mean())}
+        # fixed filter
+        pf, cf, nf = run_place_filter(sim, TAU_G); corr = pose_correct(pf, q_xyz, MAP["xyz"], tol)
+        pools["fixed_filter"]["conf"].append(cf); pools["fixed_filter"]["corr"].append(corr)
+        row["fixed_filter"] = {"R@1": float(corr.mean()), "ECE": ece_from_conf(cf, corr, CONFIG.ECE_BINS)[0], "acc": float(corr.mean())}
+        # ccbf
+        pc, cc, nc = run_ccbf(sim, ep["qd"], CONDM); corr = pose_correct(pc, q_xyz, MAP["xyz"], tol)
+        pools["ccbf"]["conf"].append(cc); pools["ccbf"]["corr"].append(corr)
+        row["ccbf"] = {"R@1": float(corr.mean()), "ECE": ece_from_conf(cc, corr, CONFIG.ECE_BINS)[0], "acc": float(corr.mean())}
+        per_cond[q] = row
+    overall = {}
+    for m in methods:
+        conf = np.concatenate(pools[m]["conf"]); corr = np.concatenate(pools[m]["corr"])
+        overall[m] = {"ECE": ece_from_conf(conf, corr, CONFIG.ECE_BINS)[0], "acc": float(corr.mean())}
+    print(f"\n{'method':<16}{'pooled ECE':>12}{'pooled acc':>12}")
+    for m in methods: print(f"{m:<16}{overall[m]['ECE']:>12.4f}{overall[m]['acc']:>12.3f}")
+    print("\nper-condition ECE (single → filter → ccbf):")
+    for q in QCONDS:
+        s, f, c = per_cond[q]["single_image"], per_cond[q]["fixed_filter"], per_cond[q]["ccbf"]
+        print(f"  {q:<14} R@1 {s['R@1']:.3f} | ECE {s['ECE']:.3f} → {f['ECE']:.3f} → {c['ECE']:.3f}")
+    return {"overall": overall, "per_cond": per_cond}
+
+RES4["E1_calibration"] = exp_calibration()
+ov = RES4["E1_calibration"]["overall"]
+log("E.1", "ok", f"ECE single={ov['single_image']['ECE']:.3f} filter={ov['fixed_filter']['ECE']:.3f} ccbf={ov['ccbf']['ECE']:.3f}")
+
+#%%CODE
+# === E.2 — open-set / off-map AUROC (filter-null vs CCBF-null vs SUE) =================
+def exp_offmap(frac=0.7):
+    agg = {m: {"s": [], "l": []} for m in ["fixed_null", "ccbf_null", "sue"]}
+    per = {}
+    Mmap = int(MAP["M"] * frac)
+    map_sub = dict(desc=MAP["desc"][:Mmap], xyz=MAP["xyz"][:Mmap], M=Mmap)
+    for q in QCONDS:
+        ep = rc_episode(q, MAP)                                   # gt over full route
+        label = (ep["gt"] >= Mmap).astype(int)                    # off-map = true place beyond the kept map
+        sim = cosine_sim(ep["qd"], map_sub["desc"])
+        _, _, nf = run_place_filter(sim, TAU_G)
+        _, _, nc = run_ccbf(sim, ep["qd"], CONDM)
+        sue = sue_uncertainty(sim)
+        for m, sc in [("fixed_null", nf), ("ccbf_null", nc), ("sue", sue)]:
+            agg[m]["s"].append(sc); agg[m]["l"].append(label)
+        per[q] = {m: auroc(sc, label) for m, sc in [("fixed_null", nf), ("ccbf_null", nc), ("sue", sue)]}
+    overall = {}
+    for m in agg:
+        s = np.concatenate(agg[m]["s"]); l = np.concatenate(agg[m]["l"])
+        overall[m] = {"AUROC": auroc(s, l), "AUPR": average_precision(s, l)}
+    print(f"off-map detection (map = first {frac:.0%} of route):")
+    for m in ["fixed_null", "ccbf_null", "sue"]:
+        print(f"  {m:<12} AUROC={overall[m]['AUROC']:.3f}  AUPR={overall[m]['AUPR']:.3f}")
+    return {"overall": overall, "per_cond": per}
+
+RES4["E2_offmap"] = exp_offmap()
+ov2 = RES4["E2_offmap"]["overall"]
+log("E.2", "ok", f"AUROC filter={ov2['fixed_null']['AUROC']:.3f} ccbf={ov2['ccbf_null']['AUROC']:.3f} sue={ov2['sue']['AUROC']:.3f}")
+
+#%%CODE
+# === E.3 — ECE vs sequence length (final-step, fresh windows) ========================
+def exp_ece_vs_T(n_windows=60):
+    curve = {"single_image": [], "fixed_filter": [], "ccbf": []}
+    eps = {q: rc_episode(q, MAP) for q in QCONDS}
+    for T in CONFIG.T_GRID:
+        pools = {m: {"conf": [], "corr": []} for m in curve}
+        for q in QCONDS:
+            ep = eps[q]; sim = ep["sim"]; q_xyz = ep["q_xyz"]; L = len(sim)
+            if L <= T: continue
+            starts = sorted(set(np.linspace(0, L - T, min(n_windows, L - T + 1)).astype(int).tolist()))
+            for st in starts:
+                e = st + T - 1; sw = sim[st:st + T]; qdw = ep["qd"][st:st + T]; xw = q_xyz[st:st + T]
+                lp = sw[-1] / TAU_G; pr = np.exp(lp - _logsumexp(lp)); pred = int(pr.argmax())
+                pools["single_image"]["conf"].append(float(pr.max()))
+                pools["single_image"]["corr"].append(float(pose_correct(np.array([pred]), xw[-1:], MAP["xyz"], CONFIG.POSE_TOL_M)[0]))
+                pf, cf, _ = run_place_filter(sw, TAU_G)
+                pools["fixed_filter"]["conf"].append(cf[-1]); pools["fixed_filter"]["corr"].append(float(pose_correct(pf[-1:], xw[-1:], MAP["xyz"], CONFIG.POSE_TOL_M)[0]))
+                pc, cc, _ = run_ccbf(sw, qdw, CONDM)
+                pools["ccbf"]["conf"].append(cc[-1]); pools["ccbf"]["corr"].append(float(pose_correct(pc[-1:], xw[-1:], MAP["xyz"], CONFIG.POSE_TOL_M)[0]))
+        for m in curve:
+            conf = np.asarray(pools[m]["conf"]); corr = np.asarray(pools[m]["corr"])
+            curve[m].append(ece_from_conf(conf, corr, max(5, CONFIG.ECE_BINS // 2))[0] if len(conf) > 10 else float("nan"))
+    print("T            :", list(CONFIG.T_GRID))
+    for m in curve: print(f"ECE[{m:<13}]:", [round(x, 3) if np.isfinite(x) else None for x in curve[m]])
+    return curve
+
+RES4["E3_ece_vs_T"] = exp_ece_vs_T()
+log("E.3", "ok", "ECE-vs-T computed")
+
+#%%CODE
+# === E.4 — summary verdict ============================================================
+ov = RES4["E1_calibration"]["overall"]; ov2 = RES4["E2_offmap"]["overall"]
+filter_helps = ov["fixed_filter"]["ECE"] < 0.6 * ov["single_image"]["ECE"]
+beats_sue = ov2["fixed_null"]["AUROC"] >= ov2["sue"]["AUROC"] + 0.02
+ccbf_eq_fixed = abs(ov["ccbf"]["ECE"] - ov["fixed_filter"]["ECE"]) < 0.01
+summary = dict(ref=B, qconds=QCONDS,
+               ece_single=round(ov["single_image"]["ECE"], 4), ece_filter=round(ov["fixed_filter"]["ECE"], 4),
+               ece_ccbf=round(ov["ccbf"]["ECE"], 4),
+               auroc_filter=round(ov2["fixed_null"]["AUROC"], 4), auroc_ccbf=round(ov2["ccbf_null"]["AUROC"], 4),
+               auroc_sue=round(ov2["sue"]["AUROC"], 4),
+               filter_fixes_calibration=bool(filter_helps), filter_beats_sue_offmap=bool(beats_sue),
+               ccbf_equals_fixed=bool(ccbf_eq_fixed))
+VERDICT4 = "RELIABILITY_CONTRIBUTION_HOLDS" if (filter_helps and beats_sue) else \
+           ("PARTIAL" if (filter_helps or beats_sue) else "RECONSIDER")
+summary["verdict"] = VERDICT4
+print("\n================ GATING VERDICT ================")
+print(f"filter fixes calibration (ECE {ov['single_image']['ECE']:.3f} → {ov['fixed_filter']['ECE']:.3f}) : {filter_helps}")
+print(f"filter-null beats SUE off-map ({ov2['fixed_null']['AUROC']:.3f} vs {ov2['sue']['AUROC']:.3f})        : {beats_sue}")
+print(f"CCBF ≈ fixed_filter (honest ablation)                      : {ccbf_eq_fixed}")
+print(f"VERDICT : {VERDICT4}")
+print("RC_RELIABILITY_JSON=" + json.dumps(summary))
+log("E.4", "ok", f"verdict={VERDICT4}")

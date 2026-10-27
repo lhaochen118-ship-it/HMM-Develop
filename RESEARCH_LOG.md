@@ -39,6 +39,40 @@ calibration (CCBF) has real value.
   but NOT gated on — a dry run confirmed per-condition τ barely moves single-image ECE even when τ varies 6×;
   CCBF's real edge, if any, is *sequential*: Theorem 1 / ECE-vs-T).
 
-**Result.** _(pending T4 run — see below)_
+**Result (T4, SALAD dim 8448, 9 RobotCar conditions ~200 imgs each, ref=sun, tol=5m).**
 
-**Verdict.** _(pending)_
+| query cond | n | τ | R@1 | match | nonmatch | gap |
+|---|---|---|---|---|---|---|
+| night | 175 | 0.0208 | 0.977 | 0.384 | 0.295 | 0.089 |
+| night-rain | 203 | 0.0253 | 0.966 | 0.395 | 0.308 | 0.087 |
+| rain | 170 | 0.0253 | 1.000 | 0.553 | 0.384 | 0.170 |
+| dawn | 210 | 0.0253 | 0.986 | 0.529 | 0.380 | 0.149 |
+| snow | 215 | 0.0253 | 0.991 | 0.549 | 0.392 | 0.158 |
+| dusk | 167 | 0.0253 | 1.000 | 0.580 | 0.414 | 0.166 |
+| overcast-winter | 181 | 0.0253 | 0.994 | 0.564 | 0.397 | 0.167 |
+| overcast-summer | 201 | 0.0309 | 0.995 | 0.565 | 0.394 | 0.171 |
+
+- **τ spread = 1.49×** (Nordland 1.22×). per-condition-τ pooled ECE improvement vs global-τ = **−0.1%** (nil).
+- Appearance gap is **real**: night/night-rain match–nonmatch gap (~0.088) is **half** the day gap (~0.17); night
+  match scores are much lower (0.38 vs 0.58). But R@1 stays ~0.98 everywhere — **SALAD is recall-robust**.
+- Single-image pooled ECE ≈ **0.55** (softmax over ~200 candidates is wildly miscalibrated to top-1 correctness).
+
+**Verdict: PIVOT (CCBF's temperature mechanism is inert on a 2nd dataset).** A scalar per-condition temperature
+does not convert the real appearance gap into a calibration gain — on both Nordland and RobotCar. Condition-
+conditional *temperature* is the wrong knob. **Stop polishing CCBF-as-temperature.**
+
+**What IS worth keeping (verified or strongly indicated):**
+1. The sequential Bayes filter sharply improves calibration (Nordland single→filter ECE 0.076→0.028).
+2. Filter-null off-map detection beats SUE (Nordland AUROC 0.99 vs 0.94).
+3. Single-image VPR confidence is badly miscalibrated even when recall is ~saturated — an under-studied problem.
+
+**Research gap / new direction.** VPR is benchmarked on recall, which is saturating for SOTA descriptors even in
+hard conditions. The deployment-critical axis is **reliability**: calibrated confidence + knowing when you are
+off-map/lost. Standard fixes (temperature scaling, SUE) are weak. → **Contribution candidate:** a descriptor-
+agnostic sequential probabilistic layer giving calibrated place posteriors + reliable open-set abstention,
+beating temperature/SUE across datasets; condition-modeling demoted to an honest ablation ("when does it help?").
+
+**Gating experiment (Entry 2):** confirm (1) filter fixes calibration and (2) filter-null beats SUE off-map — on
+**RobotCar hard conditions** (night/rain), with route-indexed maps + pose-GT. If both hold → solid cross-dataset
+reliability contribution. If the filter does NOT help on RobotCar → rethink (open-set-only, or tournament idea B).
+
