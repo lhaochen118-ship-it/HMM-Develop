@@ -1,0 +1,176 @@
+#%%MARKDOWN
+## NB5 — diagnose the filter's RobotCar failure + probe instantaneous calibration
+
+Entry 2 showed the sequential filter did not fix calibration and lost to SUE on off-map. Two possibilities:
+(1) a **setup artifact** — RobotCar train is ~180 *sparse* samples/condition, so the velocity≈1 motion model is
+mismatched and handicaps the filter; or (2) a **real** limitation. This notebook separates them, then probes a
+simpler direction that works on sparse data.
+
+- **G1 traversal diagnostics** — route-index spacing (velocity) of the sorted-GT stream per condition.
+- **G2 matched filter** — re-run the filter with velocity/σ estimated from the data; does calibration recover?
+- **G3 instantaneous calibrated uncertainty** — Platt-scale each per-frame signal (SUE, top1–top2 gap, score
+  entropy, max-sim) to predict correctness; report calibrated ECE + off-map AUROC. Does a trivial per-frame
+  calibrator beat both the filter and raw SUE?
+
+#%%CODE
+# === G.0 — route order, map, pose-GT episode (same as NB4) ===========================
+def pose_dist_mat(A, Bx): return np.sqrt(((A[:, None, :] - Bx[None, :, :]) ** 2).sum(-1))
+def build_route_order(xyz):
+    n = len(xyz)
+    if n <= 2: return np.arange(n)
+    start = int(np.argmax(((xyz - xyz.mean(0)) ** 2).sum(1)))
+    D = pose_dist_mat(xyz, xyz); np.fill_diagonal(D, 1e18)
+    order = [start]; used = np.zeros(n, bool); used[start] = True
+    for _ in range(n - 1):
+        d = D[order[-1]].copy(); d[used] = 1e18
+        nxt = int(np.argmin(d)); order.append(nxt); used[nxt] = True
+    return np.array(order)
+def make_map(B):
+    o = build_route_order(COND[B]["xyz"]); return dict(desc=DESC[B][o], xyz=COND[B]["xyz"][o], M=len(o))
+def rc_episode(Q, MAP):
+    D = pose_dist_mat(COND[Q]["xyz"], MAP["xyz"]); gt = D.argmin(1); gtd = D[np.arange(len(D)), gt]
+    srt = np.argsort(gt, kind="stable")
+    return dict(sim=cosine_sim(DESC[Q][srt], MAP["desc"]), qd=DESC[Q][srt],
+                q_xyz=COND[Q]["xyz"][srt], gt=gt[srt], gtd=gtd[srt])
+def pose_correct(pred, q_xyz, map_xyz, tol):
+    return (np.sqrt(((q_xyz - map_xyz[pred]) ** 2).sum(1)) <= tol).astype(float)
+
+avail = list(DESC.keys())
+B = next((p for p in ["overcast-summer", "sun", "overcast-winter"] if p in avail), avail[0])
+MAP = make_map(B)
+QCONDS = [c for c in ["night", "night-rain", "rain", "snow", "dawn", "dusk"] if c in avail and c != B]
+TOL = CONFIG.POSE_TOL_M
+print("map ref =", B, "M =", MAP["M"], "| query conds =", QCONDS)
+RES5 = OrderedDict()
+log("G.0", "ok", f"ref={B} M={MAP['M']}")
+
+#%%CODE
+# === G.1 — traversal velocity diagnostics ============================================
+def diag_velocity():
+    rows = {}
+    for q in QCONDS:
+        ep = rc_episode(q, MAP); dv = np.diff(ep["gt"])
+        rows[q] = dict(n=len(ep["gt"]), med_dv=float(np.median(dv)), mean_dv=float(dv.mean()),
+                       frac_0to3=float(((dv >= 0) & (dv <= 3)).mean()), frac_jump=float((np.abs(dv) > 5).mean()),
+                       uniq_gt=int(len(np.unique(ep["gt"]))))
+    print(f"{'cond':<13}{'n':>5}{'uniq_gt':>8}{'med_dv':>8}{'mean_dv':>9}{'%dv∈[0,3]':>11}{'%|dv|>5':>9}")
+    for q, r in rows.items():
+        print(f"{q:<13}{r['n']:>5}{r['uniq_gt']:>8}{r['med_dv']:>8.1f}{r['mean_dv']:>9.2f}"
+              f"{r['frac_0to3']*100:>10.0f}%{r['frac_jump']*100:>8.0f}%")
+    return rows
+RES5["G1_velocity"] = diag_velocity()
+log("G.1", "ok", "velocity diagnosed")
+
+#%%CODE
+# === G.2 — matched-motion filter vs default filter vs single-image ===================
+def fit_global_tau_rc():
+    S, G = [], []
+    for q in QCONDS:
+        ep = rc_episode(q, MAP); k = ep["gtd"] <= TOL; S.append(ep["sim"][k]); G.append(ep["gt"][k])
+    return fit_temperature(np.concatenate(S), np.concatenate(G))[0]
+TAU_G = fit_global_tau_rc()
+
+def run_filter_matched(sim, v, std):
+    """fixed-observation filter with an explicit motion velocity/σ (overrides CONFIG for this call)."""
+    ov, os_ = CONFIG.MOTION_VELOCITY, CONFIG.MOTION_STD
+    CONFIG.MOTION_VELOCITY, CONFIG.MOTION_STD = float(v), float(std)
+    try: out = run_place_filter(sim, TAU_G)
+    finally: CONFIG.MOTION_VELOCITY, CONFIG.MOTION_STD = ov, os_
+    return out
+
+def exp_matched():
+    pools = {m: {"c": [], "k": []} for m in ["single", "filter_default", "filter_matched"]}
+    for q in QCONDS:
+        ep = rc_episode(q, MAP); sim = ep["sim"]; x = ep["q_xyz"]; dv = np.diff(ep["gt"])
+        v = max(1.0, float(np.median(dv))); std = max(2.0, float(np.std(dv)))
+        lp = sim / TAU_G; pr = np.exp(lp - _logsumexp(lp, 1)[:, None])
+        pools["single"]["c"].append(pr.max(1)); pools["single"]["k"].append(pose_correct(pr.argmax(1), x, MAP["xyz"], TOL))
+        pf, cf, _ = run_place_filter(sim, TAU_G)
+        pools["filter_default"]["c"].append(cf); pools["filter_default"]["k"].append(pose_correct(pf, x, MAP["xyz"], TOL))
+        pm, cm, _ = run_filter_matched(sim, v, std)
+        pools["filter_matched"]["c"].append(cm); pools["filter_matched"]["k"].append(pose_correct(pm, x, MAP["xyz"], TOL))
+    out = {}
+    for m in pools:
+        c = np.concatenate(pools[m]["c"]); k = np.concatenate(pools[m]["k"])
+        out[m] = dict(ECE=ece_from_conf(c, k, CONFIG.ECE_BINS)[0], acc=float(k.mean()), conf=float(c.mean()))
+    print(f"\n{'method':<16}{'ECE':>9}{'acc':>8}{'mean_conf':>11}")
+    for m, r in out.items(): print(f"{m:<16}{r['ECE']:>9.4f}{r['acc']:>8.3f}{r['conf']:>11.3f}")
+    return out
+RES5["G2_matched"] = exp_matched()
+log("G.2", "ok", f"matched filter ECE={RES5['G2_matched']['filter_matched']['ECE']:.3f}")
+
+#%%CODE
+# === G.3 — instantaneous calibrated uncertainty (Platt) + off-map AUROC ==============
+def fit_platt(x, y, iters=500, lr=0.5):
+    """1-D logistic calibrator sigmoid(a*z+b) on standardized x -> p(correct). Returns predictor."""
+    z = (x - x.mean()) / (x.std() + 1e-9); a, b = 0.0, 0.0; n = len(z)
+    for _ in range(iters):
+        p = 1 / (1 + np.exp(-(a * z + b))); ga = ((p - y) * z).mean(); gb = (p - y).mean()
+        a -= lr * ga; b -= lr * gb
+    mu, sd = x.mean(), x.std() + 1e-9
+    return lambda xx: 1 / (1 + np.exp(-(a * (xx - mu) / sd + b)))
+
+def features(sim):
+    srt = np.sort(sim, 1)[:, ::-1]
+    maxs = srt[:, 0]; gap12 = srt[:, 0] - srt[:, 1]
+    p = np.exp(sim / 0.05 - _logsumexp(sim / 0.05, 1)[:, None]); ent = -(p * np.log(p + 1e-12)).sum(1)
+    sue = np.sqrt(np.maximum(2 - 2 * maxs, 0.0))
+    return {"sue": sue, "gap12": gap12, "entropy": ent, "maxsim": maxs}
+
+def exp_instant(frac=0.7):
+    Mmap = int(MAP["M"] * frac); map_sub = dict(desc=MAP["desc"][:Mmap], xyz=MAP["xyz"][:Mmap])
+    # gather per-frame features + correctness (in-map) and off-map labels (full map, truncated eval)
+    feat_all = {k: [] for k in ["sue", "gap12", "entropy", "maxsim"]}; corr_all = []; conf_soft = []
+    off_feat = {k: [] for k in feat_all}; off_lab = []; off_null = []
+    for q in QCONDS:
+        ep = rc_episode(q, MAP); sim = ep["sim"]; x = ep["q_xyz"]
+        f = features(sim); lp = sim / TAU_G; pr = np.exp(lp - _logsumexp(lp, 1)[:, None])
+        corr = pose_correct(pr.argmax(1), x, MAP["xyz"], TOL)
+        for k in feat_all: feat_all[k].append(f[k])
+        corr_all.append(corr); conf_soft.append(pr.max(1))
+        # off-map: truncated map
+        sim2 = cosine_sim(ep["qd"], map_sub["desc"]); f2 = features(sim2)
+        lab = (ep["gt"] >= Mmap).astype(int); _, _, nf = run_place_filter(sim2, TAU_G)
+        for k in off_feat: off_feat[k].append(f2[k])
+        off_lab.append(lab); off_null.append(nf)
+    corr = np.concatenate(corr_all); conf_soft = np.concatenate(conf_soft)
+    feats = {k: np.concatenate(v) for k, v in feat_all.items()}
+    off = {k: np.concatenate(v) for k, v in off_feat.items()}; lab = np.concatenate(off_lab); nf = np.concatenate(off_null)
+    # calibration: Platt each feature (cross-fit: fit on evens, eval on odds)
+    ev = np.arange(len(corr)) % 2 == 0
+    print("\ninstantaneous calibration (Platt, cross-fit):")
+    print(f"  {'softmax-max (uncal)':<22} ECE={ece_from_conf(conf_soft[~ev], corr[~ev], CONFIG.ECE_BINS)[0]:.4f}")
+    cal = {}
+    for k, s in feats.items():
+        # orient so higher => more likely correct
+        g = fit_platt(s[ev], corr[ev]); p = g(s[~ev])
+        e = ece_from_conf(p, corr[~ev], CONFIG.ECE_BINS)[0]; cal[k] = e
+        print(f"  {('platt('+k+')'):<22} ECE={e:.4f}")
+    # off-map AUROC for each raw feature (orient: higher uncertainty => off-map)
+    orient = {"sue": 1, "gap12": -1, "entropy": 1, "maxsim": -1}
+    print("off-map AUROC (instantaneous vs filter-null):")
+    au = {"filter_null": auroc(nf, lab)}
+    print(f"  {'filter_null':<14} AUROC={au['filter_null']:.4f}")
+    for k in off:
+        au[k] = auroc(orient[k] * off[k], lab); print(f"  {k:<14} AUROC={au[k]:.4f}")
+    return {"cal_ece": cal, "softmax_ece": float(ece_from_conf(conf_soft[~ev], corr[~ev], CONFIG.ECE_BINS)[0]),
+            "offmap_auroc": au}
+RES5["G3_instant"] = exp_instant()
+
+best_cal = min(RES5["G3_instant"]["cal_ece"], key=RES5["G3_instant"]["cal_ece"].get)
+best_ood = max(RES5["G3_instant"]["offmap_auroc"], key=RES5["G3_instant"]["offmap_auroc"].get)
+summary = dict(ref=B, tau_global=round(TAU_G, 4),
+               ece_single=round(RES5["G2_matched"]["single"]["ECE"], 4),
+               ece_filter_default=round(RES5["G2_matched"]["filter_default"]["ECE"], 4),
+               ece_filter_matched=round(RES5["G2_matched"]["filter_matched"]["ECE"], 4),
+               softmax_ece=round(RES5["G3_instant"]["softmax_ece"], 4),
+               best_calibrator=best_cal, best_cal_ece=round(RES5["G3_instant"]["cal_ece"][best_cal], 4),
+               best_ood=best_ood, best_ood_auroc=round(RES5["G3_instant"]["offmap_auroc"][best_ood], 4),
+               filter_null_auroc=round(RES5["G3_instant"]["offmap_auroc"]["filter_null"], 4))
+print("\n================ NB5 SUMMARY ================")
+print(f"matched motion recovers filter? ECE {summary['ece_single']} (single) / "
+      f"{summary['ece_filter_default']} (default) / {summary['ece_filter_matched']} (matched)")
+print(f"best instantaneous calibrator: {best_cal} ECE={summary['best_cal_ece']} (vs softmax {summary['softmax_ece']})")
+print(f"best off-map signal: {best_ood} AUROC={summary['best_ood_auroc']} (filter_null {summary['filter_null_auroc']})")
+print("NB5_JSON=" + json.dumps(summary))
+log("G.3", "ok", f"best_cal={best_cal} best_ood={best_ood}")

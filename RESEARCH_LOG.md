@@ -23,7 +23,31 @@ Honest state at handoff:
 
 ---
 
-## Entry 1 — RobotCar per-condition τ diagnostic  [IN PROGRESS]
+## Entry 2 — RobotCar reliability gating (NB4)  →  VERDICT: RECONSIDER
+
+Both Nordland "wins" FAILED to generalize to RobotCar (ref=overcast-summer, 6 hard query conds, pose-GT 5m):
+
+| method | pooled ECE | pooled acc |   | off-map | AUROC |
+|---|---|---|---|---|---|
+| single_image | 0.472 | 0.943 |   | **SUE** | **0.950** |
+| fixed_filter | 0.439 | 0.950 |   | fixed_null | 0.888 |
+| ccbf | 0.398 | 0.950 |   | ccbf_null | 0.891 |
+
+- **Filter does NOT fix calibration** (0.472→0.439; on Nordland it was 0.076→0.028). ECE-vs-T stays flat ~0.44–0.49.
+- **SUE (trivial L2-to-NN) BEATS the filter on off-map** (0.950 vs 0.888) — the *opposite* of Nordland (0.99 vs 0.94).
+- All methods badly UNDER-confident (acc 0.94 but conf ~0.47): softmax-max over ~180 near-tie candidates ≠ P(correct).
+
+**Interpretation (tentative):** the Nordland advantages are artifacts of its dense, 1:1-aligned, smooth trajectories.
+RobotCar train = ~180 *sparse* samples per condition → the motion model (velocity≈1) is likely mismatched, which
+would handicap the filter. **Must rule out this setup artifact before concluding the filter "fails"** (honesty).
+
+**Entry 3 (next):** NB5 diagnoses traversal spacing + retests the filter with a *matched* motion model; and probes
+a new direction — **instantaneous calibrated uncertainty** (Platt-scaled SUE / top1–top2 gap / score-entropy) to
+see if a simple per-frame signal fixes calibration + beats raw SUE on off-map (works on sparse data, no dense video).
+
+---
+
+## Entry 1 — RobotCar per-condition τ diagnostic  →  VERDICT: PIVOT
 
 **Hypothesis.** RobotCar's huge day↔night/rain/snow appearance gaps make SALAD's match/non-match score
 distributions differ drastically by condition ⇒ τ_c spread ≫ Nordland's 1.22× ⇒ condition-conditional
