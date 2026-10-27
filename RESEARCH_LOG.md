@@ -23,6 +23,30 @@ Honest state at handoff:
 
 ---
 
+## Entry 7 — NB9 descriptor-agnostic (DINOv2 instead of SALAD)  →  honest nuance
+
+DINOv2 CLS+mean (dim 1536), much weaker than SALAD: R@1 0.10/0.28/0.50/0.76 at tol 0.5/1/2/5 m. RobotCar, same
+protocol. Headline tol=2m (acc 0.50):
+
+| method | ECE | AURC ↓ | conf-AUROC ↑ | off-map |
+|---|---|---|---|---|
+| softmax | 0.438 | 0.319 | 0.729 | — |
+| temperature | 0.309 | 0.326 | 0.738 | — |
+| **CRSG** | **0.058** | 0.331 | 0.702 | **0.861** (SUE 0.746, filter 0.802) |
+
+- **CRSG fixes calibration descriptor-agnostically** (ECE 0.03–0.06 across tolerances for BOTH SALAD and DINOv2,
+  vs softmax/temperature 0.2–0.7) and **wins off-map with both descriptors** (here 0.861 ≫ SUE 0.746, since a weak
+  descriptor degrades the raw NN-distance SUE while multi-feature CRSG is robust).
+- **But CRSG's discrimination EDGE is descriptor-dependent:** with strong SALAD it clearly beats softmax on AURC /
+  conf-AUROC; with weak DINOv2 it is ~parity (softmax-max already ranks reasonably; the calibrator optimizes
+  log-loss, not ranking). Honest: the *calibration* and *open-set* wins are descriptor-agnostic; the *discrimination
+  dominance* is larger for stronger descriptors.
+
+**Net:** the descriptor-agnostic claim holds for calibration + open-set (the core reliability deliverables); the
+discrimination-dominance claim should be stated for strong descriptors specifically.
+
+---
+
 ## Entry 6 — NB8 unified "calibrate the belief"  →  sharper finding: calibration can't rescue the filter
 
 Tested CRSG-filter = calibrate the *filter posterior* geometry (max/margin/entropy/null), vs CRSG-single

@@ -119,6 +119,14 @@ the single-image geometry.
 **5.4 Ablation.** Single-feature margin-Platt calibrates ECE but discriminates poorly (conf-AUROC ≈0.61–0.74);
 the multi-feature CRSG recovers discrimination (0.80) — the feature combination matters. ✅ (NB6)
 
+**5.5 Descriptor-agnosticism.** ✅ (NB9) Repeating on a weaker descriptor (DINOv2 CLS+mean, dim 1536; R@1 drops to
+0.10–0.76 across tolerances) shows CRSG **fixes calibration for both descriptors** (ECE 0.03–0.06 vs softmax/
+temperature 0.2–0.7) and **wins open-set with both** (DINOv2: CRSG 0.861 ≫ SUE 0.746 — a weak descriptor degrades
+the raw NN-distance, but multi-feature CRSG stays robust). Honest nuance: CRSG's *discrimination* edge over the raw
+softmax ranking is **larger for stronger descriptors** (clear with SALAD, ~parity with DINOv2), since the margin is
+only as informative as the descriptor. The calibration and open-set gains are descriptor-agnostic; the
+discrimination dominance is stated for strong descriptors.
+
 ## 6. Contributions
 
 1. A **reliability evaluation protocol** for VPR (calibration + selective risk via AURC + open-set, swept over
