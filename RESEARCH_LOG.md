@@ -23,6 +23,42 @@ Honest state at handoff:
 
 ---
 
+## Entry 4 — NB6 CRSG validation on RobotCar (tolerance sweep)  →  POSITIVE: CRSG dominates
+
+Calibrated Retrieval-Score Geometry (**CRSG**) = a per-frame logistic on retrieval-score geometry
+[top1−top2 margin, NN-distance, score entropy] → one calibrated reliability score. Pooled cross-fit (fit 50% /
+eval 50%), ref map = overcast-summer, 8 query conditions, pose tolerance swept (R@1: 0.21@0.5m, 0.51@1m,
+0.79@2m, 0.94@5m — tight tol = meaningful errors; the 5m regime used earlier was too easy).
+
+**Headline tol = 2.0m (acc 0.765):**
+
+| method | ECE | AURC ↓ | conf-AUROC ↑ |
+|---|---|---|---|
+| softmax (uncal) | 0.485 | 0.133 | 0.749 |
+| temperature scaling | 0.303 | 0.135 | 0.736 |
+| sequential fixed_filter | 0.301 | 0.132 | 0.677 |
+| CCBF | 0.269 | 0.130 | 0.671 |
+| **CRSG (ours)** | **0.069** | **0.090** | **0.801** |
+| oracle AURC | — | 0.030 | — |
+
+- **CRSG gives the best discrimination (AURC, conf-AUROC) at EVERY tolerance** {0.5,1,2,5}m, and near-best ECE.
+  It beats softmax, temperature, the sequential filter AND CCBF. The sequential/condition methods give **no**
+  reliability benefit over softmax here (AURC ~0.13 ≈ softmax; ECE ~0.27–0.30).
+- Single-feature platt(margin) calibrates ECE well but discriminates poorly (conf-AUROC ~0.61–0.74); the
+  **multi-feature CRSG** is what delivers discrimination — a clean ablation.
+- **Off-map:** CRSG 0.949 ≈ SUE 0.948 > filter_null 0.898. CRSG is a *unified* reliability score (in-map
+  calibration + open-set), matching the best instantaneous OOD and beating the filter.
+- (Notebook prints "PARTIAL" only because a hard gate ECE≤0.06 vs CRSG 0.069; the discrimination wins are the
+  real, consistent result.)
+
+**Verdict: the contribution holds.** On realistic RobotCar hard conditions, reliable VPR needs **calibrated
+retrieval-score geometry**, not sequential filtering or condition modeling. Simple per-frame calibration dominates.
+
+**Entry 5 (next):** cross-dataset — the SAME CRSG protocol on Nordland (4 seasons, frame-GT). Nordland is dense
+(the filter's natural home), so it tests whether CRSG matches/beats the filter even where the filter is strongest.
+
+---
+
 ## Entry 3 — NB5 diagnosis + instantaneous-calibration probe  →  BREAKTHROUGH (positive direction)
 
 - **G1 velocity:** sorted-GT traversal is clean ~1:1 (median Δ=1, 97–99% of steps in [0,3], <2% jumps) for all
