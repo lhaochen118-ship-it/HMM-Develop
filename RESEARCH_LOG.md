@@ -23,6 +23,34 @@ Honest state at handoff:
 
 ---
 
+## Entry 8 — NB11 third dataset: Extended-CMU-Seasons  →  reinforces regime-dependence + CRSG dominance
+
+CMU slice as a single route, 10 date-conditions (camera c0), pose-GT, same CRSG protocol (N=1335). Headline
+tol=2m (acc 0.876):
+
+| method | ECE | AURC ↓ | conf-AUROC ↑ | off-map AUROC |
+|---|---|---|---|---|
+| softmax | 0.651 | 0.085 | 0.640 | — |
+| temperature | 0.435 | 0.084 | 0.633 | — |
+| fixed_filter | 0.416 | 0.080 | 0.603 | **0.228 (collapse)** |
+| ccbf | 0.359 | 0.081 | 0.601 | — |
+| **CRSG (ours)** | **0.055** | **0.048** | **0.769** | 0.861 |
+| SUE / oracle AURC | — | 0.008 | — | SUE 0.895 |
+
+- **CRSG dominates on CMU exactly as on RobotCar** (best ECE/AURC/conf-AUROC at every tolerance).
+- **The sequential filter's off-map COLLAPSES on CMU (AUROC 0.228 — worse than random)**, a 2nd realistic dataset
+  confirming the filter is regime-specific; SUE (0.895) and CRSG (0.861) are the robust off-map signals.
+- Filter/CCBF again give no discrimination gain over softmax.
+
+**Status: the contribution is now robustly supported on 3 datasets + 2 descriptors.** CRSG dominant on BOTH realistic
+benchmarks (RobotCar, CMU), competitive on idealized Nordland; sequential filtering regime-specific (great on dense
+Nordland, fails on sparse RobotCar+CMU); condition-temperature inert everywhere.
+
+**Entry 9 (next):** conformal risk control (NB12) — distribution-free selective-prediction guarantees on the CRSG
+score; show the marginal guarantee breaks under appearance shift and Mondrian restores it (the A*-depth lever).
+
+---
+
 ## Entry 7 — NB9 descriptor-agnostic (DINOv2 instead of SALAD)  →  honest nuance
 
 DINOv2 CLS+mean (dim 1536), much weaker than SALAD: R@1 0.10/0.28/0.50/0.76 at tol 0.5/1/2/5 m. RobotCar, same

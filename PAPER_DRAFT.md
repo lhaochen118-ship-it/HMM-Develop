@@ -39,7 +39,9 @@ We test both rigorously and find they do **not** deliver reliability on realisti
 ## 2. Setup
 
 - **Descriptor:** SALAD (DINOv2-ViT-B/14 backbone, dim 8448), loaded offline; frozen, no fine-tuning. ✅
-- **Datasets:** RobotCar-Seasons v2 (9 real conditions, pose-GT) ✅; Nordland (4 seasons, frame-aligned GT) ✅.
+- **Datasets:** RobotCar-Seasons v2 (9 real conditions, pose-GT) ✅; Extended-CMU-Seasons (per-slice route, ~10
+  date-conditions, pose-GT) ✅; Nordland (4 seasons, frame-aligned GT) ✅. Two realistic (RobotCar, CMU) + one
+  idealized dense (Nordland).
 - **GT & tolerance:** place = pose-nearest reference (RobotCar) / aligned frame id (Nordland). We **sweep the
   tolerance** (RobotCar 0.5/1/2/5 m; Nordland 0/1/2/5 frames) because the loose regime is trivially easy and
   hides the problem.
@@ -93,6 +95,20 @@ stream, no condition labels, no filtering.
 CRSG gives the **best discrimination (AURC, conf-AUROC) at every tolerance** {0.5,1,2,5} m and near-best ECE,
 beating softmax, temperature, filter and CCBF. The sequential/condition methods offer no discrimination gain over
 softmax. **Open-set:** CRSG 0.949 ≈ SUE 0.948 > filter-null 0.898 — CRSG is a *unified* reliability score.
+
+**5.1b Second realistic benchmark: Extended-CMU-Seasons, tol=2 m (R@1 0.876).** ✅ (NB11)
+
+| method | ECE | AURC ↓ | conf-AUROC ↑ | off-map |
+|---|---|---|---|---|
+| softmax | 0.651 | 0.085 | 0.640 | — |
+| temperature | 0.435 | 0.084 | 0.633 | — |
+| sequential filter | 0.416 | 0.080 | 0.603 | **0.228 (collapse)** |
+| CCBF | 0.359 | 0.081 | 0.601 | — |
+| **CRSG (ours)** | **0.055** | **0.048** | **0.769** | 0.861 |
+
+Same pattern as RobotCar — **CRSG dominates** all methods on calibration and discrimination at every tolerance,
+and the **sequential filter's open-set detector collapses** (AUROC 0.228, worse than random), a second realistic
+dataset confirming the filter is regime-specific. SUE (0.895) and CRSG (0.861) are the robust open-set signals.
 
 **5.2 Cross-dataset: Nordland (dense, the filter's natural home), tol=0 (R@1 0.815).** ✅ (NB7)
 
