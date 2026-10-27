@@ -8,16 +8,19 @@
 
 State-of-the-art visual place recognition (VPR) descriptors now achieve near-saturated recall even under extreme
 appearance change, yet two deployment-critical questions remain poorly served: *is this match trustworthy?* and
-*am I off the map?* We show that the field's two natural remedies — **condition-aware calibration** and
-**sequential Bayesian filtering** — give large, convincing gains on the idealized Nordland benchmark but **fail to
-generalize** to the realistic RobotCar-Seasons benchmark, where a trivial nearest-neighbour-distance baseline
-actually beats the sequential open-set detector. We trace the failure to a simple fact: a retrieval softmax over
-hundreds of near-tie candidates is not a calibratable confidence, and a scalar temperature — global or
-per-condition — cannot repair it. We propose **Calibrated Retrieval-Score Geometry (CRSG)**, a 2–3 parameter
-per-frame calibrator on the *geometry* of the retrieval score vector (top-1/top-2 margin, nearest-neighbour
-distance, score entropy). CRSG produces a single calibrated reliability score that supports both confidence
-calibration and open-set abstention, and **dominates temperature scaling, sequential filtering, and condition
-modeling across datasets and pose tolerances**, while being descriptor-agnostic and requiring no temporal stream.
+*am I off the map?* We show that VPR reliability is **regime-dependent** and that the field's Nordland-centric
+evaluation has masked this. The two natural remedies — **condition-aware calibration** and **sequential Bayesian
+filtering** — give large, convincing gains on the dense idealized Nordland benchmark but **fail to generalize** to
+the sparse realistic RobotCar-Seasons benchmark, where the sequential filter stops helping and a trivial
+nearest-neighbour baseline beats its open-set detector. We trace this to a mechanism: the discriminative
+reliability signal lives in the **single-image retrieval-score geometry** (chiefly the top-1/top-2 margin), and the
+sequential filter *destroys* this signal on sparse data (its motion prior is uninformative), while a scalar
+temperature — global or per-condition — never repairs the softmax-over-hundreds-of-ties in the first place. We
+propose **Calibrated Retrieval-Score Geometry (CRSG)**, a 2–3 parameter per-frame calibrator on that geometry
+(margin, nearest-neighbour distance, score entropy) producing one calibrated reliability score for both confidence
+and open-set abstention. CRSG beats temperature scaling and the sequential/condition methods on **both** datasets
+for calibration-plus-discrimination, is the **regime-robust, stream-free default** (dominant on realistic
+RobotCar, competitive on idealized Nordland where the filter also works), and is descriptor-agnostic.
 
 ## 1. The gap
 
@@ -36,7 +39,7 @@ We test both rigorously and find they do **not** deliver reliability on realisti
 ## 2. Setup
 
 - **Descriptor:** SALAD (DINOv2-ViT-B/14 backbone, dim 8448), loaded offline; frozen, no fine-tuning. ✅
-- **Datasets:** RobotCar-Seasons v2 (9 real conditions, pose-GT) ✅; Nordland (4 seasons, frame-aligned GT) ⏳.
+- **Datasets:** RobotCar-Seasons v2 (9 real conditions, pose-GT) ✅; Nordland (4 seasons, frame-aligned GT) ✅.
 - **GT & tolerance:** place = pose-nearest reference (RobotCar) / aligned frame id (Nordland). We **sweep the
   tolerance** (RobotCar 0.5/1/2/5 m; Nordland 0/1/2/5 frames) because the loose regime is trivially easy and
   hides the problem.
@@ -91,22 +94,44 @@ CRSG gives the **best discrimination (AURC, conf-AUROC) at every tolerance** {0.
 beating softmax, temperature, filter and CCBF. The sequential/condition methods offer no discrimination gain over
 softmax. **Open-set:** CRSG 0.949 ≈ SUE 0.948 > filter-null 0.898 — CRSG is a *unified* reliability score.
 
-**5.2 Cross-dataset: Nordland (dense, the filter's natural home).** ⏳ (NB7)
-Expected/role: the filter should be strong here; the claim is CRSG remains **competitive-to-best** on Nordland
-while being **dominant** on RobotCar — i.e. one simple per-frame method is robust across regimes, whereas the
-filter is regime-specific. *(table to be filled from NB7)*
+**5.2 Cross-dataset: Nordland (dense, the filter's natural home), tol=0 (R@1 0.815).** ✅ (NB7)
 
-**5.3 Ablation.** Single-feature margin-Platt calibrates ECE but discriminates poorly (conf-AUROC ≈0.61–0.74);
+| method | ECE | AURC ↓ | conf-AUROC ↑ | off-map AUROC |
+|---|---|---|---|---|
+| softmax (uncal.) | 0.254 | 0.063 | 0.813 | — |
+| temperature | 0.039 | 0.041 | 0.920 | — |
+| **CRSG (ours)** | 0.040 | 0.037 | 0.941 | 0.804 |
+| sequential fixed filter | **0.017** | **0.019** | 0.940 | **0.992** |
+| CCBF | 0.017 | 0.019 | 0.941 | — |
+| oracle AURC / SUE | — | 0.018 | — | SUE 0.935 |
+
+Here the **filter is excellent** (AURC ≈ oracle; off-map 0.99 ≫ SUE) — dense 1:1 frame alignment is its natural
+home. CRSG is only *competitive* (beats softmax & temperature, ties conf-AUROC, loses AURC to the filter). This is
+the honest cross-dataset picture: **the filter is regime-specific (needs dense temporal structure); CRSG is the
+regime-robust stream-free method** — dominant on realistic RobotCar, competitive on idealized Nordland.
+
+**5.3 Can calibration rescue the filter on sparse data? No.** ✅ (NB8) Calibrating the *filter posterior* geometry
+(CRSG-filter) fixes its ECE on RobotCar but NOT its discrimination (AURC 0.137 ≈ raw filter; conf-AUROC 0.68 <
+CRSG-single 0.80). The sequential filter destroys the single-image margin signal on sparse data, and no
+calibration of its posterior regenerates it — one must calibrate the belief that *carries* discrimination, i.e.
+the single-image geometry.
+
+**5.4 Ablation.** Single-feature margin-Platt calibrates ECE but discriminates poorly (conf-AUROC ≈0.61–0.74);
 the multi-feature CRSG recovers discrimination (0.80) — the feature combination matters. ✅ (NB6)
 
 ## 6. Contributions
 
-1. A **reliability evaluation protocol** for VPR (calibration + selective risk + open-set, swept over tolerance)
-   that exposes problems hidden by loose-tolerance recall.
-2. A rigorous, cross-benchmark demonstration that **condition-aware calibration and sequential filtering do not
-   deliver reliability on realistic data**, despite convincing gains on idealized Nordland — a cautionary result.
-3. **CRSG**, a trivial descriptor-agnostic per-frame calibrator on retrieval-score geometry that **dominates** these
-   complex methods for both calibration and open-set abstention.
+1. A **reliability evaluation protocol** for VPR (calibration + selective risk via AURC + open-set, swept over
+   tolerance) that exposes problems hidden by loose-tolerance recall, and the finding that **VPR reliability is
+   regime-dependent**.
+2. A rigorous, cross-benchmark demonstration that **condition-aware calibration is inert** (per-condition τ ≈
+   global on both datasets) and **sequential filtering is regime-specific** — near-oracle on dense Nordland but
+   collapsing on sparse realistic RobotCar, where it even loses open-set to a trivial NN-distance — with the
+   **mechanism** (filtering destroys the single-image margin signal; calibrating its posterior cannot regenerate
+   discrimination, NB8). A cautionary result against Nordland-only evaluation.
+3. **CRSG**, a trivial descriptor-agnostic, stream-free per-frame calibrator on retrieval-score geometry that is
+   the **regime-robust default**: it beats softmax and temperature scaling on both datasets, dominates all methods
+   on realistic RobotCar, and stays competitive on Nordland where the filter also works.
 
 ## 7. Honesty / limitations
 

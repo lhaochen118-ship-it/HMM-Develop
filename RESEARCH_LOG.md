@@ -23,6 +23,33 @@ Honest state at handoff:
 
 ---
 
+## Entry 6 — NB8 unified "calibrate the belief"  →  sharper finding: calibration can't rescue the filter
+
+Tested CRSG-filter = calibrate the *filter posterior* geometry (max/margin/entropy/null), vs CRSG-single
+(calibrate single-image retrieval geometry), on RobotCar. Headline tol=2m (acc ~0.77):
+
+| method | ECE | AURC ↓ | conf-AUROC ↑ |
+|---|---|---|---|
+| softmax | 0.303 | 0.135 | 0.736 |
+| raw filter | 0.285 | 0.138 | 0.700 |
+| **CRSG-single (ours)** | 0.071 | **0.090** | **0.801** |
+| CRSG-filter | 0.054 | 0.137 | 0.678 |
+
+- **CRSG-filter does NOT recover** on sparse RobotCar: it fixes ECE (0.054) but NOT discrimination
+  (AURC 0.137 ≈ raw filter; conf-AUROC 0.678 < CRSG-single 0.801). CRSG-single is best at every tolerance.
+- **Mechanistic insight:** the discriminative reliability signal lives in the **single-image retrieval-score
+  geometry (the top-1/top-2 margin)**. On sparse realistic data the sequential filter **destroys** this signal
+  (its motion prior is uninformative), and no calibration of the filter posterior can regenerate it. "Calibrate
+  the belief" is not a free lunch — you must calibrate the belief that *carries discrimination*, which on realistic
+  data is the single-image geometry, not the filter. (On dense Nordland the filter posterior IS informative, so
+  there the filter wins — Entry 5.)
+
+**This completes a clean, honest story:** reliability is regime-dependent; the single-image retrieval margin is the
+robust discriminative signal; CRSG-single is the stream-free default that dominates realistic data and is
+competitive on idealized data; sequential filtering and condition-temperature are regime-specific / inert.
+
+---
+
 ## Entry 5 — NB7 cross-dataset on Nordland  →  the honest, richer finding: reliability is REGIME-DEPENDENT
 
 Nordland 4 seasons (ref=summer), pooled cross-fit, frame-GT. R@tol: 0.815@0, 0.854@1, 0.879@2, 0.914@5
