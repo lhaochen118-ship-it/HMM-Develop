@@ -23,6 +23,35 @@ Honest state at handoff:
 
 ---
 
+## Entry 3 — NB5 diagnosis + instantaneous-calibration probe  →  BREAKTHROUGH (positive direction)
+
+- **G1 velocity:** sorted-GT traversal is clean ~1:1 (median Δ=1, 97–99% of steps in [0,3], <2% jumps) for all
+  conditions. The motion model is **not** mismatched.
+- **G2 matched filter:** filter_matched ECE = filter_default = 0.439 (single 0.472). → **The filter's RobotCar
+  failure is REAL, not a setup artifact.** Temporal filtering genuinely barely helps calibration here.
+- **G3 instantaneous calibration (cross-fit, fit evens / eval odds):**
+  - softmax-max (uncalibrated) ECE = **0.470**
+  - **Platt(top1−top2 gap) ECE = 0.0056**  ← ~80× better, 2 parameters
+  - Platt(sue)=0.029, Platt(entropy)=0.024, Platt(maxsim)=0.024 — all crush softmax.
+  - off-map AUROC: SUE / maxsim = **0.950** > filter_null 0.888 > gap12 0.668.
+
+**Insight.** VPR reliability does NOT need sequential filtering or condition modeling. The failure mode is that
+**softmax-max over ~180 near-tie candidates is not a correctness signal**; the **top1−top2 retrieval margin** is,
+and a trivial 2-parameter calibrator on it fixes ECE. Instantaneous **NN-distance** is the best off-map detector.
+A per-frame "calibrated retrieval-score geometry" beats the whole sequential/condition line (filter, CCBF).
+
+**Caveat to resolve in Entry 4.** Acc is ~0.94–0.98 across all conditions, so a low ECE could partly reflect a
+stable base rate. Must report **discrimination** (risk–coverage / AURC, confidence-vs-correct AUROC), not just ECE,
+and test **cross-condition transfer** (fit calibrator on benign/day conditions, evaluate on night/rain) — that
+transfer under appearance shift is the real novelty claim, not in-condition fitting.
+
+**Direction (candidate A* contribution).** *Calibrated retrieval-score geometry for reliable VPR*: a descriptor-
+agnostic, per-frame calibration (margin→confidence, NN-distance→abstention/OOD) that dominates sequential Bayesian
+filtering and condition-aware temperature across datasets, with selective-prediction (risk–coverage) and possibly
+conformal coverage guarantees. Honest negatives on filter/CCBF become the motivation.
+
+---
+
 ## Entry 2 — RobotCar reliability gating (NB4)  →  VERDICT: RECONSIDER
 
 Both Nordland "wins" FAILED to generalize to RobotCar (ref=overcast-summer, 6 hard query conds, pose-GT 5m):
