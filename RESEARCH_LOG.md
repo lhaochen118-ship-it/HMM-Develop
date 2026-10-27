@@ -51,8 +51,22 @@ Honest state at handoff:
 Scale-up (vs 800/season) is **consistent**: CRSG beats softmax & temperature on all metrics and has best
 conf-AUROC; the sequential filter keeps its AURC + off-map edge on dense Nordland. The regime story holds at scale.
 
-**NB14 — CMU multi-slice large-scale (T4):** fixed two loader bugs (3-tuple unpack; nested `sliceN/sliceN`
-duplicate slices) → re-running; result pending.
+**NB14 — CMU multi-slice large-scale (4 routes: slice6–9, N=7395 pooled), T4:**
+
+| tol | method | ECE | AURC ↓ | conf-AUROC ↑ |
+|---|---|---|---|---|
+| 2 m (acc 0.707) | maxsim-cal (baseline) | 0.019 | 0.159 | 0.732 |
+| | **CRSG** | 0.025 | **0.143** | **0.759** |
+| | fixed_filter | **0.321** | **0.196** | **0.647** |
+| 5 m (acc 0.972) | CRSG | 0.010 | **0.006** | **0.854** |
+| | maxsim-cal | 0.005 | 0.009 | 0.788 |
+
+Confirms the realistic-data story at scale across **4 distinct routes**: CRSG beats the calibrated-max-sim baseline
+on discrimination (AURC, conf-AUROC), and the **sequential filter fails badly** (ECE 0.32, conf-AUROC 0.65). Fixed
+two loader bugs first (3-tuple unpack; nested `sliceN/sliceN` duplicate slices).
+
+**Full-scale validation (task) complete:** both Nordland (N=9000) and CMU (N=7395, 4 routes) scale-ups confirm the
+contribution — CRSG dominant/robust on realistic data, filter regime-specific — matching the subsampled results.
 
 ---
 

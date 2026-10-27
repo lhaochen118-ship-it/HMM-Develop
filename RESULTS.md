@@ -36,6 +36,13 @@ Headline tolerance chosen where errors are non-trivial (acc≈0.8). **Bold** = b
 *Scale-up (NB13, T4) is consistent with the 800/season result: CRSG beats softmax & temperature and has the best
 conf-AUROC; the sequential filter keeps its AURC + off-map edge on dense Nordland.*
 
+| **CMU @ scale** (4 routes, N=7395) | 2 m | maxsim-cal (baseline) | 0.019 | 0.159 | 0.732 |
+| | | **CRSG (ours)** | 0.025 | **0.143** | **0.759** |
+| | | sequential filter | **0.321** | **0.196** | **0.647** |
+
+*Scale-up (NB14, T4, 4 distinct CMU routes): CRSG beats the calibrated-max-sim baseline on discrimination; the
+sequential filter fails badly (ECE 0.32, conf-AUROC 0.65) — the realistic-data story holds at scale.*
+
 **Reading:** CRSG dominates all methods on both **realistic** datasets (RobotCar, CMU). On **idealized dense**
 Nordland the sequential filter is best (near-oracle) and CRSG is competitive (beats softmax & temperature). The
 sequential/condition methods never beat softmax on the realistic data.
