@@ -1,0 +1,58 @@
+#%%MARKDOWN
+## NB10 (probe) — Extended-CMU-Seasons structure discovery
+
+Cheap probe to learn the CMU layout before building the full CRSG experiment: mount tree, pose-file format
+(xyz = last 3 floats per the schema `img_..._cN_<ts>us.jpg qw qx qy qz tx ty tz`), database/query split,
+per-slice image counts, and image-path resolution. Probe-only; no SALAD, fast.
+
+#%%CODE
+# === CMU.probe ========================================================================
+import os, glob, json
+ROOTS = ["/kaggle/input"]
+def walk_top(root, maxd=3):
+    out = []
+    for d, subs, files in os.walk(root):
+        depth = d[len(root):].count(os.sep)
+        if depth > maxd: subs[:] = []; continue
+        out.append((depth, d, len(files), sorted(subs)[:12]))
+    return out
+
+cmu_roots = []
+for r in ROOTS:
+    for d, subs, files in os.walk(r):
+        if any(s.lower().startswith("slice") for s in subs) or os.path.basename(d).lower().startswith("slice"):
+            cmu_roots.append(d)
+cmu_roots = sorted(set(cmu_roots), key=len)[:6]
+print("candidate CMU roots:", cmu_roots[:6])
+
+for r in ROOTS:
+    print("\n=== top-level of", r, "===")
+    try:
+        for e in sorted(os.listdir(r)): print("  ", e)
+    except Exception as ex: print("  (err)", ex)
+
+# find slices
+slices = []
+for r in ROOTS:
+    slices += glob.glob(os.path.join(r, "**", "slice*"), recursive=True)
+slices = [s for s in slices if os.path.isdir(s)]
+print("\nfound", len(slices), "slice dirs; first few:", slices[:6])
+
+for sl in slices[:3]:
+    print("\n--- slice:", sl, "---")
+    print("   contents:", sorted(os.listdir(sl))[:20])
+    base = sl
+    inner = os.path.join(sl, os.path.basename(sl))
+    if os.path.isdir(inner): base = inner; print("   (nested base:", inner, ")")
+    for sub in ["database", "query", "camera-poses", "ground-truth-database-images-slice"]:
+        p = os.path.join(base, sub)
+        if os.path.isdir(p):
+            fs = os.listdir(p); print(f"   {sub}/: {len(fs)} entries, e.g. {fs[:3]}")
+    pose_dir = os.path.join(base, "camera-poses")
+    if os.path.isdir(pose_dir):
+        pf = sorted(glob.glob(os.path.join(pose_dir, "*")))
+        print("   pose files:", len(pf), "first:", os.path.basename(pf[0]) if pf else None)
+        if pf:
+            with open(pf[0]) as f: head = [next(f, "").rstrip() for _ in range(4)]
+            for h in head: print("     POSE:", h[:150])
+print("\nPROBE_DONE")
