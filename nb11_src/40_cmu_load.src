@@ -1,57 +1,75 @@
 #%%MARKDOWN
-## CMU loader — one slice, 12 date-conditions, camera c0, pose-GT (xyz = last 3 floats)
+## CMU loader (robust) — pick a working slice, index images by basename, pose-GT (xyz=last 3 floats)
 
-Extended-CMU-Seasons: each slice is a fixed route traversed on ~12 dates (seasonal/foliage change). We treat the
-dates as conditions (as RobotCar conditions), match across dates by GT pose, and run the identical CRSG protocol.
-Produces the same DESC[cond] / COND[cond] = {paths, xyz, fids} structures the experiment cells consume.
+Dates = conditions (same route, seasonal change). Resolves pose-file image names against a basename index of all
+images under the slice, iterates slices until one yields >=2 usable date-conditions. Verbose diagnostics.
 
 #%%CODE
-# === CMU.0 — locate slice, parse 12 date pose-files (camera c0), resolve query images =
+# === CMU.0 — locate slices, parse date pose-files, resolve via basename index ========
 import os, glob, numpy as np
-def _find_cmu():
+def _slices():
+    hits = []
     for r in CONFIG.INPUT_ROOTS:
-        hits = glob.glob(os.path.join(r, "**", "slice*"), recursive=True)
-        hits = [h for h in hits if os.path.isdir(h) and os.path.basename(h).lower().startswith("slice")]
-        if hits: return sorted(hits, key=lambda p: (len(p), p))
-    return []
-SLICES = _find_cmu()
-# pick a slice that has camera-poses + query
+        hits += glob.glob(os.path.join(r, "**", "slice*"), recursive=True)
+    hits = [h for h in hits if os.path.isdir(h) and os.path.basename(h).lower().startswith("slice")]
+    # sort numerically by slice number
+    def num(p):
+        d = "".join(c for c in os.path.basename(p) if c.isdigit()); return int(d) if d else 999
+    return sorted(set(hits), key=num)
 def _base(sl):
     inner = os.path.join(sl, os.path.basename(sl)); return inner if os.path.isdir(inner) else sl
-SLICE = None
-for sl in SLICES:
-    b = _base(sl)
-    if os.path.isdir(os.path.join(b, "camera-poses")) and os.path.isdir(os.path.join(b, "query")): SLICE = sl; break
-print("using slice:", SLICE)
-BASE = _base(SLICE) if SLICE else None
-CAM = "_c0_"           # single camera/viewpoint
-MIN_PER_COND = 40; CAP = 220
-COND = {}
-if BASE:
-    qdir = os.path.join(BASE, "query")
-    for pf in sorted(glob.glob(os.path.join(BASE, "camera-poses", "*.txt"))):
-        date = "".join(ch for ch in os.path.basename(pf) if ch.isdigit())[-8:]  # YYYYMMDD
-        paths, xyz = [], []
+
+MIN_PER_COND = 30; CAP = 200
+def load_slice(sl, cam_filter):
+    b = _base(sl); pdir = os.path.join(b, "camera-poses")
+    if not os.path.isdir(pdir): return None, "no camera-poses"
+    # basename index of all images under the slice base
+    idx = {}
+    for d, _, files in os.walk(b):
+        for f in files:
+            if f.lower().endswith((".jpg", ".png")): idx.setdefault(f, os.path.join(d, f))
+    cond = {}; diag = []
+    for pf in sorted(glob.glob(os.path.join(pdir, "*.txt"))):
+        date = "".join(ch for ch in os.path.basename(pf) if ch.isdigit())[-8:]
+        nlines = ncam = nres = 0; paths = []; xyz = []
         for ln in open(pf):
             t = ln.split()
-            if len(t) < 8 or CAM not in t[0]: continue
+            if len(t) < 8: continue
+            nlines += 1
+            if cam_filter and cam_filter not in t[0]: continue
+            ncam += 1
+            ip = idx.get(os.path.basename(t[0]))
+            if ip is None: continue
             try: v = [float(x) for x in t[1:8]]
             except ValueError: continue
-            ip = os.path.join(qdir, t[0])
-            if os.path.isfile(ip): paths.append(ip); xyz.append(v[-3:])   # xyz = last 3 floats
+            nres += 1; paths.append(ip); xyz.append(v[-3:])
+        diag.append((date, nlines, ncam, nres))
         if len(paths) >= MIN_PER_COND:
             if len(paths) > CAP:
-                sel = np.linspace(0, len(paths)-1, CAP).round().astype(int)
-                paths = [paths[i] for i in sel]; xyz = [xyz[i] for i in sel]
-            COND["d"+date] = {"paths": paths, "xyz": np.asarray(xyz, np.float64), "fids": list(range(len(paths)))}
-print("CMU conditions (dates):", {k: len(v["paths"]) for k, v in COND.items()})
+                sel = np.linspace(0, len(paths)-1, CAP).round().astype(int); paths = [paths[i] for i in sel]; xyz = [xyz[i] for i in sel]
+            cond["d"+date] = {"paths": paths, "xyz": np.asarray(xyz, np.float64), "fids": list(range(len(paths)))}
+    return cond, diag
+
+SLICES = _slices(); print("slices found:", [os.path.basename(s) for s in SLICES][:12], "...total", len(SLICES))
+COND = {}; SLICE = None
+for sl in SLICES:
+    for cam in ["_c0_", "_c1_", ""]:
+        c, diag = load_slice(sl, cam)
+        if c and len(c) >= 2:
+            COND = c; SLICE = sl
+            print(f"OK slice={os.path.basename(sl)} cam='{cam}' -> {len(c)} date-conditions")
+            print("  per-date (date,lines,cam,resolved):", diag[:4], "...")
+            break
+        elif isinstance(diag, list) and sl == SLICES[0]:
+            print(f"  try slice={os.path.basename(sl)} cam='{cam}': sample diag {diag[:2]}")
+    if SLICE: break
+print("CMU conditions:", {k: len(v["paths"]) for k, v in COND.items()})
 log("CMU.0", "ok" if len(COND) >= 2 else "fail", f"slice={os.path.basename(SLICE) if SLICE else None} conds={len(COND)}")
 
 #%%CODE
 # === CMU.1 — SALAD descriptors per date-condition ====================================
 DESC = {}
 for c, v in COND.items():
-    tag = "cmu_" + c
-    DESC[c] = extract_paths(v["paths"], v["fids"], tag=tag)
+    DESC[c] = extract_paths(v["paths"], v["fids"], tag="cmu_" + c)
 print("descriptors:", {c: d.shape for c, d in DESC.items()}, "| extractor:", EXTRACTOR_INFO["name"])
 log("CMU.1", "ok" if DESC else "fail", f"extractor={EXTRACTOR_INFO['name']}")
