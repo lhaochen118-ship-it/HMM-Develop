@@ -16,3 +16,6 @@ kaggle.json
 # Hệ điều hành
 Thumbs.db
 desktop.ini
+
+# Kaggle run artifacts (ephemeral)
+automation/run/

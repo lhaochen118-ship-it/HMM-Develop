@@ -1,0 +1,199 @@
+#%%MARKDOWN
+## RobotCar-Seasons per-condition calibration diagnostic (DECISIVE)
+
+The make-or-break test for CCBF (HANDOFF §6.1). On Nordland+SALAD the per-condition temperatures were
+nearly identical (τ≈0.031 vs 0.025) so condition-conditional calibration ≈ global calibration and CCBF added
+nothing. Hypothesis: on RobotCar's huge day↔night / rain / snow appearance gaps, SALAD's match/non-match score
+distributions differ drastically by condition, so **τ_night ≫ τ_day**, giving CCBF a real home.
+
+This cell is self-probing and adaptive:
+- parse `robotcar_v2_train.txt` (`<cond>/<cam>/<ts>.jpg` + flattened 4×4 pose; **translation = flat idx [3,7,11]**),
+- extract SALAD descriptors per condition,
+- pick a benign reference condition B; for every condition fit τ_c on sim(query→map B) with pose-NN GT at an
+  adaptively chosen tolerance,
+- compare pooled ECE under a single **global τ** vs **per-condition τ_c** (the crux of CCBF),
+- print a one-line `CCBF_DIAG_JSON={...}` verdict.
+
+#%%CODE
+# === RC.0 — locate RobotCar mount + train.txt =========================================
+import numpy as np, os, glob, json, time
+RC = PATHS.get("robotcar")
+# robust re-discovery: any mounted dir containing a robotcar_v2_train.txt
+def _find_file(name_substrs, roots=("/kaggle/input",), max_depth=6):
+    for root in roots:
+        for d, subs, files in os.walk(root):
+            if d.count(os.sep) - root.count(os.sep) > max_depth: subs[:] = []; continue
+            for f in files:
+                if all(s.lower() in f.lower() for s in name_substrs): return os.path.join(d, f)
+    return None
+TRAIN_TXT = _find_file(["robotcar", "train", ".txt"]) or _find_file(["v2_train"]) or _find_file(["train", ".txt"])
+print("robotcar mount:", RC)
+print("train.txt     :", TRAIN_TXT)
+if RC:
+    print("mount top-level:", sorted(os.listdir(RC))[:30])
+    for sub in ["images", "3D-models"]:
+        p = os.path.join(RC, sub)
+        if os.path.isdir(p): print(f"  {sub}/ ->", sorted(os.listdir(p))[:20])
+log("RC.0", "ok" if TRAIN_TXT else "fail", f"train.txt={TRAIN_TXT}")
+
+#%%CODE
+# === RC.1 — parse train.txt: per-condition image rel-paths + xyz translation ==========
+def parse_train(txt):
+    by_cond = {}
+    with open(txt) as fh:
+        for ln in fh:
+            parts = ln.split()
+            if len(parts) < 13: continue
+            rel = parts[0]
+            try: nums = [float(x) for x in parts[1:13]]
+            except ValueError: continue
+            xyz = np.array([nums[3], nums[7], nums[11]], np.float64)   # flattened 4x4, translation column
+            cond = rel.split("/")[0]
+            by_cond.setdefault(cond, []).append((rel, xyz))
+    return by_cond
+
+RAW = parse_train(TRAIN_TXT) if TRAIN_TXT else {}
+print("conditions in train.txt:", {c: len(v) for c, v in sorted(RAW.items())})
+
+# resolve each rel-path to a real file on the mount
+_IDX = None
+def _build_index(root):
+    idx = {}
+    for d, _, files in os.walk(root):
+        for f in files:
+            if f.lower().endswith((".jpg", ".png")): idx.setdefault(f, []).append(os.path.join(d, f))
+    return idx
+def resolve(rel):
+    global _IDX
+    for base in [os.path.join(RC, "images", rel), os.path.join(RC, rel)]:
+        if os.path.isfile(base): return base
+    if _IDX is None: _IDX = _build_index(RC)
+    cands = _IDX.get(os.path.basename(rel), [])
+    rp = rel.replace("\\", "/")
+    for c in cands:
+        if c.replace("\\", "/").endswith(rp): return c
+    return cands[0] if cands else None
+
+COND = {}
+for c, items in RAW.items():
+    paths, xyz = [], []
+    for rel, t in items:
+        p = resolve(rel)
+        if p: paths.append(p); xyz.append(t)
+    if paths:
+        COND[c] = {"paths": paths, "xyz": np.stack(xyz), "fids": list(range(len(paths)))}
+print("resolved per condition:", {c: len(v["paths"]) for c, v in sorted(COND.items())})
+log("RC.1", "ok" if COND else "fail", f"{len(COND)} conditions resolved")
+
+#%%CODE
+# === RC.2 — SALAD descriptors per condition (cached) ==================================
+DESC = {}
+for c, v in COND.items():
+    tag = "rc_" + "".join(ch if ch.isalnum() else "_" for ch in c)
+    DESC[c] = extract_paths(v["paths"], v["fids"], tag=tag)
+print("descriptors:", {c: d.shape for c, d in DESC.items()}, "| extractor:", EXTRACTOR_INFO)
+log("RC.2", "ok", f"extractor={EXTRACTOR_INFO['name']} dim={EXTRACTOR_INFO['dim']}")
+
+#%%CODE
+# === RC.3 — pose GT (adaptive tolerance) + per-condition τ ============================
+def pose_dist(q_xyz, r_xyz):
+    return np.sqrt(((q_xyz[:, None, :] - r_xyz[None, :, :]) ** 2).sum(-1))   # [Q,R] metres
+
+# choose benign reference condition B (prefer daytime/overcast)
+PREF = ["sun", "overcast-summer", "overcast-winter", "dusk", "dawn", "rain", "snow", "night-rain", "night"]
+avail = list(DESC.keys())
+B = next((p for p in PREF if p in avail), None) or avail[0]
+print("reference condition B =", B, "| conditions:", avail)
+
+N_MIN = 25          # min matched queries to trust a condition's τ
+TOL_GRID = [5, 10, 15, 20, 30, 40, 60]
+
+def fit_cond_tau(qc, mapc):
+    """sim(query qc -> map mapc), pose-NN target, adaptive tol; correctness = pred pose within tol."""
+    sim = cosine_sim(DESC[qc], DESC[mapc])
+    D = pose_dist(COND[qc]["xyz"], COND[mapc]["xyz"])          # [Q,R] metres
+    nn = D.argmin(1); nnd = D[np.arange(len(D)), nn]
+    tol = next((t for t in TOL_GRID if (nnd <= t).sum() >= N_MIN), TOL_GRID[-1])
+    keep = nnd <= tol
+    if keep.sum() < 5: return None
+    gt = np.where(keep, nn, -1)
+    tau, nll = fit_temperature(sim, gt)
+    v = gt >= 0; s = sim[v]; g = gt[v]; Dv = D[v]
+    # correctness: the retrieved map image's pose is within tol of the query's true pose (RobotCar criterion)
+    pred = s.argmax(1)
+    correct = (Dv[np.arange(len(pred)), pred] <= tol).astype(float)
+    # match score = sim at pose-NN; hardest non-match = max sim over OUT-of-tol columns
+    far = Dv > tol
+    match_s = s[np.arange(len(g)), g]
+    nonmatch_s = np.where(far, s, -np.inf).max(1)
+    nonmatch_s = nonmatch_s[np.isfinite(nonmatch_s)]
+    return dict(cond=qc, tau=float(tau), nll=float(nll), tol=float(tol), n=int(v.sum()),
+                R1=float(correct.mean()), gt=g, sim=s, Dv=Dv,
+                match_mean=float(match_s.mean()),
+                nonmatch_mean=float(nonmatch_s.mean()) if len(nonmatch_s) else float("nan"),
+                gap=float(match_s.mean() - (nonmatch_s.mean() if len(nonmatch_s) else np.nan)))
+
+RES = {}
+for c in avail:
+    if c == B: continue              # B is the map; its own τ is not comparable (skip)
+    r = fit_cond_tau(c, B)
+    if r: RES[c] = r
+
+print(f"\nref map = {B}")
+print(f"{'query condition':<18}{'n':>5}{'tol_m':>7}{'tau':>9}{'R@1':>7}{'match':>8}{'nonmat':>8}{'gap':>7}")
+for c, r in sorted(RES.items(), key=lambda kv: kv[1]["tau"]):
+    print(f"{c:<18}{r['n']:>5}{r['tol']:>7.0f}{r['tau']:>9.4f}{r['R1']:>7.3f}"
+          f"{r['match_mean']:>8.3f}{r['nonmatch_mean']:>8.3f}{r['gap']:>7.3f}")
+log("RC.3", "ok", f"fit τ for {len(RES)} query conditions, ref={B}")
+
+#%%CODE
+# === RC.4 — global-τ vs per-condition-τ calibration (the crux of CCBF) ================
+# Pool all non-reference conditions; compare ECE under one global τ vs each condition's own τ_c.
+qconds = list(RES.keys())
+taus = np.array([RES[c]["tau"] for c in qconds])
+gaps = np.array([RES[c]["gap"] for c in qconds], float)
+spread = float(taus.max() / max(taus.min(), 1e-9))
+gap_cv = float(np.nanstd(gaps) / max(abs(np.nanmean(gaps)), 1e-9))   # how much separability varies by condition
+
+def pooled_ece(tau_fn):
+    confs, corrs = [], []
+    for c in qconds:
+        s = RES[c]["sim"]; Dv = RES[c]["Dv"]; tol = RES[c]["tol"]; tau = tau_fn(c)
+        z = np.exp((s - s.max(1, keepdims=True)) / tau); z = z / z.sum(1, keepdims=True)
+        pred = z.argmax(1)
+        confs.append(z.max(1)); corrs.append((Dv[np.arange(len(pred)), pred] <= tol).astype(float))
+    conf = np.concatenate(confs); corr = np.concatenate(corrs)
+    return ece_from_conf(conf, corr, CONFIG.ECE_BINS)[0]
+
+if qconds:
+    allS = np.concatenate([RES[c]["sim"] for c in qconds], 0)
+    allG = np.concatenate([RES[c]["gt"] for c in qconds], 0)
+    tau_global, _ = fit_temperature(allS, allG)
+    ece_global = pooled_ece(lambda c: tau_global)
+    ece_percond = pooled_ece(lambda c: RES[c]["tau"])
+    rel_improve = (ece_global - ece_percond) / max(ece_global, 1e-9)
+else:
+    tau_global = float("nan"); ece_global = ece_percond = rel_improve = float("nan")
+
+# Verdict keys on whether conditions genuinely DIFFER (τ spread + separability variation) — the
+# precondition for CCBF. Single-image ECE gain is reported but NOT gated on (CCBF's edge is sequential:
+# Theorem 1 / ECE-vs-T), confirmed by the sequential experiment if conditions differ. Nordland ref: spread≈1.22.
+DIFFER = (spread >= 1.8) or (gap_cv >= 0.35)
+VERDICT = "CCBF_HAS_A_HOME" if DIFFER else ("MARGINAL" if (spread >= 1.35 or gap_cv >= 0.20) else "PIVOT")
+
+summary = dict(ref=B, n_conditions=len(RES), tau_spread=round(spread, 3), gap_cv=round(gap_cv, 3),
+               tau_by_cond={c: round(RES[c]["tau"], 4) for c in RES},
+               R1_by_cond={c: round(RES[c]["R1"], 3) for c in RES},
+               gap_by_cond={c: (round(RES[c]["gap"], 3) if np.isfinite(RES[c]["gap"]) else None) for c in RES},
+               tau_global=round(float(tau_global), 4),
+               ece_global=round(float(ece_global), 4), ece_percond=round(float(ece_percond), 4),
+               ece_rel_improve=round(float(rel_improve), 3), verdict=VERDICT)
+print("\n================ DECISIVE DIAGNOSTIC ================")
+print(f"τ spread (max/min)        : {spread:.3f}   (Nordland was ~1.22 -> CCBF added nothing there)")
+print(f"gap CV across conditions   : {gap_cv:.3f}")
+print(f"global-τ pooled ECE        : {ece_global:.4f}")
+print(f"per-condition-τ pooled ECE : {ece_percond:.4f}   (single-image; CCBF's real test is ECE-vs-T)")
+print(f"relative ECE improvement   : {rel_improve*100:.1f}%")
+print(f"VERDICT                    : {VERDICT}")
+print("CCBF_DIAG_JSON=" + json.dumps(summary))
+log("RC.4", "ok", f"verdict={VERDICT} spread={spread:.2f} gap_cv={gap_cv:.2f}")
