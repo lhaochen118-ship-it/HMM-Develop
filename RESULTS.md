@@ -28,6 +28,13 @@ Headline tolerance chosen where errors are non-trivial (acc≈0.8). **Bold** = b
 | | | **sequential filter** | **0.017** | **0.019** | 0.940 |
 | | | CCBF | 0.017 | 0.019 | 0.941 |
 | | | *oracle AURC* | — | 0.018 | — |
+| **Nordland @ scale** (3000/season, N=9000) | 2 fr | softmax | 0.432 | 0.061 | 0.822 |
+| | | temperature | 0.086 | 0.035 | 0.932 |
+| | | CRSG (ours) | 0.047 | 0.029 | **0.957** |
+| | | **sequential filter** | 0.063 | **0.011** | 0.933 |
+
+*Scale-up (NB13, T4) is consistent with the 800/season result: CRSG beats softmax & temperature and has the best
+conf-AUROC; the sequential filter keeps its AURC + off-map edge on dense Nordland.*
 
 **Reading:** CRSG dominates all methods on both **realistic** datasets (RobotCar, CMU). On **idealized dense**
 Nordland the sequential filter is best (near-oracle) and CRSG is competitive (beats softmax & temperature). The

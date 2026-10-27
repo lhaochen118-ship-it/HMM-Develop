@@ -23,6 +23,39 @@ Honest state at handoff:
 
 ---
 
+## Entry 10 — RTX full-scale validation + Kaggle ops learnings
+
+**Ops / environment findings (verified live):**
+- Kaggle token API has **no cancel/stop** method; **pushing a new version does NOT free a queued GPU session**
+  (confirmed). The only programmatic cancel is **`kaggle kernels delete -y <id>`** (deletes the kernel → ends its
+  run → frees the GPU slot; a later push recreates it). `run_rtx2.py` now cancels this way.
+- GPU concurrency cap is **2 batch GPU sessions** (the "Maximum batch GPU session count of 2 reached" error proves
+  >1 is allowed). **Two T4 kernels DO run concurrently** — verified: NB13 and NB14 both executed 13:51–14:05
+  (Kaggle's output API only exposes a RUNNING kernel's log near completion, so early "0 output" was API lag, not a
+  hang). Accumulating sessions without deleting the old one is what triggers the cap error.
+- **RTX PRO 6000 was genuinely busy**: NB13 on RTX sat queued 21 min with zero output even on a free slot →
+  re-queuing wouldn't help. Moved full-scale to **T4** (instant, reliable). T4 SALAD throughput measured ~16 img/s
+  here (NB13 12k imgs extracted in ~12 min), so T4 full-scale is only ~10–15 min/run — RTX's edge is marginal and
+  the sequential filter is CPU-bound regardless.
+
+**NB13 — Nordland large-scale (3000/season, N=9000 pooled), T4:**
+
+| tol | method | ECE | AURC ↓ | conf-AUROC ↑ |
+|---|---|---|---|---|
+| 2 fr (acc 0.804) | softmax | 0.432 | 0.061 | 0.822 |
+| | temperature | 0.086 | 0.035 | 0.932 |
+| | **CRSG** | 0.047 | 0.029 | **0.957** |
+| | fixed_filter / ccbf | 0.063 | **0.011** | 0.933 |
+| | off-map | filter 0.981 > SUE 0.922 > CRSG 0.799 | | |
+
+Scale-up (vs 800/season) is **consistent**: CRSG beats softmax & temperature on all metrics and has best
+conf-AUROC; the sequential filter keeps its AURC + off-map edge on dense Nordland. The regime story holds at scale.
+
+**NB14 — CMU multi-slice large-scale (T4):** fixed two loader bugs (3-tuple unpack; nested `sliceN/sliceN`
+duplicate slices) → re-running; result pending.
+
+---
+
 ## Entry 9 — NB12 conformal risk control (RobotCar)  →  distribution-free guarantees, all 3 claims hold
 
 Selective predictor on the CRSG reliability score with an RCPS/Hoeffding upper bound so realized selective-risk ≤

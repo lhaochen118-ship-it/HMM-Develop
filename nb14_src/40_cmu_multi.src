@@ -50,8 +50,11 @@ def load_one(sl):
         if len(paths) >= MIN_PER: cond["d"+date] = {"paths": paths, "xyz": np.asarray(xyz, np.float64)}
     return cond if len(cond) >= 2 else None
 
-SL = []
+SL = []; seen_base = set()
 for sl in _slices():
+    b = _base(sl)
+    if b in seen_base: continue        # dedup nested sliceN/sliceN duplicates
+    seen_base.add(b)
     c = load_one(sl)
     if c: SL.append((os.path.basename(sl), c))
     if len(SL) >= K_SLICES: break
@@ -62,7 +65,7 @@ for sname, cond in SL:
     desc = {}
     for dt, v in cond.items(): desc[dt] = extract_paths(v["paths"], list(range(len(v["paths"]))), tag=f"cmu_{sname}_{dt}")
     SLICES.append((sname, cond, desc))
-print("total frames:", sum(sum(len(v['paths']) for v in c.values()) for _, c, _ in SL), "| extractor:", EXTRACTOR_INFO["name"])
+print("total frames:", sum(sum(len(v['paths']) for v in c.values()) for _, c in SL), "| extractor:", EXTRACTOR_INFO["name"])
 log("CM.0", "ok" if SLICES else "fail", f"{len(SLICES)} slices")
 
 #%%CODE
