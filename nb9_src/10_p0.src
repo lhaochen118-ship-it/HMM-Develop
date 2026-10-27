@@ -1,0 +1,230 @@
+#%%MARKDOWN
+# DIVE-HMM · CCBF — Notebook 2 (Headline experiments)
+
+This notebook runs the **paper's headline evaluation** for Calibrated Condition-Belief Filtering (CCBF):
+
+1. **Multi-condition localization** — CCBF vs single-image, fixed-observation filter, SeqSLAM-style, and an
+   uncertainty baseline (SUE / L2), on genuinely multi-condition data.
+2. **Calibration** — ECE and **reliability diagrams** (the headline reliability metric).
+3. **Open-set / off-map** — **AUROC / AUPR** for "lost" detection.
+4. **Theory validation** — the **ECE-vs-sequence-length (T)** curve that directly tests *Theorem 1
+   (miscalibration propagation)*: a fixed, condition-agnostic observation model should degrade with T while CCBF
+   stays flat.
+5. **Label-free test-time domain adaptation** — condition belief vs. true condition, and condition-drift robustness.
+
+**Datasets.** The robust backbone is **Nordland Full** (4 synchronized seasons, clean frame-ID GT → ideal,
+*controlled* multi-condition testbed for calibration/open-set; note these metrics are **not** saturated the way
+recall is). **RobotCar Seasons v2** and **Extended CMU** are added as hard real-world conditions via a *best-effort,
+self-probing* loader — if the pose-GT format matches the standard schema it runs; otherwise it prints the format so
+the loader can be finalized in NB3.
+
+> Run top-to-bottom. `CONFIG.SMOKE_TEST=True` (default) uses a small subset so the full suite finishes in minutes.
+> Offline / Kaggle Internet OFF. Reuses the descriptor cache in `/kaggle/working/dive_hmm/features` if present.
+
+#%%CODE
+# === P0.0 — Imports, device, seeds (same contract as NB1) ==============================
+import os, sys, json, time, glob, math, warnings
+from dataclasses import dataclass, field, asdict
+from collections import OrderedDict, defaultdict
+import numpy as np
+
+REPORT = OrderedDict()
+def log(step, status, msg=""):
+    REPORT[step] = {"status": status, "msg": msg}
+    print({"ok": "[ OK ]", "warn": "[WARN]", "fail": "[FAIL]", "info": "[info]"}.get(status, "[??]"), step + ":", msg)
+
+def _seed(s=0):
+    import random; random.seed(s); np.random.seed(s)
+    try:
+        import torch; torch.manual_seed(s)
+        if torch.cuda.is_available(): torch.cuda.manual_seed_all(s)
+    except Exception: pass
+
+try:
+    import torch; _HAS_TORCH = True
+except Exception as e:
+    _HAS_TORCH = False; print("torch not importable:", e)
+_seed(0)
+if _HAS_TORCH:
+    DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
+    BF16_OK = (DEVICE == "cuda" and torch.cuda.is_bf16_supported())
+    print("torch", torch.__version__, "| device", DEVICE, "| bf16", BF16_OK)
+    if DEVICE == "cuda": print("GPU:", torch.cuda.get_device_properties(0).name)
+else:
+    DEVICE, BF16_OK = "cpu", False
+print("numpy", np.__version__)
+
+#%%CODE
+# === P0.1 — CONFIG =====================================================================
+@dataclass
+class Config:
+    SMOKE_TEST: bool = True
+    SEED: int = 0
+    INPUT_ROOTS: tuple = ("/kaggle/input",)
+    WORKING_DIR: str = "/kaggle/working/dive_hmm"
+    CACHE_SUBDIR: str = "features"; CKPT_SUBDIR: str = "ckpt"
+
+    IMG_SIZE: int = 322
+    BATCH_SIZE: int = 64
+    NUM_WORKERS: int = 2
+    USE_BF16: bool = True
+    SMOKE_MAX_FRAMES: int = 800          # per season/condition in smoke
+
+    # CCBF
+    STICKY_RHO: float = 0.97
+    MOTION_STD: float = 2.0
+    MOTION_VELOCITY: float = 1.0
+    MOTION_LEAK: float = 1e-3
+    NULL_PRIOR: float = 0.02
+    NULL_SELF: float = 0.9
+
+    # evaluation
+    RECALL_KS: tuple = (1, 5, 10)
+    PLACE_TOL: int = 2
+    ECE_BINS: int = 15
+    USE_TRAIN_CONDITION_LABELS: bool = True
+
+    # experiments
+    T_GRID: tuple = (1, 2, 3, 5, 8, 13, 21, 34, 55, 89)   # sequence lengths for ECE-vs-T
+    OFFMAP_MAP_FRACTION: float = 0.7      # first 70% of the route is the map; last 30% are off-map queries
+    ROBOTCAR_REF_COND: str = "overcast-reference"
+    ROBOTCAR_QUERY_CONDS: tuple = ("night", "night-rain", "snow", "rain", "dusk", "sun")
+    POSE_TOL_M: float = 5.0               # metres: a retrieval is correct if within this of GT pose
+
+    @property
+    def cache_dir(self): return os.path.join(self.WORKING_DIR, self.CACHE_SUBDIR)
+    @property
+    def ckpt_dir(self): return os.path.join(self.WORKING_DIR, self.CKPT_SUBDIR)
+
+CONFIG = Config()
+if _HAS_TORCH and DEVICE == "cuda":
+    g = torch.cuda.get_device_properties(0).total_memory / 1e9
+    CONFIG.BATCH_SIZE = 256 if g >= 70 else (128 if g >= 40 else 64)
+CONFIG.USE_BF16 = CONFIG.USE_BF16 and BF16_OK
+os.makedirs(CONFIG.cache_dir, exist_ok=True); os.makedirs(CONFIG.ckpt_dir, exist_ok=True)
+print(json.dumps({k: str(v) for k, v in asdict(CONFIG).items()}, indent=0)[:800])
+log("P0.1.config", "ok", f"SMOKE={CONFIG.SMOKE_TEST} batch={CONFIG.BATCH_SIZE} bf16={CONFIG.USE_BF16}")
+
+#%%CODE
+# === P0.2 — Offline env + path discovery ==============================================
+for k, v in {"HF_HUB_OFFLINE": "1", "TRANSFORMERS_OFFLINE": "1", "HF_DATASETS_OFFLINE": "1",
+             "PIP_NO_INDEX": "1", "WANDB_MODE": "offline", "TOKENIZERS_PARALLELISM": "false"}.items():
+    os.environ.setdefault(k, v)
+
+def _find_dir(markers_any, markers_all=(), roots=None, max_depth=4):
+    roots = roots or CONFIG.INPUT_ROOTS; seen = set()
+    for root in roots:
+        if not os.path.isdir(root): continue
+        frontier = [(root, 0)]
+        while frontier:
+            d, dep = frontier.pop(0)
+            if d in seen or dep > max_depth: continue
+            seen.add(d)
+            try: entries = set(os.listdir(d))
+            except Exception: continue
+            ok_all = all(any(m.lower() in e.lower() for e in entries) for m in markers_all) if markers_all else True
+            ok_any = any(any(m.lower() in e.lower() for e in entries) for m in markers_any) if markers_any else True
+            if ok_all and ok_any: return d
+            for e in sorted(entries):
+                sub = os.path.join(d, e)
+                if os.path.isdir(sub): frontier.append((sub, dep + 1))
+    return None
+
+PATHS = {
+    "bundle":        _find_dir(["checkpoints"], ["checkpoints", "sources"]),
+    "nordland_full": _find_dir(["data"], ["data", "annotations"]),
+    "nordland_short":_find_dir(["summer", "winter"], ["summer", "winter"]),
+    "robotcar":      _find_dir(["images"], ["images", "3D-models"]),
+    "cmu":           _find_dir(["slice2", "slice6", "slice7"]),
+}
+for n, p in PATHS.items():
+    log(f"P0.2.path.{n}", "ok" if p else "warn", p or "not found")
+if PATHS["bundle"]:
+    for sub in ["salad", "dinov2", "Hierarchical-Localization", "LightGlue", ""]:
+        p = os.path.join(PATHS["bundle"], "sources", sub) if sub else os.path.join(PATHS["bundle"], "sources")
+        if os.path.isdir(p) and p not in sys.path: sys.path.insert(0, p)
+
+#%%CODE
+# === P0.3 — Pluggable feature extractor (SALAD -> DINOv2 CLS+mean -> placeholder) ======
+# NOTE: DINOv2 tokens are SIGNED; we use CLS + mean pooling (the GeM-clamp bug from NB1 v1 is fixed here).
+EXTRACTOR_INFO = {"name": None, "dim": None, "detail": ""}
+
+def _try_salad():
+    """serizba/salad via helper.get_* (released dino_salad.ckpt configs), bypassing VPRModel. dim=8448."""
+    if not PATHS["bundle"]: return None
+    ck = os.path.join(PATHS["bundle"], "checkpoints", "dino_salad.ckpt")
+    salad_dir = os.path.join(PATHS["bundle"], "sources", "salad")
+    if not (os.path.isfile(ck) and os.path.isdir(salad_dir)): return None
+    try:
+        if salad_dir not in sys.path: sys.path.insert(0, salad_dir)
+        from models import helper
+        backbone = helper.get_backbone("dinov2_vitb14",
+            {"num_trainable_blocks": 4, "return_token": True, "norm_layer": True})
+        aggregator = helper.get_aggregator("SALAD",
+            {"num_channels": 768, "num_clusters": 64, "cluster_dim": 128, "token_dim": 256})
+        sd = torch.load(ck, map_location="cpu"); sd = sd.get("state_dict", sd)
+        bb = {k[len("backbone."):]: v for k, v in sd.items() if k.startswith("backbone.")}
+        ag = {k[len("aggregator."):]: v for k, v in sd.items() if k.startswith("aggregator.")}
+        backbone.load_state_dict(bb, strict=False); aggregator.load_state_dict(ag, strict=False)
+        model = torch.nn.Module(); model.backbone = backbone; model.aggregator = aggregator
+        model.eval().to(DEVICE)
+        @torch.no_grad()
+        def fwd(x): return model.aggregator(model.backbone(x))
+        with torch.no_grad():
+            d = fwd(torch.zeros(2, 3, CONFIG.IMG_SIZE, CONFIG.IMG_SIZE, device=DEVICE))
+        if not torch.isfinite(d).all() or d.ndim != 2 or d.shape[1] < 1000: return None
+        return fwd, d.shape[1]
+    except Exception:
+        import traceback; print("  SALAD error:"); traceback.print_exc(); return None
+
+def _try_dinov2():
+    pth = os.path.join(PATHS["bundle"], "checkpoints", "dinov2_vitb14_pretrain.pth") if PATHS["bundle"] else None
+    try:
+        vit_base = __import__("dinov2.models.vision_transformer", fromlist=["vit_base"]).vit_base
+        vit = vit_base(patch_size=14, img_size=518, init_values=1.0, block_chunks=0)
+    except Exception as e:
+        print("  DINOv2 build failed:", repr(e)[:120]); return None
+    try:
+        if pth and os.path.isfile(pth):
+            sd = torch.load(pth, map_location="cpu"); sd = sd.get("state_dict", sd)
+            m, u = vit.load_state_dict(sd, strict=False); print(f"  DINOv2 weights (missing={len(m)})")
+        vit.eval().to(DEVICE)
+        @torch.no_grad()
+        def fwd(x):
+            f = vit.forward_features(x)
+            if isinstance(f, dict):
+                parts = []
+                if f.get("x_norm_clstoken") is not None: parts.append(f["x_norm_clstoken"])
+                if f.get("x_norm_patchtokens") is not None: parts.append(f["x_norm_patchtokens"].mean(1))
+                return torch.cat(parts, 1) if parts else f
+            return f.mean(1) if f.dim() == 3 else f
+        with torch.no_grad():
+            d = fwd(torch.zeros(2, 3, CONFIG.IMG_SIZE, CONFIG.IMG_SIZE, device=DEVICE))
+        if not torch.isfinite(d).all(): return None
+        return fwd, d.shape[1]
+    except Exception as e:
+        print("  DINOv2 error:", repr(e)[:120]); return None
+
+def _placeholder():
+    GRID = 4
+    @torch.no_grad()
+    def fwd(x):
+        B, C, H, W = x.shape; gh, gw = H // GRID, W // GRID; feats = []
+        for i in range(GRID):
+            for j in range(GRID):
+                t = x[:, :, i*gh:(i+1)*gh, j*gw:(j+1)*gw]
+                feats += [t.mean((2, 3)), t.std((2, 3)), (t[:, :, :, 1:] - t[:, :, :, :-1]).abs().mean((2, 3))]
+        return torch.cat(feats, 1)
+    return fwd, GRID * GRID * 9
+
+def build_extractor():
+    for name, b in [("dinov2", _try_dinov2)]:   # NB9: force DINOv2 (descriptor-agnostic test)
+        if PATHS["bundle"]:
+            print("try extractor:", name); r = b()
+            if r is not None:
+                EXTRACTOR_INFO.update(name=name, dim=r[1], detail="bundle")
+                log("P0.3.extractor", "ok", f"{name} dim={r[1]}"); return r[0]
+    fwd, dim = _placeholder(); EXTRACTOR_INFO.update(name="placeholder", dim=dim, detail="DEGRADED")
+    log("P0.3.extractor", "warn", f"placeholder dim={dim} (not publication-grade)"); return fwd
+
+EXTRACT_FWD = build_extractor()

@@ -1,0 +1,95 @@
+#%%MARKDOWN
+## RobotCar-Seasons per-condition calibration diagnostic (DECISIVE)
+
+The make-or-break test for CCBF (HANDOFF §6.1). On Nordland+SALAD the per-condition temperatures were
+nearly identical (τ≈0.031 vs 0.025) so condition-conditional calibration ≈ global calibration and CCBF added
+nothing. Hypothesis: on RobotCar's huge day↔night / rain / snow appearance gaps, SALAD's match/non-match score
+distributions differ drastically by condition, so **τ_night ≫ τ_day**, giving CCBF a real home.
+
+This cell is self-probing and adaptive:
+- parse `robotcar_v2_train.txt` (`<cond>/<cam>/<ts>.jpg` + flattened 4×4 pose; **translation = flat idx [3,7,11]**),
+- extract SALAD descriptors per condition,
+- pick a benign reference condition B; for every condition fit τ_c on sim(query→map B) with pose-NN GT at an
+  adaptively chosen tolerance,
+- compare pooled ECE under a single **global τ** vs **per-condition τ_c** (the crux of CCBF),
+- print a one-line `CCBF_DIAG_JSON={...}` verdict.
+
+#%%CODE
+# === RC.0 — locate RobotCar mount + train.txt =========================================
+import numpy as np, os, glob, json, time
+RC = PATHS.get("robotcar")
+# robust re-discovery: any mounted dir containing a robotcar_v2_train.txt
+def _find_file(name_substrs, roots=("/kaggle/input",), max_depth=6):
+    for root in roots:
+        for d, subs, files in os.walk(root):
+            if d.count(os.sep) - root.count(os.sep) > max_depth: subs[:] = []; continue
+            for f in files:
+                if all(s.lower() in f.lower() for s in name_substrs): return os.path.join(d, f)
+    return None
+TRAIN_TXT = _find_file(["robotcar", "train", ".txt"]) or _find_file(["v2_train"]) or _find_file(["train", ".txt"])
+print("robotcar mount:", RC)
+print("train.txt     :", TRAIN_TXT)
+if RC:
+    print("mount top-level:", sorted(os.listdir(RC))[:30])
+    for sub in ["images", "3D-models"]:
+        p = os.path.join(RC, sub)
+        if os.path.isdir(p): print(f"  {sub}/ ->", sorted(os.listdir(p))[:20])
+log("RC.0", "ok" if TRAIN_TXT else "fail", f"train.txt={TRAIN_TXT}")
+
+#%%CODE
+# === RC.1 — parse train.txt: per-condition image rel-paths + xyz translation ==========
+def parse_train(txt):
+    by_cond = {}
+    with open(txt) as fh:
+        for ln in fh:
+            parts = ln.split()
+            if len(parts) < 13: continue
+            rel = parts[0]
+            try: nums = [float(x) for x in parts[1:13]]
+            except ValueError: continue
+            xyz = np.array([nums[3], nums[7], nums[11]], np.float64)   # flattened 4x4, translation column
+            cond = rel.split("/")[0]
+            by_cond.setdefault(cond, []).append((rel, xyz))
+    return by_cond
+
+RAW = parse_train(TRAIN_TXT) if TRAIN_TXT else {}
+print("conditions in train.txt:", {c: len(v) for c, v in sorted(RAW.items())})
+
+# resolve each rel-path to a real file on the mount
+_IDX = None
+def _build_index(root):
+    idx = {}
+    for d, _, files in os.walk(root):
+        for f in files:
+            if f.lower().endswith((".jpg", ".png")): idx.setdefault(f, []).append(os.path.join(d, f))
+    return idx
+def resolve(rel):
+    global _IDX
+    for base in [os.path.join(RC, "images", rel), os.path.join(RC, rel)]:
+        if os.path.isfile(base): return base
+    if _IDX is None: _IDX = _build_index(RC)
+    cands = _IDX.get(os.path.basename(rel), [])
+    rp = rel.replace("\\", "/")
+    for c in cands:
+        if c.replace("\\", "/").endswith(rp): return c
+    return cands[0] if cands else None
+
+COND = {}
+for c, items in RAW.items():
+    paths, xyz = [], []
+    for rel, t in items:
+        p = resolve(rel)
+        if p: paths.append(p); xyz.append(t)
+    if paths:
+        COND[c] = {"paths": paths, "xyz": np.stack(xyz), "fids": list(range(len(paths)))}
+print("resolved per condition:", {c: len(v["paths"]) for c, v in sorted(COND.items())})
+log("RC.1", "ok" if COND else "fail", f"{len(COND)} conditions resolved")
+
+#%%CODE
+# === RC.2 — SALAD descriptors per condition (cached) ==================================
+DESC = {}
+for c, v in COND.items():
+    tag = "rc_" + "".join(ch if ch.isalnum() else "_" for ch in c)
+    DESC[c] = extract_paths(v["paths"], v["fids"], tag=tag)
+print("descriptors:", {c: d.shape for c, d in DESC.items()}, "| extractor:", EXTRACTOR_INFO)
+log("RC.2", "ok", f"extractor={EXTRACTOR_INFO['name']} dim={EXTRACTOR_INFO['dim']}")
