@@ -23,7 +23,41 @@ Honest state at handoff:
 
 ---
 
-## Entry 4 — NB6 CRSG validation on RobotCar (tolerance sweep)  →  POSITIVE: CRSG dominates
+## Entry 5 — NB7 cross-dataset on Nordland  →  the honest, richer finding: reliability is REGIME-DEPENDENT
+
+Nordland 4 seasons (ref=summer), pooled cross-fit, frame-GT. R@tol: 0.815@0, 0.854@1, 0.879@2, 0.914@5
+(meaningful errors — a fair regime). Headline tol=0 (acc 0.815):
+
+| method | ECE | AURC ↓ | conf-AUROC ↑ | off-map AUROC |
+|---|---|---|---|---|
+| softmax (uncal) | 0.254 | 0.063 | 0.813 | — |
+| temperature | 0.039 | 0.041 | 0.920 | — |
+| **CRSG (ours)** | 0.040 | 0.0365 | **0.941** | 0.804 |
+| **fixed_filter** | **0.017** | **0.019** | 0.940 | **0.992** |
+| ccbf | 0.017 | 0.019 | 0.941 | — |
+| oracle AURC / SUE | — | 0.018 | — | SUE 0.935 |
+
+**This refutes the naïve "CRSG dominates everywhere" reading and gives the real contribution:**
+- On **dense idealized Nordland**, the **sequential filter is excellent** (AURC 0.019 ≈ oracle 0.018; off-map
+  0.992 ≫ SUE). CRSG is only *competitive* (AURC 0.037), and CRSG's off-map (0.804) is *weak* here.
+- On **sparse realistic RobotCar**, the filter **collapses** and **CRSG dominates** (Entry 4).
+- CRSG beats softmax AND temperature on **both** datasets, and is the best **stream-free** method + the most
+  **regime-robust** one; the filter is regime-specific (needs dense temporal structure).
+
+**Honest contribution (revised).** (1) A reliability protocol + the finding that VPR reliability is
+**regime-dependent** and that Nordland-only evaluation masks it (sequential filtering looks great on Nordland,
+fails on realistic RobotCar; condition-temperature is inert on both). (2) **CRSG**, a trivial stream-free
+per-frame geometry calibrator that is regime-robust and dominant on realistic data. This is honest and genuinely
+useful, but as a *single-method-wins* claim it does NOT hold — the filter wins on Nordland.
+
+**Entry 6 (next, unifying).** Apply the CRSG geometry-calibration to the **filter's posterior** (not just the
+single-image similarity): "calibrate whatever belief you have." Hypothesis: this is regime-adaptive best-of-both —
+matches the filter on dense Nordland and keeps CRSG's win on sparse RobotCar — turning a nuanced result into a
+clean unified method. (NB8)
+
+---
+
+## Entry 4 — NB6 CRSG validation on RobotCar (tolerance sweep)  →  POSITIVE: CRSG dominates (on realistic data)
 
 Calibrated Retrieval-Score Geometry (**CRSG**) = a per-frame logistic on retrieval-score geometry
 [top1−top2 margin, NN-distance, score entropy] → one calibrated reliability score. Pooled cross-fit (fit 50% /
