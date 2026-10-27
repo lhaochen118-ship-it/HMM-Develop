@@ -21,12 +21,12 @@ def push(d, tag):
     o = kg("kernels","push","-p",d); line = o.splitlines()[-1] if o else ""
     print(time.strftime("%H:%M:%S"), tag, line, flush=True); return ("successfully pushed" in o.lower())
 def free_and_restart():
-    # stop stuck GPU session with CPU no-op, wait for it to register, then push RTX fresh
-    push(stopdir, "STOP(cpu-noop):")
-    for _ in range(9):
-        time.sleep(20); st = kg("kernels","status",kid).lower()
-        if ".complete" in st or ".running" in st: break   # cpu version took over -> GPU freed
-    time.sleep(10); return push(rtxdir, "REPUSH(rtx):")
+    # CANCEL the stuck GPU session by DELETING the kernel (verified: pushing a new version does NOT
+    # free a queued session; `kaggle kernels delete -y` terminates it and frees the GPU slot), then
+    # re-push the RTX kernel fresh (push recreates the deleted kernel).
+    o = kg("kernels", "delete", "-y", kid)
+    print(time.strftime("%H:%M:%S"), "CANCEL(delete):", (o.splitlines()[-1] if o else "")[:80], flush=True)
+    time.sleep(15); return push(rtxdir, "REPUSH(rtx):")
 
 tmp = outdir+"_partial"; t0 = time.time()
 push(rtxdir, "PUSH(rtx):"); time.sleep(10)
