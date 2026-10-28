@@ -116,3 +116,23 @@ conformal null sample for VPR acceptance. **Verdict: novel; proceed.**
 
 Verdict: SelfCal's core (held-out map blocks as a conformal null, affine-invariant far-region statistics,
 label-free FAR guarantee under shift) is still not pre-empted. Related-work must add the papers above.
+
+## Gate 4 (2026-10-28): component-by-component overlap check for SelfCal (paper reading only)
+
+New papers checked: TFA (arXiv 2609.25937), LocalScore (2602.01012), VPR Auditing with VLMs (2607.12818),
+KappaPlace (2605.19435, abstract only), Mount et al. RA-L'20 [citation only], and Gates 1–3 again.
+
+| SelfCal component | Closest prior work | Overlap |
+|---|---|---|
+| Map images as pseudo-queries | **TFA'26**: database images as leave-*self*-out pseudo-queries to calibrate the *aggregation head* (retrieval accuracy, hub detection). Hussaini'26: 2 reference traversals to pick map density. Trinh & Lyons'25: negative stats inside the DB. | **Partial (mechanism).** None removes a *spatial block* to create *off-map* nulls, and none uses them to calibrate an *accept/reject* test. Cite TFA explicitly. |
+| Spatially-excluded gap (z_gap) | **MPF'19 quality score** (best vs next best *outside a window* around the best). SeqSLAM's quality ratio. PA ratio. | **Statistic family is known.** Our addition is the far-sd normalisation and conformal calibration on the map null. Do not claim the statistic itself. |
+| Per-query z-norm / EVT spacing | Score normalisation (biometrics Z/T-norm), meta-recognition EVT (Scheirer'11), RS/SD/SU (Miller'25), LocalScore (k-NN gallery density, biometrics). | Known building blocks. Not novel alone. |
+| Map-mean centring (hubness) | Radovanović'10, Jégou & Chum'12, TFA'26 (hub analysis). | Known. |
+| Conformal p-values for outliers, BH | Bates et al.'23 (conformal outlier testing). | Standard theory, cited. |
+| Label-free FAR control under appearance shift | SAFEVPR'26 (labelled), Quantile Transfer'26 (no guarantee), Mount'20 / Trinh'25 / Vysotska'25 (heuristic thresholds), VLM auditing'26 (no threshold, FAR ≈ 0.12–0.30, no guarantee). | **No paper found.** This is the contribution. |
+| HMM / sequence | Xu'21 off-map state, etc. (see literature review) | SelfCal does **not** use an HMM. |
+
+Verdict: no paper duplicates SelfCal as a whole. The novelty is the *combination*: a held-out-block map null + an
+invariant statistic + a label-free conformal guarantee under shift. Every individual building block has precedent,
+so the paper must be written as "a new calibration principle", not "new scores". The open domain-shift validity gap
+(Entry 14) is the main threat to that claim.
