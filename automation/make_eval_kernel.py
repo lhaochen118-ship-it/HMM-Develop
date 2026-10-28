@@ -7,16 +7,22 @@
 Then run it with:  python automation/run_kernel.py <kernel_dir> <out_dir>   and copy <out_dir>/results/*.json.
 
 Usage: make_eval_kernel.py <kernel_dir> <slug> "<script> <ds> <desc>;<script> <ds> <desc>;..." [dump_kernels,...] [--gpu]
+  --acc2: use the second Kaggle account (set KAGGLE_API_TOKEN=$(cat ~/.kaggle/access_token_acc2) for both scripts)
   --gpu : T4 kernel, SELFCAL_DEVICE=cuda (PyTorch backend in selfcal.qm_stats); default CPU/numpy.
   script = eval_all.py | exp9_natural.py | ... ; for exp9_natural.py write "exp9_natural.py <desc>" (dumps auto).
 """
 import sys, os, json, glob, shutil, subprocess
 
-OWNER = "nhatlong1103"; CODE_DS = f"{OWNER}/dive-vpr-analysis"
-DUMPS = [f"{OWNER}/dive-vpr-nb15a-dump", f"{OWNER}/dive-vpr-nb15b-dump", f"{OWNER}/dive-vpr-nb15c-dump",
-         f"{OWNER}/dive-vpr-nb15d-dump", f"{OWNER}/dive-vpr-nb16a-msls", f"{OWNER}/dive-vpr-nb16b-msls"]
+# Account 1 (default, token ~/.kaggle/access_token): dumps are the outputs of its NB15/NB16 kernels.
+# Account 2 (--acc2, token ~/.kaggle/access_token_acc2 -> export KAGGLE_API_TOKEN for this script AND run_kernel.py):
+#   the same dumps re-uploaded as the private dataset yuan1103/dive-vpr-dumps.
+ACC2 = "--acc2" in sys.argv
+OWNER = "yuan1103" if ACC2 else "nhatlong1103"; CODE_DS = f"{OWNER}/dive-vpr-analysis"
+DUMPS = [] if ACC2 else [f"{OWNER}/dive-vpr-nb15a-dump", f"{OWNER}/dive-vpr-nb15b-dump", f"{OWNER}/dive-vpr-nb15c-dump",
+                         f"{OWNER}/dive-vpr-nb15d-dump", f"{OWNER}/dive-vpr-nb16a-msls", f"{OWNER}/dive-vpr-nb16b-msls"]
+DUMP_DS = ["yuan1103/dive-vpr-dumps"] if ACC2 else []
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GPU = "--gpu" in sys.argv; argv = [a for a in sys.argv if a != "--gpu"]
+GPU = "--gpu" in sys.argv; argv = [a for a in sys.argv if a not in ("--gpu", "--acc2")]
 kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]
 dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
 
@@ -66,7 +72,7 @@ print("EVAL_DONE", rcs, f"{time.time()-t0:.0f}s", flush=True)
 os.makedirs(kdir, exist_ok=True); open(os.path.join(kdir, "run.py"), "w").write(runner)
 meta = {"id": f"{OWNER}/{slug}", "title": slug, "code_file": "run.py", "language": "python", "kernel_type": "script",
         "is_private": True, "enable_gpu": GPU, "enable_tpu": False, "enable_internet": False,
-        "dataset_sources": [CODE_DS], "competition_sources": [], "kernel_sources": dumps, "model_sources": []}
+        "dataset_sources": [CODE_DS] + DUMP_DS, "competition_sources": [], "kernel_sources": dumps, "model_sources": []}
 json.dump(meta, open(os.path.join(kdir, "kernel-metadata.json"), "w"), indent=2)
 shutil.rmtree(stage, ignore_errors=True)
 print("kernel dir:", kdir, "| jobs:", len(jobs), "| sources:", dumps)
