@@ -93,3 +93,40 @@ def combined_p(null_list, stat_list):
     c = P.min(1)
     le = np.searchsorted(c_null, c, side="right")
     return (1 + le) / (1 + n)
+
+
+class SelfCalAA:
+    """Deployment-time SelfCal-AA: everything query-independent is precomputed once from the map.
+    p(q) = max( recalibrated min(p_maxsim, p_zfar), p_zgap ); accept iff p <= alpha."""
+
+    def __init__(self, m_desc, m_pos, cell=10.0, excl=25.0, k=10, block=300.0, off_d=40.0, stride=2):
+        self.m_raw = m_desc.astype(np.float32); self.mu = self.m_raw.mean(0, keepdims=True)
+        n = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True)
+        self.m_c = n(self.m_raw - self.mu); self.k, self.excl = k, excl
+        cid, self.cent = V.map_cells(m_pos, cell); self.order = np.argsort(cid, kind="stable")
+        self.starts = np.r_[0, np.flatnonzero(np.diff(cid[self.order])) + 1]; self.top_cell_dist = None
+        self.m_pos = np.asarray(m_pos, float)
+        nr = map_null(self.m_raw, m_pos, block, off_d, cell, excl, k, stride)
+        nc = map_null(self.m_c, m_pos, block, off_d, cell, excl, k, stride)
+        N = np.column_stack([nr["maxsim"], nc["z_far"]]); ok = np.isfinite(N).all(1) & np.isfinite(nc["z_gap"])
+        self.null_ms, self.null_zf, self.null_zg = np.sort(N[ok, 0]), np.sort(N[ok, 1]), np.sort(nc["z_gap"][ok])
+        nn = ok.sum(); r = np.column_stack([(nn - np.searchsorted(np.sort(N[ok, j]), N[ok, j], "left")) / nn for j in range(2)])
+        self.c_null = np.sort(r.min(1)); self.n = nn
+
+    @staticmethod
+    def _p(srt, x):
+        return (1 + len(srt) - np.searchsorted(srt, x, side="left")) / (1 + len(srt))
+
+    def pvalue(self, q_desc):
+        q = np.atleast_2d(q_desc).astype(np.float32)
+        s_raw = q @ self.m_raw.T; qc = q - self.mu; qc /= np.linalg.norm(qc, axis=1, keepdims=True); s_c = qc @ self.m_c.T
+        top = s_c.argmax(1)  # same retrieval as raw up to centring; use the raw top-1 for the reported match
+        top_raw = s_raw.argmax(1); s1_raw = s_raw[np.arange(len(q)), top_raw]
+        Z = np.maximum.reduceat(s_c[:, self.order], self.starts, axis=1)
+        far = np.sqrt(((self.m_pos[top_raw][:, None, :] - self.cent[None]) ** 2).sum(-1)) > self.excl
+        Zf = np.where(far, Z, np.nan); mu_f, sd_f = np.nanmean(Zf, 1), np.nanstd(Zf, 1) + 1e-9
+        s1_c = s_c[np.arange(len(q)), top_raw]; best_far = np.nanmax(Zf, 1)
+        z_far, z_gap = (s1_c - mu_f) / sd_f, (s1_c - best_far) / sd_f
+        m = np.minimum(self._p(self.null_ms, s1_raw), self._p(self.null_zf, z_far))
+        p_comb = (1 + np.searchsorted(self.c_null, m, side="right")) / (1 + self.n)
+        return np.maximum(p_comb, self._p(self.null_zg, z_gap)), top_raw

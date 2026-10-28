@@ -23,6 +23,38 @@ Honest state at handoff:
 
 ---
 
+## Entry 13 — SelfCal-AA validated on 6 descriptors × 3 datasets (138 deployment conditions)
+
+**Aliasing guard.** The union rule controls *off-map* false accepts but accepts many in-map aliasing errors on
+repetitive Nordland (52%). AND-rule with the gap to the best far region (`z_gap`, map-self-calibrated):
+SelfCal-AA = accept iff max(p_comb, p_gap) ≤ α. SALAD α=0.05: aliasing accept 0.000 / 0.015 / 0.057 (RobotCar / CMU /
+Nordland) vs 0.33–0.80 for every label-calibrated baseline; BH on AA p-values controls gross FDR on Nordland too
+(≤ 0.030 at q=0.1).
+
+**All descriptors (NetVLAD, CosPlace, MixVPR, DINOv2 CLS+mean, SALAD, MegaLoc), α=0.05:**
+
+| method | violating cells (of 138) | settings with ≥1 violation (of 18) | mean TPR | median aliasing-accept |
+|---|---|---|---|---|
+| SelfCal-AA (no labels) | **0** | **0** | 0.676 | **0.008** |
+| SelfCal (no labels) | **0** | **0** | **0.718** | 0.060 |
+| Oracle (labels of every condition) | 0 | 0 | 0.721 | — |
+| Conformal LOCO (SAFEVPR protocol) | 38 | **18** | 0.716 | 0.231 |
+| Quantile Transfer | 64 | 18 | 0.799 | 0.440 |
+| Threshold benign→all / CRSG | 25 / 25 | 10 / 10 | 0.664 / 0.785 | 0.218 / 0.173 |
+| Gaussian z-norm null | 112 | 16 | 0.740 | 0.451 |
+
+- Honest weak spot: **DINOv2 CLS+mean** (generic, not VPR-trained) — valid but very conservative (TPR 0.06–0.33 vs
+  oracle 0.39–0.70): its global feature encodes the capture condition, so same-condition map pseudo-queries are far more
+  map-like than deployment queries. Dual (session-mean) centring recovers only 0.33→0.41 → reported as a limitation.
+- Robustness: winter-as-map Nordland 0/3; 25% of RobotCar map (650 pseudo-queries) FAR 0, TPR 0.994; ablations
+  insensitive; centring essential on Nordland (0.754 vs 0.329).
+- Mechanism: one-sided KS excess-risk bound Δ⁺ ≤ 0.052 with the map null vs up to 0.255 with a labelled benign null.
+- Cost: offline 24 s (7k-image map, CPU); online ≈10 ms/query incl. similarity products (`selfcal.SelfCalAA`).
+- 4Seasons on Kaggle has no pose files → not usable for evaluation.
+- Paper: `paper/SelfCal_paper_full.pdf` (built by `paper/build_paper.py` from `paper/selfcal_paper.md` + results).
+
+---
+
 ## Entry 12 — New direction: self-calibrating maps (label-free, shift-robust acceptance for VPR)
 
 **Gap.** Every guarantee-giving VPR acceptance method needs labelled calibration data (integrity MLPs, Quantile

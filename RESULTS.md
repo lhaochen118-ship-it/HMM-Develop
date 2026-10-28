@@ -1,91 +1,29 @@
-# CRSG — Master Results Table
+# Master results — Self-calibrating maps (SelfCal / SelfCal-AA)
 
-All numbers verified on Kaggle T4 this session (SALAD descriptor unless noted). Lower ECE/AURC better; higher
-conf-AUROC / off-map AUROC better. "CRSG" = per-frame logistic on retrieval-score geometry (margin, NN-dist,
-entropy). Full method/context in `PAPER_DRAFT.md`; honest narrative in `RESEARCH_LOG.md`.
+Current direction (Entries 12–13). The previous CRSG tables are superseded (see `LITERATURE_GATE.md`); they remain in
+git history (commit `96ced6c`). All numbers are reproducible from the NB15 descriptor dumps with `analysis/`:
+`eval_all.py` (main comparison), `exp3_fdr.py` (BH / label-free confidence), `exp5_ablation.py`, `exp6_dominance.py`,
+`exp7_mapsize.py`, `exp8_dualcenter.py`, `summarize.py`; paper tables via `paper/build_tables.py`.
 
-## Reliability: calibration + discrimination (pooled cross-fit)
+Protocol: off-map queries by leave-one-300 m-block-out of the map (RobotCar 1,386 / CMU 14,117 / Nordland 12,180);
+correct = top-1 within (5 m, 10°) (RobotCar official coarse threshold; CMU) or 2 places (Nordland); aliasing =
+in-map query whose top-1 is > 25 m (5 places) away. #viol = conditions whose FAR is significantly above α
+(one-sided binomial, Bonferroni).
 
-Headline tolerance chosen where errors are non-trivial (acc≈0.8). **Bold** = best in column per dataset.
+## Aggregate over 6 descriptors × 3 datasets (138 deployment conditions), α = 0.05
+See `paper/tables.md` (Table 2a) — SelfCal-AA 0/138 violating, mean TPR 0.676, median aliasing 0.008;
+SelfCal 0/138, mean TPR 0.718 (oracle 0.721); LOCO (SAFEVPR protocol) 38/138 with a violation in all 18 settings;
+Quantile Transfer 64/138; benign threshold 25/138; CRSG 25/138; Gaussian z-norm 112/138.
 
-| dataset (regime) | tol | method | ECE ↓ | AURC ↓ | conf-AUROC ↑ |
-|---|---|---|---|---|---|
-| **RobotCar** (sparse, realistic) | 2 m | softmax | 0.485 | 0.133 | 0.749 |
-| | | temperature | 0.303 | 0.135 | 0.736 |
-| | | sequential filter | 0.301 | 0.132 | 0.677 |
-| | | CCBF | 0.269 | 0.130 | 0.671 |
-| | | **CRSG (ours)** | **0.069** | **0.090** | **0.801** |
-| | | *oracle AURC* | — | 0.030 | — |
-| **CMU** (sparse, realistic) | 2 m | softmax | 0.651 | 0.085 | 0.640 |
-| | | temperature | 0.435 | 0.084 | 0.633 |
-| | | sequential filter | 0.416 | 0.080 | 0.603 |
-| | | CCBF | 0.359 | 0.081 | 0.601 |
-| | | **CRSG (ours)** | **0.055** | **0.048** | **0.769** |
-| | | *oracle AURC* | — | 0.008 | — |
-| **Nordland** (dense, idealized) | 0 fr | softmax | 0.254 | 0.063 | 0.813 |
-| | | temperature | 0.039 | 0.041 | 0.920 |
-| | | CRSG (ours) | 0.040 | 0.037 | 0.941 |
-| | | **sequential filter** | **0.017** | **0.019** | 0.940 |
-| | | CCBF | 0.017 | 0.019 | 0.941 |
-| | | *oracle AURC* | — | 0.018 | — |
-| **Nordland @ scale** (3000/season, N=9000) | 2 fr | softmax | 0.432 | 0.061 | 0.822 |
-| | | temperature | 0.086 | 0.035 | 0.932 |
-| | | CRSG (ours) | 0.047 | 0.029 | **0.957** |
-| | | **sequential filter** | 0.063 | **0.011** | 0.933 |
-
-*Scale-up (NB13, T4) is consistent with the 800/season result: CRSG beats softmax & temperature and has the best
-conf-AUROC; the sequential filter keeps its AURC + off-map edge on dense Nordland.*
-
-| **CMU @ scale** (4 routes, N=7395) | 2 m | maxsim-cal (baseline) | 0.019 | 0.159 | 0.732 |
-| | | **CRSG (ours)** | 0.025 | **0.143** | **0.759** |
-| | | sequential filter | **0.321** | **0.196** | **0.647** |
-
-*Scale-up (NB14, T4, 4 distinct CMU routes): CRSG beats the calibrated-max-sim baseline on discrimination; the
-sequential filter fails badly (ECE 0.32, conf-AUROC 0.65) — the realistic-data story holds at scale.*
-
-**Reading:** CRSG dominates all methods on both **realistic** datasets (RobotCar, CMU). On **idealized dense**
-Nordland the sequential filter is best (near-oracle) and CRSG is competitive (beats softmax & temperature). The
-sequential/condition methods never beat softmax on the realistic data.
-
-## Open-set / off-map detection (AUROC)
-
-| dataset | CRSG | L2-NN dist. (RUE)† | filter-null |
+## SALAD, α = 0.05 (FAR / #viol / TPR / aliasing-accept)
+| method | RobotCar (9) | CMU (11) | Nordland (3) |
 |---|---|---|---|
-| RobotCar | 0.949 | 0.948 | 0.898 |
-| CMU | 0.861 | **0.895** | **0.228 (collapse)** |
-| Nordland | 0.804 | 0.935 | **0.992** |
+| SelfCal-AA (ours) | 0.004 / 0/9 / 0.988 / 0.00 | 0.002 / 0/11 / 0.853 / 0.01 | 0.008 / 0/3 / 0.754 / 0.06 |
+| SelfCal (ours) | 0.004 / 0/9 / 0.994 / 0.01 | 0.009 / 0/11 / 0.956 / 0.26 | 0.031 / 0/3 / 0.788 / 0.52 |
+| Threshold benign→all | 0.109 / 5/9 / 0.997 / 0.50 | 0.052 / 4/11 / 0.985 / 0.78 | 0.037 / 0/3 / 0.630 / 0.49 |
+| Conformal LOCO | 0.052 / 1/9 / 0.997 / 0.34 | 0.051 / 4/11 / 0.984 / 0.77 | 0.070 / 2/3 / 0.666 / 0.51 |
+| Quantile Transfer | 0.097 / 4/9 / 0.998 / 0.47 | 0.054 / 2/11 / 0.993 / 0.80 | 0.109 / 2/3 / 0.901 / 0.72 |
+| CRSG benign→all | 0.099 / 4/9 / 0.996 / 0.33 | 0.054 / 4/11 / 0.982 / 0.68 | 0.041 / 0/3 / 0.814 / 0.45 |
+| Oracle (labels, all cond.) | 0.040 / 0/9 / 0.995 / — | 0.049 / 0/11 / 0.992 / — | 0.050 / 0/3 / 0.780 / — |
 
-**Reading:** the sequential filter-null is the best OOD detector on dense Nordland (0.99) but **collapses on sparse
-realistic data** (CMU 0.23 ≪ random-ish). L2-NN distance and CRSG are the robust instantaneous OOD signals on realistic data.
-
-† **Correction (Entry 11 / `LITERATURE_GATE.md`):** this column was previously labelled "SUE". The quantity computed
-in every notebook is `sqrt(2-2*max cos)`, i.e. Zaffar et al.'s *L2-distance* retrieval-based baseline, not SUE
-(spatial spread of the top-K reference poses). True SUE has not been evaluated yet.
-
-## Why the inherited methods fail
-
-| finding | evidence |
-|---|---|
-| Condition-aware temperature (CCBF) is **inert** | per-condition τ spread: Nordland 1.22×, RobotCar 1.49×; per-cond ECE gain ≈0% |
-| Sequential filtering is **regime-specific** | fixes calibration on Nordland (ECE 0.076→0.028) but not RobotCar (0.47→0.44); off-map collapses on CMU (0.23) |
-| Calibration can't **rescue** the filter on sparse data | CRSG-filter AURC 0.137 ≈ raw filter ≫ CRSG-single 0.090 (NB8) — the margin signal is destroyed, not recoverable |
-
-## Descriptor-agnosticism (RobotCar, DINOv2 vs SALAD)
-
-CRSG fixes calibration for both (ECE 0.03–0.06 vs softmax/temperature 0.2–0.7) and wins open-set for both. Its
-*discrimination* edge over raw softmax ranking is larger for the stronger descriptor (clear SALAD, ~parity DINOv2).
-
-## Conformal risk control (RobotCar, tol 2 m, δ=0.1)  ✅ NB12
-
-**C1 — selective risk control (exchangeable): CRSG is a far better conformity score.**
-
-| target α | softmax risk / cov | CRSG risk / cov |
-|---|---|---|
-| 0.10 | — / **0.00** (abstains all) | 0.11 / **0.615** |
-| 0.20 | 0.21 / 0.97 | 0.22 / 0.98 |
-
-**C2 — marginal guarantee breaks under appearance shift** (calibrate benign → deploy hard): realized hard-risk
-0.115 (α=0.10), 0.304 (α=0.20) — exceeds target.
-
-**C3 — Mondrian per-condition conformal restores control** (α=0.10): worst-condition risk marginal **0.221** →
-Mondrian **0.000** (every condition ≤ target).
+Full per-descriptor tables: `analysis/results/summary_a0.05.md`, `summary_a0.1.md`, `paper/tables.md`.
