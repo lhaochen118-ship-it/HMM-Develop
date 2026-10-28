@@ -8,7 +8,7 @@ import vprlib as V, selfcal as SC
 from sc_eval import CFG
 
 dump, ds, desc = sys.argv[1], sys.argv[2], sys.argv[3]
-ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland}[ds](dump, desc); c = CFG[ds]
+ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
 nrm = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True)
 inm = V.nearest_map_dist(ep) <= c["in_d"]; _, dt, _ = V.top1_errors(ep)
 corr = V.correct(ep, *c["tol"]) & inm; alias = inm & (dt > c["excl"])

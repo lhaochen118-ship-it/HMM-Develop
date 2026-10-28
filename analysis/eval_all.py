@@ -1,5 +1,5 @@
 """Unified comparison: label-free self-calibrated tests vs label-calibrated / oracle / theory-only baselines.
-Usage: eval_all.py <dump> <rc|cmu|nord> [desc]   -> prints a table, writes results/eval_<ds>_<desc>.json"""
+Usage: eval_all.py <dump> <rc|cmu|nord|msls|nordw> [desc]   -> prints a table, writes results/eval_<ds>_<desc>.json"""
 import sys, os, json
 import numpy as np
 from scipy.stats import norm, binom
@@ -75,7 +75,7 @@ def evaluate(ep, c, desc, key=None):
     methods["Theory F-test[T_spacing]"] = lambda a: ((1 + raw[1]["T_spacing"] / k) ** (-k) <= a, (1 + raw[2]["T_spacing"] / k) ** (-k) <= a)
     methods["Theory Gauss[z_all]"] = lambda a: (np.clip(raw[3] * norm.sf(raw[1]["z_all"]), 0, 1) <= a, np.clip(raw[3] * norm.sf(raw[2]["z_all"]), 0, 1) <= a)
     # --- label-calibrated on calibration conditions (split conformal on their OFF-MAP queries), transferred
-    for st in ["maxsim", "margin", "PA", "z_far"]:
+    for st in ["maxsim", "margin", "PA", "z_far", "SUE"]:
         methods[f"LabelCal[{st}] (day->all)"] = conformal(raw[1][st][cal & offm], raw[1][st], raw[2][st])
     # label calibration whose negatives include in-map aliasing errors of the calibration conditions (fairer)
     for st in ["maxsim", "z_far"]:
@@ -130,7 +130,7 @@ def evaluate(ep, c, desc, key=None):
 
 if __name__ == "__main__":
     dump, ds = sys.argv[1], sys.argv[2]; desc = sys.argv[3] if len(sys.argv) > 3 else "salad"
-    ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland, "nordw": lambda d, x: V.load_nordland(d, x, ref="winter")}[ds](dump, desc)
+    ep = V.LOADERS[ds](dump, desc)
     rows, meta = evaluate(ep, CFG[ds], desc, key=f"{ds}_{desc}")
     print(f"\n### {ds} / {desc}: off-map n={meta['n_off']}, correct in-map n={meta['n_corr']}, map-null n={meta['n_null']}, label-cal conds={meta['calib']}")
     for a in ALPHAS:

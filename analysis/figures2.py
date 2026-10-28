@@ -21,7 +21,7 @@ def save(fig, name):
 
 
 def load(ds, dump, desc):
-    ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland, "nordw": lambda d, x: V.load_nordland(d, x, ref="winter")}[ds](dump, desc); c = CFG[ds]
+    ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
     raw = signals(ep, c, False, f"{ds}_{desc}"); cen = signals(ep, c, True, f"{ds}_{desc}")
     inm = V.nearest_map_dist(ep) <= c["in_d"]; _, dt, _ = V.top1_errors(ep)
     corr = V.correct(ep, *c["tol"]) & inm; alias = inm & (dt > c["excl"])

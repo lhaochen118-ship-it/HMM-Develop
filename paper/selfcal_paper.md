@@ -253,7 +253,7 @@ descriptor that is not trained for VPR: its global features encode the capture c
 pseudo-queries (which share the map's condition) are much more map-like than any deployment query. SelfCal stays valid
 (FAR ≤ 0.004) but becomes conservative (TPR 0.06–0.33 vs. oracle 0.39–0.70); centring queries on their own session
 mean recovers only part of the gap (RobotCar 0.33 → 0.41). This is the price of label-free validity, paid only by
-condition-sensitive descriptors. ⏳
+condition-sensitive descriptors.
 
 ## 6.5 Batches: FDR and label-free confidence
 

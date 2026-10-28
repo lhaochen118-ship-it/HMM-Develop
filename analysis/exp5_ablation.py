@@ -8,7 +8,7 @@ import vprlib as V, selfcal as SC
 from sc_eval import CFG
 
 dump, ds = sys.argv[1], sys.argv[2]; desc = sys.argv[3] if len(sys.argv) > 3 else "salad"
-ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland}[ds](dump, desc); c = CFG[ds]
+ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
 u = 1.0 if ds != "nord" else 0.2          # Nordland positions are subsampled frame indices
 inm = V.nearest_map_dist(ep) <= c["in_d"]; _, dt, _ = V.top1_errors(ep)
 corr = V.correct(ep, *c["tol"]) & inm; alias = inm & (dt > c["excl"])

@@ -101,6 +101,22 @@ def load_nordland(dump, desc="salad", ref="summer"):
     return Episode("nordland", np.concatenate(qs), R, np.tile(pos, len(qs)), pos, np.array(cs), unit="frame")
 
 
+def load_msls(dump, desc="salad", cities=("cph", "sf")):
+    """MSLS val: database of every city = one map (cities offset far apart in UTM), queries = city query sets."""
+    Q, M, qp, mp, qc = [], [], [], [], []
+    for i, c in enumerate(cities):
+        f = os.path.join(dump, "meta", f"msls_{c}.npz")
+        if not os.path.isfile(f): continue
+        m = np.load(f, allow_pickle=True); off = np.array([1e7 * i, 0.0])
+        Q.append(np.load(os.path.join(dump, desc, f"msls_{c}_q.npy"))); M.append(np.load(os.path.join(dump, desc, f"msls_{c}_db.npy")))
+        qp.append(m["q_C"] + off); mp.append(m["db_C"] + off); qc.append(m["q_cond"])
+    return Episode("msls", np.concatenate(Q), np.concatenate(M), np.concatenate(qp), np.concatenate(mp), np.concatenate(qc))
+
+
+LOADERS = {"rc": load_robotcar, "cmu": load_cmu_merged, "nord": load_nordland, "msls": load_msls,
+           "nordw": lambda d, x="salad": load_nordland(d, x, ref="winter")}
+
+
 # --------------------------------------------------------------------------- score-based baselines
 def _softmax_max(S, T=0.05):
     z = S / T; z = z - z.max(1, keepdims=True); p = np.exp(z); p /= p.sum(1, keepdims=True)

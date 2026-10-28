@@ -127,3 +127,38 @@ def load_nordland():
     fids = [common[i] for i in sel]
     log("L.NORD", "ok", f"seasons={list(tracks)} common={len(common)} selected={len(fids)} (stride~{len(common)/len(fids):.1f})")
     return {"parts": [(s, [tracks[s][f] for f in fids]) for s in tracks], "meta": {"frame_ids": np.array(fids), "seasons": np.array(list(tracks))}}
+
+#%%CODE
+# === L.MSLS — Mapillary SLS val cities (cph, sf): database = map, query = queries; UTM easting/northing ===
+def load_msls():
+    import pandas as pd
+    root = _find_dir(["train_val"], ["train_val"]); assert root, "msls mount not found"
+    tv = os.path.join(root, "train_val"); parts, meta = [], {}
+    season = {12: "winter", 1: "winter", 2: "winter", 3: "spring", 4: "spring", 5: "spring",
+              6: "summer", 7: "summer", 8: "summer", 9: "fall", 10: "fall", 11: "fall"}
+    for city in CONFIG.MSLS_CITIES:
+        out = {}
+        for sub in ("database", "query"):
+            b = os.path.join(tv, city, sub)
+            pp = pd.read_csv(os.path.join(b, "postprocessed.csv"), index_col=0)
+            raw = pd.read_csv(os.path.join(b, "raw.csv"), index_col=0)
+            df = pp.merge(raw[["key", "ca", "captured_at", "pano"]], on="key")
+            df = df[~df.pano.astype(bool)].reset_index(drop=True)
+            paths = [os.path.join(b, "images", k + ".jpg") for k in df.key]
+            ex = np.array([os.path.isfile(p) for p in paths]); df = df[ex].reset_index(drop=True)
+            paths = [p for p, e in zip(paths, ex) if e]
+            mon = pd.to_datetime(df.captured_at).dt.month.values
+            cond = np.array([f"{city}-night" if n else f"{city}-{season[int(mm)]}" for n, mm in zip(df.night.values, mon)])
+            out[sub] = (df, paths, cond)
+            print(f"  msls {city}/{sub}: {len(df)} images (missing {int((~ex).sum())}) conds={dict(zip(*np.unique(cond, return_counts=True)))}", flush=True)
+        (dd, dp, _), (qd, qp, qc) = out["database"], out["query"]
+        parts += [(f"{city}_db", dp), (f"{city}_q", qp)]
+        meta[city] = {"db_keys": np.asarray(dd.key, dtype=str), "db_C": dd[["easting", "northing"]].values.astype(float),
+                      "db_ca": dd.ca.values.astype(float), "db_view": np.asarray(dd.view_direction, dtype=str),
+                      "db_date": np.asarray(dd.captured_at, dtype=str),
+                      "q_keys": np.asarray(qd.key, dtype=str), "q_C": qd[["easting", "northing"]].values.astype(float),
+                      "q_ca": qd.ca.values.astype(float), "q_view": np.asarray(qd.view_direction, dtype=str),
+                      "q_date": np.asarray(qd.captured_at, dtype=str), "q_cond": qc}
+        dmin = np.sqrt(((meta[city]["q_C"][:, None] - meta[city]["db_C"][None]) ** 2).sum(-1)).min(1)
+        log(f"L.MSLS.{city}", "ok", f"db={len(dp)} q={len(qp)} | q->nearest-db median {np.median(dmin):.1f} m, >25 m {np.mean(dmin > 25):.3f}")
+    return {"parts": parts, "meta": meta}

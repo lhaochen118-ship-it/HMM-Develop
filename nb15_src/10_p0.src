@@ -43,6 +43,7 @@ class Config:
     USE_BF16: bool = True
     NORD_PER_SEASON: int = 4500
     CMU_MAX_IMAGES: int = 24000
+    MSLS_CITIES: tuple = ("cph", "sf")
     CMU_SLICE_ORDER: tuple = (7, 10, 19, 8, 11, 20, 6, 12, 21, 5, 13, 22, 4, 14, 23, 3, 15, 24, 2, 16, 17, 18, 9, 25)
 CONFIG = Config()
 CONFIG.USE_BF16 = CONFIG.USE_BF16 and BF16_OK

@@ -17,11 +17,17 @@ def center(q, m):
     return n(q.astype(np.float32) - mu), n(m.astype(np.float32) - mu)
 
 
-def query_stats(S, m_pos, cell, excl, k):
-    """Affine-invariant per-query statistics (higher = more evidence the top-1 is a real match)."""
-    cid, cent = V.map_cells(m_pos, cell); nc = cid.max() + 1
-    Z = np.empty((S.shape[0], nc), np.float32)
-    for c in range(nc): Z[:, c] = S[:, cid == c].max(1)
+def query_stats(S, m_pos, cell, excl, k, chunk=2048, sue_k=10, sue_lam=350.0):
+    """Affine-invariant per-query statistics (higher = more evidence the top-1 is a real match). Row-chunked."""
+    cid, cent = V.map_cells(m_pos, cell); order = np.argsort(cid, kind="stable")
+    starts = np.r_[0, np.flatnonzero(np.diff(cid[order])) + 1]
+    parts = [_query_stats(S[i:i + chunk], m_pos, cent, order, starts, excl, k, sue_k, sue_lam) for i in range(0, S.shape[0], chunk)]
+    return {kk: np.concatenate([p[kk] for p in parts]) for kk in parts[0]}
+
+
+def _query_stats(S, m_pos, cent, order, starts, excl, k, sue_k, sue_lam):
+    S = np.asarray(S, np.float32)
+    Z = np.maximum.reduceat(S[:, order], starts, axis=1)                # max similarity per map cell
     top = S.argmax(1); s1 = S[np.arange(len(top)), top]
     dc = np.sqrt(((m_pos[top][:, None, :] - cent[None]) ** 2).sum(-1))
     Zf = np.where(dc > excl, Z, -np.inf); Zs = -np.sort(-Zf, 1)
@@ -34,7 +40,12 @@ def query_stats(S, m_pos, cell, excl, k):
     s2 = -np.partition(-S, 1, axis=1)[:, 1]
     d1, d2 = np.sqrt(np.maximum(2 - 2 * s1, 0)), np.sqrt(np.maximum(2 - 2 * s2, 0))
     z = S / 0.05; z = z - z.max(1, keepdims=True); pr = np.exp(z); pr /= pr.sum(1, keepdims=True)
-    raw = {"maxsim": s1, "margin": s1 - s2, "PA": -d1 / np.maximum(d2, 1e-9), "neg_entropy": (pr * np.log(pr + 1e-12)).sum(1)}
+    # SUE (Zaffar CVPR'24): weighted spatial variance of the top-K reference positions (returned negated)
+    K = min(sue_k, S.shape[1]); idx = np.argpartition(-S, K - 1, axis=1)[:, :K]
+    dk = np.sqrt(np.maximum(2 - 2 * np.take_along_axis(S, idx, 1), 0)); w = np.exp(-sue_lam * (dk - dk.min(1, keepdims=True)))
+    w /= w.sum(1, keepdims=True); P = m_pos[idx]; mp = (w[..., None] * P).sum(1, keepdims=True)
+    raw = {"maxsim": s1, "margin": s1 - s2, "PA": -d1 / np.maximum(d2, 1e-9), "neg_entropy": (pr * np.log(pr + 1e-12)).sum(1),
+           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2))}
     out = {"T_spacing": (s1 - top_k[:, 0]) / beta,                 # EVS spacing statistic (F(2,2k) under ideal null)
            "T_level": (s1 - top_k[:, :k].mean(1)) / beta,         # level above the top-k far maxima, in tail units
            "z_far": (s1 - mu_f) / sd_f,                            # standardised vs far region maxima

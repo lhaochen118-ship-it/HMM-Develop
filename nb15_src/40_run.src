@@ -3,7 +3,7 @@
 
 #%%CODE
 # === R.0 — load selected datasets ==========================================================
-LOADERS = {"rc": load_robotcar, "cmu": load_cmu, "nord": load_nordland}
+LOADERS = {"rc": load_robotcar, "cmu": load_cmu, "nord": load_nordland, "msls": load_msls}
 LOADED = {}
 for key in DUMP:
     t0 = time.time()
@@ -12,8 +12,8 @@ for key in DUMP:
         import traceback; traceback.print_exc(); log(f"R.0.{key}", "fail", repr(e)[:200])
 os.makedirs(os.path.join(CONFIG.OUT_DIR, "meta"), exist_ok=True)
 def _save_meta(key, meta):
-    if key == "cmu":
-        for s, m in meta.items(): np.savez(os.path.join(CONFIG.OUT_DIR, "meta", f"cmu_{s}.npz"), **m)
+    if key in ("cmu", "msls"):
+        for s, m in meta.items(): np.savez(os.path.join(CONFIG.OUT_DIR, "meta", f"{key}_{s}.npz"), **m)
     else: np.savez(os.path.join(CONFIG.OUT_DIR, "meta", f"{key}.npz"), **meta)
 for key, D in LOADED.items(): _save_meta(key, D["meta"])
 print("meta saved:", os.listdir(os.path.join(CONFIG.OUT_DIR, "meta")), flush=True)
@@ -84,6 +84,13 @@ for dname in FWDS:
             top = (FEATS[(dname, "nord", s)].astype(np.float32) @ ref.T).argmax(1); err = np.abs(top - np.arange(len(top)))
             SANITY[f"{dname}/nord/{s}"] = [float(np.mean(err <= k)) for k in (0, 1, 2)]
             print(f"  {dname} Nordland {s:7s} R@1 (0/1/2 frames) = " + "/".join(f"{np.mean(err<=k):.3f}" for k in (0, 1, 2)), flush=True)
+
+    if "msls" in LOADED:
+        for city, m in LOADED["msls"]["meta"].items():
+            if (dname, "msls", f"{city}_db") not in FEATS: continue
+            S = FEATS[(dname, "msls", f"{city}_q")].astype(np.float32) @ FEATS[(dname, "msls", f"{city}_db")].astype(np.float32).T
+            dt = np.linalg.norm(m["q_C"] - m["db_C"][S.argmax(1)], axis=1); SANITY[f"{dname}/msls/{city}"] = [float(np.mean(dt <= 25))]
+            print(f"  {dname} MSLS {city} n={len(dt)} R@1 (25 m) = {np.mean(dt <= 25):.3f} | median err {np.median(dt):.1f} m", flush=True)
 
 #%%CODE
 # === R.3 — summary =========================================================================

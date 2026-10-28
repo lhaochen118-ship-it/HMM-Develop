@@ -6,7 +6,7 @@ sys.path.insert(0, os.path.dirname(__file__))
 import vprlib as V, eval_all as EA
 from sc_eval import CFG
 dump, ds = sys.argv[1], sys.argv[2]; desc = sys.argv[3] if len(sys.argv) > 3 else "salad"
-ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged}[ds](dump, desc); c = CFG[ds]
+ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
 P = ep.m_pos[:, :2]; d0 = np.linalg.norm(P - np.median(P, 0), axis=1)
 nn = np.array([np.argmin(((ep.m_pos - q) ** 2).sum(1)) for q in ep.q_pos])
 out = {}
