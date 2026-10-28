@@ -9,7 +9,10 @@ Variants of the SelfCal-AA p-value (alpha = 0.05):
   AND-ms             max(AA, p(maxsim))           (fully robust: valid if ANY component is dominated)
   Mondrian-<s>-B     AA computed within B quantile strata of a nuisance statistic s of the map null
                      (s = raw maxsim 'ms' or far-region spread 'sdf'); conditional conformal validity per stratum
-Usage: exp10_shiftfix.py <desc> <dump> [datasets=rc,cmu,nord,msls-cph,msls-sf]"""
+Usage: exp10_shiftfix.py <desc> <dump> [datasets=rc,cmu,nord,msls-cph,msls-sf]
+       exp10_shiftfix.py <desc> --stats <shiftstats_<desc>.npz>     (re-score new variants from cached statistics,
+                                                                     seconds on CPU, no descriptors needed)
+A run with a dump also writes results/shiftstats_<desc>.npz (all per-query statistics + masks)."""
 import sys, os, json
 import numpy as np
 sys.path.insert(0, os.path.dirname(__file__))
@@ -18,8 +21,10 @@ from sc_eval import CFG
 from eval_all import violations
 
 desc, dump = sys.argv[1], sys.argv[2]
-DS = (sys.argv[3] if len(sys.argv) > 3 else "rc,cmu,nord,msls-cph,msls-sf").split(",")
+STATS = sys.argv[3] if dump == "--stats" else None
+DS = (sys.argv[3] if len(sys.argv) > 3 and not STATS else "rc,cmu,nord,msls-cph,msls-sf").split(",")
 A, NF = 0.05, 2000
+KEYS = ("ms", "zf", "zg", "sdf")
 
 
 def load(k):
@@ -27,9 +32,6 @@ def load(k):
     return V.LOADERS[k](dump, desc), CFG[k]
 
 
-EP = {k: load(k) for k in DS}
-rng = np.random.default_rng(0)
-FOR = {k: e.q[np.sort(rng.choice(len(e.q), min(NF, len(e.q)), replace=False))].astype(np.float32) for k, (e, _) in EP.items()}
 nrm = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True)
 
 
@@ -66,24 +68,60 @@ def variants(N, X):
     return out
 
 
+def compute_stats():
+    """all per-query statistics needed by any variant: map null N, LOBO off-map O, in-map F, natural foreign PN"""
+    EP = {k: load(k) for k in DS}
+    rng = np.random.default_rng(0)
+    FOR = {k: e.q[np.sort(rng.choice(len(e.q), min(NF, len(e.q)), replace=False))].astype(np.float32) for k, (e, _) in EP.items()}
+    S = {}
+    for mk, (ep, c) in EP.items():
+        args = (c["block"], c["off_d"], c["cell"], c["excl"], c["k"])
+        mr = ep.m.astype(np.float32); mu = mr.mean(0, keepdims=True); mc = nrm(mr - mu)
+        st = lambda qq: pack(SC.qm_stats(qq, mr, ep.m_pos, c["cell"], c["excl"], c["k"]), SC.qm_stats(nrm(qq - mu), mc, ep.m_pos, c["cell"], c["excl"], c["k"]))
+        q = ep.q.astype(np.float32); qc = nrm(q - mu)
+        inm = V.nearest_map_dist(ep) <= c["in_d"]; _, dt, _ = V.top1_errors(ep)
+        S[mk] = dict(N=pack(SC.map_null(mr, ep.m_pos, *args), SC.map_null(mc, ep.m_pos, *args)),
+                     O=pack(SC.lobo_stats(mr, ep.m_pos, c["block"], c["off_d"], q, ep.q_pos, c["cell"], c["excl"], c["k"]),
+                            SC.lobo_stats(mc, ep.m_pos, c["block"], c["off_d"], qc, ep.q_pos, c["cell"], c["excl"], c["k"])),
+                     F=st(q), nat={sk: st(fq) for sk, fq in FOR.items() if sk != mk},
+                     cond=np.asarray(ep.q_cond, dtype=str), corr=V.correct(ep, *c["tol"]) & inm, alias=inm & (dt > c["excl"]))
+    return S
+
+
+def save_stats(S, path):
+    flat = {}
+    for mk, d in S.items():
+        for part in ("N", "O", "F"):
+            for key in KEYS: flat[f"{mk}|{part}|{key}"] = np.asarray(d[part][key], dtype=np.float64)
+        for sk, X in d["nat"].items():
+            for key in KEYS: flat[f"{mk}|nat:{sk}|{key}"] = np.asarray(X[key], dtype=np.float64)
+        for key in ("cond", "corr", "alias"): flat[f"{mk}|{key}"] = d[key]
+    np.savez_compressed(path, **flat)
+
+
+def load_stats(path):
+    z = np.load(path); S = {}
+    for name in z.files:
+        mk, part, *key = name.split("|"); d = S.setdefault(mk, {"nat": {}})
+        if key and part.startswith("nat:"): d["nat"].setdefault(part[4:], {})[key[0]] = z[name]
+        elif key: d.setdefault(part, {})[key[0]] = z[name]
+        else: d[part] = z[name]
+    return S
+
+
+RD = os.path.join(os.path.dirname(__file__), "results"); os.makedirs(RD, exist_ok=True)
+if STATS: S = load_stats(STATS)
+else: S = compute_stats(); save_stats(S, os.path.join(RD, f"shiftstats_{desc}.npz"))
 res = {}
-for mk, (ep, c) in EP.items():
-    args = (c["block"], c["off_d"], c["cell"], c["excl"], c["k"])
-    mr = ep.m.astype(np.float32); mu = mr.mean(0, keepdims=True); mc = nrm(mr - mu)
-    st = lambda qq: pack(SC.qm_stats(qq, mr, ep.m_pos, c["cell"], c["excl"], c["k"]), SC.qm_stats(nrm(qq - mu), mc, ep.m_pos, c["cell"], c["excl"], c["k"]))
-    N = pack(SC.map_null(mr, ep.m_pos, *args), SC.map_null(mc, ep.m_pos, *args))
-    q = ep.q.astype(np.float32); qc = nrm(q - mu)
-    O = pack(SC.lobo_stats(mr, ep.m_pos, c["block"], c["off_d"], q, ep.q_pos, c["cell"], c["excl"], c["k"]),
-             SC.lobo_stats(mc, ep.m_pos, c["block"], c["off_d"], qc, ep.q_pos, c["cell"], c["excl"], c["k"]))
-    F = st(q)
-    inm = V.nearest_map_dist(ep) <= c["in_d"]; corr = V.correct(ep, *c["tol"]) & inm
-    _, dt, _ = V.top1_errors(ep); alias = inm & (dt > c["excl"])
+for mk, d in S.items():
+    N, O, F = d["N"], d["O"], d["F"]
+    corr, alias = d["corr"], d["alias"]
     offm = np.isfinite(O["ms"]) & np.isfinite(O["zf"])
     PO, PF = variants(N, O), variants(N, F)
-    PN = {sk: variants(N, st(fq)) for sk, fq in FOR.items() if sk != mk}
+    PN = {sk: variants(N, X) for sk, X in d["nat"].items()}
     r = {}
     for name in PO:
-        nv, fars = violations(PO[name] <= A, ep.q_cond, offm, A)
+        nv, fars = violations(PO[name] <= A, d["cond"], offm, A)
         nat = {sk: float(np.mean(PN[sk][name] <= A)) for sk in PN}
         r[name] = dict(FAR=float(np.mean(PO[name][offm] <= A)), worst=float(max(fars.values())), n_viol=nv, n_cond=len(fars),
                        TPR=float(np.mean(PF[name][corr] <= A)), alias=float(np.mean(PF[name][alias] <= A)) if alias.any() else None,
@@ -92,5 +130,4 @@ for mk, (ep, c) in EP.items():
               f"alias {r[name]['alias'] if r[name]['alias'] is None else round(r[name]['alias'], 3)} | natural max {r[name]['natural_max']:.3f} "
               + " ".join(f"{k}:{v:.3f}" for k, v in nat.items()), flush=True)
     res[mk] = r
-os.makedirs(os.path.join(os.path.dirname(__file__), "results"), exist_ok=True)
-json.dump(res, open(os.path.join(os.path.dirname(__file__), "results", f"shiftfix_{desc}.json"), "w"), indent=1)
+json.dump(res, open(os.path.join(RD, f"shiftfix_{desc}.json"), "w"), indent=1)

@@ -26,3 +26,4 @@ literature/fonts/
 paper/SelfCal_paper_full.md
 paper/tables.md
 analysis/results/summary_*.md
+analysis/results/*.npz
