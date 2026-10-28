@@ -199,12 +199,14 @@ class SelfCalTest:
          the AA p-value of a query is computed against the null items of its own bin only.
       2. Domain gate: the query's raw max-sim p-value w.r.t. the whole null must be <= gate (0.8: above the null's
          20 % quantile), otherwise p = 1.
-    strata=1, gate=1 recovers the original SelfCal-AA."""
+    strata=1, gate=1 recovers the original SelfCal-AA.
+    mode="aa" (default): max(recalibrated min(p_ms, p_zfar), p_zgap) — valid if EITHER branch is dominated.
+    mode="gap" (SelfCal-Gap): p_zgap alone — more power, valid only if z_gap is dominated."""
 
-    def __init__(self, N, strata=10, gate=0.8, min_per=50):
+    def __init__(self, N, strata=10, gate=0.8, min_per=50, mode="aa"):
         N = {k: np.asarray(N[k], float) for k in ("ms", "zf", "zg", "sdf")}
         ok = np.isfinite(N["ms"]) & np.isfinite(N["zf"]) & np.isfinite(N["zg"]) & np.isfinite(N["sdf"])
-        self.B = max(1, min(strata, int(ok.sum()) // min_per)); self.gate = gate
+        self.B = max(1, min(strata, int(ok.sum()) // min_per)); self.gate, self.mode = gate, mode
         self.edges = np.quantile(N["sdf"][ok], np.linspace(0, 1, self.B + 1)[1:-1])
         bn = np.digitize(N["sdf"], self.edges)
         self.cal = [_AACal(N["ms"][ok & (bn == b)], N["zf"][ok & (bn == b)], N["zg"][ok & (bn == b)]) for b in range(self.B)]
@@ -215,7 +217,8 @@ class SelfCalTest:
         bx = np.digitize(np.nan_to_num(np.asarray(sdf, float), nan=-1e9), self.edges); p = np.ones(len(ms))
         for b in range(self.B):
             mx = bx == b
-            if mx.any(): p[mx] = self.cal[b].p(ms[mx], zf[mx], zg[mx])
+            if not mx.any(): continue
+            p[mx] = self.cal[b].p(ms[mx], zf[mx], zg[mx]) if self.mode == "aa" else _AACal._p(self.cal[b].zg, zg[mx])
         return np.where(_AACal._p(self.ms_all, ms) <= self.gate, p, 1.0)
 
 
