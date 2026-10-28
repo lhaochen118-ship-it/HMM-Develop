@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""Push a Kaggle kernel, wait for it, cancel+restart if it is stuck in the queue, pull + decode output.
+
+Stall policy (user): a session with no output for ~10 min is queue-stuck -> cancel it for real
+(`kaggle kernels delete -y`, the only verified cancel) and push a fresh session; at most MAX_RESTARTS times.
+Kaggle's output API only exposes a RUNNING kernel's log near the end, so "no output" is judged by the kernel
+STATUS: QUEUED for > STALL secs => stuck. A RUNNING kernel is only restarted if it stays silent for
+SILENT_MAX secs (default 3x STALL), which catches a hung worker without killing slow-but-healthy runs.
+
+Usage: run_kernel.py <kernel_dir> <out_dir> [stall=600] [max_restarts=4] [hard=10800] [silent_max=1800]
+Last line: STATUS=DONE:<complete|error|stall|timeout>
+"""
+import sys, subprocess, time, os, json, glob
+
+kdir, outdir = sys.argv[1], sys.argv[2]
+STALL = int(sys.argv[3]) if len(sys.argv) > 3 else 600
+MAXR = int(sys.argv[4]) if len(sys.argv) > 4 else 4
+HARD = int(sys.argv[5]) if len(sys.argv) > 5 else 10800
+SILENT_MAX = int(sys.argv[6]) if len(sys.argv) > 6 else 1800
+kid = json.load(open(os.path.join(kdir, "kernel-metadata.json")))["id"]
+
+
+def kg(*a):
+    r = subprocess.run(["kaggle"] + list(a), capture_output=True, text=True)
+    return (r.stdout + r.stderr).strip()
+
+
+def ts():
+    return time.strftime("%H:%M:%S")
+
+
+def stdout_len(tmp):
+    os.makedirs(tmp, exist_ok=True)
+    subprocess.run(["kaggle", "kernels", "output", kid, "-p", tmp, "-o", "--file-pattern", r".*\.log$"],
+                   capture_output=True, text=True)
+    n = 0
+    for f in glob.glob(tmp + "/*.log"):
+        try:
+            n += sum(len(r.get("data", "")) for r in json.load(open(f, errors="ignore")) if r.get("stream_name") == "stdout")
+        except Exception:
+            pass
+    return n
+
+
+def push():
+    o = kg("kernels", "push", "-p", kdir)
+    print(ts(), "PUSH:", (o.splitlines()[-1] if o else "")[:160], flush=True)
+    return "successfully pushed" in o.lower() or "kernel version" in o.lower()
+
+
+def cancel():
+    o = kg("kernels", "delete", "-y", kid)
+    print(ts(), "CANCEL(delete):", (o.splitlines()[-1] if o else "")[:120], flush=True)
+    time.sleep(20)
+
+
+t0 = time.time()
+if not push():
+    print("STATUS=PUSH_FAILED", flush=True); sys.exit(1)
+attempt_t0 = time.time(); restarts = 0; last = None; state = ""; running_since = None; saw_out = False
+time.sleep(15)
+while True:
+    now = time.time()
+    st = kg("kernels", "status", kid); low = st.lower()
+    if low != last:
+        print(ts(), f"[{int(now - t0)}s]", st[:140], flush=True); last = low
+    if "complete" in low or "error" in low or "cancel" in low:
+        state = "complete" if "complete" in low else ("error" if "error" in low else "cancel"); break
+    queued = "queued" in low
+    if "running" in low and running_since is None:
+        running_since = now; print(ts(), "kernel RUNNING (GPU granted)", flush=True)
+    stuck = False
+    if queued and now - attempt_t0 > STALL:
+        stuck = True; why = f"QUEUED {int(now - attempt_t0)}s"
+    elif running_since and not saw_out and now - running_since > SILENT_MAX:
+        if stdout_len(outdir + "_partial") > 0: saw_out = True
+        else: stuck = True; why = f"RUNNING silent {int(now - running_since)}s"
+    if stuck:
+        if restarts >= MAXR:
+            print("STATUS=STALL_GIVEUP", why, flush=True); state = "stall"; break
+        restarts += 1; print(ts(), f"STUCK ({why}) -> cancel + restart {restarts}/{MAXR}", flush=True)
+        cancel(); push(); attempt_t0 = time.time(); running_since = None; saw_out = False; time.sleep(15); continue
+    if now - t0 > HARD:
+        print("STATUS=HARD_TIMEOUT", flush=True); state = "timeout"; break
+    time.sleep(30)
+
+os.makedirs(outdir, exist_ok=True)
+print(f"=== PULL ({state}) -> {outdir} ===", flush=True)
+print(kg("kernels", "output", kid, "-p", outdir, "-o")[-400:], flush=True)
+for f in sorted(glob.glob(outdir + "/*.log")):
+    try:
+        recs = json.load(open(f, errors="ignore"))
+        out = "".join(r.get("data", "") for r in recs if r.get("stream_name") == "stdout")
+        err = "".join(r.get("data", "") for r in recs if r.get("stream_name") == "stderr")
+        print("========== STDOUT ==========\n" + out[-20000:], flush=True)
+        if state != "complete": print("========== STDERR (tail) ==========\n" + err[-4000:], flush=True)
+    except Exception as e:
+        print("decode failed:", e, flush=True)
+print(f"elapsed {int(time.time() - t0)}s, restarts {restarts}", flush=True)
+print(f"STATUS=DONE:{state}", flush=True)
