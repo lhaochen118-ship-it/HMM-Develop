@@ -4,10 +4,11 @@
 Stall policy (user): a session with no output for ~10 min is queue-stuck -> cancel it for real
 (`kaggle kernels delete -y`, the only verified cancel) and push a fresh session; at most MAX_RESTARTS times.
 Kaggle's output API only exposes a RUNNING kernel's log near the end, so "no output" is judged by the kernel
-STATUS: QUEUED for > STALL secs => stuck. A RUNNING kernel is only restarted if it stays silent for
-SILENT_MAX secs (default 3x STALL), which catches a hung worker without killing slow-but-healthy runs.
+STATUS: QUEUED for > STALL secs => stuck. A RUNNING kernel is NOT restarted for being silent by default
+(silent_max=0): the output API hides logs until the end, and a silent-restart rule killed two healthy 60-min runs.
 
-Usage: run_kernel.py <kernel_dir> <out_dir> [stall=600] [max_restarts=4] [hard=10800] [silent_max=1800]
+Usage: run_kernel.py <kernel_dir> <out_dir> [stall=600] [max_restarts=4] [hard=10800] [silent_max=0] [--attach]
+  --attach : do not push; wait for an already-running kernel (e.g. after a local restart), then pull.
 Last line: STATUS=DONE:<complete|error|stall|timeout>
 """
 import sys, subprocess, time, os, json, glob
@@ -16,7 +17,8 @@ kdir, outdir = sys.argv[1], sys.argv[2]
 STALL = int(sys.argv[3]) if len(sys.argv) > 3 else 600
 MAXR = int(sys.argv[4]) if len(sys.argv) > 4 else 4
 HARD = int(sys.argv[5]) if len(sys.argv) > 5 else 10800
-SILENT_MAX = int(sys.argv[6]) if len(sys.argv) > 6 else 1800
+SILENT_MAX = int(sys.argv[6]) if len(sys.argv) > 6 and sys.argv[6].isdigit() else 0
+ATTACH = "--attach" in sys.argv
 kid = json.load(open(os.path.join(kdir, "kernel-metadata.json")))["id"]
 
 
@@ -55,7 +57,7 @@ def cancel():
 
 
 t0 = time.time()
-if not push():
+if not ATTACH and not push():
     print("STATUS=PUSH_FAILED", flush=True); sys.exit(1)
 attempt_t0 = time.time(); restarts = 0; last = None; state = ""; running_since = None; saw_out = False
 time.sleep(15)
@@ -72,7 +74,7 @@ while True:
     stuck = False
     if queued and now - attempt_t0 > STALL:
         stuck = True; why = f"QUEUED {int(now - attempt_t0)}s"
-    elif running_since and not saw_out and now - running_since > SILENT_MAX:
+    elif SILENT_MAX > 0 and running_since and not saw_out and now - running_since > SILENT_MAX:
         if stdout_len(outdir + "_partial") > 0: saw_out = True
         else: stuck = True; why = f"RUNNING silent {int(now - running_since)}s"
     if stuck:

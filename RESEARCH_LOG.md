@@ -62,6 +62,15 @@ Off-map protocol = leave-one-300m-block-out (RobotCar 1386, CMU 14117, Nordland 
 - Honest caveats: worst-condition FAR at α=0.1 reaches ~0.11–0.13 on RobotCar (within binomial noise, n≈150/cond);
   RobotCar GT only exists for the public train split (test GT withheld), official thresholds applied to top-1 poses.
 
+**Ops lesson (2026-10-28 05:05):** a "RUNNING but silent for 60 min → cancel+restart" rule in `run_kernel.py`
+killed two *healthy* multi-descriptor dump kernels (Kaggle's output API hides logs until a run ends). Silent-restart is
+now OFF by default; only QUEUED > 10 min triggers cancel (`kaggle kernels delete -y`) + re-push. `--attach` waits for
+an already-running kernel after a local container restart without re-pushing.
+
+**Ablation (Nordland, SALAD, α=0.05):** SelfCal-AA is insensitive to cell / exclusion / block / δ / calibration-set
+size (TPR 0.72–0.76, FAR ≤ 0.011, aliasing ≤ 0.058, even with 497 null items); **without map-centring TPR drops to
+0.33** (hubness), so centring is essential on Nordland. RobotCar: TPR 0.94–0.99 across all variants.
+
 ---
 
 ## Entry 11 — Literature gate (Bước 0)  →  VERDICT: OVERLAP on method + conformal; reality-check still novel
