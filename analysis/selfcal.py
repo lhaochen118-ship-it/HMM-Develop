@@ -38,7 +38,8 @@ def query_stats(S, m_pos, cell, excl, k):
     out = {"T_spacing": (s1 - top_k[:, 0]) / beta,                 # EVS spacing statistic (F(2,2k) under ideal null)
            "T_level": (s1 - top_k[:, :k].mean(1)) / beta,         # level above the top-k far maxima, in tail units
            "z_far": (s1 - mu_f) / sd_f,                            # standardised vs far region maxima
-           "z_all": (s1 - mu) / sd}                                # classic per-query z-norm
+           "z_all": (s1 - mu) / sd,                                # classic per-query z-norm
+           "z_gap": (s1 - top_k[:, 0]) / sd_f}                     # gap to the best FAR region, in far-sd units
     for kk in out: out[kk] = np.where(ok, out[kk], -np.inf)
     out.update(raw)   # NOT affine-invariant: literature baselines
     return out
@@ -76,3 +77,19 @@ def conformal_p(null_stat, stat):
 def map_null(m_desc, m_pos, block, off_d, cell, excl, k, stride=2):
     sub = np.arange(0, len(m_desc), stride)
     return lobo_stats(m_desc, m_pos, block, off_d, m_desc[sub], m_pos[sub], cell, excl, k)
+
+
+def combined_p(null_list, stat_list):
+    """Self-calibrated combination of several statistics: c = min_k conformal p_k, re-calibrated on the map null
+    with leave-one-out p-values of the null items themselves (valid under exchangeability, power ~ best statistic).
+    null_list: [ (n,) null statistics per k ] aligned over the same null items; stat_list: [ (m,) query statistics ]."""
+    N = np.column_stack(null_list); ok = np.isfinite(N).all(1); N = N[ok]; n = len(N)
+    ranks = np.empty_like(N)
+    for k in range(N.shape[1]):
+        srt = np.sort(N[:, k]); ge = n - np.searchsorted(srt, N[:, k], side="left")    # includes itself
+        ranks[:, k] = ge / n                                                                # LOO: (1 + (ge-1)) / n
+    c_null = np.sort(ranks.min(1))
+    P = np.column_stack([conformal_p(N[:, k], st) for k, st in enumerate(stat_list)])
+    c = P.min(1)
+    le = np.searchsorted(c_null, c, side="right")
+    return (1 + le) / (1 + n)
