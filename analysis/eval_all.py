@@ -125,7 +125,7 @@ def evaluate(ep, c, desc, key=None):
             fars[cc] = float(ao[mc & offm].mean()); tp.append(ai[mc & corr])
         rows.append(dict(method="Oracle[maxsim] (labels per cond.)", alpha=a, FAR=float(np.mean(list(fars.values()))), worstFAR=max(fars.values()),
                          n_viol=0, n_cond=len(fars), TPR=float(np.concatenate(tp).mean()), alias_acc=float("nan"), per_cond=fars))
-    return rows, dict(n_alias=int(alias.sum()), n_off=int(offm.sum()), n_corr=int(corr.sum()), n_null=int(np.isfinite(cen[0]["z_far"]).sum()), calib=list(calib))
+    return rows, dict(r1=float(corr[inm].mean()), n_alias=int(alias.sum()), n_off=int(offm.sum()), n_corr=int(corr.sum()), n_null=int(np.isfinite(cen[0]["z_far"]).sum()), calib=list(calib))
 
 
 if __name__ == "__main__":
