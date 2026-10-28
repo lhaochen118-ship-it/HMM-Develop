@@ -148,6 +148,13 @@ the leave-one-out values $m(i)$ of the null items: $p_{comb}(q)=(1+\#\{i:m(i)\le
 **Aliasing guard (SelfCal-AA).** Accept iff $\max\{p_{comb}(q),\,p_{z_{gap}}(q)\}\le\alpha$. In an aliasing failure
 the true place is a strong far competitor, so $z_{gap}$ is small.
 
+**Domain gate.** The scale-normalised statistics can be inflated for queries from a *foreign* domain (another city or
+dataset): their similarity profile against the map is flat, so $\sigma_{far}$ shrinks and $z_{far},z_{gap}$ grow
+even though $s_{j^*}$ is low. We therefore also require that the raw similarity is not unusually low for the map:
+accept iff $\max\{p_{comb},p_{z_{gap}}\}\le\alpha$ **and** $p_{\max s}(q)\le\gamma$, with a lenient
+$\gamma=0.8$ (the raw max-similarity must exceed the 20 % quantile of the map null). The gate is inactive for
+almost every true match (Nordland TPR 0.533 → 0.524) but removes the foreign-domain false accepts (Table 6).
+
 **Batches.** With p-values of a deployment batch, Benjamini–Hochberg controls the false-discovery rate, and the
 two-groups model (Storey's $\hat\pi_0$, Grenander density estimate) turns $p$ into a calibrated probability of a true
 match, $1-\widehat{\mathrm{lfdr}}(p)$ — again without labels.
@@ -177,6 +184,16 @@ valid conformal p-value (the leave-one-out ranks are computed exactly as for the
 **T5 (FDR).** Conformal p-values that share one calibration set are PRDS [Bates'23]; hence Benjamini–Hochberg at level
 $q$ controls the off-map FDR at $\pi_0 q$. Aliasing control is empirical: an in-map aliasing failure differs from its
 off-map counterpart by an extra strong far competitor, which can only decrease $z_{far}$ and $z_{gap}$.
+
+**T6 (domain gate: valid if either assumption holds).** For the gated test,
+$\mathrm{FAR}_c(\alpha)\le\min\{\alpha+\Delta_c^+,\ \varepsilon_c\}$ with
+$\varepsilon_c:=P\big(s^c_{j^*}\ge\hat q_{1-\gamma}(s^0)\big)$, the probability that an off-map query of condition
+$c$ reaches the lower $(1-\gamma)$ quantile of the map's own raw max-similarity null. *Proof:* the accept event is the
+intersection of the two tests' accept events, so its probability is at most that of either. The first term is
+small under **appearance** shift (the invariant statistics are dominated, T2/T3); the second is small under
+**domain** shift, where foreign images are visibly less similar to the map than its own unrelated places are. The
+test is thus conservative whenever *either* kind of shift explains the change, the intersection–union principle
+[Berger'82]. Neither assumption needs labels; $\varepsilon_c$ can be audited with any unlabelled foreign image set.
 
 # 6. Experiments
 
@@ -300,6 +317,7 @@ combining SelfCal with geometric verification scores, which it can calibrate wit
 - [Barber'23] R. F. Barber, E. J. Candès, A. Ramdas, R. J. Tibshirani. Conformal prediction beyond exchangeability. Annals of Statistics 2023.
 - [Bates'23] S. Bates, E. Candès, L. Lei, Y. Romano, M. Sesia. Testing for outliers with conformal p-values. Annals of Statistics 2023.
 - [Benjamini'95] Y. Benjamini, Y. Hochberg. Controlling the false discovery rate. JRSS-B 1995.
+- [Berger'82] R. L. Berger. Multiparameter hypothesis testing and acceptance sampling. *Technometrics* 24(4), 1982.
 - [Berton'22] G. Berton, C. Masone, B. Caputo. Rethinking visual geo-localization for large-scale applications (CosPlace). CVPR 2022.
 - [Berton'25] G. Berton, C. Masone. MegaLoc: One retrieval to place them all. CVPR Workshops 2025.
 - [Cai'22] K. Cai, C. X. Lu, X. Huang. STUN: Self-teaching uncertainty estimation for place recognition. IROS 2022.
