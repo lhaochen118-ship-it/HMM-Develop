@@ -253,6 +253,132 @@
    }
   },
   {
+   "method": "SelfCal-Gap",
+   "alpha": 0.01,
+   "FAR": 0.002886002886002886,
+   "worstFAR": 0.019867549668874173,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.8802469135802469,
+   "alias_acc": 0.0,
+   "per_cond": {
+    "dawn": 0.005813953488372093,
+    "dusk": 0.0,
+    "night": 0.0,
+    "night-rain": 0.0,
+    "overcast-summer": 0.0,
+    "overcast-winter": 0.0,
+    "rain": 0.0,
+    "snow": 0.0,
+    "sun": 0.019867549668874173
+   }
+  },
+  {
+   "method": "SelfCal-Gap",
+   "alpha": 0.05,
+   "FAR": 0.012987012987012988,
+   "worstFAR": 0.046357615894039736,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.9222222222222223,
+   "alias_acc": 0.0,
+   "per_cond": {
+    "dawn": 0.011627906976744186,
+    "dusk": 0.0,
+    "night": 0.020134228187919462,
+    "night-rain": 0.0,
+    "overcast-summer": 0.006289308176100629,
+    "overcast-winter": 0.0,
+    "rain": 0.021739130434782608,
+    "snow": 0.011363636363636364,
+    "sun": 0.046357615894039736
+   }
+  },
+  {
+   "method": "SelfCal-Gap",
+   "alpha": 0.1,
+   "FAR": 0.04040404040404041,
+   "worstFAR": 0.08609271523178808,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.9302469135802469,
+   "alias_acc": 0.0,
+   "per_cond": {
+    "dawn": 0.029069767441860465,
+    "dusk": 0.0,
+    "night": 0.06040268456375839,
+    "night-rain": 0.024242424242424242,
+    "overcast-summer": 0.050314465408805034,
+    "overcast-winter": 0.014598540145985401,
+    "rain": 0.06521739130434782,
+    "snow": 0.03409090909090909,
+    "sun": 0.08609271523178808
+   }
+  },
+  {
+   "method": "SelfCal-Gap w/o gate",
+   "alpha": 0.01,
+   "FAR": 0.002886002886002886,
+   "worstFAR": 0.019867549668874173,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.8888888888888888,
+   "alias_acc": 0.0,
+   "per_cond": {
+    "dawn": 0.005813953488372093,
+    "dusk": 0.0,
+    "night": 0.0,
+    "night-rain": 0.0,
+    "overcast-summer": 0.0,
+    "overcast-winter": 0.0,
+    "rain": 0.0,
+    "snow": 0.0,
+    "sun": 0.019867549668874173
+   }
+  },
+  {
+   "method": "SelfCal-Gap w/o gate",
+   "alpha": 0.05,
+   "FAR": 0.016594516594516596,
+   "worstFAR": 0.04697986577181208,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.9481481481481482,
+   "alias_acc": 0.0,
+   "per_cond": {
+    "dawn": 0.011627906976744186,
+    "dusk": 0.0,
+    "night": 0.04697986577181208,
+    "night-rain": 0.006060606060606061,
+    "overcast-summer": 0.006289308176100629,
+    "overcast-winter": 0.0,
+    "rain": 0.021739130434782608,
+    "snow": 0.011363636363636364,
+    "sun": 0.046357615894039736
+   }
+  },
+  {
+   "method": "SelfCal-Gap w/o gate",
+   "alpha": 0.1,
+   "FAR": 0.06204906204906205,
+   "worstFAR": 0.18791946308724833,
+   "n_viol": 1,
+   "n_cond": 9,
+   "TPR": 0.9629629629629629,
+   "alias_acc": 0.031578947368421054,
+   "per_cond": {
+    "dawn": 0.029069767441860465,
+    "dusk": 0.0,
+    "night": 0.18791946308724833,
+    "night-rain": 0.048484848484848485,
+    "overcast-summer": 0.05660377358490566,
+    "overcast-winter": 0.051094890510948905,
+    "rain": 0.06521739130434782,
+    "snow": 0.03977272727272727,
+    "sun": 0.08609271523178808
+   }
+  },
+  {
    "method": "SelfCal[min(maxsim, z_far+c)] (no alias guard)",
    "alpha": 0.01,
    "FAR": 0.001443001443001443,
