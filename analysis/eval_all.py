@@ -130,7 +130,7 @@ def evaluate(ep, c, desc, key=None):
 
 if __name__ == "__main__":
     dump, ds = sys.argv[1], sys.argv[2]; desc = sys.argv[3] if len(sys.argv) > 3 else "salad"
-    ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland}[ds](dump, desc)
+    ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland, "nordw": lambda d, x: V.load_nordland(d, x, ref="winter")}[ds](dump, desc)
     rows, meta = evaluate(ep, CFG[ds], desc, key=f"{ds}_{desc}")
     print(f"\n### {ds} / {desc}: off-map n={meta['n_off']}, correct in-map n={meta['n_corr']}, map-null n={meta['n_null']}, label-cal conds={meta['calib']}")
     for a in ALPHAS:

@@ -12,7 +12,7 @@ from eval_all import signals
 
 
 def main(dump, ds, desc="salad", mixes=(0.1, 0.3, 0.5), qs=(0.05, 0.1), seed=0):
-    ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland}[ds](dump, desc); c = CFG[ds]
+    ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland, "nordw": lambda d, x: V.load_nordland(d, x, ref="winter")}[ds](dump, desc); c = CFG[ds]
     raw = signals(ep, c, False, f"{ds}_{desc}"); cen = signals(ep, c, True, f"{ds}_{desc}")
     nul = [raw[0]["maxsim"], cen[0]["z_far"]]
     p_in = SC.combined_p(nul, [raw[2]["maxsim"], cen[2]["z_far"]])

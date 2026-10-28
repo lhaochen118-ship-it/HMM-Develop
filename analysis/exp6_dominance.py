@@ -11,7 +11,7 @@ def dplus(x, null):
     t = np.r_[x, null]; Sx = 1 - np.searchsorted(x, t, "left") / len(x); Sn = 1 - np.searchsorted(null, t, "left") / len(null)
     return float(max(0.0, (Sx - Sn).max()))
 dump, ds = sys.argv[1], sys.argv[2]; desc = sys.argv[3] if len(sys.argv) > 3 else "salad"
-ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland}[ds](dump, desc); c = CFG[ds]
+ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland, "nordw": lambda d, x: V.load_nordland(d, x, ref="winter")}[ds](dump, desc); c = CFG[ds]
 raw = signals(ep, c, False, f"{ds}_{desc}"); cen = signals(ep, c, True, f"{ds}_{desc}")
 inm = V.nearest_map_dist(ep) <= c["in_d"]; corr = V.correct(ep, *c["tol"]) & inm
 offm = np.isfinite(raw[1]["maxsim"]) & np.isfinite(cen[1]["z_far"]); cond = ep.q_cond; conds = sorted(set(cond))
