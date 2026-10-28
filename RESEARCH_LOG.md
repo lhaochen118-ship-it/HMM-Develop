@@ -32,7 +32,9 @@ because its z_gap branch is (intersection–union), but the z_far branch costs p
   (AA: 0.012).
 - Both are reported as two operating points: **AA is robust** (valid if either branch is dominated); **Gap has more
   power** (valid if z_gap is dominated).
-- Caveat: chosen after looking at these data. A full eval_all rerun with both rules is running (v3).
+- Caveat: chosen after looking at these data.
+- **Full eval_all rerun (v3, 24 settings):** SelfCal-Gap 0/192, TPR **0.746** (oracle 0.706, AA 0.646), MSLS 0.603
+  (oracle 0.661, AA 0.460), worst point FAR 0.073. The AA rows are identical to the AA branch.
 
 **2. Sequence-level SelfCal (exp11).** Window of L frames, calibrated on map pseudo-sequences and cross-fitted, so
 it is exact under exchangeability. The statistic is `run_evidence`: -log p summed over the trailing run of

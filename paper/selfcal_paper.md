@@ -24,7 +24,10 @@ target (worst condition 0.048 at α = 0.05) and accepts a median 1.1% of percept
 label-calibrated baselines exceed the target in 16–79 conditions — leave-one-condition-out conformal calibration in
 every one of the 24 settings — and accept 7–41% of aliasing errors. Queries from other cities and datasets are rejected
 (false-accept rate ≤ 0.007 in all 120 map × source pairs). Its average power is 0.646, against 0.706 for an oracle
-that holds labels for every deployment condition.
+that holds labels for every deployment condition. A higher-power operating point that tests only the gap statistic
+(SelfCal-Gap) reaches 0.746 — above the oracle — still without any significant violation (worst condition 0.073). In a
+localisation experiment on a map with holes, SelfCal lowers the mean position error of an odometry + VPR filter
+1.3–12.6× relative to a label-calibrated threshold.
 
 # 1. Introduction
 
@@ -298,6 +301,14 @@ query: SelfCal stays valid (FAR ≤ 0.001) but its TPR is 0.04–0.38 against th
 cities, many capture dates and front/side views in one map; SelfCal-AA keeps 0/54 violations but reaches TPR 0.460
 against the oracle's 0.661 (MegaLoc 0.879 vs 0.965). The label-calibrated baselines obtain their higher MSLS power by
 violating 6–15 of the 54 conditions.
+
+**SelfCal-Gap.** Testing the gap alone (§4) keeps 0/192 significant violations and raises the mean TPR from 0.646 to
+0.746, above the oracle's 0.706: on MSLS from 0.460 to 0.603 (oracle 0.661) and on RobotCar, CMU and Nordland from
+0.708 to 0.793. The price is a thinner margin: the worst single-condition FAR is 0.073 (none significant) instead of
+0.048, and the median aliasing acceptance is 0.021 instead of 0.011. Without the gate its TPR is 0.758, but the
+foreign-domain leaks return. The far-region level $z_{far}$ is the statistic whose dominance fails on MSLS: alone it
+reaches a worst-condition FAR of 0.40–0.88 there. It is therefore not needed for validity where $z_{gap}$ is dominated,
+but it protects SelfCal-AA where $z_{gap}$ might not be.
 
 **Components (Table 2a).** Removing the Mondrian strata lowers the mean TPR from 0.646 to 0.612 and raises the
 worst-condition FAR from 0.048 to 0.140 (one RobotCar condition; not significant after Bonferroni); removing the domain
