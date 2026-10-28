@@ -50,7 +50,9 @@ def _query_stats(S, m_pos, cent, order, starts, excl, k, sue_k, sue_lam):
            "T_level": (s1 - top_k[:, :k].mean(1)) / beta,         # level above the top-k far maxima, in tail units
            "z_far": (s1 - mu_f) / sd_f,                            # standardised vs far region maxima
            "z_all": (s1 - mu) / sd,                                # classic per-query z-norm
-           "z_gap": (s1 - top_k[:, 0]) / sd_f}                     # gap to the best FAR region, in far-sd units
+           "z_gap": (s1 - top_k[:, 0]) / sd_f,                     # gap to the best FAR region, in far-sd units
+           "d_far": s1 - mu_f,                                     # shift-invariant only (not scale-normalised)
+           "d_gap": s1 - top_k[:, 0]}                              # shift-invariant gap to the best far region
     for kk in out: out[kk] = np.where(ok, out[kk], -np.inf)
     out.update(raw)   # NOT affine-invariant: literature baselines
     return out

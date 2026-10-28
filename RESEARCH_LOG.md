@@ -23,6 +23,44 @@ Honest state at handoff:
 
 ---
 
+## Entry 14 — SUE baseline, natural off-map stress test (a validity gap), MSLS + 4Seasons data (2026-10-28)
+
+**SUE baseline** (Zaffar CVPR'24, published K=10, λ=350; label-calibrated benign→all) on SALAD, α=0.05:
+- RobotCar: 1/9 violations (worst 0.102), TPR 0.934.
+- CMU: 0/11, TPR 0.516.
+- Nordland: 0/3, TPR 0.865, which is higher than SelfCal-AA's 0.754.
+
+SUE is more shift-robust than a max-sim threshold, but it still needs labels and still violates on RobotCar.
+SelfCal-calibrated SUE alone is not invariant (CMU 1/11 violations). Putting SUE inside the AA combination
+(SelfCal-AA+SUE) stays valid and lifts Nordland TPR 0.754→0.806 (winter map 0.593→0.663). Added to eval_all.
+
+**Natural off-map stress test (exp9_natural.py).** Every query of *another* dataset/city is scored against a map,
+so all such queries are truly unmapped with no leave-block-out simulation. At α=0.05 most cells have FAR ≤ 0.035.
+**One violation:** CosPlace with the CMU map and RobotCar queries gives FAR 0.134 (dawn 0.27).
+- **Diagnosis:** raw max-sim is strongly dominated (FAR 0.000), but z_far (0.200), z_gap (0.218) and T_spacing
+  (0.12) are inflated. For foreign-domain queries the far-region scores are compressed into a light-tailed bulk,
+  so the top-1 stands out in spread-normalised units. The T2 dominance assumption ("shift only makes off-map
+  queries less map-like") holds for raw similarity but **not** for scale-normalised statistics under *domain*
+  (not appearance) shift.
+- **Tried:**
+  - (a) Location-only statistics (s1−μ_far, s1−best far): valid but Nordland TPR collapses (0.35→0.10).
+  - (b) AND-gate with max-sim: valid but Nordland TPR is about 0.06 (CosPlace).
+  - (c) Dual null (map null AND background-image null, intersection-union): fixes the violation only if the
+    background resembles the foreign domain (bg=RobotCar fixes it, bg=Nordland does not), and costs CMU TPR
+    0.81→0.48.
+- **Status: open.** Must be fixed or stated as a scoped limitation (guarantee covers off-map places of the same
+  environment/domain as the map).
+
+**MSLS-val** added as the 4th benchmark (CPH 12.5k map / 6.6k queries, SF 6.3k / 4.5k; conditions = city ×
+season + night). NB15 loader added. Two T4 kernels `dive-vpr-nb16{a,b}-msls` dump 6 descriptors.
+
+**4Seasons poses** (user request): all 30 `reference_poses` archives + calibration downloaded from TUM and
+uploaded as Kaggle dataset `nhatlong1103/4seasons-poses` (layout scene/date like `nhatlong1103/4seasons`).
+
+**Literature:** `literature/HMM_SEQUENCE_VPR_REVIEW.md` (HMM/sequence VPR, anti-overlap checklist) and
+LITERATURE_GATE Gate 3. Newly found related papers are Trinh & Lyons'25 (negative-stat thresholds), TAO'26
+(map-out protocol) and Vysotska ICRA'25. SelfCal is still novel, but these must be cited.
+
 ## Entry 13 — SelfCal-AA validated on 6 descriptors × 3 datasets (138 deployment conditions)
 
 **Aliasing guard.** The union rule controls *off-map* false accepts but accepts many in-map aliasing errors on

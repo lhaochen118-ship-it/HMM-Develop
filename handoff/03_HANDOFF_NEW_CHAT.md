@@ -90,7 +90,7 @@ new version under these slugs, because that replaces their outputs.
    per-descriptor statistic choice selected on the map null only, or sequential evidence (combining p-values over
    consecutive frames, which stays valid by the T4 logic).
 2. **More datasets.** A fourth geo-tagged benchmark with GPS (MSLS val, Pitts30k or SF-XL) needs only the
-   leave-block-out protocol, no new labels. The 4Seasons Kaggle copy has no poses and cannot be used.
+   leave-block-out protocol, no new labels. 4Seasons poses are now on Kaggle (`nhatlong1103/4seasons-poses`, pairs with `nhatlong1103/4seasons`).
 3. **Paper polish.** Turn the markdown into a LaTeX venue template and add a qualitative figure (accepted vs rejected
    aliasing examples).
 

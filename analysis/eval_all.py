@@ -58,7 +58,8 @@ def evaluate(ep, c, desc, key=None):
             methods[f"SelfCal[{st}{tag}]"] = conformal(nul[st], off[st], full[st])
     # --- ours: self-calibrated combinations
     combos = {"SelfCal[min(maxsim, z_far+c)]": [(raw, "maxsim"), (cen, "z_far")],
-              "SelfCal[min(maxsim, z_far+c, T_sp)]": [(raw, "maxsim"), (cen, "z_far"), (raw, "T_spacing")]}
+              "SelfCal[min(maxsim, z_far+c, T_sp)]": [(raw, "maxsim"), (cen, "z_far"), (raw, "T_spacing")],
+              "SelfCal[min(maxsim, z_far+c, SUE)]": [(raw, "maxsim"), (cen, "z_far"), (raw, "SUE")]}
     for cname, parts in combos.items():
         po = SC.combined_p([src[0][st] for src, st in parts], [src[1][st] for src, st in parts])
         pi = SC.combined_p([src[0][st] for src, st in parts], [src[2][st] for src, st in parts])
@@ -68,6 +69,11 @@ def evaluate(ep, c, desc, key=None):
     pco_i = SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"]], [raw[2]["maxsim"], cen[2]["z_far"]])
     pg_o, pg_i = SC.conformal_p(cen[0]["z_gap"], cen[1]["z_gap"]), SC.conformal_p(cen[0]["z_gap"], cen[2]["z_gap"])
     methods["SelfCal-AA[combo AND z_gap+c]"] = (lambda a: (np.maximum(pco_o, pg_o) <= a, np.maximum(pco_i, pg_i) <= a))
+    # SelfCal-AA whose combination also contains SUE (spatial spread of the top-K poses), self-calibrated on the map
+    p3_o = SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"], raw[0]["SUE"]], [raw[1]["maxsim"], cen[1]["z_far"], raw[1]["SUE"]])
+    p3_i = SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"], raw[0]["SUE"]], [raw[2]["maxsim"], cen[2]["z_far"], raw[2]["SUE"]])
+    methods["SelfCal-AA+SUE[combo3 AND z_gap+c]"] = (lambda a: (np.maximum(p3_o, pg_o) <= a, np.maximum(p3_i, pg_i) <= a))
+    methods["SelfCal[SUE] (non-invariant)"] = conformal(raw[0]["SUE"], raw[1]["SUE"], raw[2]["SUE"])
     # --- ablation: self-calibration of a NON-invariant score
     methods["SelfCal[maxsim] (non-invariant)"] = conformal(raw[0]["maxsim"], raw[1]["maxsim"], raw[2]["maxsim"])
     # --- theory-only p-values (no calibration at all)

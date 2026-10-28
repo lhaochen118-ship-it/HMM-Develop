@@ -99,3 +99,20 @@ shift-robust false-accept control; an AND-rule with the gap to the best far regi
 Searches (alphaXiv, 2 rounds): "database images as pseudo-queries threshold calibration", "label-free FDR place
 recognition", "EVT meta-recognition retrieval", "self-supervised calibration VPR" → no paper uses the map as a
 conformal null sample for VPR acceptance. **Verdict: novel; proceed.**
+
+## Gate 3 (2026-10-28): papers found while reviewing HMM/sequence VPR (see `literature/HMM_SEQUENCE_VPR_REVIEW.md`)
+
+- **Trinh & Lyons, arXiv 2512.09071 (2025).** Per-place thresholds from "negative" similarity statistics of other
+  places in the database. It overlaps with SelfCal's "use the map's own negatives", but it has no held-out spatial
+  block, no off-map null, no p-values, no guarantee and no appearance-shift analysis, and it only uses tiny
+  multi-condition databases. **Must be cited and contrasted.**
+- **Vysotska et al., ICRA'25 (adaptive thresholding for sequence PR) and Schubert et al., ICRA'21 (Beyond ANN).**
+  Data-driven thresholds that assume most pairs are different places. Heuristic, no guarantee. Cite.
+- **Lu & Tanaka, arXiv 2607.04745 (TAO / Route-MHT, thermal, 2026).** Its map-out benchmark deletes contiguous map
+  segments, which matches our leave-block-out protocol *as an evaluation*. Our novelty is using held-out blocks
+  as the **calibration null**, not as the evaluation protocol. Cite it for the protocol.
+- **Xu et al., RA-L'21.** HMM off-map state, emission = k-th best match, thresholds tuned with labels. Already
+  cited, no calibration.
+
+Verdict: SelfCal's core (held-out map blocks as a conformal null, affine-invariant far-region statistics,
+label-free FAR guarantee under shift) is still not pre-empted. Related-work must add the papers above.
