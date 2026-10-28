@@ -82,6 +82,14 @@ def load_cmu(dump, desc="salad"):
     return eps
 
 
+def load_cmu_merged(dump, desc="salad"):
+    """All CMU slices share one world frame and are consecutive route segments: merge them into one city map."""
+    eps = load_cmu(dump, desc)
+    cat = lambda f: np.concatenate([f(e) for e in eps])
+    return Episode("cmu", cat(lambda e: e.q), cat(lambda e: e.m), cat(lambda e: e.q_pos), cat(lambda e: e.m_pos),
+                   cat(lambda e: e.q_cond), cat(lambda e: e.q_R), cat(lambda e: e.m_R))
+
+
 def load_nordland(dump, desc="salad", ref="summer"):
     m = np.load(os.path.join(dump, "meta", "nord.npz"), allow_pickle=True)
     seasons = [str(s) for s in m["seasons"]]; R = np.load(os.path.join(dump, desc, f"nord_{ref}.npy"))

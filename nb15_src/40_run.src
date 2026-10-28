@@ -19,18 +19,43 @@ for key, D in LOADED.items(): _save_meta(key, D["meta"])
 print("meta saved:", os.listdir(os.path.join(CONFIG.OUT_DIR, "meta")), flush=True)
 
 #%%CODE
-# === R.1 — extract + save =================================================================
+# === R.1 — extract + save (one pass over the images, all descriptors per batch: I/O is the bottleneck) ===
 FEATS = {}
+FWDS = {}
 for dname in DESCRIPTORS:
-    try: fwd = build_extractor(dname)
+    try: FWDS[dname] = build_extractor(dname)
     except Exception as e:
-        import traceback; traceback.print_exc(); log(f"R.1.{dname}", "fail", repr(e)[:200]); continue
-    od = os.path.join(CONFIG.OUT_DIR, dname); os.makedirs(od, exist_ok=True)
-    for key, D in LOADED.items():
-        for tag, paths in D["parts"]:
-            arr = extract(paths, fwd, f"{dname}:{key}_{tag}")
-            np.save(os.path.join(od, f"{key}_{tag}.npy"), arr); FEATS[(dname, key, tag)] = arr
-    del fwd; torch.cuda.empty_cache()
+        import traceback; traceback.print_exc(); log(f"R.1.{dname}", "fail", repr(e)[:200])
+DIMS = {}
+for dname, fwd in FWDS.items():
+    with torch.no_grad(): DIMS[dname] = int(fwd(torch.zeros(2, 3, CONFIG.IMG_SIZE, CONFIG.IMG_SIZE, device=DEVICE)).shape[1])
+print("descriptors ready:", DIMS, flush=True)
+for dname in FWDS: os.makedirs(os.path.join(CONFIG.OUT_DIR, dname), exist_ok=True)
+
+@torch.no_grad()
+def extract_multi(paths, tag):
+    dl = torch.utils.data.DataLoader(ImageList(paths, CONFIG.IMG_SIZE), batch_size=CONFIG.BATCH_SIZE, shuffle=False,
+                                     num_workers=CONFIG.NUM_WORKERS, pin_memory=(DEVICE == "cuda"))
+    outs = {d: np.empty((len(paths), DIMS[d]), np.float16) for d in FWDS}; t0 = time.time()
+    amp = torch.bfloat16 if CONFIG.USE_BF16 else torch.float16
+    for b, (x, idx, ok) in enumerate(dl):
+        x = x.to(DEVICE, non_blocking=True)
+        for d, fwd in FWDS.items():
+            with torch.autocast("cuda", dtype=amp, enabled=(DEVICE == "cuda" and d != "netvlad")):
+                y = fwd(x)
+            outs[d][idx.numpy()] = torch.nn.functional.normalize(y.float(), dim=1).cpu().numpy().astype(np.float16)
+        if b % 20 == 0: print(f"    {tag}: {min((b+1)*CONFIG.BATCH_SIZE, len(paths))}/{len(paths)} ({(b+1)*CONFIG.BATCH_SIZE/max(time.time()-t0,1e-3):.1f} img/s)", flush=True)
+    dt = time.time() - t0; THROUGHPUT.append((tag, len(paths), dt))
+    for d, a in outs.items():
+        assert np.isfinite(a.astype(np.float32)).all(), f"non-finite {d} {tag}"
+    log(f"E.1.{tag}", "ok", f"{len(paths)} imgs x {len(FWDS)} descriptors in {dt:.0f}s ({len(paths)/max(dt,1e-3):.1f} img/s)")
+    return outs
+
+for key, D in LOADED.items():
+    for tag, paths in D["parts"]:
+        outs = extract_multi(paths, f"{key}_{tag}")
+        for dname, arr in outs.items():
+            np.save(os.path.join(CONFIG.OUT_DIR, dname, f"{key}_{tag}.npy"), arr); FEATS[(dname, key, tag)] = arr
 
 #%%CODE
 # === R.2 — retrieval sanity with official thresholds (top-1 reference pose) ===============
@@ -40,7 +65,7 @@ def recall_at(qC, qR, rC, rR, sim):
     da = np.array([rot_angle_deg(qR[i], rR[top[i]]) for i in range(len(top))])
     return [float(np.mean((dt <= t) & (da <= a))) for t, a in THR], dt
 SANITY = {}
-for dname in DESCRIPTORS:
+for dname in FWDS:
     if "rc" in LOADED and (dname, "rc", "ref") in FEATS:
         m = LOADED["rc"]["meta"]; S = FEATS[(dname, "rc", "q")].astype(np.float32) @ FEATS[(dname, "rc", "ref")].astype(np.float32).T
         for c in sorted(set(m["q_cond"])):

@@ -53,44 +53,71 @@ def conformal_threshold(null_scores, alpha):
     return np.inf if r < 1 else s[r - 1] + 1e-12
 
 
-DEFAULT_CFG = {"cell": 10.0, "excl": 25.0, "k": 10, "hole_cell": 50.0, "hole_frac": 0.3, "off_d": 40.0, "in_d": 5.0}
-NORD_CFG = {"cell": 3.0, "excl": 5.0, "k": 10, "hole_cell": 50.0, "hole_frac": 0.3, "off_d": 10.0, "in_d": 0.5}
+DEFAULT_CFG = {"cell": 10.0, "excl": 25.0, "k": 10, "block": 300.0, "off_d": 40.0, "in_d": 5.0}
+NORD_CFG = {"cell": 3.0, "excl": 5.0, "k": 10, "block": 200.0, "off_d": 10.0, "in_d": 0.5}
 
 
-def run(ep, tol, calib_conds, alphas=(0.01, 0.05, 0.1), seeds=(0, 1, 2, 3, 4), cfg=None, extra_off=None):
+def all_methods(ep, cfg):
+    """Every reliability signal for the queries of `ep` (dict name -> array; p-values marked by key prefix 'p:')."""
+    out = {"p:" + k: v for k, v in pvalue_methods(ep, cfg).items()}
+    sc, b = score_methods(ep)
+    out.update({"s:" + k: v for k, v in sc.items()})
+    out["f:margin"], out["f:neg_L2"], out["f:neg_entropy"] = b["margin"], b["neg_L2"], b["neg_entropy"]
+    return out
+
+
+def lobo_offmap(ep, cfg):
+    """Leave-one-block-out: remove each spatial block of the map in turn; queries of that block that end up
+    farther than off_d from the remaining map are OFF-MAP for that fold. Returns (signals, off_mask)."""
+    bid, _ = V.map_cells(ep.m_pos, cfg["block"])
+    nn = np.empty(len(ep.q_pos), int)
+    for i in range(0, len(ep.q_pos), 1024):
+        d = ((ep.q_pos[i:i + 1024, None, :] - ep.m_pos[None, :, :]) ** 2).sum(-1); nn[i:i + 1024] = d.argmin(1)
+    qb = bid[nn]; sig = None; off = np.zeros(len(ep.q_pos), bool)
+    for b in range(bid.max() + 1):
+        qsel = np.where(qb == b)[0]
+        if len(qsel) == 0: continue
+        e2 = ep.subset_map(bid != b).subset_q(qsel)
+        far = V.nearest_map_dist(e2) > cfg["off_d"]
+        if not far.any(): continue
+        e3 = e2.subset_q(np.where(far)[0]); m = all_methods(e3, cfg)
+        if sig is None: sig = {k: np.full(len(ep.q_pos), np.nan) for k in m}
+        for k, v in m.items(): sig[k][qsel[far]] = v
+        off[qsel[far]] = True
+    return sig, off
+
+
+def run(ep, tol, calib_conds, alphas=(0.01, 0.05, 0.1), cfg=None):
     cfg = {**DEFAULT_CFG, **(cfg or {})}
+    sig_off, off = lobo_offmap(ep, cfg)
+    sig_in = all_methods(ep, cfg); inm = V.nearest_map_dist(ep) <= cfg["in_d"]
+    corr = V.correct(ep, *tol) & inm
+    cal = np.isin(ep.q_cond, calib_conds)
+    # CRSG: logistic on [margin, -L2, -entropy]; positives = correct in-map, negatives = off-map (calib conds only)
+    Xin = np.column_stack([sig_in["f:margin"], sig_in["f:neg_L2"], sig_in["f:neg_entropy"]])
+    Xoff = np.column_stack([sig_off["f:margin"], sig_off["f:neg_L2"], sig_off["f:neg_entropy"]])
+    tr_pos, tr_neg = cal & corr, cal & off
+    f = V.logistic_model(np.vstack([Xin[tr_pos], Xoff[tr_neg]]), np.r_[np.ones(tr_pos.sum()), np.zeros(tr_neg.sum())])
+    sig_in["s:CRSG"], sig_off["s:CRSG"] = f(Xin), np.where(off, f(np.nan_to_num(Xoff)), np.nan)
     rows = []
-    for seed in seeds:
-        eh, off, inm = make_holes(ep, cell=cfg["hole_cell"], frac=cfg["hole_frac"], seed=seed,
-                                  off_d=cfg["off_d"], in_d=cfg["in_d"])
-        if extra_off is not None: off = off | extra_off
-        corr = V.correct(eh, *tol) & inm
-        pv = pvalue_methods(eh, cfg); sc, b = score_methods(eh)
-        cal = np.isin(eh.q_cond, calib_conds)
-        # CRSG: logistic on [margin, -L2, -entropy] fit on calibration condition, target = correct in-map vs rest
-        X = np.column_stack([b["margin"], b["neg_L2"], b["neg_entropy"]]); lab = cal & (inm | off)
-        f = V.logistic_model(X[lab], corr[lab].astype(float)); sc["CRSG"] = f(X)
-        for cond in sorted(set(eh.q_cond)):
-            m = eh.q_cond == cond
-            for a in alphas:
-                for name, p in pv.items():
-                    acc = p <= a
-                    rows.append(dict(seed=seed, cond=str(cond), alpha=a, method=name, n_off=int((m & off).sum()),
-                                     FAR=float(acc[m & off].mean()) if (m & off).any() else np.nan,
-                                     TPR=float(acc[m & corr].mean()) if (m & corr).any() else np.nan,
-                                     acc_wrong_inmap=float(acc[m & inm & ~corr].mean()) if (m & inm & ~corr).any() else np.nan))
-                for name, s in sc.items():
-                    tau = conformal_threshold(s[cal & off], a); acc = s >= tau
-                    rows.append(dict(seed=seed, cond=str(cond), alpha=a, method=name + "+conf(day)", n_off=int((m & off).sum()),
-                                     FAR=float(acc[m & off].mean()) if (m & off).any() else np.nan,
-                                     TPR=float(acc[m & corr].mean()) if (m & corr).any() else np.nan,
-                                     acc_wrong_inmap=float(acc[m & inm & ~corr].mean()) if (m & inm & ~corr).any() else np.nan))
-                    # oracle: per-condition conformal threshold (needs labels of THIS condition) - power upper bound
-                    tau_o = conformal_threshold(s[m & off], a); acc_o = s >= tau_o
-                    rows.append(dict(seed=seed, cond=str(cond), alpha=a, method=name + "+oracle", n_off=int((m & off).sum()),
-                                     FAR=float(acc_o[m & off].mean()) if (m & off).any() else np.nan,
-                                     TPR=float(acc_o[m & corr].mean()) if (m & corr).any() else np.nan, acc_wrong_inmap=np.nan))
-    return rows
+    names = [k for k in sig_in if k[:2] in ("p:", "s:")]
+    for cond in sorted(set(ep.q_cond)):
+        m = ep.q_cond == cond
+        for a in alphas:
+            for k in names:
+                if k.startswith("p:"):
+                    acc_off, acc_in = sig_off[k] <= a, sig_in[k] <= a; variants = [(k[2:], acc_off, acc_in)]
+                else:
+                    tau = conformal_threshold(sig_off[k][cal & off], a)
+                    tau_o = conformal_threshold(sig_off[k][m & off], a)
+                    variants = [(k[2:] + "+conf(day)", sig_off[k] >= tau, sig_in[k] >= tau),
+                                (k[2:] + "+oracle", sig_off[k] >= tau_o, sig_in[k] >= tau_o)]
+                for name, ao, ai in variants:
+                    rows.append(dict(cond=str(cond), alpha=a, method=name, n_off=int((m & off).sum()), n_corr=int((m & corr).sum()),
+                                     FAR=float(ao[m & off].mean()) if (m & off).any() else np.nan,
+                                     TPR=float(ai[m & corr].mean()) if (m & corr).any() else np.nan,
+                                     acc_wrong_inmap=float(ai[m & inm & ~corr].mean()) if (m & inm & ~corr).any() else np.nan))
+    return rows, dict(sig_in=sig_in, sig_off=sig_off, off=off, inm=inm, corr=corr)
 
 
 def summarise(rows, alpha=0.05, methods=None):
@@ -103,7 +130,10 @@ def summarise(rows, alpha=0.05, methods=None):
     conds = sorted({k[1] for k in agg})
     print(f"\nalpha={alpha}: realised FAR on OFF-MAP queries (target <= {alpha})  |  TPR on correct in-map")
     print(f"{'method':22s}" + "".join(f"{c[:10]:>11s}" for c in conds) + f"{'maxFAR':>9s}{'meanTPR':>9s}")
+    r0 = agg[(meths[0], conds[0])][0]
+    print(f"{'(n_off)':22s}" + "".join(f"{agg[(meths[0], c)][0]['n_off']:11d}" for c in conds))
     for mt in meths:
         far = [np.nanmean([r['FAR'] for r in agg[(mt, c)]]) for c in conds]
+        noff = [agg[(mt, c)][0]['n_off'] for c in conds]
         tpr = [np.nanmean([r['TPR'] for r in agg[(mt, c)]]) for c in conds]
         print(f"{mt:22s}" + "".join(f"{x:11.3f}" for x in far) + f"{np.nanmax(far):9.3f}{np.nanmean(tpr):9.3f}")

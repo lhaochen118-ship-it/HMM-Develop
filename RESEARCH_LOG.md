@@ -23,6 +23,47 @@ Honest state at handoff:
 
 ---
 
+## Entry 12 — New direction: self-calibrating maps (label-free, shift-robust acceptance for VPR)
+
+**Gap.** Every guarantee-giving VPR acceptance method needs labelled calibration data (integrity MLPs, Quantile
+Transfer, SAFEVPR LTT/Mondrian, our CRSG+conformal) and breaks under unseen appearance shift. No method controls the
+false-accept (wrong loop-closure / off-map) rate without labels.
+
+**Idea.** (1) In VPR the map is a free source of *off-map* calibration queries: each map image with its own spatial
+block removed from the map is off-map by construction (leave-one-block-out) — labelled nulls at zero cost.
+(2) Use per-query statistics invariant to affine score changes (z-norm of the top-1 vs the far-region maxima, EVT
+spacing), so that appearance shift (night compresses scores) does not move their null distribution. (3) Split-conformal
+p-values of a deployment query against the map pseudo-queries → FAR control with no labels. (4) Centering descriptors on
+the map mean (hubness reduction, map-only).
+
+**Infra.** NB15 dumps fp16 descriptors once (T4): RobotCar-Seasons overcast-reference **rear map with NVM poses** (6954)
++ 1906 train queries (poses cam→world, verified); Extended-CMU **official databases of 11 slices merged into one city
+map** (2418 db, 21.4k queries, 11 dates; slices share one world frame); Nordland 4×4500. All analysis local (CPU).
+Off-map protocol = leave-one-300m-block-out (RobotCar 1386, CMU 14117, Nordland 12180 off-map queries).
+
+**Results (SALAD, α=0.05; FAR on off-map, #conditions significantly violating, TPR on correct in-map):**
+
+| | RobotCar (9 cond.) | CMU (11 dates) | Nordland (3 seasons) |
+|---|---|---|---|
+| SelfCal[z_all] (ours, no labels) | 0.009, 0/9, **0.987** | 0.034, 1/11, 0.848 | 0.046, 0/3, 0.304 |
+| SelfCal[z_far+center] (ours) | 0.012, 0/9, 0.995 | 0.019, **0/11**, 0.864 | 0.048, **0/3**, **0.840** |
+| SelfCal[maxsim] (non-invariant) | 0.001, 0/9, 0.979 | 0.010, 0/11, 0.949 | 0.022, 0/3, 0.411 |
+| LabelCal[maxsim] day→all | 0.109, **5/9**, 0.997 | 0.052, **4/11**, 0.985 | 0.037, 0/3, 0.630 |
+| LabelCal[CRSG] day→all | 0.099, **4/9**, 0.996 | 0.054, **4/11**, 0.982 | 0.041, 0/3, 0.814 |
+| Oracle[maxsim] (labels of every cond.) | 0.040, 0/9, 0.995 | 0.049, 0/11, 0.992 | 0.050, 0/3, 0.780 |
+| Theory-only Gaussian z-norm | 0.350, 9/9 | 0.250, 11/11 | 0.125, 3/3 |
+
+- Label-calibrated thresholds transferred from benign conditions **violate the target in 4–5 conditions** on the two
+  realistic datasets; map self-calibration is valid everywhere tested (0 significant violations for z_far+center).
+- Pure EVT spacing test (closed-form F(2,2k)) is close to valid but mildly anti-conservative (night-rain 0.109@0.05);
+  cause = **hubness** (5% of map cells win 59% of null competitions). Map self-calibration + centering fix it.
+- No single statistic has the best power everywhere (maxsim strong on CMU, z_far+center on Nordland) → next: self-
+  calibrate a *combination* (min of conformal p-values, re-calibrated on the map null).
+- Honest caveats: worst-condition FAR at α=0.1 reaches ~0.11–0.13 on RobotCar (within binomial noise, n≈150/cond);
+  RobotCar GT only exists for the public train split (test GT withheld), official thresholds applied to top-1 poses.
+
+---
+
 ## Entry 11 — Literature gate (Bước 0)  →  VERDICT: OVERLAP on method + conformal; reality-check still novel
 
 Full report: `LITERATURE_GATE.md`. Read 9 closest papers in full (paper text only, no code).

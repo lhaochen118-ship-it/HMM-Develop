@@ -16,37 +16,33 @@ def describe(ep, tol):
           ", ".join(f"{c}={ok[ep.q_cond == c].mean():.2f}" for c in conds))
 
 
-def discrimination(ep, tol, cfg, seed=0):
-    """AUROC (correct in-map vs off-map+wrong) and AURC for every score; p-values used as -p."""
-    eh, off, inm = E1.make_holes(ep, cell=cfg["hole_cell"], frac=cfg["hole_frac"], seed=seed, off_d=cfg["off_d"], in_d=cfg["in_d"])
-    corr = V.correct(eh, *tol) & inm; use = inm | off
-    pv = E1.pvalue_methods(eh, cfg); sc, b = E1.score_methods(eh)
-    allsc = {**{k: -v for k, v in pv.items()}, **sc, "softmax": b["softmax"], "neg_entropy": b["neg_entropy"]}
+def discrimination(info):
+    """Accept/reject discrimination: positives = correct in-map, negatives = off-map (LOBO). p-values as -p."""
+    si, so, off, corr = info["sig_in"], info["sig_off"], info["off"], info["corr"]
     res = {}
-    for k, s in allsc.items():
-        res[k] = {"AUROC_correct": V.auroc(s[use], corr[use]), "AUROC_offmap": V.auroc(s[inm | off], inm[inm | off]),
-                  "AURC": V.aurc(s[use], corr[use])}
-    return res, corr[use].mean()
+    for k in si:
+        if k[:2] not in ("p:", "s:", "f:"): continue
+        sgn = -1 if k.startswith("p:") else 1
+        sc = np.r_[sgn * si[k][corr], sgn * so[k][off]]; y = np.r_[np.ones(corr.sum()), np.zeros(off.sum())]
+        res[k] = {"AUROC": V.auroc(sc, y), "AURC": V.aurc(sc, y)}
+    return res
 
 
-def calib_fdr(ep, tol, cfg, calib_conds, seed=0, alpha=0.1):
-    """Per condition (one deployment batch each): ECE of label-free EVS confidence vs label-trained CRSG
-    transferred from calib conds; BH(alpha) realised FDR and power."""
-    eh, off, inm = E1.make_holes(ep, cell=cfg["hole_cell"], frac=cfg["hole_frac"], seed=seed, off_d=cfg["off_d"], in_d=cfg["in_d"])
-    corr = V.correct(eh, *tol) & inm; use = inm | off
-    p = V.evs_test(eh, cell=cfg["cell"], excl=cfg["excl"], k=cfg["k"]); b = V.baseline_scores(eh)
-    X = np.column_stack([b["margin"], b["neg_L2"], b["neg_entropy"]]); cal = np.isin(eh.q_cond, calib_conds) & use
-    crsg = V.logistic_model(X[cal], corr[cal].astype(float))(X)
-    rows = []
-    for c in sorted(set(eh.q_cond)):
-        m = (eh.q_cond == c) & use
-        if m.sum() < 30: continue
-        conf, pi0 = E2.labelfree_confidence(p[m])
-        acc = E2.bh_accept(p[m], alpha); y = corr[m]
-        rows.append(dict(cond=str(c), n=int(m.sum()), acc_rate=float(y.mean()), pi0_hat=pi0,
-                         ECE_EVS_labelfree=V.ece(conf, y), ECE_CRSG_transfer=V.ece(crsg[m], y),
-                         ECE_softmax=V.ece(b["softmax"][m], y),
-                         BH_FDR=float((~y[acc]).mean()) if acc.any() else 0.0, BH_power=float(acc[y].mean()) if y.any() else np.nan))
+def calib_fdr(ep, info, alpha=0.1, mix=0.3, seed=0):
+    """Per condition = one deployment batch mixing correct in-map queries with a share `mix` of off-map ones.
+    ECE of the label-free EVS confidence vs CRSG transferred from the day calibration; BH(alpha) FDR/power."""
+    rng = np.random.default_rng(seed); si, so = info["sig_in"], info["sig_off"]; rows = []
+    inm, off, corr = info["inm"], info["off"], info["corr"]
+    for c in sorted(set(ep.q_cond)):
+        ii = np.where((ep.q_cond == c) & inm)[0]; oo = np.where((ep.q_cond == c) & off)[0]
+        if len(ii) < 20 or len(oo) < 10: continue
+        n_off = min(len(oo), int(round(mix / (1 - mix) * len(ii)))); oo = rng.choice(oo, n_off, replace=False)
+        p = np.r_[si["p:EVS"][ii], so["p:EVS"][oo]]; y = np.r_[corr[ii], np.zeros(n_off, bool)]
+        crsg = np.r_[si["s:CRSG"][ii], so["s:CRSG"][oo]]
+        conf, pi0 = E2.labelfree_confidence(p); acc = E2.bh_accept(p, alpha)
+        rows.append(dict(cond=str(c), n=len(p), frac_correct=float(y.mean()), pi0_hat=pi0,
+                         ECE_EVS_labelfree=V.ece(conf, y), ECE_CRSG_transfer=V.ece(crsg, y),
+                         BH_FDR=float((~y[acc]).mean()) if acc.any() else 0.0, BH_power=float(acc[y].mean())))
     return rows
 
 
@@ -63,18 +59,19 @@ def main():
         eps.append(("nord", V.load_nordland(DUMP, DESC), (2.0, None), E1.NORD_CFG, ["fall"]))
     for name, ep, tol, cfg, calc in eps:
         t0 = time.time(); describe(ep, tol)
-        rows = E1.run(ep, tol, calc, cfg=cfg)
-        for a in (0.05, 0.1): E1.summarise(rows, a)
-        disc, base = discrimination(ep, tol, cfg)
-        print(f"  discrimination (base acc {base:.2f}):")
-        for k, v in sorted(disc.items(), key=lambda kv: -np.nan_to_num(kv[1]["AUROC_correct"])):
-            print(f"    {k:14s} AUROC(correct)={v['AUROC_correct']:.3f} AUROC(offmap)={v['AUROC_offmap']:.3f} AURC={v['AURC']:.3f}")
-        cf = calib_fdr(ep, tol, cfg, calc)
-        print("  label-free calibration / BH(0.1) per condition:")
+        rows, info = E1.run(ep, tol, calc, cfg=cfg)
+        print(f"  off-map (LOBO) queries: {int(info['off'].sum())} | in-map: {int(info['inm'].sum())} | correct in-map: {int(info['corr'].sum())}")
+        for a in (0.01, 0.05, 0.1): E1.summarise(rows, a)
+        disc = discrimination(info)
+        print("  accept/reject discrimination (correct in-map vs off-map):")
+        for k, v in sorted(disc.items(), key=lambda kv: -np.nan_to_num(kv[1]["AUROC"])):
+            print(f"    {k:16s} AUROC={v['AUROC']:.3f} AURC={v['AURC']:.4f}")
+        cf = calib_fdr(ep, info)
+        print("  label-free calibration / BH(0.1) per condition (batch = in-map + 30% off-map):")
         for r in cf:
-            print(f"    {r['cond'][:16]:16s} n={r['n']:4d} acc={r['acc_rate']:.2f} pi0^={r['pi0_hat']:.2f} | ECE EVS-lf={r['ECE_EVS_labelfree']:.3f} "
-                  f"CRSG-transfer={r['ECE_CRSG_transfer']:.3f} softmax={r['ECE_softmax']:.3f} | BH FDR={r['BH_FDR']:.3f} power={r['BH_power']:.3f}")
-        results[name] = {"E1": rows, "disc": disc, "calib": cf, "calib_conds": calc, "tol": tol, "cfg": cfg}
+            print(f"    {r['cond'][:16]:16s} n={r['n']:4d} correct={r['frac_correct']:.2f} pi0^={r['pi0_hat']:.2f} | ECE EVS-labelfree={r['ECE_EVS_labelfree']:.3f} "
+                  f"CRSG-transfer={r['ECE_CRSG_transfer']:.3f} | BH FDR={r['BH_FDR']:.3f} power={r['BH_power']:.3f}")
+        results[name] = {"E1": rows, "disc": disc, "calib": cf, "calib_conds": list(calc), "tol": tol, "cfg": cfg}
         print(f"  [{name}] done in {time.time()-t0:.0f}s\n", flush=True)
     json.dump(results, open(os.path.join(OUT, f"run_all_{DESC}.json"), "w"), default=float)
 
