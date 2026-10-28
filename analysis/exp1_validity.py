@@ -53,11 +53,16 @@ def conformal_threshold(null_scores, alpha):
     return np.inf if r < 1 else s[r - 1] + 1e-12
 
 
+DEFAULT_CFG = {"cell": 10.0, "excl": 25.0, "k": 10, "hole_cell": 50.0, "hole_frac": 0.3, "off_d": 40.0, "in_d": 5.0}
+NORD_CFG = {"cell": 3.0, "excl": 5.0, "k": 10, "hole_cell": 50.0, "hole_frac": 0.3, "off_d": 10.0, "in_d": 0.5}
+
+
 def run(ep, tol, calib_conds, alphas=(0.01, 0.05, 0.1), seeds=(0, 1, 2, 3, 4), cfg=None, extra_off=None):
-    cfg = cfg or {"cell": 10.0, "excl": 25.0, "k": 10}
+    cfg = {**DEFAULT_CFG, **(cfg or {})}
     rows = []
     for seed in seeds:
-        eh, off, inm = make_holes(ep, seed=seed)
+        eh, off, inm = make_holes(ep, cell=cfg["hole_cell"], frac=cfg["hole_frac"], seed=seed,
+                                  off_d=cfg["off_d"], in_d=cfg["in_d"])
         if extra_off is not None: off = off | extra_off
         corr = V.correct(eh, *tol) & inm
         pv = pvalue_methods(eh, cfg); sc, b = score_methods(eh)

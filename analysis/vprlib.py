@@ -55,9 +55,12 @@ def correct(ep, tol_m, tol_deg=None):
     return ok
 
 
-def nearest_map_dist(ep):
-    d = np.sqrt(((ep.q_pos[:, None, :] - ep.m_pos[None, :, :]) ** 2).sum(-1))
-    return d.min(1)
+def nearest_map_dist(ep, chunk=2048):
+    out = np.empty(len(ep.q_pos))
+    for i in range(0, len(ep.q_pos), chunk):
+        d = ((ep.q_pos[i:i + chunk, None, :] - ep.m_pos[None, :, :]) ** 2).sum(-1)
+        out[i:i + chunk] = np.sqrt(d.min(1))
+    return out
 
 
 # --------------------------------------------------------------------------- loaders
