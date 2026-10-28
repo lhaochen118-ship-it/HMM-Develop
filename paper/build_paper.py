@@ -38,6 +38,7 @@ if t2:
     txt = txt.replace("Table 2a aggregates all six descriptors", "\n\n".join(t2) + "\n\nTable 2a aggregates all six descriptors", 1)
 after("## 6.5 Batches: FDR and label-free confidence", "\n".join(v for k, v in tabs.items() if k.startswith("Table 5")))
 after("## 6.6 Robustness and ablations", "\n".join(v for k, v in tabs.items() if k.startswith("Table 4")) + fig("fig_alias_salad", "Figure 3. Acceptance rate of in-map aliasing errors (>25 m) at α = 0.05."))
+after("## 6.7 Foreign cities and datasets", "\n".join(v for k, v in tabs.items() if k.startswith("Table 6")))
 txt = re.sub(r"^---\ntitle:.*?---\n", "", txt, flags=re.S)
 txt = "# Your Map Is Its Own Calibration Set: Label-Free, Shift-Robust Rejection of False Matches in Visual Place Recognition\n\n" + txt.replace("# Abstract", "## Abstract", 1)
 out_md = os.path.join(H, "SelfCal_paper_full.md"); open(out_md, "w").write(txt)

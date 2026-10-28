@@ -7,23 +7,24 @@ author: "Anonymous submission"
 
 Visual place recognition (VPR) returns a best match for every query, yet a robot must decide whether to *trust* it:
 accepting a match for a place that is not in the map — or one that merely looks like it — corrupts pose graphs and
-relocalisation. Existing acceptance rules (similarity thresholds, learned integrity monitors, conformal calibration) all
-need labelled query–map pairs, and we show that their false-accept guarantees break as soon as the appearance
-condition (night, rain, snow, season) differs between calibration and deployment. We observe that VPR offers labelled
-negatives for free: **the map itself**. Holding out each spatial block of the map turns every map image into a query
-that is off-map *by construction*. Calibrating an acceptance statistic against these map pseudo-queries yields
-split-conformal p-values without any human or deployment labels. To make this calibration transfer across appearance
-conditions we use statistics that are invariant to per-query affine changes of the similarity scores, computed against
-spatially distant map regions on hubness-reduced (map-centred) descriptors, combine them with a self-calibrated
-minimum-p rule, and add an aliasing guard based on the gap to the best distant region. We prove validity under
-exchangeability, conservativeness whenever appearance change only makes unrelated queries less map-like, and FDR
-control with Benjamini–Hochberg. On RobotCar-Seasons (official reference map and thresholds), Extended-CMU-Seasons
-(eleven official slices merged into one 2,418-image city map, 21k queries, 11 dates) and Nordland, with six descriptors
-from NetVLAD to MegaLoc, the method keeps the off-map false-accept rate at or below the target in all 138
-descriptor × condition cells and rejects nearly all perceptual-aliasing errors (median acceptance 0.8%), while
-label-calibrated baselines exceed the target in 25–64 of the 138 cells — leave-one-condition-out conformal calibration
-fails in every one of the 18 descriptor–dataset settings — and accept 17–44% of aliasing errors. Without the aliasing
-guard, its average power equals that of an oracle that has labels for every deployment condition (0.718 vs 0.721).
+relocalisation. Existing acceptance rules (similarity thresholds, spatial-uncertainty scores, learned integrity
+monitors, conformal calibration) need labelled query–map pairs, and we show that their false-accept guarantees break as
+soon as the appearance condition (night, rain, snow, season) differs between calibration and deployment. We observe
+that VPR offers labelled negatives for free: **the map itself**. Holding out each spatial block of the map turns every
+map image into a query that is off-map *by construction*, and calibrating against these map pseudo-queries yields
+split-conformal p-values without any human or deployment labels. To make this calibration transfer across conditions we
+use statistics that are invariant to per-query affine changes of the similarity scores, computed against spatially
+distant map regions on map-centred descriptors; we combine them with a self-calibrated minimum-p rule, an aliasing
+guard, Mondrian strata on the spread of the distant regions, and a lenient raw-similarity gate that keeps the test valid
+for queries from foreign cities or datasets. We prove validity under exchangeability, conservativeness whenever
+appearance change makes unrelated queries less map-like, an intersection–union bound under domain shift, and FDR
+control. On RobotCar-Seasons, Extended-CMU-Seasons, Nordland and MSLS with six descriptors from NetVLAD to MegaLoc
+(24 settings, 192 deployment conditions), the method has no condition whose off-map false-accept rate exceeds the
+target (worst condition 0.048 at α = 0.05) and accepts a median 1.1% of perceptual-aliasing errors, while
+label-calibrated baselines exceed the target in 16–79 conditions — leave-one-condition-out conformal calibration in
+every one of the 24 settings — and accept 7–41% of aliasing errors. Queries from other cities and datasets are rejected
+(false-accept rate ≤ 0.007 in all 120 map × source pairs). Its average power is 0.646, against 0.706 for an oracle
+that holds labels for every deployment condition.
 
 # 1. Introduction
 
@@ -64,13 +65,14 @@ offline pass of self-retrieval over the map and a sort per query, and provides a
 with a fixed level, with Benjamini–Hochberg for batches, or turned into a calibrated confidence via the two-groups
 model — all without labels.
 
-**Contributions.** (i) We show on three benchmarks that label-calibrated acceptance (threshold, learned and conformal)
-loses its false-accept guarantee under appearance shift, and that the classical parametric nulls (Gaussian z-norm, EVT
-spacing tests) are invalid or degraded by hubness. (ii) We propose SelfCal: map pseudo-queries via spatial hold-out as
-a conformal null sample, affine-invariant far-region statistics on map-centred descriptors, a self-calibrated
-combination, and an aliasing guard. (iii) We give validity, dominance-based robustness, excess-risk and FDR results.
-(iv) We evaluate on RobotCar-Seasons, Extended-CMU-Seasons and Nordland with six descriptors and 23 deployment
-conditions, with full ablations; code and descriptor dumps are released.
+**Contributions.** (i) We show on four benchmarks that label-calibrated acceptance (threshold, spatial uncertainty,
+learned and conformal) loses its false-accept guarantee under appearance shift, and that the classical parametric nulls
+(Gaussian z-norm, EVT spacing tests) are invalid or degraded by hubness. (ii) We propose SelfCal: map pseudo-queries via
+spatial hold-out as a conformal null sample, affine-invariant far-region statistics on map-centred descriptors, a
+self-calibrated combination, an aliasing guard, Mondrian strata and a domain gate. (iii) We give validity,
+dominance-based robustness, excess-risk, domain-shift and FDR results. (iv) We evaluate on RobotCar-Seasons,
+Extended-CMU-Seasons, Nordland and MSLS with six descriptors and 32 deployment conditions, plus queries from foreign
+cities and datasets, with full ablations; code and the descriptor dumps are public.
 
 # 2. Related work
 
@@ -162,16 +164,16 @@ dataset): their similarity profile against the map is flat, so $\sigma_{far}$ sh
 even though $s_{j^*}$ is low. We therefore also require that the raw similarity is not unusually low for the map:
 accept iff $\max\{p_{comb},p_{z_{gap}}\}\le\alpha$ **and** $p_{\max s}(q)\le\gamma$, with a lenient
 $\gamma=0.8$ (the raw max-similarity must exceed the 20 % quantile of the map null). The gate is inactive for
-almost every true match (Nordland TPR 0.533 → 0.524) but removes the foreign-domain false accepts (Table 6).
+almost every true match (mean TPR 0.648 → 0.646 over 24 settings) but removes the foreign-domain false accepts (§6.7).
 
 **Batches.** With p-values of a deployment batch, Benjamini–Hochberg controls the false-discovery rate, and the
 two-groups model (Storey's $\hat\pi_0$, Grenander density estimate) turns $p$ into a calibrated probability of a true
 match, $1-\widehat{\mathrm{lfdr}}(p)$ — again without labels.
 
-**Cost.** Offline: one self-retrieval pass over the map with block hold-out — 24 s on 4 CPU cores for the
+**Cost.** Offline: one self-retrieval pass over the map with block hold-out — 18 s on 4 CPU cores for the
 6,954-image RobotCar map (8,448-d SALAD). Online: the similarity vector (needed for retrieval anyway), its centred
-counterpart, cell maxima (one `reduceat`) and three binary searches — about 10 ms per query on CPU in NumPy, both
-similarity products included.
+counterpart, cell maxima (one `reduceat`), a bin look-up and four binary searches — about 1 ms per query on CPU in
+NumPy when queries are processed in batches, both similarity products included.
 
 # 5. Guarantees
 
@@ -214,111 +216,138 @@ test is thus conservative whenever *either* kind of shift explains the change, t
 (6,954 images, ~1.3 × 1.1 km) with poses from the official reconstruction (`all.nvm`); queries are the 1,906 rear
 images of the public training split in nine conditions (dawn, dusk, night, night-rain, overcast-summer/winter, rain,
 snow, sun), whose 6-DoF poses are released (test poses are withheld by the benchmark). A query is correct if the top-1
-reference is within the coarsest official threshold (5 m, 10°); we also report the finer official thresholds.
-*Extended-CMU-Seasons* [Toft'20]: the eleven slices with released query poses (6–8, 10–13, 21–24) share one world frame
-and are consecutive segments, so we merge their official databases into one 2,418-image city map; queries are the
-21,407 camera-0 images of 11 dates (Sep 2010 – Jul 2011), correct at (5 m, 10°). *Nordland* [Sünderhauf'13]: 4,500
-frame-aligned places per season (uniform subsample of the 35,768-frame route); summer is the map (winter in §6.6),
-spring/fall/winter are queries, correct within 2 places.
+reference is within the coarsest official threshold (5 m, 10°). *Extended-CMU-Seasons* [Toft'20]: the eleven slices
+with released query poses (6–8, 10–13, 21–24) share one world frame and are consecutive segments, so we merge their
+official databases into one 2,418-image city map; queries are the 21,407 camera-0 images of 11 dates (Sep 2010 – Jul
+2011), correct at (5 m, 10°). *Nordland* [Sünderhauf'13]: 4,500 frame-aligned places per season (uniform subsample of
+the 35,768-frame route); summer is the map (winter in §6.6), spring/fall/winter are queries, correct within 2 places.
+*MSLS* [Warburg'20], validation cities Copenhagen and San Francisco (panoramas excluded): the two city databases
+(12,556 and 6,315 images) form one map and the 11,084 queries are grouped into nine conditions (city × season, plus
+Copenhagen night), correct within the standard 25 m.
 
 **Off-map protocol.** We cannot rely on a few hand-picked unmapped streets, so we hold out the map in turn: the map is
 partitioned into 300 m blocks (200 places on Nordland); for each block, the block is removed and its queries farther
-than 40 m (10 places) from the remaining map are evaluated as *off-map*. This gives 1,386 (RobotCar), 14,117 (CMU) and
-12,180 (Nordland) off-map query instances spread over all conditions. In-map queries (within 5 m of a map image) are
-evaluated against the full map; in-map queries whose top-1 is farther than 25 m (5 places) are *aliasing* errors.
-The method's own null construction (map blocks, pseudo-queries) uses only the map and never sees queries.
+than 40 m (10 places) from the remaining map are evaluated as *off-map*. This gives 1,386 (RobotCar), 14,117 (CMU),
+12,180 (Nordland) and 8,491 (MSLS) off-map query instances spread over all conditions. In-map queries (within 5 m of a
+map image; 10 m on MSLS) are evaluated against the full map; in-map queries whose top-1 is farther than 25 m (5 places)
+are *aliasing* errors. The method's own null construction uses only the map and never sees queries. We also score
+*natural* off-map queries: the queries of every other dataset and city against each map (§6.7).
 
 **Descriptors.** Frozen, off-the-shelf: NetVLAD (VGG16, Pitts30k, 4,096-d) [Arandjelović'16], CosPlace (ResNet-50,
 2,048-d) [Berton'22], MixVPR (ResNet-50, 4,096-d) [Ali-bey'23], DINOv2 ViT-B/14 CLS+mean (1,536-d) [Oquab'24], SALAD
 (8,448-d) [Izquierdo'24] and MegaLoc (8,448-d) [Berton'25]. All descriptors are extracted once at 322 × 322.
 
 **Baselines.** (a) *Threshold, benign→all*: split-conformal threshold on the max-similarity of off-map queries of the
-two most benign conditions (RobotCar: overcast-summer/winter; CMU: the two dates with the highest recall; Nordland:
-fall), applied to all conditions; (b) the same with aliasing errors added to the negatives; (c) *conformal LOCO*,
-the SAFEVPR protocol: calibrate on the labelled off-map queries of all *other* conditions and test on the held-out
-one; (d) *Quantile Transfer* [Rajani'26]: the benign threshold mapped through the quantile function of each deployment
-batch; (e) a learned logistic calibrator on margin, max-similarity and entropy (CRSG) trained on benign conditions;
-(f) the PA ratio [Hausler'21]; (g) parametric nulls: Gaussian z-norm with Bonferroni and the closed-form EVT spacing
-test; (h) an *oracle* that calibrates max-similarity with the labels of every deployment condition.
+two most benign conditions (the two with the highest recall; Nordland: fall), applied to all conditions; (b) the same
+with aliasing errors added to the negatives; (c) *conformal LOCO*, the SAFEVPR protocol: calibrate on the labelled
+off-map queries of all *other* conditions and test on the held-out one; (d) *Quantile Transfer* [Rajani'26]: the benign
+threshold mapped through the quantile function of each deployment batch; (e) a learned logistic calibrator on margin,
+max-similarity and entropy (CRSG) trained on benign conditions; (f) *SUE* [Zaffar'24], the spatial spread of the
+top-10 reference poses (λ = 350), and (g) the PA ratio [Hausler'21], both calibrated benign→all; (h) parametric nulls:
+Gaussian z-norm with Bonferroni and the closed-form EVT spacing test; (i) an *oracle* that calibrates max-similarity with
+the labels of every deployment condition.
 
 **Metrics.** FAR on off-map queries per condition (target α), the number of conditions whose FAR is significantly above
-α (one-sided binomial test, Bonferroni over conditions), TPR on correct in-map queries, and the acceptance rate of
-aliasing errors.
+α (one-sided binomial test, Bonferroni over conditions), the worst-condition FAR, TPR on correct in-map queries, and the
+acceptance rate of aliasing errors.
 
 ## 6.2 Main result
 
-Table 1 reports α = 0.05 for SALAD. Every label-calibrated method exceeds the target in at least one realistic dataset —
-the benign→all threshold in 5/9 RobotCar conditions (worst FAR 0.21 at night-rain) and 4/11 CMU dates; calibrating on
-all other labelled conditions (SAFEVPR protocol) still fails in 1/9, 4/11 and 2/3 conditions — and all of them accept a
-third to four fifths of the aliasing errors. Parametric nulls are either invalid (Gaussian z-norm: FAR 0.13–0.35) or
-anti-conservative under hubness (EVT spacing: night-rain 0.109). SelfCal-AA, which uses no labels, has **no
-significant violation in any of the 23 conditions**, accepts 0.0%, 1.5% and 5.7% of aliasing errors, and its TPR
-(0.988 / 0.853 / 0.754) is close to the oracle that holds labels for every condition (0.995 / 0.992 / 0.780).
-Without the aliasing guard, SelfCal reaches oracle power on RobotCar and CMU (0.994 / 0.956) while still controlling
-the off-map FAR. Fig. 2 shows the same picture for α ∈ [0.005, 0.2].
+Table 1 reports α = 0.05 for SALAD. Every label-calibrated method exceeds the target on at least one dataset — the
+benign→all threshold in 5/9 RobotCar conditions (worst FAR 0.21 at night-rain) and 4/11 CMU dates; calibrating on all
+other labelled conditions (SAFEVPR protocol) still fails in 1/9, 4/11, 2/3 and 2/9 conditions; SUE in 1/9 RobotCar and
+2/9 MSLS conditions — and the score-threshold methods accept a third to four fifths of the aliasing errors.
+Parametric nulls are either invalid (Gaussian z-norm: FAR 0.13–0.90) or anti-conservative under hubness (EVT spacing:
+5/9 MSLS conditions). SelfCal-AA, which uses no labels, has **no significant violation in any of the 32 conditions**,
+a worst-condition FAR of 0.048, accepts 3%, 1%, 6% and 12% of aliasing errors, and its TPR (0.978 / 0.865 / 0.742 /
+0.528) is close to the oracle that holds labels for every condition on RobotCar, CMU and Nordland (0.995 / 0.992 /
+0.780) but not on MSLS (0.820; §7). Fig. 2 shows the same picture for α ∈ [0.005, 0.2].
 
 ## 6.3 Why it works
 
 Fig. 1 plots the survival function of the off-map statistic for every RobotCar condition against the map null.
 All conditions lie below the null for both max-similarity and z_far: appearance change makes unrelated queries
 *less* map-like than the map's own held-out blocks (T2). Table 3 quantifies the excess-risk bound Δ⁺ of T3: with the
-map null it is at most 0.052 (max-similarity) and 0.047 (z_far, centred) over all 23 conditions, whereas with a
-labelled benign null it reaches 0.255 (max-similarity, night-rain) — exactly the violations of Table 1. The
-invariant statistic matters for power: calibrating raw max-similarity on the map is valid but loses most of its
-power on Nordland (0.41 vs 0.84), where seasonal change lowers all similarities.
+map null it is at most 0.052 (max-similarity) and 0.047 (z_far, centred) over the RobotCar, CMU and Nordland
+conditions, whereas with a labelled benign null it reaches 0.255 (max-similarity, night-rain) — exactly the violations
+of Table 1. The invariant statistic matters for power: calibrating raw max-similarity on the map is valid but loses
+power on Nordland (0.41 vs 0.74), where seasonal change lowers all similarities.
 
-## 6.4 Descriptors
+## 6.4 Descriptors and datasets
 
-Table 2a aggregates all six descriptors and three datasets (18 settings, 138 deployment conditions) and Table 2
-details each setting. SelfCal and SelfCal-AA have **no significant violation in any of the 138 cells** and a
-worst-condition FAR of at most 0.040 / 0.051 at α = 0.05, whereas the benign threshold and the learned calibrator
-violate in 25 cells (10 of 18 settings), leave-one-condition-out conformal calibration in 38 cells — at least once in
-*every* setting — and Quantile Transfer in 64. Averaged over all settings, SelfCal reaches the oracle's power (0.718
-vs 0.721) and SelfCal-AA trades 4 points of TPR for a 7× lower aliasing acceptance (median 0.008 vs 0.060). For older
-descriptors (NetVLAD, CosPlace, MixVPR) SelfCal-AA often exceeds the oracle's TPR, because the oracle thresholds raw
-max-similarity while SelfCal also exploits the far-region statistic. The one weak case is DINOv2 CLS+mean, a generic
-descriptor that is not trained for VPR: its global features encode the capture condition so strongly that map
-pseudo-queries (which share the map's condition) are much more map-like than any deployment query. SelfCal stays valid
-(FAR ≤ 0.004) but becomes conservative (TPR 0.06–0.33 vs. oracle 0.39–0.70); centring queries on their own session
-mean recovers only part of the gap (RobotCar 0.33 → 0.41). This is the price of label-free validity, paid only by
-condition-sensitive descriptors.
+Table 2a aggregates all six descriptors and four datasets (24 settings, 192 deployment conditions) and Table 2 details
+each setting. SelfCal-AA has **no significant violation in any of the 192 conditions** and a worst-condition FAR of at
+most 0.048 at α = 0.05. The benign threshold violates in 36 conditions (15 of 24 settings), the learned calibrator in
+32, SUE in 16 (10 settings), leave-one-condition-out conformal calibration in 51 — at least once in *every* setting —
+and Quantile Transfer in 79. Averaged over all settings SelfCal-AA has TPR 0.646 against the oracle's 0.706, with a
+median aliasing acceptance of 0.011 (benign threshold 0.218, SUE 0.070). On RobotCar, CMU and Nordland alone the gap to
+the oracle is 0.013 (0.708 vs 0.721). For older descriptors (NetVLAD, CosPlace, MixVPR) SelfCal-AA often exceeds the
+oracle's TPR on CMU and Nordland, because the oracle thresholds raw max-similarity while SelfCal also exploits the
+far-region statistic.
+
+Two cases are conservative. *DINOv2 CLS+mean*, a generic descriptor not trained for VPR, encodes the capture condition
+so strongly that map pseudo-queries (which share the map's condition) are much more map-like than any deployment
+query: SelfCal stays valid (FAR ≤ 0.001) but its TPR is 0.04–0.38 against the oracle's 0.32–0.70. *MSLS* combines two
+cities, many capture dates and front/side views in one map; SelfCal-AA keeps 0/54 violations but reaches TPR 0.460
+against the oracle's 0.661 (MegaLoc 0.879 vs 0.965). The label-calibrated baselines obtain their higher MSLS power by
+violating 6–15 of the 54 conditions.
+
+**Components (Table 2a).** Removing the Mondrian strata lowers the mean TPR from 0.646 to 0.612 and raises the
+worst-condition FAR from 0.048 to 0.140 (one RobotCar condition; not significant after Bonferroni); removing the domain
+gate changes the TPR by +0.002 but re-opens the foreign-domain leaks of §6.7; removing the aliasing guard raises the TPR
+to 0.667 but accepts a median 7.2% of aliasing errors and produces 5 significant violations on MSLS, where aliasing
+errors and off-map queries share the similarity range.
 
 ## 6.5 Batches: FDR and label-free confidence
 
-With an off-map share of 10–50%, Benjamini–Hochberg on SelfCal p-values (q = 0.1) keeps the false-discovery rate of
-gross errors at 0.004–0.009 on RobotCar and 0.008–0.011 on CMU (max over conditions 0.046 / 0.023) with power 0.96–0.998,
-and the two-groups confidence has ECE 0.013–0.050 without labels (π̂₀ within 0.03–0.08 of the true off-map share).
-On Nordland, where 18.5% of in-map queries are gross aliasing errors that the union rule does not target, BH on the
-union p-values exceeds q (gross FDR 0.15); with the aliasing-aware p-values, max(p_comb, p_gap), BH keeps the gross FDR
-at 0.017–0.021 (max 0.030) with power 0.53–0.75. The label-free confidence is, however, poorly calibrated on Nordland
-(ECE ≈ 0.14): many correct matches on its repetitive scenery have non-significant gaps, which inflates π̂₀
-(0.47–0.91 vs. 0.27–0.57). We therefore recommend the p-values, not the two-groups confidence, on aliasing-prone maps.
+With an off-map share of 10–50%, Benjamini–Hochberg on SelfCal-AA p-values (q = 0.1) keeps the false-discovery rate of
+gross errors at 0.005–0.012 on RobotCar, 0.002–0.006 on CMU and 0.019–0.022 on Nordland (max over conditions 0.040 /
+0.016 / 0.028) with power 0.97–0.99, 0.87–0.89 and 0.68–0.74 (Table 5). The two-groups confidence has ECE 0.018–0.023
+on RobotCar without labels, but it is poorly calibrated on CMU (≈ 0.09) and Nordland (≈ 0.13): many correct matches
+on repetitive scenery have non-significant gaps, which inflates π̂₀ (Nordland 0.47–0.90 vs. 0.27–0.57). We therefore
+recommend the p-values, not the two-groups confidence, on aliasing-prone maps.
 
 ## 6.6 Robustness and ablations
 
 *Map in a hard condition.* Using Nordland **winter** as the map (queries summer/spring/fall) — so that map
-pseudo-queries are the degraded ones — SelfCal-AA keeps 0/3 violations (FAR 0.010, aliasing 0.022, TPR 0.593).
-*Map size.* Keeping 25% of the RobotCar map (635 × 592 m, 1,739 images, 650 pseudo-queries) gives FAR 0.000 and
-TPR 0.994; 50% gives 0.037 and 0.916. *Hyper-parameters.* Cell size (×0.5–2), exclusion radius (×0.4–2), block size
-(×0.5–2), δ (×0.6–2) and calibration-set size (497–4,747 pseudo-queries) change TPR by at most 0.05 and keep the worst-condition FAR at or below 0.073 at α = 0.05 (Table 4). *Centring* is essential on Nordland (TPR 0.754 → 0.329 without it) and neutral elsewhere.
+pseudo-queries are the degraded ones — SelfCal-AA keeps 0/3 violations (FAR 0.009, aliasing 0.011, TPR 0.623).
+*Map size.* Keeping 25% or 50% of the RobotCar map (1,739 / 3,477 images, 650 / 1,147 pseudo-queries) keeps 0/9
+violations (FAR 0.017 / 0.026) with TPR 0.964 / 0.843. *Hyper-parameters.* Cell size (×0.5–2), exclusion radius
+(×0.4–2), block size (×0.5–2), δ (×0.6–2) and calibration-set size (497–4,747 pseudo-queries) change TPR by at most 0.06
+and keep the worst-condition FAR at or below 0.073 at α = 0.05 (Table 4). *Centring* is essential on Nordland (TPR 0.742
+→ 0.568 without it) and neutral elsewhere.
+
+## 6.7 Foreign cities and datasets
+
+A deployed robot may also see places of a different kind than the map — another city, a rural railway instead of
+streets. We score 2,000 queries of every other dataset and city against each map with the deployable SelfCal-AA, fitted
+on the map alone (6 descriptors × 5 maps × 4 foreign sources = 120 cells). Without the domain gate, the scale-normalised
+statistics are inflated for some foreign queries: with CosPlace, 13% of RobotCar and MSLS-Copenhagen queries are
+accepted against the CMU map (3 of 120 cells above α, worst 0.143). With the gate, **no cell exceeds α; the largest
+false-accept rate is 0.007** (Table 6). The gate costs 0.002 TPR on average, and T6 explains why both kinds of shift
+are covered: the invariant statistics are dominated under appearance shift, and foreign images fall below the map's
+own raw-similarity quantile under domain shift.
 
 # 7. Limitations
 
 The aliasing guard is supported empirically, not by a theorem. The guarantees concern the *off-map* null and assume
-deployment off-map queries are no more map-like than the map's own held-out blocks; a deployment area that is a
-near-duplicate of a mapped area (e.g. two identical stations) is aliasing in disguise. The map must be large enough to
-hold out blocks (we merged the CMU slices into one city map). RobotCar ground truth exists only for the public training
-queries (test poses are withheld by the benchmark), so we apply the official thresholds to the top-1 reference pose of
-the 1,906 training queries. Strict levels (α ≤ 0.01) cost power on Extended-CMU.
+deployment off-map queries are no more map-like than the map's own held-out blocks (or, for the gate, less similar
+than the map's unrelated places); a deployment area that is a near-duplicate of a mapped area (e.g. two identical
+stations) is aliasing in disguise. The map must be large enough to hold out blocks and to fill the Mondrian strata: with
+$n_b$ pseudo-queries per stratum no p-value is below $1/(n_b+1)$, so strict levels (α ≤ 0.01) need about 100 per
+stratum (CMU has 75). Power is the price of label-free validity on heterogeneous maps (MSLS) and for condition-sensitive
+descriptors (DINOv2). RobotCar ground truth exists only for the public training queries (test poses are withheld by
+the benchmark), so we apply the official thresholds to the top-1 reference pose of the 1,906 training queries.
 
 # 8. Conclusion
 
 A VPR map is more than a retrieval database: with its poses, it is a free, unlimited source of labelled off-map
 queries in its own environment. Calibrating affine-invariant, geometry-aware statistics against these pseudo-queries
-gives acceptance decisions whose false-accept rate is controlled without labels and survives the appearance changes
-that break label-based calibration, together with an aliasing guard, FDR control and calibrated confidence. Natural
-next steps are sequential evidence (accumulating p-values along a trajectory), maps that change over time, and
-combining SelfCal with geometric verification scores, which it can calibrate without modification.
+gives acceptance decisions whose false-accept rate is controlled without labels and survives both the appearance
+changes that break label-based calibration and queries from foreign cities and datasets, together with an aliasing
+guard, FDR control and calibrated confidence. Natural next steps are sequential evidence (accumulating p-values along a
+trajectory, calibrated on map pseudo-sequences), maps that change over time, and combining SelfCal with geometric
+verification scores, which it can calibrate without modification.
 
 # References
 
@@ -358,6 +387,7 @@ combining SelfCal with geometric verification scores, which it can calibrate wit
 - [Trinh'25] N. Trinh, D. Lyons. Adaptive thresholding for visual place recognition using negative Gaussian mixture statistics. arXiv:2512.09071.
 - [Vovk'05] V. Vovk, A. Gammerman, G. Shafer. Algorithmic Learning in a Random World. Springer 2005.
 - [Vysotska'25] O. Vysotska, I. Bogoslavskyi, M. Hutter, C. Stachniss. Adaptive thresholding for sequence-based place recognition. ICRA 2025.
+- [Warburg'20] F. Warburg, S. Hauberg, M. López-Antequera, P. Gargallo, Y. Kuang, J. Civera. Mapillary Street-Level Sequences: A dataset for lifelong place recognition. CVPR 2020.
 - [Warburg'21] F. Warburg, M. Jørgensen, J. Civera, S. Hauberg. Bayesian triplet loss: Uncertainty quantification in image retrieval. ICCV 2021.
 - [Zaffar'24] M. Zaffar, L. Nan, J. F. P. Kooij. On the estimation of image-matching uncertainty in visual place recognition. CVPR 2024.
 - [Zaffar'25] M. Zaffar, L. Nan, S. Scherer, J. F. P. Kooij. The overlooked value of test-time reference sets in visual place recognition. arXiv:2510.03751.
