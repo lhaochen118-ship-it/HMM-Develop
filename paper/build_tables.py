@@ -48,6 +48,25 @@ for d in descs:
         lines.append(f"| {DESC_NAMES.get(d, d)} | {dn.split(' ')[0]} | {meta.get('r1', float('nan')):.3f} | {cell(s)} | "
                      f"{b['n_viol']}/{b['n_cond']} ({b['alias_acc']:.2f}) | {lo['n_viol']}/{lo['n_cond']} | {cr['n_viol']}/{cr['n_cond']} | {orc['TPR']:.3f} |")
 
+AGG = [("SelfCal-AA[combo AND z_gap+c]", "SelfCal-AA (ours)", "none"), ("SelfCal[min(maxsim, z_far+c)]", "SelfCal (ours)", "none"),
+       ("LabelCal[maxsim] (day->all)", "Threshold, benign→all", "benign"), ("LabelCal[maxsim] (day, neg=off+alias)", "Threshold, benign, neg. incl. aliasing", "benign"),
+       ("LabelCal[maxsim] (LOCO, SAFEVPR-style)", "Conformal LOCO (SAFEVPR protocol)", "other cond."), ("QuantileTransfer[maxsim] (day->all)", "Quantile Transfer", "benign"),
+       ("LabelCal[CRSG] (day->all)", "Learned calibrator (CRSG)", "benign"), ("LabelCal[PA] (day->all)", "PA ratio", "benign"),
+       ("Theory Gauss[z_all]", "Gaussian z-norm null", "none"), ("Theory F-test[T_spacing]", "EVT spacing test", "none"),
+       ("Oracle[maxsim] (labels per cond.)", "Oracle (labels of every condition)", "all")]
+for a in (0.05, 0.1):
+    lines.append(f"\n### Table 2a (α = {a}). All 6 descriptors × 3 datasets (18 settings, 138 deployment conditions)\n")
+    lines.append("| method | labels | violating conditions | settings with ≥1 violation | mean TPR | median aliasing-accept | max worst-cond. FAR |\n|---|---|---|---|---|---|---|")
+    for key, name, lab in AGG:
+        v = c_ = sv = 0; tp, al, wf = [], [], []
+        for f in glob.glob(os.path.join(R, "eval_*_*.json")):
+            if "nordw" in f: continue
+            for r in json.load(open(f))["rows"]:
+                if r["method"] != key or abs(r["alpha"] - a) > 1e-9: continue
+                v += r["n_viol"]; c_ += r["n_cond"]; sv += int(r["n_viol"] > 0); tp.append(r["TPR"]); wf.append(r["worstFAR"])
+                if r.get("alias_acc") is not None and r["alias_acc"] == r["alias_acc"]: al.append(r["alias_acc"])
+        if c_: lines.append(f"| {name} | {lab} | {v}/{c_} | {sv}/18 | {np.mean(tp):.3f} | " + (f"{np.median(al):.3f}" if al else "—") + f" | {max(wf):.3f} |")
+
 lines.append("\n### Table 3. Excess-FAR bound Δ⁺_c (one-sided KS) — labelled benign null vs map null\n")
 for ds, dn in DS:
     f = os.path.join(R, f"dominance_{ds}_salad.json")

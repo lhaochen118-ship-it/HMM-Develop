@@ -34,8 +34,8 @@ t3 = [v for k, v in tabs.items() if k.startswith("Table 3")]
 if t3: after("## 6.3 Why it works", t3[0])
 t2 = [v for k, v in tabs.items() if k.startswith("Table 2")]
 if t2:
-    txt = txt.replace("Table 2 repeats the comparison for six descriptors spanning a decade of VPR. ⏳",
-                      "Table 2 repeats the comparison for six descriptors spanning a decade of VPR.\n\n" + t2[0])
+    t2 = sorted(t2, key=lambda x: 0 if "Table 2a" in x[:30] else 1)
+    txt = txt.replace("Table 2a aggregates all six descriptors", "\n\n".join(t2) + "\n\nTable 2a aggregates all six descriptors", 1)
 after("## 6.5 Batches: FDR and label-free confidence", "\n".join(v for k, v in tabs.items() if k.startswith("Table 5")))
 after("## 6.6 Robustness and ablations", "\n".join(v for k, v in tabs.items() if k.startswith("Table 4")) + fig("fig_alias_salad", "Figure 3. Acceptance rate of in-map aliasing errors (>25 m) at α = 0.05."))
 txt = re.sub(r"^---\ntitle:.*?---\n", "", txt, flags=re.S)

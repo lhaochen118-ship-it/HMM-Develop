@@ -37,9 +37,56 @@
 
 | descriptor | dataset | R@1 (5 m,10° / 2 fr) | SelfCal-AA | benign thr. #viol (alias) | LOCO #viol | CRSG #viol | oracle TPR |
 |---|---|---|---|---|---|---|---|
+| NetVLAD | RobotCar-Seasons | 0.666 | 0.006 / 0/9 / 0.746 / 0.00 | 4/9 (0.07) | 2/9 | 4/9 | 0.715 |
+| NetVLAD | Extended-CMU | 0.640 | 0.006 / 0/11 / 0.594 / 0.01 | 4/11 (0.20) | 4/11 | 5/11 | 0.367 |
+| NetVLAD | Nordland | 0.366 | 0.009 / 0/3 / 0.413 / 0.02 | 0/3 (0.07) | 1/3 | 0/3 | 0.179 |
+| CosPlace | RobotCar-Seasons | 0.767 | 0.004 / 0/9 / 0.842 / 0.01 | 0/9 (0.07) | 1/9 | 0/9 | 0.869 |
+| CosPlace | Extended-CMU | 0.903 | 0.012 / 0/11 / 0.813 / 0.01 | 1/11 (0.24) | 3/11 | 1/11 | 0.962 |
+| CosPlace | Nordland | 0.640 | 0.006 / 0/3 / 0.351 / 0.01 | 0/3 (0.16) | 1/3 | 0/3 | 0.393 |
+| MixVPR | RobotCar-Seasons | 0.850 | 0.004 / 0/9 / 0.912 / 0.00 | 1/9 (0.04) | 1/9 | 1/9 | 0.915 |
+| MixVPR | Extended-CMU | 0.937 | 0.012 / 0/11 / 0.884 / 0.00 | 1/11 (0.34) | 5/11 | 1/11 | 0.940 |
+| MixVPR | Nordland | 0.748 | 0.007 / 0/3 / 0.638 / 0.05 | 0/3 (0.33) | 1/3 | 0/3 | 0.552 |
+| DINOv2 (CLS+mean) | RobotCar-Seasons | 0.536 | 0.001 / 0/9 / 0.326 / 0.00 | 0/9 (0.11) | 2/9 | 0/9 | 0.642 |
+| DINOv2 (CLS+mean) | Extended-CMU | 0.637 | 0.001 / 0/11 / 0.062 / 0.00 | 2/11 (0.12) | 4/11 | 2/11 | 0.696 |
+| DINOv2 (CLS+mean) | Nordland | 0.459 | 0.007 / 0/3 / 0.183 / 0.01 | 0/3 (0.06) | 1/3 | 0/3 | 0.388 |
 | SALAD | RobotCar-Seasons | 0.911 | 0.004 / 0/9 / 0.988 / 0.00 | 5/9 (0.50) | 1/9 | 4/9 | 0.995 |
 | SALAD | Extended-CMU | 0.936 | 0.002 / 0/11 / 0.853 / 0.01 | 4/11 (0.78) | 4/11 | 4/11 | 0.992 |
 | SALAD | Nordland | 0.791 | 0.008 / 0/3 / 0.754 / 0.06 | 0/3 (0.49) | 2/3 | 0/3 | 0.780 |
+| MegaLoc | RobotCar-Seasons | 0.905 | 0.002 / 0/9 / 0.994 / 0.10 | 1/9 (0.29) | 1/9 | 1/9 | 0.993 |
+| MegaLoc | Extended-CMU | 0.927 | 0.012 / 0/11 / 0.950 / 0.00 | 2/11 (0.68) | 2/11 | 2/11 | 0.996 |
+| MegaLoc | Nordland | 0.799 | 0.007 / 0/3 / 0.861 / 0.08 | 0/3 (0.59) | 2/3 | 0/3 | 0.615 |
+
+### Table 2a (α = 0.05). All 6 descriptors × 3 datasets (18 settings, 138 deployment conditions)
+
+| method | labels | violating conditions | settings with ≥1 violation | mean TPR | median aliasing-accept | max worst-cond. FAR |
+|---|---|---|---|---|---|---|
+| SelfCal-AA (ours) | none | 0/138 | 0/18 | 0.676 | 0.008 | 0.040 |
+| SelfCal (ours) | none | 0/138 | 0/18 | 0.718 | 0.060 | 0.051 |
+| Threshold, benign→all | benign | 25/138 | 10/18 | 0.664 | 0.218 | 0.281 |
+| Threshold, benign, neg. incl. aliasing | benign | 15/138 | 7/18 | 0.541 | 0.087 | 0.209 |
+| Conformal LOCO (SAFEVPR protocol) | other cond. | 38/138 | 18/18 | 0.716 | 0.231 | 0.418 |
+| Quantile Transfer | benign | 64/138 | 18/18 | 0.799 | 0.440 | 0.483 |
+| Learned calibrator (CRSG) | benign | 25/138 | 10/18 | 0.785 | 0.173 | 0.187 |
+| PA ratio | benign | 11/138 | 5/18 | 0.526 | 0.083 | 0.122 |
+| Gaussian z-norm null | none | 112/138 | 16/18 | 0.740 | 0.451 | 0.525 |
+| EVT spacing test | none | 4/138 | 4/18 | 0.670 | 0.039 | 0.109 |
+| Oracle (labels of every condition) | all | 0/138 | 0/18 | 0.721 | — | 0.050 |
+
+### Table 2a (α = 0.1). All 6 descriptors × 3 datasets (18 settings, 138 deployment conditions)
+
+| method | labels | violating conditions | settings with ≥1 violation | mean TPR | median aliasing-accept | max worst-cond. FAR |
+|---|---|---|---|---|---|---|
+| SelfCal-AA (ours) | none | 0/138 | 0/18 | 0.762 | 0.020 | 0.079 |
+| SelfCal (ours) | none | 0/138 | 0/18 | 0.802 | 0.133 | 0.103 |
+| Threshold, benign→all | benign | 25/138 | 9/18 | 0.742 | 0.344 | 0.583 |
+| Threshold, benign, neg. incl. aliasing | benign | 18/138 | 8/18 | 0.617 | 0.175 | 0.568 |
+| Conformal LOCO (SAFEVPR protocol) | other cond. | 42/138 | 17/18 | 0.783 | 0.341 | 0.559 |
+| Quantile Transfer | benign | 58/138 | 17/18 | 0.857 | 0.529 | 0.523 |
+| Learned calibrator (CRSG) | benign | 27/138 | 10/18 | 0.831 | 0.318 | 0.525 |
+| PA ratio | benign | 10/138 | 4/18 | 0.608 | 0.134 | 0.203 |
+| Gaussian z-norm null | none | 106/138 | 15/18 | 0.755 | 0.554 | 0.622 |
+| EVT spacing test | none | 2/138 | 2/18 | 0.757 | 0.082 | 0.182 |
+| Oracle (labels of every condition) | all | 0/138 | 0/18 | 0.811 | — | 0.100 |
 
 ### Table 3. Excess-FAR bound Δ⁺_c (one-sided KS) — labelled benign null vs map null
 

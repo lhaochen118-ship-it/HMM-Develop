@@ -17,10 +17,11 @@ minimum-p rule, and add an aliasing guard based on the gap to the best distant r
 exchangeability, conservativeness whenever appearance change only makes unrelated queries less map-like, and FDR
 control with Benjamini–Hochberg. On RobotCar-Seasons (official reference map and thresholds), Extended-CMU-Seasons
 (eleven official slices merged into one 2,418-image city map, 21k queries, 11 dates) and Nordland, with six descriptors
-from NetVLAD to MegaLoc, the method keeps the off-map false-accept rate at or below the target in every deployment
-condition and rejects nearly all perceptual-aliasing errors, while label-calibrated baselines — including
-leave-one-condition-out conformal calibration and quantile transfer — exceed the target in up to five of nine conditions
-and accept 33–80% of aliasing errors. Its power approaches an oracle that has labels for every condition.
+from NetVLAD to MegaLoc, the method keeps the off-map false-accept rate at or below the target in all 138
+descriptor × condition cells and rejects nearly all perceptual-aliasing errors (median acceptance 0.8%), while
+label-calibrated baselines exceed the target in 25–64 of the 138 cells — leave-one-condition-out conformal calibration
+fails in every one of the 18 descriptor–dataset settings — and accept 17–44% of aliasing errors. Without the aliasing
+guard, its average power equals that of an oracle that has labels for every deployment condition (0.718 vs 0.721).
 
 # 1. Introduction
 
@@ -271,16 +272,60 @@ power on Nordland (0.41 vs 0.84), where seasonal change lowers all similarities.
 
 ## 6.4 Descriptors
 
-Table 2 repeats the comparison for six descriptors spanning a decade of VPR.
+**Table 2a (α = 0.05). All 6 descriptors × 3 datasets (18 settings, 138 deployment conditions)**
+
+| method | labels | violating conditions | settings with ≥1 violation | mean TPR | median aliasing-accept | max worst-cond. FAR |
+|---|---|---|---|---|---|---|
+| SelfCal-AA (ours) | none | 0/138 | 0/18 | 0.676 | 0.008 | 0.040 |
+| SelfCal (ours) | none | 0/138 | 0/18 | 0.718 | 0.060 | 0.051 |
+| Threshold, benign→all | benign | 25/138 | 10/18 | 0.664 | 0.218 | 0.281 |
+| Threshold, benign, neg. incl. aliasing | benign | 15/138 | 7/18 | 0.541 | 0.087 | 0.209 |
+| Conformal LOCO (SAFEVPR protocol) | other cond. | 38/138 | 18/18 | 0.716 | 0.231 | 0.418 |
+| Quantile Transfer | benign | 64/138 | 18/18 | 0.799 | 0.440 | 0.483 |
+| Learned calibrator (CRSG) | benign | 25/138 | 10/18 | 0.785 | 0.173 | 0.187 |
+| PA ratio | benign | 11/138 | 5/18 | 0.526 | 0.083 | 0.122 |
+| Gaussian z-norm null | none | 112/138 | 16/18 | 0.740 | 0.451 | 0.525 |
+| EVT spacing test | none | 4/138 | 4/18 | 0.670 | 0.039 | 0.109 |
+| Oracle (labels of every condition) | all | 0/138 | 0/18 | 0.721 | — | 0.050 |
+
 
 **Table 2 (α = 0.05). Descriptors. Cell: FAR / #viol / TPR / aliasing for SelfCal-AA | #viol for benign threshold, LOCO, CRSG | oracle TPR**
 
 | descriptor | dataset | R@1 (5 m,10° / 2 fr) | SelfCal-AA | benign thr. #viol (alias) | LOCO #viol | CRSG #viol | oracle TPR |
 |---|---|---|---|---|---|---|---|
+| NetVLAD | RobotCar-Seasons | 0.666 | 0.006 / 0/9 / 0.746 / 0.00 | 4/9 (0.07) | 2/9 | 4/9 | 0.715 |
+| NetVLAD | Extended-CMU | 0.640 | 0.006 / 0/11 / 0.594 / 0.01 | 4/11 (0.20) | 4/11 | 5/11 | 0.367 |
+| NetVLAD | Nordland | 0.366 | 0.009 / 0/3 / 0.413 / 0.02 | 0/3 (0.07) | 1/3 | 0/3 | 0.179 |
+| CosPlace | RobotCar-Seasons | 0.767 | 0.004 / 0/9 / 0.842 / 0.01 | 0/9 (0.07) | 1/9 | 0/9 | 0.869 |
+| CosPlace | Extended-CMU | 0.903 | 0.012 / 0/11 / 0.813 / 0.01 | 1/11 (0.24) | 3/11 | 1/11 | 0.962 |
+| CosPlace | Nordland | 0.640 | 0.006 / 0/3 / 0.351 / 0.01 | 0/3 (0.16) | 1/3 | 0/3 | 0.393 |
+| MixVPR | RobotCar-Seasons | 0.850 | 0.004 / 0/9 / 0.912 / 0.00 | 1/9 (0.04) | 1/9 | 1/9 | 0.915 |
+| MixVPR | Extended-CMU | 0.937 | 0.012 / 0/11 / 0.884 / 0.00 | 1/11 (0.34) | 5/11 | 1/11 | 0.940 |
+| MixVPR | Nordland | 0.748 | 0.007 / 0/3 / 0.638 / 0.05 | 0/3 (0.33) | 1/3 | 0/3 | 0.552 |
+| DINOv2 (CLS+mean) | RobotCar-Seasons | 0.536 | 0.001 / 0/9 / 0.326 / 0.00 | 0/9 (0.11) | 2/9 | 0/9 | 0.642 |
+| DINOv2 (CLS+mean) | Extended-CMU | 0.637 | 0.001 / 0/11 / 0.062 / 0.00 | 2/11 (0.12) | 4/11 | 2/11 | 0.696 |
+| DINOv2 (CLS+mean) | Nordland | 0.459 | 0.007 / 0/3 / 0.183 / 0.01 | 0/3 (0.06) | 1/3 | 0/3 | 0.388 |
 | SALAD | RobotCar-Seasons | 0.911 | 0.004 / 0/9 / 0.988 / 0.00 | 5/9 (0.50) | 1/9 | 4/9 | 0.995 |
 | SALAD | Extended-CMU | 0.936 | 0.002 / 0/11 / 0.853 / 0.01 | 4/11 (0.78) | 4/11 | 4/11 | 0.992 |
 | SALAD | Nordland | 0.791 | 0.008 / 0/3 / 0.754 / 0.06 | 0/3 (0.49) | 2/3 | 0/3 | 0.780 |
+| MegaLoc | RobotCar-Seasons | 0.905 | 0.002 / 0/9 / 0.994 / 0.10 | 1/9 (0.29) | 1/9 | 1/9 | 0.993 |
+| MegaLoc | Extended-CMU | 0.927 | 0.012 / 0/11 / 0.950 / 0.00 | 2/11 (0.68) | 2/11 | 2/11 | 0.996 |
+| MegaLoc | Nordland | 0.799 | 0.007 / 0/3 / 0.861 / 0.08 | 0/3 (0.59) | 2/3 | 0/3 | 0.615 |
 
+
+Table 2a aggregates all six descriptors and three datasets (18 settings, 138 deployment conditions) and Table 2
+details each setting. SelfCal and SelfCal-AA have **no significant violation in any of the 138 cells** and a
+worst-condition FAR of at most 0.040 / 0.051 at α = 0.05, whereas the benign threshold and the learned calibrator
+violate in 25 cells (10 of 18 settings), leave-one-condition-out conformal calibration in 38 cells — at least once in
+*every* setting — and Quantile Transfer in 64. Averaged over all settings, SelfCal reaches the oracle's power (0.718
+vs 0.721) and SelfCal-AA trades 4 points of TPR for a 7× lower aliasing acceptance (median 0.008 vs 0.060). For older
+descriptors (NetVLAD, CosPlace, MixVPR) SelfCal-AA often exceeds the oracle's TPR, because the oracle thresholds raw
+max-similarity while SelfCal also exploits the far-region statistic. The one weak case is DINOv2 CLS+mean, a generic
+descriptor that is not trained for VPR: its global features encode the capture condition so strongly that map
+pseudo-queries (which share the map's condition) are much more map-like than any deployment query. SelfCal stays valid
+(FAR ≤ 0.004) but becomes conservative (TPR 0.06–0.33 vs. oracle 0.39–0.70); centring queries on their own session
+mean recovers only part of the gap (RobotCar 0.33 → 0.41). This is the price of label-free validity, paid only by
+condition-sensitive descriptors. ⏳
 
 ## 6.5 Batches: FDR and label-free confidence
 

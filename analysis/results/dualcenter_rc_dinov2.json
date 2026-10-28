@@ -1,0 +1,50 @@
+{
+ "map-centring | combo(maxsim_raw, z_far_c) | SelfCal": {
+  "FAR": 0.0007215007215007215,
+  "worst": 0.005681818181818182,
+  "TPR": 0.3584720861900098,
+  "alias": 0.0038461538461538464
+ },
+ "map-centring | combo(maxsim_raw, z_far_c) | SelfCal-AA": {
+  "FAR": 0.0007215007215007215,
+  "worst": 0.005681818181818182,
+  "TPR": 0.32615083251714005,
+  "alias": 0.0038461538461538464
+ },
+ "map-centring | combo(maxsim_c, z_far_c) | SelfCal": {
+  "FAR": 0.0021645021645021645,
+  "worst": 0.011363636363636364,
+  "TPR": 0.41821743388834476,
+  "alias": 0.0057692307692307696
+ },
+ "map-centring | combo(maxsim_c, z_far_c) | SelfCal-AA": {
+  "FAR": 0.001443001443001443,
+  "worst": 0.011363636363636364,
+  "TPR": 0.3682664054848188,
+  "alias": 0.0038461538461538464
+ },
+ "dual-centring | combo(maxsim_raw, z_far_c) | SelfCal": {
+  "FAR": 0.0,
+  "worst": 0.0,
+  "TPR": 0.3878550440744368,
+  "alias": 0.021153846153846155
+ },
+ "dual-centring | combo(maxsim_raw, z_far_c) | SelfCal-AA": {
+  "FAR": 0.0,
+  "worst": 0.0,
+  "TPR": 0.3604309500489716,
+  "alias": 0.011538461538461539
+ },
+ "dual-centring | combo(maxsim_c, z_far_c) | SelfCal": {
+  "FAR": 0.0007215007215007215,
+  "worst": 0.005813953488372093,
+  "TPR": 0.4427032321253673,
+  "alias": 0.03653846153846154
+ },
+ "dual-centring | combo(maxsim_c, z_far_c) | SelfCal-AA": {
+  "FAR": 0.0007215007215007215,
+  "worst": 0.005813953488372093,
+  "TPR": 0.40450538687561216,
+  "alias": 0.023076923076923078
+ }
+}
