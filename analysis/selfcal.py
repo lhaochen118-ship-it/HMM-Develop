@@ -109,7 +109,7 @@ def _query_stats_torch(S, POS, CENT, CID, nc, excl, k, sue_k, sue_lam):
     d1, d2 = torch.sqrt(torch.clamp(2 - 2 * s1, min=0)), torch.sqrt(torch.clamp(2 - 2 * s2, min=0))
     pr = torch.softmax(S / 0.05, dim=1)
     K = min(sue_k, S.shape[1]); sv, idx = torch.topk(S, K, dim=1)
-    dk = torch.sqrt(torch.clamp(2 - 2 * sv, min=0)).double(); w = torch.exp(-sue_lam * (dk - dk.min(1, keepdim=True).values))
+    dk = torch.sqrt(torch.clamp(2 - 2 * sv, min=0)); w = torch.exp(-sue_lam * (dk - dk.min(1, keepdim=True).values))   # float32 as numpy
     w = w / w.sum(1, keepdim=True); P = POS[idx]; mp = (w[..., None] * P).sum(1, keepdim=True)
     s1d, tk0 = s1.double(), top_k[:, 0].double()
     raw = {"maxsim": s1, "margin": s1 - s2, "PA": -d1 / torch.clamp(d2, min=1e-9), "neg_entropy": (pr * torch.log(pr + 1e-12)).sum(1),
