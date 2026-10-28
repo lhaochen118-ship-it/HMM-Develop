@@ -24,7 +24,8 @@ target (worst condition 0.048 at α = 0.05) and accepts a median 1.1% of percept
 label-calibrated baselines exceed the target in 16–79 conditions — leave-one-condition-out conformal calibration in
 every one of the 24 settings — and accept 7–41% of aliasing errors. Queries from other cities and datasets are rejected
 (false-accept rate ≤ 0.007 in all 120 map × source pairs). Its average power is 0.646, against 0.706 for an oracle
-that holds labels for every deployment condition.
+that holds labels for every deployment condition. A higher-power operating point that tests only the gap statistic
+(SelfCal-Gap) reaches 0.746 — above the oracle — still without any significant violation (worst condition 0.073).
 
 # 1. Introduction
 
@@ -166,6 +167,13 @@ accept iff $\max\{p_{comb},p_{z_{gap}}\}\le\alpha$ **and** $p_{\max s}(q)\le\gam
 $\gamma=0.8$ (the raw max-similarity must exceed the 20 % quantile of the map null). The gate is inactive for
 almost every true match (mean TPR 0.648 → 0.646 over 24 settings) but removes the foreign-domain false accepts (§6.7).
 
+**Two operating points.** SelfCal-AA requires both the combination and the gap to be significant, so it stays valid
+when *either* branch is dominated by the map null (intersection–union, as for the gate). Where the far-region level
+$z_{far}$ is not dominated (we observe this on MSLS) its branch is still harmless for validity but costs power.
+**SelfCal-Gap** uses the gap alone, $p=p_{z_{gap}}$ within the same Mondrian strata and behind the same gate: it is
+valid whenever $z_{gap}$ is dominated and has markedly more power (§6.4). We report both and recommend SelfCal-AA when
+validity must hold under the weakest assumptions.
+
 **Batches.** With p-values of a deployment batch, Benjamini–Hochberg controls the false-discovery rate, and the
 two-groups model (Storey's $\hat\pi_0$, Grenander density estimate) turns $p$ into a calibrated probability of a true
 match, $1-\widehat{\mathrm{lfdr}}(p)$ — again without labels.
@@ -292,7 +300,15 @@ cities, many capture dates and front/side views in one map; SelfCal-AA keeps 0/5
 against the oracle's 0.661 (MegaLoc 0.879 vs 0.965). The label-calibrated baselines obtain their higher MSLS power by
 violating 6–15 of the 54 conditions.
 
-**Components (Table 2a).** Removing the Mondrian strata lowers the mean TPR from 0.646 to 0.612 and raises the
+**SelfCal-Gap.** Testing the gap alone (§4) keeps 0/192 significant violations and raises the mean TPR from 0.646 to
+0.746, above the oracle's 0.706: on MSLS from 0.460 to 0.603 (oracle 0.661) and on RobotCar, CMU and Nordland from
+0.708 to 0.793. The price is a thinner margin: the worst single-condition FAR is 0.073 (none significant) instead of
+0.048, and the median aliasing acceptance is 0.021 instead of 0.011. Without the gate its TPR is 0.758, but the
+foreign-domain leaks return. The far-region level $z_{far}$ is the statistic whose dominance fails on MSLS: alone it
+reaches a worst-condition FAR of 0.40–0.88 there. It is therefore not needed for validity where $z_{gap}$ is dominated,
+but it protects SelfCal-AA where $z_{gap}$ might not be.
+
+**Components (Table 2a). Removing the Mondrian strata lowers the mean TPR from 0.646 to 0.612 and raises the
 worst-condition FAR from 0.048 to 0.140 (one RobotCar condition; not significant after Bonferroni); removing the domain
 gate changes the TPR by +0.002 but re-opens the foreign-domain leaks of §6.7; removing the aliasing guard raises the TPR
 to 0.667 but accepts a median 7.2% of aliasing errors and produces 5 significant violations on MSLS, where aliasing

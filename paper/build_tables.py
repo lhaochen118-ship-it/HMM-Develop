@@ -6,7 +6,7 @@ R = os.path.join(os.path.dirname(__file__), "..", "analysis", "results")
 OUT = os.path.join(os.path.dirname(__file__), "tables.md")
 DS = [("rc", "RobotCar-Seasons (9 cond.)"), ("cmu", "Extended-CMU (11 dates)"), ("nord", "Nordland (3 seasons)"), ("msls", "MSLS-val (CPH+SF, 9 cond.)")]
 DESC_NAMES = {"salad": "SALAD", "megaloc": "MegaLoc", "dinov2": "DINOv2 (CLS+mean)", "mixvpr": "MixVPR", "cosplace": "CosPlace", "netvlad": "NetVLAD"}
-MAIN = [("SelfCal-AA", "**SelfCal-AA (ours)**", "none"), ("SelfCal[min(maxsim, z_far+c)] (no alias guard)", "SelfCal (ours, no alias guard)", "none"),
+MAIN = [("SelfCal-AA", "**SelfCal-AA (ours)**", "none"), ("SelfCal-Gap", "**SelfCal-Gap (ours, high power)**", "none"), ("SelfCal[min(maxsim, z_far+c)] (no alias guard)", "SelfCal (ours, no alias guard)", "none"),
         ("LabelCal[maxsim] (day->all)", "Threshold, benign→all", "benign"), ("LabelCal[maxsim] (day, neg=off+alias)", "Threshold, benign, neg. incl. aliasing", "benign"),
         ("LabelCal[maxsim] (LOCO, SAFEVPR-style)", "Conformal LOCO (SAFEVPR protocol)", "other cond."),
         ("QuantileTransfer[maxsim] (day->all)", "Quantile Transfer", "benign"), ("LabelCal[CRSG] (day->all)", "Learned calibrator (CRSG), benign→all", "benign"),
@@ -16,9 +16,15 @@ MAIN = [("SelfCal-AA", "**SelfCal-AA (ours)**", "none"), ("SelfCal[min(maxsim, z
         ("Oracle[maxsim] (labels per cond.)", "Oracle (labels of every condition)", "all")]
 
 
+def rows_of(f):
+    """rows of eval_<ds>_<desc>.json plus the SelfCal-Gap rows kept separately in results/gap/ (same name)"""
+    rows = json.load(open(f))["rows"]; g = os.path.join(R, "gap", os.path.basename(f))
+    return rows + (json.load(open(g))["rows"] if os.path.isfile(g) else [])
+
+
 def load(ds, desc):
     f = os.path.join(R, f"eval_{ds}_{desc}.json")
-    return {(r["method"], round(r["alpha"], 3)): r for r in json.load(open(f))["rows"]} if os.path.isfile(f) else {}
+    return {(r["method"], round(r["alpha"], 3)): r for r in rows_of(f)} if os.path.isfile(f) else {}
 
 
 def cell(r, alias=True):
@@ -38,19 +44,21 @@ for a in (0.05, 0.1):
 
 descs = [d for d in ["netvlad", "cosplace", "mixvpr", "dinov2", "salad", "megaloc"] if glob.glob(os.path.join(R, f"eval_*_{d}.json"))]
 lines.append("\n### Table 2 (α = 0.05). Descriptors. Cell: FAR / #viol / TPR / aliasing for SelfCal-AA | #viol for benign threshold, LOCO, CRSG | oracle TPR\n")
-lines.append("| descriptor | dataset | R@1 (5 m,10° / 2 fr / 25 m) | SelfCal-AA | benign thr. #viol (alias) | LOCO #viol | CRSG #viol | SUE #viol | oracle TPR |\n|---|---|---|---|---|---|---|---|---|")
+lines.append("| descriptor | dataset | R@1 (5 m,10° / 2 fr / 25 m) | SelfCal-AA | SelfCal-Gap TPR (worst) | benign thr. #viol (alias) | LOCO #viol | CRSG #viol | SUE #viol | oracle TPR |\n|---|---|---|---|---|---|---|---|---|---|")
 for d in descs:
     for ds, dn in DS:
         D = load(ds, d)
         if not D: continue
         g = lambda k: D.get((k, 0.05))
-        s, b, lo, cr, su, orc = g(MAIN[0][0]), g(MAIN[2][0]), g(MAIN[4][0]), g(MAIN[6][0]), g("LabelCal[SUE] (day->all)"), g(MAIN[-1][0])
+        s, b, lo, cr, su, orc = g("SelfCal-AA"), g("LabelCal[maxsim] (day->all)"), g("LabelCal[maxsim] (LOCO, SAFEVPR-style)"), g("LabelCal[CRSG] (day->all)"), g("LabelCal[SUE] (day->all)"), g("Oracle[maxsim] (labels per cond.)"); gp = g("SelfCal-Gap")
         meta = json.load(open(os.path.join(R, f"eval_{ds}_{d}.json")))["meta"]
         lines.append(f"| {DESC_NAMES.get(d, d)} | {dn.split(' ')[0]} | {meta.get('r1', float('nan')):.3f} | {cell(s)} | "
-                     f"{b['n_viol']}/{b['n_cond']} ({b['alias_acc']:.2f}) | {lo['n_viol']}/{lo['n_cond']} | {cr['n_viol']}/{cr['n_cond']} | "
+                     + (f"{gp['TPR']:.3f} ({gp['worstFAR']:.3f}) | " if gp else "— | ")
+                     + f"{b['n_viol']}/{b['n_cond']} ({b['alias_acc']:.2f}) | {lo['n_viol']}/{lo['n_cond']} | {cr['n_viol']}/{cr['n_cond']} | "
                      + (f"{su['n_viol']}/{su['n_cond']}" if su else "—") + f" | {orc['TPR']:.3f} |")
 
-AGG = [("SelfCal-AA", "SelfCal-AA (ours)", "none"), ("SelfCal-AA w/o strata", "  − Mondrian strata", "none"),
+AGG = [("SelfCal-AA", "SelfCal-AA (ours)", "none"), ("SelfCal-Gap", "SelfCal-Gap (ours, high power)", "none"),
+       ("SelfCal-Gap w/o gate", "  SelfCal-Gap − domain gate", "none"), ("SelfCal-AA w/o strata", "  − Mondrian strata", "none"),
        ("SelfCal-AA w/o gate", "  − domain gate", "none"), ("SelfCal-AA w/o strata, w/o gate", "  − both (original AA rule)", "none"),
        ("SelfCal[min(maxsim, z_far+c)] (no alias guard)", "  − aliasing guard", "none"),
        ("LabelCal[maxsim] (day->all)", "Threshold, benign→all", "benign"), ("LabelCal[maxsim] (day, neg=off+alias)", "Threshold, benign, neg. incl. aliasing", "benign"),
@@ -67,7 +75,7 @@ for a in (0.05, 0.1):
     for key, name, lab in AGG:
         v = c_ = sv = 0; tp, al, wf = [], [], []
         for f in EVALS:
-            for r in json.load(open(f))["rows"]:
+            for r in rows_of(f):
                 if r["method"] != key or abs(r["alpha"] - a) > 1e-9: continue
                 v += r["n_viol"]; c_ += r["n_cond"]; sv += int(r["n_viol"] > 0); tp.append(r["TPR"]); wf.append(r["worstFAR"])
                 if r.get("alias_acc") is not None and r["alias_acc"] == r["alias_acc"]: al.append(r["alias_acc"])

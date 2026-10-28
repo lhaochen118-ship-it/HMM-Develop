@@ -56,7 +56,8 @@ def evaluate(ep, c, desc, key=None):
         return lambda a: (po <= a, pi <= a)
     # --- ours: SelfCal-AA (Mondrian strata by sd_far + raw-similarity domain gate) and its component ablations
     for name, kw in [("SelfCal-AA", {}), ("SelfCal-AA w/o strata", dict(strata=1)), ("SelfCal-AA w/o gate", dict(gate=1.0)),
-                     ("SelfCal-AA w/o strata, w/o gate", dict(strata=1, gate=1.0))]:
+                     ("SelfCal-AA w/o strata, w/o gate", dict(strata=1, gate=1.0)), ("SelfCal-Gap", dict(mode="gap")),
+                     ("SelfCal-Gap w/o gate", dict(mode="gap", gate=1.0))]:
         methods[name] = pv(SC.selfcal_p(raw[0], cen[0], raw[1], cen[1], **kw), SC.selfcal_p(raw[0], cen[0], raw[2], cen[2], **kw))
     methods["SelfCal[min(maxsim, z_far+c)] (no alias guard)"] = pv(
         SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"]], [raw[1]["maxsim"], cen[1]["z_far"]]),

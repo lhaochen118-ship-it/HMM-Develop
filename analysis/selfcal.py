@@ -198,12 +198,14 @@ class SelfCalTest:
          the AA p-value of a query is computed against the null items of its own bin only.
       2. Domain gate: the query's raw max-sim p-value w.r.t. the whole null must be <= gate (0.8: above the null's
          20 % quantile), otherwise p = 1.
-    strata=1, gate=1 recovers the original SelfCal-AA."""
+    strata=1, gate=1 recovers the original SelfCal-AA.
+    mode="aa" (default): max(recalibrated min(p_ms, p_zfar), p_zgap) — valid if EITHER branch is dominated.
+    mode="gap" (SelfCal-Gap): p_zgap alone — more power, valid only if z_gap is dominated."""
 
-    def __init__(self, N, strata=10, gate=0.8, min_per=50):
+    def __init__(self, N, strata=10, gate=0.8, min_per=50, mode="aa"):
         N = {k: np.asarray(N[k], float) for k in ("ms", "zf", "zg", "sdf")}
         ok = np.isfinite(N["ms"]) & np.isfinite(N["zf"]) & np.isfinite(N["zg"]) & np.isfinite(N["sdf"])
-        self.B = max(1, min(strata, int(ok.sum()) // min_per)); self.gate = gate
+        self.B = max(1, min(strata, int(ok.sum()) // min_per)); self.gate, self.mode = gate, mode
         self.edges = np.quantile(N["sdf"][ok], np.linspace(0, 1, self.B + 1)[1:-1])
         bn = np.digitize(N["sdf"], self.edges)
         self.cal = [_AACal(N["ms"][ok & (bn == b)], N["zf"][ok & (bn == b)], N["zg"][ok & (bn == b)]) for b in range(self.B)]
@@ -214,7 +216,8 @@ class SelfCalTest:
         bx = np.digitize(np.nan_to_num(np.asarray(sdf, float), nan=-1e9), self.edges); p = np.ones(len(ms))
         for b in range(self.B):
             mx = bx == b
-            if mx.any(): p[mx] = self.cal[b].p(ms[mx], zf[mx], zg[mx])
+            if not mx.any(): continue
+            p[mx] = self.cal[b].p(ms[mx], zf[mx], zg[mx]) if self.mode == "aa" else _AACal._p(self.cal[b].zg, zg[mx])
         return np.where(_AACal._p(self.ms_all, ms) <= self.gate, p, 1.0)
 
 
@@ -233,7 +236,7 @@ class SelfCalAA:
     Defaults = the adopted rule (Mondrian by sd_far, B=10, raw-similarity gate 0.8); strata=1, gate=1 = original rule."""
 
     def __init__(self, m_desc, m_pos, cell=10.0, excl=25.0, k=10, block=300.0, off_d=40.0, stride=2,
-                 strata=10, gate=0.8, min_per=50):
+                 strata=10, gate=0.8, min_per=50, mode="aa"):
         self.m_raw = m_desc.astype(np.float32); self.mu = self.m_raw.mean(0, keepdims=True)
         n = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True)
         self.m_c = n(self.m_raw - self.mu); self.k, self.excl = k, excl
@@ -242,7 +245,7 @@ class SelfCalAA:
         self.m_pos = np.asarray(m_pos, float)
         nr = map_null(self.m_raw, m_pos, block, off_d, cell, excl, k, stride)
         nc = map_null(self.m_c, m_pos, block, off_d, cell, excl, k, stride)
-        self.test = SelfCalTest(dict(ms=nr["maxsim"], zf=nc["z_far"], zg=nc["z_gap"], sdf=nc["sd_far"]), strata, gate, min_per)
+        self.test = SelfCalTest(dict(ms=nr["maxsim"], zf=nc["z_far"], zg=nc["z_gap"], sdf=nc["sd_far"]), strata, gate, min_per, mode)
 
     def stats(self, q_desc):
         """per-query statistics (same definitions as query_stats on raw / centred similarities) + raw top-1 index"""

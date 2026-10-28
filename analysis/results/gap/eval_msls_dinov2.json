@@ -1,0 +1,142 @@
+{
+ "rows": [
+  {
+   "method": "SelfCal-Gap",
+   "alpha": 0.01,
+   "FAR": 0.0008244023083264633,
+   "worstFAR": 0.0022770398481973433,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.04805672268907563,
+   "alias_acc": 0.00016937669376693767,
+   "per_cond": {
+    "cph-fall": 0.0,
+    "cph-night": 0.0,
+    "cph-spring": 0.0022770398481973433,
+    "cph-summer": 0.0,
+    "cph-winter": 0.0,
+    "sf-fall": 0.000819000819000819,
+    "sf-spring": 0.0,
+    "sf-summer": 0.0,
+    "sf-winter": 0.0
+   }
+  },
+  {
+   "method": "SelfCal-Gap",
+   "alpha": 0.05,
+   "FAR": 0.011306088799905783,
+   "worstFAR": 0.018837018837018837,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.19143907563025211,
+   "alias_acc": 0.005420054200542005,
+   "per_cond": {
+    "cph-fall": 0.014492753623188406,
+    "cph-night": 0.0,
+    "cph-spring": 0.017836812144212524,
+    "cph-summer": 0.00859375,
+    "cph-winter": 0.0,
+    "sf-fall": 0.018837018837018837,
+    "sf-spring": 0.004137931034482759,
+    "sf-summer": 0.005608974358974359,
+    "sf-winter": 0.0
+   }
+  },
+  {
+   "method": "SelfCal-Gap",
+   "alpha": 0.1,
+   "FAR": 0.02708750441644094,
+   "worstFAR": 0.05217391304347826,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.31092436974789917,
+   "alias_acc": 0.019139566395663957,
+   "per_cond": {
+    "cph-fall": 0.05217391304347826,
+    "cph-night": 0.023255813953488372,
+    "cph-spring": 0.03795066413662239,
+    "cph-summer": 0.0203125,
+    "cph-winter": 0.011976047904191617,
+    "sf-fall": 0.030303030303030304,
+    "sf-spring": 0.020689655172413793,
+    "sf-summer": 0.01842948717948718,
+    "sf-winter": 0.006134969325153374
+   }
+  },
+  {
+   "method": "SelfCal-Gap w/o gate",
+   "alpha": 0.01,
+   "FAR": 0.0008244023083264633,
+   "worstFAR": 0.0022770398481973433,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.04963235294117647,
+   "alias_acc": 0.00016937669376693767,
+   "per_cond": {
+    "cph-fall": 0.0,
+    "cph-night": 0.0,
+    "cph-spring": 0.0022770398481973433,
+    "cph-summer": 0.0,
+    "cph-winter": 0.0,
+    "sf-fall": 0.000819000819000819,
+    "sf-spring": 0.0,
+    "sf-summer": 0.0,
+    "sf-winter": 0.0
+   }
+  },
+  {
+   "method": "SelfCal-Gap w/o gate",
+   "alpha": 0.05,
+   "FAR": 0.012837121658226357,
+   "worstFAR": 0.021294021294021293,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.20430672268907563,
+   "alias_acc": 0.006436314363143632,
+   "per_cond": {
+    "cph-fall": 0.014492753623188406,
+    "cph-night": 0.0,
+    "cph-spring": 0.019734345351043642,
+    "cph-summer": 0.01015625,
+    "cph-winter": 0.0014970059880239522,
+    "sf-fall": 0.021294021294021293,
+    "sf-spring": 0.006896551724137931,
+    "sf-summer": 0.005608974358974359,
+    "sf-winter": 0.0
+   }
+  },
+  {
+   "method": "SelfCal-Gap w/o gate",
+   "alpha": 0.1,
+   "FAR": 0.03745141914968791,
+   "worstFAR": 0.057971014492753624,
+   "n_viol": 0,
+   "n_cond": 9,
+   "TPR": 0.3398109243697479,
+   "alias_acc": 0.02625338753387534,
+   "per_cond": {
+    "cph-fall": 0.057971014492753624,
+    "cph-night": 0.023255813953488372,
+    "cph-spring": 0.05388994307400379,
+    "cph-summer": 0.03203125,
+    "cph-winter": 0.014970059880239521,
+    "sf-fall": 0.043407043407043405,
+    "sf-spring": 0.028965517241379312,
+    "sf-summer": 0.022435897435897436,
+    "sf-winter": 0.006134969325153374
+   }
+  }
+ ],
+ "meta": {
+  "r1": 0.39209225700164746,
+  "n_alias": 5904,
+  "n_off": 8491,
+  "n_corr": 3808,
+  "n_null": 7024,
+  "calib": [
+   "cph-fall",
+   "cph-winter"
+  ]
+ },
+ "note": "SelfCal-Gap rows of the v3 eval_all rerun (claude/selfcal-seq); the AA rows of that run equal analysis/results/eval_*.json exactly"
+}
