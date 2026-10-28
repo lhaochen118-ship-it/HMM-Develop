@@ -68,9 +68,11 @@ model — all without labels.
 
 **Contributions.** (i) We show on four benchmarks that label-calibrated acceptance (threshold, spatial uncertainty,
 learned and conformal) loses its false-accept guarantee under appearance shift, and that the classical parametric nulls
-(Gaussian z-norm, EVT spacing tests) are invalid or degraded by hubness. (ii) We propose SelfCal: map pseudo-queries via
-spatial hold-out as a conformal null sample, affine-invariant far-region statistics on map-centred descriptors, a
-self-calibrated combination, an aliasing guard, Mondrian strata and a domain gate. (iii) We give validity,
+(Gaussian z-norm, EVT spacing tests) are invalid or degraded by hubness. (ii) We propose SelfCal, a calibration
+principle rather than a new score: spatial hold-out turns the map into a conformal null sample of off-map queries, and
+affine-invariant far-region statistics on map-centred descriptors make that null transfer across conditions. Standard
+conformal devices (re-calibrated minimum-p, Mondrian strata, intersection–union aliasing guard and domain gate) are
+instantiated so that every quantity is computed from the query and the map alone. (iii) We give validity,
 dominance-based robustness, excess-risk, domain-shift and FDR results. (iv) We evaluate on RobotCar-Seasons,
 Extended-CMU-Seasons, Nordland and MSLS with six descriptors and 32 deployment conditions, plus queries from foreign
 cities and datasets, with full ablations; code and the descriptor dumps are public.
@@ -90,7 +92,8 @@ calibrate any score, and it shows which scores transfer across conditions.
 
 **Thresholds and operating points.** Schubert et al. [ICRA'21] model the similarity distribution as a robust normal and
 threshold a high quantile; Vysotska et al. [ICRA'25] adapt thresholds for sequences; Trinh & Lyons [2025] derive
-per-place thresholds from negative statistics of the database; Quantile Transfer [IROS'26] transfers a threshold
+per-place thresholds from negative statistics of the database; quality scores that compare the best match with the
+best match outside a window around it date back to multi-process fusion [Hausler'19] and SeqSLAM; Quantile Transfer [IROS'26] transfers a threshold
 calibrated on a labelled traversal through quantiles of the deployment similarity distribution. None provides a
 guarantee under appearance shift; parametric nulls are invalid in our experiments and raw-score database negatives are
 conservative but lose power under shift (§6.4).
@@ -99,12 +102,30 @@ conservative but lose power under shift (§6.4).
 finite-sample guarantees under exchangeability [Vovk'05, Angelopoulos'21, Bates'23]; Barber et al. [2023] bound the
 coverage gap under distribution shift. SAFEVPR [Sier'26] combines a DINOv2 patch-matching verifier with Mondrian
 Learn-then-Test and reports empirical FDR validity across conditions when calibrating on labelled data of the other
-conditions; Route-MHT [2026] learns a map-out guardrail for thermal VPR. Our null sample comes from the map rather than
-from labelled queries, and our robustness argument is a stochastic-dominance property of the map's own condition.
+conditions; its Mondrian bins are quantiles of the verifier score itself and are fitted with labels. Route-MHT
+[2026] learns a map-out guardrail for thermal VPR, and QCSA [Kim'26] admits LiDAR loop candidates above a quantile of
+the strongest false segment per calibration query, again from labelled calibration trajectories. Our null sample comes
+from the map rather than from labelled queries, and our robustness argument is a stochastic-dominance property of the
+map's own condition. The devices we combine are standard: Mondrian (category-conditional) calibration [Vovk'05] and its
+localised and conditional generalisations [Gibbs'25, Wu'26], and max-p (intersection–union) aggregation, which is
+valid when the test point follows any one of several null distributions [Berger'82, Yang'26, Qian'26]. What is
+specific to SelfCal is that the stratifier ($\sigma_{far}$) and both branches of the intersection–union test are
+computed from the query's own similarities to the map, so they need no labels.
 
-**Using the map at test time.** The reference map with its poses is available before deployment in most VPR
+**Using the map or gallery at test time.** The reference map with its poses is available before deployment in most VPR
 applications; it has been used to fine-tune descriptors (RSF [Zaffar'25]), to choose map density from two reference
-traversals [Hussaini'26], and to estimate spatial uncertainty (SUE). We use it as a *calibration set*.
+traversals [Hussaini'26], to estimate spatial uncertainty (SUE), to derive per-place thresholds from negative
+statistics [Trinh'25], and as leave-self-out pseudo-queries that select a training-free aggregation head [TFA'26];
+TFA also shows that database-only evidence can fail to transfer to deployment queries, which is why we pair the map
+null with an explicit shift argument (§5). Open-set face and speaker recognition offer the closest analogues outside
+VPR. Bhatta et al. [Bhatta'25] simulate out-of-gallery probes by removing the probe identity from the gallery and
+train a classifier on the resulting rank patterns; Heo et al. [Heo'26] use the other enrolled speakers as in-domain
+evidence and calibrate verification with affine-invariant dispersion and profile-deviance terms; COVE [Khazem'26]
+gives distribution-free false-accept control for embedding verification and shows how hub identities limit
+calibration-only thresholds, but needs labelled calibration identities and exchangeability between calibration and
+deployment. None of these turns a held-out part of the gallery into a conformal null sample with a guarantee that
+survives a change of acquisition condition. We use the map in exactly that role, with spatial hold-out supplying the
+labels.
 
 **Hubness.** High-dimensional nearest-neighbour retrieval produces hubs, points that are close to many queries
 [Radovanović'10]; centring [Suzuki'13] and local scaling (CSLS [Conneau'18]) reduce it. We find that hubness is what
@@ -214,7 +235,7 @@ intersection of the two tests' accept events, so its probability is at most that
 small under **appearance** shift (the invariant statistics are dominated, T2/T3); the second is small under
 **domain** shift, where foreign images are visibly less similar to the map than its own unrelated places are. The
 test is thus conservative whenever *either* kind of shift explains the change, the intersection–union principle
-[Berger'82]. Neither assumption needs labels; $\varepsilon_c$ can be audited with any unlabelled foreign image set.
+[Berger'82], also used for max-p aggregation of conformal p-values across several null distributions [Yang'26]. Neither assumption needs labels; $\varepsilon_c$ can be audited with any unlabelled foreign image set.
 
 # 6. Experiments
 
@@ -376,19 +397,26 @@ verification scores, which it can calibrate without modification.
 - [Berger'82] R. L. Berger. Multiparameter hypothesis testing and acceptance sampling. *Technometrics* 24(4), 1982.
 - [Berton'22] G. Berton, C. Masone, B. Caputo. Rethinking visual geo-localization for large-scale applications (CosPlace). CVPR 2022.
 - [Berton'25] G. Berton, C. Masone. MegaLoc: One retrieval to place them all. CVPR Workshops 2025.
+- [Bhatta'25] A. Bhatta, M. Dhakal, M. C. King, K. W. Bowyer. Are you in or out (of gallery)? Wisdom from the same-identity crowd. arXiv:2508.06357, 2025.
 - [Cai'22] K. Cai, C. X. Lu, X. Huang. STUN: Self-teaching uncertainty estimation for place recognition. IROS 2022.
 - [Carson'22] H. Carson, J. J. Ford, M. Milford. Predicting to improve: Integrity measures for assessing visual localization performance. RA-L 2022.
 - [Claxton'24] O. Claxton, C. Malone, H. Carson, J. J. Ford, G. Bolton, I. Shames, M. Milford. Improving visual place recognition based robot navigation by verifying localization estimates. RA-L 2024.
 - [Conneau'18] A. Conneau, G. Lample, M. Ranzato, L. Denoyer, H. Jégou. Word translation without parallel data (CSLS). ICLR 2018.
 - [Efron'01] B. Efron, R. Tibshirani, J. D. Storey, V. Tusher. Empirical Bayes analysis of a microarray experiment (local fdr). JASA 2001.
+- [Gibbs'25] I. Gibbs, J. J. Cherian, E. J. Candès. Conformal prediction with conditional guarantees. JRSS-B 2025.
+- [Hausler'19] S. Hausler, A. Jacobson, M. Milford. Multi-process fusion: Visual place recognition using multiple image processing methods. RA-L 2019.
 - [Hausler'21] S. Hausler, T. Fischer, M. Milford. Unsupervised complementary-aware multi-process fusion for visual place recognition. arXiv:2112.04701.
+- [Heo'26] H.-S. Heo, M. Lee, Y. Kwon, B.-J. Lee. Using the enrollment gallery as evidence: Affine-invariant score calibration for target speaker tagging. arXiv:2610.11272, 2026.
 - [Hussaini'25] S. Hussaini, T. Fischer, M. Milford. Improving visual place recognition with sequence-matching receptiveness prediction. arXiv:2503.06840.
 - [Hussaini'26] S. Hussaini, T. Fischer, M. Milford. Automatic map density selection for locally-performant visual place recognition. arXiv:2602.21473.
 - [Izquierdo'24] S. Izquierdo, J. Civera. Optimal transport aggregation for visual place recognition (SALAD). CVPR 2024.
 - [KappaPlace'26] M. Yanko, Y. Shavit. KappaPlace: Learning hyperspherical uncertainty for visual place recognition via prototype-anchored supervision. arXiv:2605.19435.
+- [Khazem'26] S. Khazem. Identities, not pairs: Distribution-free false-accept control for embedding-based verification (COVE). arXiv:2610.35277, 2026.
+- [Kim'26] J. Kim, S. Choi, W. Kang, T.-w. Kim. Calibrated keyframe-segment selection for descriptor-agnostic LiDAR loop closure in repetitive environments (QCSA). arXiv:2512.09447, 2026.
 - [Lowe'04] D. G. Lowe. Distinctive image features from scale-invariant keypoints. IJCV 2004.
 - [Miller'26] E. Miller, M. Milford, M. B. Hafez, S. D. Ramchurn, S. Ehsan. Through the lens of doubt: Robust and efficient uncertainty estimation for visual place recognition. RA-L 2026 (arXiv:2510.13464).
 - [Oquab'24] M. Oquab et al. DINOv2: Learning robust visual features without supervision. TMLR 2024.
+- [Qian'26] X. Qian, Y. Cui, Y. Lin, J. Wu, Y. Xing. Detecting unseen jailbreak sources: A multi-source conformal detection perspective. arXiv:2610.09167, 2026.
 - [Radovanović'10] M. Radovanović, A. Nanopoulos, M. Ivanović. Hubs in space: Popular nearest neighbors in high-dimensional data. JMLR 2010.
 - [Rajani'26] D. M. Rajani, M. Milford, T. Fischer. Quantile transfer for reliable operating point selection in visual place recognition. IROS 2026 (arXiv:2602.04401).
 - [RouteMHT'26] Z. Lu, K. Tanaka. Route-MHT: Multimodal transformer guardrails for thermal visual place recognition. arXiv:2607.04745.
@@ -399,11 +427,14 @@ verification scores, which it can calibrate without modification.
 - [Storey'02] J. D. Storey. A direct approach to false discovery rates. JRSS-B 2002.
 - [Sünderhauf'13] N. Sünderhauf, P. Neubert, P. Protzel. Are we there yet? Challenging SeqSLAM on a 3000 km journey across all four seasons. ICRA Workshops 2013.
 - [Suzuki'13] I. Suzuki, K. Hara, M. Shimbo, M. Saerens, K. Fukumizu. Centering similarity measures to reduce hubs. EMNLP 2013.
+- [TFA'26] X. Li, Z. Mao, S. Wang, S. Duan, G. Zhang. Calibrating retrieval geometry: Reliability-guided training-free aggregation for visual place recognition. arXiv:2609.25937, 2026.
 - [Toft'20] C. Toft et al. Long-term visual localization revisited. TPAMI 2020.
 - [Trinh'25] N. Trinh, D. Lyons. Adaptive thresholding for visual place recognition using negative Gaussian mixture statistics. arXiv:2512.09071.
 - [Vovk'05] V. Vovk, A. Gammerman, G. Shafer. Algorithmic Learning in a Random World. Springer 2005.
 - [Vysotska'25] O. Vysotska, I. Bogoslavskyi, M. Hutter, C. Stachniss. Adaptive thresholding for sequence-based place recognition. ICRA 2025.
 - [Warburg'20] F. Warburg, S. Hauberg, M. López-Antequera, P. Gargallo, Y. Kuang, J. Civera. Mapillary Street-Level Sequences: A dataset for lifelong place recognition. CVPR 2020.
 - [Warburg'21] F. Warburg, M. Jørgensen, J. Civera, S. Hauberg. Bayesian triplet loss: Uncertainty quantification in image retrieval. ICCV 2021.
+- [Wu'26] X. Wu, J. Liu, H. Ren, C. Zou. Conformal novelty detection via data-enhanced localization. arXiv:2610.34999, 2026.
+- [Yang'26] Y. Yang, Y. Jin. Multi-distribution robust conformal prediction. ICML 2026 (arXiv:2601.02998).
 - [Zaffar'24] M. Zaffar, L. Nan, J. F. P. Kooij. On the estimation of image-matching uncertainty in visual place recognition. CVPR 2024.
 - [Zaffar'25] M. Zaffar, L. Nan, S. Scherer, J. F. P. Kooij. The overlooked value of test-time reference sets in visual place recognition. arXiv:2510.03751.
