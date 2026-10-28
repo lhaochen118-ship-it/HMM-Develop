@@ -49,14 +49,18 @@ sequential/condition methods never beat softmax on the realistic data.
 
 ## Open-set / off-map detection (AUROC)
 
-| dataset | CRSG | SUE | filter-null |
+| dataset | CRSG | L2-NN dist. (RUE)† | filter-null |
 |---|---|---|---|
 | RobotCar | 0.949 | 0.948 | 0.898 |
 | CMU | 0.861 | **0.895** | **0.228 (collapse)** |
 | Nordland | 0.804 | 0.935 | **0.992** |
 
 **Reading:** the sequential filter-null is the best OOD detector on dense Nordland (0.99) but **collapses on sparse
-realistic data** (CMU 0.23 ≪ random-ish). SUE and CRSG are the robust instantaneous OOD signals on realistic data.
+realistic data** (CMU 0.23 ≪ random-ish). L2-NN distance and CRSG are the robust instantaneous OOD signals on realistic data.
+
+† **Correction (Entry 11 / `LITERATURE_GATE.md`):** this column was previously labelled "SUE". The quantity computed
+in every notebook is `sqrt(2-2*max cos)`, i.e. Zaffar et al.'s *L2-distance* retrieval-based baseline, not SUE
+(spatial spread of the top-K reference poses). True SUE has not been evaluated yet.
 
 ## Why the inherited methods fail
 

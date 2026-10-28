@@ -23,6 +23,30 @@ Honest state at handoff:
 
 ---
 
+## Entry 11 — Literature gate (Bước 0)  →  VERDICT: OVERLAP on method + conformal; reality-check still novel
+
+Full report: `LITERATURE_GATE.md`. Read 9 closest papers in full (paper text only, no code).
+
+- **CRSG-as-a-method is pre-empted.** Its features are standard retrieval-based uncertainty: margin ≈ PA-score d1/d2
+  (Hausler'21; baseline in Zaffar CVPR'24), NN-distance = L2-distance RUE (Zaffar'24), score-distribution shape ≈
+  RS/SD/SU (Miller et al., RA-L'26, 9 descriptors incl. SALAD/MixVPR). A supervised classifier on distance-vector
+  statistics predicting in-tolerance correctness already exists (Carson RA-L'22 SVM; Claxton RA-L'24 MLP with 192
+  features, incl. SALAD). CRSG is a 3-feature logistic special case; only the calibrated (ECE/AURC) framing differs.
+- **Conformal C2/C3 is pre-empted** by SAFEVPR (2026-05): LTT on cosine breaks under cross-condition shift on Oxford
+  RobotCar/NCLT/St Lucia; Mondrian (score-bin) conformal restores FDR validity. Our C3 additionally uses condition
+  labels at test time — a real weakness.
+- **Naming bug (must fix in any direction):** our "SUE" baseline is `sqrt(2-2*max cos)`, i.e. Zaffar's *L2-distance*
+  RUE baseline, NOT SUE (spatial spread of the top-K reference poses). True SUE was never compared.
+- **Still novel:** reliability (ECE/AURC/off-map) of sequential filtering is regime-dependent — near-oracle on dense
+  Nordland, failing on RobotCar/CMU (off-map 0.23), with the NB8 mechanism; condition-temperature inert. SMR
+  (Hussaini'25) only shows sequence matching can hurt *accuracy*.
+
+**Decision:** per the handoff gate rule, do NOT proceed to the official benchmark / BoQ-MixVPR / full paper under the
+current "CRSG is a new method" framing. Options (A) reframe as a cross-regime reliability analysis with correct
+baselines + label-free Mondrian conformal, or (B) return to Phase 2 — put to the user.
+
+---
+
 ## Entry 10 — RTX full-scale validation + Kaggle ops learnings
 
 **Ops / environment findings (verified live):**

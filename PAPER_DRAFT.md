@@ -1,5 +1,10 @@
 # Calibrated Retrieval-Score Geometry: Reliable Visual Place Recognition without Sequential Filtering or Condition Modeling
 
+> **⚠ Literature-gate correction (2026-10-28, see `LITERATURE_GATE.md`):** (1) every "SUE" number below is
+> actually the L2-distance-to-NN baseline (Zaffar'24 RUE), not SUE; (2) CRSG's features (margin≈PA-score,
+> NN-distance, score-distribution shape≈RS/SD/SU) and the supervised integrity-monitor idea are prior work, and the
+> conformal shift/Mondrian finding overlaps SAFEVPR (2026). The "CRSG is a new method" framing must be revised.
+
 *Working draft. Numbers marked ✅ are verified on Kaggle T4 this session; ⏳ = run in flight; 🔲 = planned.*
 
 ---
