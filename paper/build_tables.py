@@ -6,7 +6,7 @@ R = os.path.join(os.path.dirname(__file__), "..", "analysis", "results")
 OUT = os.path.join(os.path.dirname(__file__), "tables.md")
 DS = [("rc", "RobotCar-Seasons (9 cond.)"), ("cmu", "Extended-CMU (11 dates)"), ("nord", "Nordland (3 seasons)"), ("msls", "MSLS-val (CPH+SF, 9 cond.)")]
 DESC_NAMES = {"salad": "SALAD", "megaloc": "MegaLoc", "dinov2": "DINOv2 (CLS+mean)", "mixvpr": "MixVPR", "cosplace": "CosPlace", "netvlad": "NetVLAD"}
-MAIN = [("SelfCal-AA", "**SelfCal-AA (ours)**", "none"), ("SelfCal[min(maxsim, z_far+c)] (no alias guard)", "SelfCal (ours, no alias guard)", "none"),
+MAIN = [("SelfCal-AA", "**SelfCal-AA (ours)**", "none"), ("SelfCal-Gap", "**SelfCal-Gap (ours, high power)**", "none"), ("SelfCal[min(maxsim, z_far+c)] (no alias guard)", "SelfCal (ours, no alias guard)", "none"),
         ("LabelCal[maxsim] (day->all)", "Threshold, benign→all", "benign"), ("LabelCal[maxsim] (day, neg=off+alias)", "Threshold, benign, neg. incl. aliasing", "benign"),
         ("LabelCal[maxsim] (LOCO, SAFEVPR-style)", "Conformal LOCO (SAFEVPR protocol)", "other cond."),
         ("QuantileTransfer[maxsim] (day->all)", "Quantile Transfer", "benign"), ("LabelCal[CRSG] (day->all)", "Learned calibrator (CRSG), benign→all", "benign"),
@@ -38,19 +38,21 @@ for a in (0.05, 0.1):
 
 descs = [d for d in ["netvlad", "cosplace", "mixvpr", "dinov2", "salad", "megaloc"] if glob.glob(os.path.join(R, f"eval_*_{d}.json"))]
 lines.append("\n### Table 2 (α = 0.05). Descriptors. Cell: FAR / #viol / TPR / aliasing for SelfCal-AA | #viol for benign threshold, LOCO, CRSG | oracle TPR\n")
-lines.append("| descriptor | dataset | R@1 (5 m,10° / 2 fr / 25 m) | SelfCal-AA | benign thr. #viol (alias) | LOCO #viol | CRSG #viol | SUE #viol | oracle TPR |\n|---|---|---|---|---|---|---|---|---|")
+lines.append("| descriptor | dataset | R@1 (5 m,10° / 2 fr / 25 m) | SelfCal-AA | SelfCal-Gap TPR (worst) | benign thr. #viol (alias) | LOCO #viol | CRSG #viol | SUE #viol | oracle TPR |\n|---|---|---|---|---|---|---|---|---|---|")
 for d in descs:
     for ds, dn in DS:
         D = load(ds, d)
         if not D: continue
         g = lambda k: D.get((k, 0.05))
-        s, b, lo, cr, su, orc = g(MAIN[0][0]), g(MAIN[2][0]), g(MAIN[4][0]), g(MAIN[6][0]), g("LabelCal[SUE] (day->all)"), g(MAIN[-1][0])
+        s, b, lo, cr, su, orc = g("SelfCal-AA"), g("LabelCal[maxsim] (day->all)"), g("LabelCal[maxsim] (LOCO, SAFEVPR-style)"), g("LabelCal[CRSG] (day->all)"), g("LabelCal[SUE] (day->all)"), g("Oracle[maxsim] (labels per cond.)"); gp = g("SelfCal-Gap")
         meta = json.load(open(os.path.join(R, f"eval_{ds}_{d}.json")))["meta"]
         lines.append(f"| {DESC_NAMES.get(d, d)} | {dn.split(' ')[0]} | {meta.get('r1', float('nan')):.3f} | {cell(s)} | "
-                     f"{b['n_viol']}/{b['n_cond']} ({b['alias_acc']:.2f}) | {lo['n_viol']}/{lo['n_cond']} | {cr['n_viol']}/{cr['n_cond']} | "
+                     + (f"{gp['TPR']:.3f} ({gp['worstFAR']:.3f}) | " if gp else "— | ")
+                     + f"{b['n_viol']}/{b['n_cond']} ({b['alias_acc']:.2f}) | {lo['n_viol']}/{lo['n_cond']} | {cr['n_viol']}/{cr['n_cond']} | "
                      + (f"{su['n_viol']}/{su['n_cond']}" if su else "—") + f" | {orc['TPR']:.3f} |")
 
-AGG = [("SelfCal-AA", "SelfCal-AA (ours)", "none"), ("SelfCal-AA w/o strata", "  − Mondrian strata", "none"),
+AGG = [("SelfCal-AA", "SelfCal-AA (ours)", "none"), ("SelfCal-Gap", "SelfCal-Gap (ours, high power)", "none"),
+       ("SelfCal-Gap w/o gate", "  SelfCal-Gap − domain gate", "none"), ("SelfCal-AA w/o strata", "  − Mondrian strata", "none"),
        ("SelfCal-AA w/o gate", "  − domain gate", "none"), ("SelfCal-AA w/o strata, w/o gate", "  − both (original AA rule)", "none"),
        ("SelfCal[min(maxsim, z_far+c)] (no alias guard)", "  − aliasing guard", "none"),
        ("LabelCal[maxsim] (day->all)", "Threshold, benign→all", "benign"), ("LabelCal[maxsim] (day, neg=off+alias)", "Threshold, benign, neg. incl. aliasing", "benign"),
@@ -108,4 +110,25 @@ if nat:
         for mk, r in J.items():
             cells = [(f"{r[s]['0.05']['FAR_selfcal']:.3f} / {r[s]['0.05']['FAR_thr']:.3f}" if s in r else "—") for s in srcs]
             lines.append(f"| {DESC_NAMES.get(d, d)} | {mk} | " + " | ".join(cells) + " |")
+seq = sorted(glob.glob(os.path.join(R, "seq_*.json")))
+if seq:
+    lines.append("\n### Table 7. Sequence-level SelfCal (window of L frames, map pseudo-sequences, α = 0.05). Cell: TPR / worst-condition FAR / #viol; per-frame = SelfCal-AA on the same frames\n")
+    lines.append("| descriptor | dataset | per-frame TPR | L=1 | L=3 | L=5 | L=10 |\n|---|---|---|---|---|---|---|")
+    for d in ["netvlad", "cosplace", "mixvpr", "dinov2", "salad", "megaloc"]:
+        for ds, dn in DS:
+            f = os.path.join(R, f"seq_{ds}_{d}.json")
+            if not os.path.isfile(f): continue
+            J = json.load(open(f)); c = lambda L: (f"{J[f'L{L}:RUN']['TPR']:.3f} / {J[f'L{L}:RUN']['worst']:.3f} / {J[f'L{L}:RUN']['n_viol']}/{J[f'L{L}:RUN']['n_cond']}" if f"L{L}:RUN" in J else "—")
+            lines.append(f"| {DESC_NAMES.get(d, d)} | {dn.split(' ')[0]} | {J['L1:RUN']['TPR_frame']:.3f} | " + " | ".join(c(L) for L in (1, 3, 5, 10)) + " |")
+dep = sorted(glob.glob(os.path.join(R, "deploy_*_s*.json")))
+if dep:
+    lines.append("\n### Table 8. Localisation with drifting odometry on a map with 30 % of its blocks removed (mean over seeds). Cell: mean position error / share of frames with error > ρ / wrong fixes accepted\n")
+    rules = ["accept all", "benign threshold (labels)", "SelfCal-AA (frame)", "SelfCal-Seq (L=5)", "oracle (correct only)"]
+    lines.append("| descriptor | dataset | " + " | ".join(rules) + " |\n|---|---|" + "---|" * len(rules))
+    for d in ["netvlad", "cosplace", "mixvpr", "dinov2", "salad", "megaloc"]:
+        for ds in ("cmu", "nord"):
+            fs = sorted(glob.glob(os.path.join(R, f"deploy_{ds}_{d}_s*.json")))
+            if not fs: continue
+            J = [json.load(open(f)) for f in fs]; mm = lambda r, k: np.mean([j[r][k] for j in J])
+            lines.append(f"| {DESC_NAMES.get(d, d)} | {ds} | " + " | ".join(f"{mm(r, 'err_mean'):.1f} / {mm(r, 'frac_err_gt_rho'):.3f} / {mm(r, 'wrong_fixes'):.0f}" for r in rules) + " |")
 open(OUT, "w").write("\n".join(lines) + "\n"); print("\n".join(lines))
