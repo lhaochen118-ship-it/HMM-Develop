@@ -7,7 +7,7 @@
 Then run it with:  python automation/run_kernel.py <kernel_dir> <out_dir>   and copy <out_dir>/results/*.json.
 
 Usage: make_eval_kernel.py <kernel_dir> <slug> "<script> <ds> <desc>;<script> <ds> <desc>;..." [dump_kernels,...] [--gpu]
-  --acc2: use the second Kaggle account (set KAGGLE_API_TOKEN=$(cat ~/.kaggle/access_token_acc2) for both scripts)
+  --acc2/--acc3: use the 2nd/3rd Kaggle account (set KAGGLE_API_TOKEN=$(cat ~/.kaggle/access_token_accN) for both scripts)
   --gpu : T4 kernel, SELFCAL_DEVICE=cuda (PyTorch backend in selfcal.qm_stats); default CPU/numpy.
   script = eval_all.py | exp9_natural.py | ... ; for exp9_natural.py write "exp9_natural.py <desc>" (dumps auto).
   Any other argument order: put the literal token DUMP where the merged dump directory goes, e.g. "exp10_shiftfix.py salad DUMP".
@@ -15,15 +15,15 @@ Usage: make_eval_kernel.py <kernel_dir> <slug> "<script> <ds> <desc>;<script> <d
 import sys, os, json, glob, shutil, subprocess
 
 # Account 1 (default, token ~/.kaggle/access_token): dumps are the outputs of its NB15/NB16 kernels.
-# Account 2 (--acc2, token ~/.kaggle/access_token_acc2 -> export KAGGLE_API_TOKEN for this script AND run_kernel.py):
-#   the same dumps re-uploaded as the private dataset yuan1103/dive-vpr-dumps.
-ACC2 = "--acc2" in sys.argv
-OWNER = "yuan1103" if ACC2 else "nhatlong1103"; CODE_DS = f"{OWNER}/dive-vpr-analysis"
-DUMPS = [] if ACC2 else [f"{OWNER}/dive-vpr-nb15a-dump", f"{OWNER}/dive-vpr-nb15b-dump", f"{OWNER}/dive-vpr-nb15c-dump",
-                         f"{OWNER}/dive-vpr-nb15d-dump", f"{OWNER}/dive-vpr-nb16a-msls", f"{OWNER}/dive-vpr-nb16b-msls"]
-DUMP_DS = ["yuan1103/dive-vpr-dumps"] if ACC2 else []
+# Account 2/3 (--acc2 / --acc3, tokens ~/.kaggle/access_token_acc2 / _acc3 -> export KAGGLE_API_TOKEN for this script
+#   AND run_kernel.py): the same dumps re-uploaded as the private dataset <owner>/dive-vpr-dumps.
+ACC = 3 if "--acc3" in sys.argv else 2 if "--acc2" in sys.argv else 1
+OWNER = {1: "nhatlong1103", 2: "yuan1103", 3: "synchan5704"}[ACC]; CODE_DS = f"{OWNER}/dive-vpr-analysis"
+DUMPS = [] if ACC > 1 else [f"{OWNER}/dive-vpr-nb15a-dump", f"{OWNER}/dive-vpr-nb15b-dump", f"{OWNER}/dive-vpr-nb15c-dump",
+                            f"{OWNER}/dive-vpr-nb15d-dump", f"{OWNER}/dive-vpr-nb16a-msls", f"{OWNER}/dive-vpr-nb16b-msls"]
+DUMP_DS = [f"{OWNER}/dive-vpr-dumps"] if ACC > 1 else []
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GPU = "--gpu" in sys.argv; argv = [a for a in sys.argv if a not in ("--gpu", "--acc2")]
+GPU = "--gpu" in sys.argv; argv = [a for a in sys.argv if a not in ("--gpu", "--acc2", "--acc3")]
 kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]
 dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
 
@@ -68,6 +68,7 @@ def run(j):
 with ThreadPoolExecutor(max(1, (os.cpu_count() or 4) - 1)) as ex: rcs = list(ex.map(run, JOBS))
 shutil.copytree(os.path.join(C, "results"), os.path.join(W, "results"), dirs_exist_ok=True)
 shutil.copytree(os.path.join(C, "logs"), os.path.join(W, "logs"), dirs_exist_ok=True)
+if os.path.isdir(os.path.join(C, "figs")): shutil.copytree(os.path.join(C, "figs"), os.path.join(W, "figs"), dirs_exist_ok=True)
 shutil.rmtree(D, ignore_errors=True); shutil.rmtree(C, ignore_errors=True)
 print("EVAL_DONE", rcs, f"{time.time()-t0:.0f}s", flush=True)
 ''' % (json.dumps(jobs), "cuda" if GPU else "numpy")

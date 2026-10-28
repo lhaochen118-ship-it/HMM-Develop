@@ -148,6 +148,15 @@ the leave-one-out values $m(i)$ of the null items: $p_{comb}(q)=(1+\#\{i:m(i)\le
 **Aliasing guard (SelfCal-AA).** Accept iff $\max\{p_{comb}(q),\,p_{z_{gap}}(q)\}\le\alpha$. In an aliasing failure
 the true place is a strong far competitor, so $z_{gap}$ is small.
 
+**Mondrian strata.** How informative a given $z_{far}$ or $z_{gap}$ is depends on how spread out the distant
+regions are: the same standardised score is common when $\sigma_{far}$ is small and rare when it is large, and
+$\sigma_{far}$ varies widely across one map (open roads vs. repetitive façades). Pooling all null items into one
+reference distribution therefore forces a single threshold on very different queries. We split the null into $B$
+quantile bins of $\sigma_{far}$ and compute all p-values of a query against the null items of its own bin only
+(Mondrian conformal prediction [Vovk'05]). $\sigma_{far}$ is computed from the query's own similarities, so no labels
+enter. With $n_b$ null items per bin the smallest attainable p-value is $1/(n_b+1)$; we use $B=10$ and reduce $B$
+automatically so that every bin keeps at least 50 items (enough for $\alpha\ge0.02$).
+
 **Domain gate.** The scale-normalised statistics can be inflated for queries from a *foreign* domain (another city or
 dataset): their similarity profile against the map is flat, so $\sigma_{far}$ shrinks and $z_{far},z_{gap}$ grow
 even though $s_{j^*}$ is low. We therefore also require that the raw similarity is not unusually low for the map:
@@ -167,7 +176,9 @@ similarity products included.
 # 5. Guarantees
 
 **T1 (validity).** If, for an off-map query, $T(q)$ and the null statistics $\{T^0_i\}$ are exchangeable, then
-$P(p_T(q)\le\alpha)\le\alpha$. *Standard split-conformal argument.*
+$P(p_T(q)\le\alpha)\le\alpha$. *Standard split-conformal argument.* With Mondrian strata the same holds
+conditionally on the stratum (exchangeability is only needed among queries and null items with similar
+$\sigma_{far}$), and hence marginally; T2–T4 below apply within each stratum.
 
 **T2 (dominance ⇒ conservative).** If in condition $c$ the off-map statistic is stochastically dominated by the map
 null, $P(T^c\ge t)\le P(T^0\ge t)\ \forall t$, then $\mathrm{FAR}_c(\alpha)\le\alpha$. Map pseudo-queries are images of
