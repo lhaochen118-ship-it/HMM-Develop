@@ -60,6 +60,9 @@ def variants(N, X):
     for s in ("ms", "sdf"):
         for B in (3, 5):
             out[f"Mondrian-{s}-{B}"] = mondrian(N, X, s, B)
+    for B in (5, 10):   # power variant + the domain-shift gate
+        pm = out.get(f"Mondrian-sdf-{B}", mondrian(N, X, "sdf", B))
+        out[f"Mondrian-sdf-{B}&ms<=0.8"] = np.where(p_ms <= 0.8, pm, 1.0)
     return out
 
 
