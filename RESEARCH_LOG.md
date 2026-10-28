@@ -23,6 +23,37 @@ Honest state at handoff:
 
 ---
 
+## Entry 15 — MSLS (4th dataset) and the domain-shift fix: a lenient raw-similarity gate (2026-10-28)
+
+**MSLS-val, both cities (CPH+SF, 9 conditions, 6 descriptors, Kaggle CPU):** SelfCal-AA has **0/54** significant
+violations at α=0.05. The label-based methods all violate somewhere: SUE 5, CRSG 7, benign threshold 11, LOCO
+(SAFEVPR) 13, Quantile Transfer 15. SelfCal without the AA guard has 5. Power is conservative on MSLS: MegaLoc 0.878
+vs oracle 0.965, SALAD/CosPlace/MixVPR 0.48–0.55 vs 0.74–0.82. Natural off-map (exp9, now with MSLS): CPH↔SF cross-city
+FAR ≤ 0.005 for all descriptors. The only failure is CosPlace with the CMU map (rc 0.134, msls-cph 0.135, msls-sf 0.089).
+
+**exp10 (account yuan1103, 2×T4 + CPU): 8 variants × 6 descriptors × 5 maps.** 192 LOBO conditions, 120 natural
+map/source cells.
+
+| variant | LOBO viol. | worst LOBO | natural cells > α | natural max | mean TPR |
+|---|---|---|---|---|---|
+| AA (current) | 0/192 | 0.047 | 3/120 | 0.143 | 0.587 |
+| **AA & p_maxsim ≤ 0.8** | **0/192** | 0.040 | **0/120** | **0.008** | **0.583** |
+| AA & p_maxsim ≤ 0.5 | 0/192 | 0.040 | 0/120 | 0.004 | 0.567 |
+| AND-ms (gate at α) | 0/192 | 0.029 | 0/120 | 0.000 | 0.432 |
+| Mondrian by sd_far (5 strata) | 0/192 | 0.061 | 2/120 | 0.061 | 0.621 |
+| Mondrian by maxsim | 0/192 | 0.074–0.094 | 15–20/120 | 0.179 | 0.46–0.49 |
+
+**Decision:** adopt **SelfCal-AA with a lenient raw-similarity gate** (accept only if the raw max-sim is above the
+20 % quantile of the map null, p_ms ≤ 0.8). It removes every domain-shift failure for a TPR cost of 0.004 on average
+(Nordland 0.533 → 0.524).
+- **Theory (to write):** the acceptance set is an intersection, so FAR ≤ min(P(p_AA ≤ α), P(p_ms ≤ 0.8)). The test
+  is valid if **either** (A) the invariant statistics are dominated (appearance shift) **or** (B) foreign-domain
+  queries fall below the null's 20 % max-sim quantile with probability ≥ 1−α (domain shift). This is a
+  "union of assumptions" robustness result.
+- **Next:**
+  - Mondrian-by-sd_far gains power (0.621) but leaks under domain shift. Test it **with** the gate for more power.
+  - Power on MSLS is still the main weakness.
+
 ## Entry 14 — SUE baseline, natural off-map stress test (a validity gap), MSLS + 4Seasons data (2026-10-28)
 
 **SUE baseline** (Zaffar CVPR'24, published K=10, λ=350; label-calibrated benign→all) on SALAD, α=0.05:
