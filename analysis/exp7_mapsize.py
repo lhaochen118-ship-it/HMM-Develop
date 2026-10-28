@@ -17,7 +17,7 @@ for frac in (0.25, 0.5, 1.0):
     R = {r["method"]: r for r in rows if abs(r["alpha"] - 0.05) < 1e-9}
     ext = np.ptp(e.m_pos[:, :2], 0)
     out[frac] = {"n_map": int(keep.sum()), "extent_m": ext.tolist(), "meta": meta, "rows": {k: R[k] for k in R}}
-    s, l, o = R["SelfCal-AA[combo AND z_gap+c]"], R["LabelCal[maxsim] (day->all)"], R["Oracle[maxsim] (labels per cond.)"]
+    s, l, o = R["SelfCal-AA"], R["LabelCal[maxsim] (day->all)"], R["Oracle[maxsim] (labels per cond.)"]
     print(f"{ds} map {frac:.2f} ({keep.sum()} imgs, {ext[0]:.0f}x{ext[1]:.0f} m, null n={meta['n_null']}, off n={meta['n_off']}): "
           f"SelfCal-AA FAR {s['FAR']:.3f} viol {s['n_viol']}/{s['n_cond']} TPR {s['TPR']:.3f} alias {s['alias_acc']:.3f} | "
           f"LabelCal viol {l['n_viol']}/{l['n_cond']} | oracle TPR {o['TPR']:.3f}", flush=True)

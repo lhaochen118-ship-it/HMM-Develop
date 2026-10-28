@@ -52,28 +52,16 @@ def evaluate(ep, c, desc, key=None):
     methods = {}   # name -> (accept_off(alpha), accept_in(alpha)) as callables
     def conformal(nullv, off_v, in_v):
         return lambda a: (SC.conformal_p(nullv, off_v) <= a, SC.conformal_p(nullv, in_v) <= a)
-    # --- ours: map self-calibrated, affine-invariant statistics (no labels)
-    for st in ["z_far", "z_all", "T_spacing"]:
-        for tag, (nul, off, full, _) in [("", raw), ("+center", cen)]:
-            methods[f"SelfCal[{st}{tag}]"] = conformal(nul[st], off[st], full[st])
-    # --- ours: self-calibrated combinations
-    combos = {"SelfCal[min(maxsim, z_far+c)]": [(raw, "maxsim"), (cen, "z_far")],
-              "SelfCal[min(maxsim, z_far+c, T_sp)]": [(raw, "maxsim"), (cen, "z_far"), (raw, "T_spacing")],
-              "SelfCal[min(maxsim, z_far+c, SUE)]": [(raw, "maxsim"), (cen, "z_far"), (raw, "SUE")]}
-    for cname, parts in combos.items():
-        po = SC.combined_p([src[0][st] for src, st in parts], [src[1][st] for src, st in parts])
-        pi = SC.combined_p([src[0][st] for src, st in parts], [src[2][st] for src, st in parts])
-        methods[cname] = (lambda po, pi: lambda a: (po <= a, pi <= a))(po, pi)
-    # --- ours, aliasing-aware: accept iff combination AND gap-to-best-far-region are both significant
-    pco_o = SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"]], [raw[1]["maxsim"], cen[1]["z_far"]])
-    pco_i = SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"]], [raw[2]["maxsim"], cen[2]["z_far"]])
-    pg_o, pg_i = SC.conformal_p(cen[0]["z_gap"], cen[1]["z_gap"]), SC.conformal_p(cen[0]["z_gap"], cen[2]["z_gap"])
-    methods["SelfCal-AA[combo AND z_gap+c]"] = (lambda a: (np.maximum(pco_o, pg_o) <= a, np.maximum(pco_i, pg_i) <= a))
-    # SelfCal-AA whose combination also contains SUE (spatial spread of the top-K poses), self-calibrated on the map
-    p3_o = SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"], raw[0]["SUE"]], [raw[1]["maxsim"], cen[1]["z_far"], raw[1]["SUE"]])
-    p3_i = SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"], raw[0]["SUE"]], [raw[2]["maxsim"], cen[2]["z_far"], raw[2]["SUE"]])
-    methods["SelfCal-AA+SUE[combo3 AND z_gap+c]"] = (lambda a: (np.maximum(p3_o, pg_o) <= a, np.maximum(p3_i, pg_i) <= a))
-    methods["SelfCal[SUE] (non-invariant)"] = conformal(raw[0]["SUE"], raw[1]["SUE"], raw[2]["SUE"])
+    def pv(po, pi):
+        return lambda a: (po <= a, pi <= a)
+    # --- ours: SelfCal-AA (Mondrian strata by sd_far + raw-similarity domain gate) and its component ablations
+    for name, kw in [("SelfCal-AA", {}), ("SelfCal-AA w/o strata", dict(strata=1)), ("SelfCal-AA w/o gate", dict(gate=1.0)),
+                     ("SelfCal-AA w/o strata, w/o gate", dict(strata=1, gate=1.0))]:
+        methods[name] = pv(SC.selfcal_p(raw[0], cen[0], raw[1], cen[1], **kw), SC.selfcal_p(raw[0], cen[0], raw[2], cen[2], **kw))
+    methods["SelfCal[min(maxsim, z_far+c)] (no alias guard)"] = pv(
+        SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"]], [raw[1]["maxsim"], cen[1]["z_far"]]),
+        SC.combined_p([raw[0]["maxsim"], cen[0]["z_far"]], [raw[2]["maxsim"], cen[2]["z_far"]]))
+    methods["SelfCal[z_far+center] (single statistic)"] = conformal(cen[0]["z_far"], cen[1]["z_far"], cen[2]["z_far"])
     # --- ablation: self-calibration of a NON-invariant score
     methods["SelfCal[maxsim] (non-invariant)"] = conformal(raw[0]["maxsim"], raw[1]["maxsim"], raw[2]["maxsim"])
     # --- theory-only p-values (no calibration at all)
@@ -81,14 +69,14 @@ def evaluate(ep, c, desc, key=None):
     methods["Theory F-test[T_spacing]"] = lambda a: ((1 + raw[1]["T_spacing"] / k) ** (-k) <= a, (1 + raw[2]["T_spacing"] / k) ** (-k) <= a)
     methods["Theory Gauss[z_all]"] = lambda a: (np.clip(raw[3] * norm.sf(raw[1]["z_all"]), 0, 1) <= a, np.clip(raw[3] * norm.sf(raw[2]["z_all"]), 0, 1) <= a)
     # --- label-calibrated on calibration conditions (split conformal on their OFF-MAP queries), transferred
-    for st in ["maxsim", "margin", "PA", "z_far", "SUE"]:
+    for st in ["maxsim", "PA", "SUE"]:
         methods[f"LabelCal[{st}] (day->all)"] = conformal(raw[1][st][cal & offm], raw[1][st], raw[2][st])
     # label calibration whose negatives include in-map aliasing errors of the calibration conditions (fairer)
-    for st in ["maxsim", "z_far"]:
+    for st in ["maxsim"]:
         negs = np.r_[raw[1][st][cal & offm], raw[2][st][cal & alias]]
         methods[f"LabelCal[{st}] (day, neg=off+alias)"] = conformal(negs, raw[1][st], raw[2][st])
     # SAFEVPR-style protocol: label-calibrate on ALL OTHER conditions (leave-one-condition-out), test on held-out one
-    for st in ["maxsim", "z_far"]:
+    for st in ["maxsim"]:
         def loco(a, st=st):
             ao = np.zeros(len(cond), bool); ai = np.zeros(len(cond), bool)
             for cc in conds:

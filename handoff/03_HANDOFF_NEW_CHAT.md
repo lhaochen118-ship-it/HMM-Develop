@@ -1,7 +1,7 @@
 # Handoff — SelfCal (for a FRESH chat window)
 
 *Updated 2026-10-28 after Entry 13. Supersedes the earlier CCBF/CRSG version of this file (git history). Read this,
-then `RESEARCH_LOG.md` Entries 11–14, `LITERATURE_GATE.md` and `RESULTS.md`. The paper is `paper/selfcal_paper.md`.*
+then `RESEARCH_LOG.md` Entries 11–15 and `LITERATURE_GATE.md`. The paper is `paper/selfcal_paper.md`.*
 
 Repo `lhaochen118-ship-it/hmm-develop`, branch **`claude/elegant-brown-xvnecd`** (all work lives here; no PRs).
 Kaggle user **`nhatlong1103`**, token in `~/.kaggle/access_token` (re-create it from the user's message if the
@@ -62,8 +62,8 @@ barely move the result, but centring is essential on Nordland (TPR 0.754 vs 0.32
 | `analysis/selfcal.py` | Core method: `query_stats`, `lobo_stats`, `map_null`, `conformal_p`, `combined_p`, `SelfCalTest` = the adopted decision rule (Mondrian strata by sd_far, B=10, raw-similarity gate 0.8; `strata=1, gate=1` = original AA), plus the online class `SelfCalAA` (18 s offline for the 6954-image RobotCar map, ~1 ms/query batched; matches the batch statistics to 4e-6). |
 | `analysis/sc_eval.py` | `CFG` per dataset (cell, excl, k, block, off_d, in_d, tol). |
 | `analysis/eval_all.py` | Main comparison (all baselines). Writes `analysis/results/eval_<ds>_<desc>.json` and caches in `analysis/cache/` (git-ignored). |
-| `analysis/exp3..exp8` | FDR/confidence, aliasing, ablation, dominance Δ⁺, map size, dual centring. |
-| `analysis/summarize.py`, `figures2.py` | Summary tables, paper figures. |
+| `analysis/exp3,5,6,7,9,10` | FDR/confidence, ablation, dominance Δ⁺, map size, natural off-map, domain-shift variants (`--stats` re-scores cached statistics). |
+| `analysis/figures2.py` | Paper figures. |
 | `paper/` | `selfcal_paper.md` (source text). `build_tables.py` produces `tables.md`. `build_paper.py` produces `SelfCal_paper_full.md` and `.pdf`. |
 
 **Reproduce:** evaluations run on Kaggle: `automation/make_eval_kernel.py <dir> <slug> "eval_all.py <ds> <desc>;..." [--gpu] [--acc2]`,

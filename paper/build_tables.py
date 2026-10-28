@@ -6,7 +6,7 @@ R = os.path.join(os.path.dirname(__file__), "..", "analysis", "results")
 OUT = os.path.join(os.path.dirname(__file__), "tables.md")
 DS = [("rc", "RobotCar-Seasons (9 cond.)"), ("cmu", "Extended-CMU (11 dates)"), ("nord", "Nordland (3 seasons)"), ("msls", "MSLS-val (CPH+SF, 9 cond.)")]
 DESC_NAMES = {"salad": "SALAD", "megaloc": "MegaLoc", "dinov2": "DINOv2 (CLS+mean)", "mixvpr": "MixVPR", "cosplace": "CosPlace", "netvlad": "NetVLAD"}
-MAIN = [("SelfCal-AA[combo AND z_gap+c]", "**SelfCal-AA (ours)**", "none"), ("SelfCal[min(maxsim, z_far+c)]", "SelfCal (ours, no alias guard)", "none"),
+MAIN = [("SelfCal-AA", "**SelfCal-AA (ours)**", "none"), ("SelfCal[min(maxsim, z_far+c)] (no alias guard)", "SelfCal (ours, no alias guard)", "none"),
         ("LabelCal[maxsim] (day->all)", "Threshold, benign→all", "benign"), ("LabelCal[maxsim] (day, neg=off+alias)", "Threshold, benign, neg. incl. aliasing", "benign"),
         ("LabelCal[maxsim] (LOCO, SAFEVPR-style)", "Conformal LOCO (SAFEVPR protocol)", "other cond."),
         ("QuantileTransfer[maxsim] (day->all)", "Quantile Transfer", "benign"), ("LabelCal[CRSG] (day->all)", "Learned calibrator (CRSG), benign→all", "benign"),
@@ -50,7 +50,9 @@ for d in descs:
                      f"{b['n_viol']}/{b['n_cond']} ({b['alias_acc']:.2f}) | {lo['n_viol']}/{lo['n_cond']} | {cr['n_viol']}/{cr['n_cond']} | "
                      + (f"{su['n_viol']}/{su['n_cond']}" if su else "—") + f" | {orc['TPR']:.3f} |")
 
-AGG = [("SelfCal-AA[combo AND z_gap+c]", "SelfCal-AA (ours)", "none"), ("SelfCal[min(maxsim, z_far+c)]", "SelfCal (ours)", "none"),
+AGG = [("SelfCal-AA", "SelfCal-AA (ours)", "none"), ("SelfCal-AA w/o strata", "  − Mondrian strata", "none"),
+       ("SelfCal-AA w/o gate", "  − domain gate", "none"), ("SelfCal-AA w/o strata, w/o gate", "  − both (original AA rule)", "none"),
+       ("SelfCal[min(maxsim, z_far+c)] (no alias guard)", "  − aliasing guard", "none"),
        ("LabelCal[maxsim] (day->all)", "Threshold, benign→all", "benign"), ("LabelCal[maxsim] (day, neg=off+alias)", "Threshold, benign, neg. incl. aliasing", "benign"),
        ("LabelCal[maxsim] (LOCO, SAFEVPR-style)", "Conformal LOCO (SAFEVPR protocol)", "other cond."), ("QuantileTransfer[maxsim] (day->all)", "Quantile Transfer", "benign"),
        ("LabelCal[CRSG] (day->all)", "Learned calibrator (CRSG)", "benign"), ("LabelCal[SUE] (day->all)", "SUE [Zaffar'24]", "benign"),

@@ -38,7 +38,7 @@ for mk, ep in EP.items():
     cal = np.sort(off[np.isfinite(off) & np.isin(ep.q_cond, calib)]); n = len(cal)
     thr = {a: cal[min(n - 1, int(np.ceil((n + 1) * (1 - a))) - 1)] for a in ALPHAS}
     ms_own = (ep.q.astype(np.float32) @ ep.m.astype(np.float32).T).max(1)
-    r = {"n_map": int(len(ep.m)), "n_null": int(sc.n), "own": {}}
+    r = {"n_map": int(len(ep.m)), "n_null": int(sc.test.n), "own": {}}
     for a in ALPHAS:
         r["own"][str(a)] = dict(TPR_selfcal=float(np.mean(p_own[corr] <= a)), TPR_thr=float(np.mean(ms_own[corr] > thr[a])))
     for sk, q in QS.items():

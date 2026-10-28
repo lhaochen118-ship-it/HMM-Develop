@@ -48,13 +48,13 @@ def method_pvals(raw, cen, cond, offm, cal):
     """p-values (off-map, in-map) per method; label methods via split-conformal on calib-condition off-map."""
     nul = [raw[0]["maxsim"], cen[0]["z_far"]]
     pco = (SC.combined_p(nul, [raw[1]["maxsim"], cen[1]["z_far"]]), SC.combined_p(nul, [raw[2]["maxsim"], cen[2]["z_far"]]))
-    pg = (SC.conformal_p(cen[0]["z_gap"], cen[1]["z_gap"]), SC.conformal_p(cen[0]["z_gap"], cen[2]["z_gap"]))
+    paa = (SC.selfcal_p(raw[0], cen[0], raw[1], cen[1]), SC.selfcal_p(raw[0], cen[0], raw[2], cen[2]))
     lab = lambda st: (SC.conformal_p(raw[1][st][cal & offm], raw[1][st]), SC.conformal_p(raw[1][st][cal & offm], raw[2][st]))
     loco_o, loco_i = np.ones(len(cond)), np.ones(len(cond))
     for cc in set(cond):
         m = cond == cc; nv = raw[1]["maxsim"][(~m) & offm]
         loco_o[m] = SC.conformal_p(nv, raw[1]["maxsim"][m]); loco_i[m] = SC.conformal_p(nv, raw[2]["maxsim"][m])
-    return {"SelfCal (ours)": (pco, C_OURS2), "SelfCal-AA (ours)": ((np.maximum(pco[0], pg[0]), np.maximum(pco[1], pg[1])), C_OURS),
+    return {"SelfCal (ours)": (pco, C_OURS2), "SelfCal-AA (ours)": (paa, C_OURS),
             "LabelCal benign→all": (lab("maxsim"), C_LAB), "LabelCal LOCO (SAFEVPR-style)": ((loco_o, loco_i), C_LOCO)}
 
 

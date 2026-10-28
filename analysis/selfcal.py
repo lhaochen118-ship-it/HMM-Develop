@@ -207,7 +207,7 @@ class SelfCalTest:
         self.edges = np.quantile(N["sdf"][ok], np.linspace(0, 1, self.B + 1)[1:-1])
         bn = np.digitize(N["sdf"], self.edges)
         self.cal = [_AACal(N["ms"][ok & (bn == b)], N["zf"][ok & (bn == b)], N["zg"][ok & (bn == b)]) for b in range(self.B)]
-        self.ms_all = np.sort(N["ms"][ok])
+        self.ms_all, self.n = np.sort(N["ms"][ok]), int(ok.sum())
 
     def pvalue(self, ms, zf, zg, sdf):
         ms, zf, zg = np.asarray(ms, float), np.asarray(zf, float), np.asarray(zg, float)
@@ -216,6 +216,16 @@ class SelfCalTest:
             mx = bx == b
             if mx.any(): p[mx] = self.cal[b].p(ms[mx], zf[mx], zg[mx])
         return np.where(_AACal._p(self.ms_all, ms) <= self.gate, p, 1.0)
+
+
+def pack(raw, cen):
+    """SelfCalTest inputs from query_stats/lobo_stats dicts of raw (maxsim) and map-centred (z_far, z_gap, sd_far) runs"""
+    return dict(ms=raw["maxsim"], zf=cen["z_far"], zg=cen["z_gap"], sdf=cen["sd_far"])
+
+
+def selfcal_p(raw_null, cen_null, raw_x, cen_x, **kw):
+    """SelfCal-AA p-values of queries (raw_x, cen_x) against the map null (raw_null, cen_null); kw -> SelfCalTest"""
+    return SelfCalTest(pack(raw_null, cen_null), **kw).pvalue(**pack(raw_x, cen_x))
 
 
 class SelfCalAA:
