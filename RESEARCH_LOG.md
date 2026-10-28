@@ -18,6 +18,56 @@ Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Com
   null drawn from the map itself, which is SelfCal (Entry 12).
 
 
+## Entry 16 — Full rerun with the adopted SelfCal-AA (Mondrian strata by sd_far + domain gate), 6 T4 on 3 accounts (2026-10-28)
+
+Branch `claude/selfcal-aa`. Rule = `selfcal.SelfCalTest` (B=10 strata of the null's sd_far, gate p_maxsim ≤ 0.8).
+6 descriptors × 4 datasets = 24 settings, 192 deployment conditions, α = 0.05 (`paper/tables.md`, Table 2a):
+
+| method | labels | viol. cond. | settings ≥1 viol. | mean TPR | median alias-accept | max worst FAR |
+|---|---|---|---|---|---|---|
+| **SelfCal-AA** | none | **0/192** | **0/24** | **0.646** | 0.011 | **0.048** |
+| − strata | none | 0/192 | 0/24 | 0.612 | 0.008 | 0.140 |
+| − gate | none | 0/192 | 0/24 | 0.648 | 0.012 | 0.048 |
+| − both (original AA) | none | 0/192 | 0/24 | 0.617 | 0.011 | 0.140 |
+| − alias guard | none | 5/192 | 3/24 | 0.667 | 0.072 | 0.721 |
+| SUE [Zaffar'24] | benign | 16/192 | 10/24 | 0.661 | 0.070 | 0.163 |
+| Threshold benign→all | benign | 36/192 | 15/24 | 0.652 | 0.218 | 0.281 |
+| CRSG | benign | 32/192 | 14/24 | 0.757 | 0.169 | 0.356 |
+| Conformal LOCO (SAFEVPR) | other cond. | 51/192 | 24/24 | 0.699 | 0.217 | 0.419 |
+| Quantile Transfer | benign | 79/192 | 23/24 | 0.769 | 0.405 | 0.483 |
+| Oracle | all | 0/192 | 0/24 | 0.706 | — | 0.050 |
+
+- **Validity:**
+  - No violating condition anywhere. The worst single-condition FAR is now ≤ α (0.048).
+  - The original rule reached 0.140 in one condition. That is not significant after Bonferroni, but the point
+    estimate is above α. Strata fix it.
+- **Natural off-map (exp9):** deployable `SelfCalAA` on queries from the other datasets/cities. 0/120 cells > α, max
+  FAR 0.007. The original rule leaked 0.134 (CosPlace, CMU map).
+- **Power:** on RobotCar, CMU and Nordland the TPR is 0.708 vs oracle 0.721 (original rule 0.676).
+- **MSLS is still the weak spot:** TPR 0.460 vs oracle 0.661 (original 0.439).
+
+  | descriptor | v2 | v1 | oracle |
+  |---|---|---|---|
+  | MegaLoc | 0.879 | 0.878 | 0.965 |
+  | CosPlace | 0.578 | 0.535 | 0.736 |
+  | SALAD | 0.528 | 0.549 | 0.820 |
+  | MixVPR | 0.517 | 0.480 | 0.747 |
+  | NetVLAD | 0.218 | 0.135 | 0.377 |
+  | DINOv2 | 0.040 | 0.060 | 0.320 |
+
+  Label-based baselines get their extra MSLS power by violating 6–15 of the 54 conditions.
+- **Ablations (SALAD):** centring still matters on Nordland (TPR 0.742 vs 0.568 without).
+- **Map size (RobotCar, SALAD):** 0/9 violations at 25 %, 50 % and 100 % of the map. TPR 0.964 / 0.843 / 0.978.
+  The 50 % dip has 115 null items per stratum; to look at.
+- **Ops:**
+  - The GPU backend makes `eval_all` take 0.5–1 min per setting (RobotCar/CMU/Nordland) and about 40–50 min for MSLS.
+  - Natural off-map on CPU takes 17–40 min per descriptor.
+  - Dumps are now a public dataset, `nhatlong1103/vpr-descriptor-dumps`.
+- **Next for A\*:**
+  1. Power on MSLS (large, heterogeneous maps): a better nuisance variable for the strata, or per-city/per-view nulls.
+  2. Sequence-level anytime-valid acceptance.
+  3. A SLAM/loop-closure demo.
+
 ## Entry 15 — MSLS (4th dataset) and the domain-shift fix: a lenient raw-similarity gate (2026-10-28)
 
 **MSLS-val, both cities (CPH+SF, 9 conditions, 6 descriptors, Kaggle CPU):** SelfCal-AA has **0/54** significant

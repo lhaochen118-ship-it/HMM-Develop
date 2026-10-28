@@ -1,9 +1,9 @@
 # Handoff — SelfCal (for a FRESH chat window)
 
-*Updated 2026-10-28 after Entry 13. Supersedes the earlier CCBF/CRSG version of this file (git history). Read this,
+*Updated 2026-10-28 after Entry 16 (branch `claude/selfcal-aa`). Supersedes the earlier CCBF/CRSG version of this file (git history). Read this,
 then `RESEARCH_LOG.md` Entries 11–15 and `LITERATURE_GATE.md`. The paper is `paper/selfcal_paper.md`.*
 
-Repo `lhaochen118-ship-it/hmm-develop`, branch **`claude/elegant-brown-xvnecd`** (all work lives here; no PRs).
+Repo `lhaochen118-ship-it/hmm-develop`, branch **`claude/selfcal-aa`** (current work; branched from `claude/elegant-brown-xvnecd`; no PRs).
 Kaggle user **`nhatlong1103`**, token in `~/.kaggle/access_token` (re-create it from the user's message if the
 container is new; do not write it into shell rc files).
 
@@ -26,15 +26,18 @@ container is new; do not write it into shell rc files).
 - **Gate 2 (`LITERATURE_GATE.md`): novel.** Checked against RSF (Zaffar'25), map-density (Hussaini'26),
   Trinh & Lyons, Schubert, meta-recognition, SAFEVPR and Quantile Transfer.
 
-## 2. Headline results (α = 0.05; 6 descriptors × 3 datasets = 18 settings, 138 deployment conditions)
+## 2. Headline results (adopted SelfCal-AA = Mondrian strata + domain gate; α = 0.05; 6 descriptors × 4 datasets = 24 settings, 192 conditions)
+
+See `RESEARCH_LOG.md` Entry 16 and `paper/tables.md` (built by `python3 paper/build_tables.py`).
 
 | method | labels | violating cond. | settings ≥1 viol. | mean TPR |
 |---|---|---|---|---|
-| **SelfCal-AA** | none | **0/138** | **0/18** | 0.676 (median aliasing-accept 0.008, max worst FAR 0.040) |
-| SelfCal | none | 0/138 | 0/18 | 0.718 (Oracle 0.721) |
-| Conformal LOCO (SAFEVPR protocol) | other cond. | 38/138 | 18/18 | — |
-| Quantile Transfer | benign | 64/138 | — | — |
-| Threshold benign→all / CRSG | benign | 25/138 each | — | — |
+| **SelfCal-AA** | none | **0/192** | **0/24** | 0.646 (oracle 0.706; max worst-condition FAR 0.048) |
+| original AA rule (no strata, no gate) | none | 0/192 | 0/24 | 0.617 (worst 0.140) |
+| SUE / CRSG / threshold / LOCO / Quantile Transfer | labels | 16 / 32 / 36 / 51 / 79 | 10–24 / 24 | — |
+
+Natural off-map (queries from other datasets/cities): 0/120 cells > α, max 0.007. MSLS power is the weak spot
+(0.460 vs oracle 0.661).
 
 Robustness: Nordland with winter as the map passes 0/3. A 25 % RobotCar map gives FAR 0 and TPR 0.994. Ablations
 barely move the result, but centring is essential on Nordland (TPR 0.754 vs 0.329). Δ⁺ for the map null is at most
