@@ -53,6 +53,22 @@ map/source cells.
 - **Next:**
   - Mondrian-by-sd_far gains power (0.621) but leaks under domain shift. Test it **with** the gate for more power.
   - Power on MSLS is still the main weakness.
+- **Follow-up (Mondrian-by-sd_far + gate; kernels dive-vpr-shiftfix2-*, 6 descriptors × 5 maps):**
+
+  | variant | LOBO viol. | max worst FAR | natural cells > α | natural max | mean TPR |
+  |---|---|---|---|---|---|
+  | AA&ms<=0.8 | 0/192 | 0.040 | 0/120 | 0.008 | 0.583 |
+  | **Mondrian-sdf-10&ms<=0.8** | **0/192** | **0.048** | **0/120** | **0.006** | **0.612** |
+  | Mondrian-sdf-5&ms<=0.8 | 0/192 | 0.061 (SALAD rc, n.s.) | 0/120 | 0.006 | 0.618 |
+
+  The gate also fixes Mondrian's domain-shift leaks (2/120 → 0/120). The gain is largest where SelfCal was weakest:
+  DINOv2 TPR 0.124 → 0.218 (B=10), CosPlace 0.624 → 0.677, NetVLAD 0.410 → 0.447, CMU map 0.692 → 0.749,
+  Nordland 0.524 → 0.567. MegaLoc, MixVPR and SALAD are unchanged (±0.01). MSLS improves only slightly
+  (0.45 → 0.46–0.48).
+  **Candidate main method:** Mondrian-sdf-10 + gate, because its worst condition stays ≤ α everywhere. Caveat: B
+  and γ were chosen after seeing these results. Either fix them a priori in the paper and report B ∈ {5,10} as a
+  sensitivity check, or select them on the map null only. Mondrian conformal is valid per stratum under
+  exchangeability, so T1–T6 carry over conditionally on the sd_far stratum.
 
 ## Entry 14 — SUE baseline, natural off-map stress test (a validity gap), MSLS + 4Seasons data (2026-10-28)
 
