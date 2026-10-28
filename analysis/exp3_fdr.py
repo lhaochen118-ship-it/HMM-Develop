@@ -11,12 +11,15 @@ from sc_eval import CFG
 from eval_all import signals
 
 
-def main(dump, ds, desc="salad", mixes=(0.1, 0.3, 0.5), qs=(0.05, 0.1), seed=0):
+def main(dump, ds, desc="salad", mixes=(0.1, 0.3, 0.5), qs=(0.05, 0.1), seed=0, rule="union"):
     ep = {"rc": V.load_robotcar, "cmu": V.load_cmu_merged, "nord": V.load_nordland, "nordw": lambda d, x: V.load_nordland(d, x, ref="winter")}[ds](dump, desc); c = CFG[ds]
     raw = signals(ep, c, False, f"{ds}_{desc}"); cen = signals(ep, c, True, f"{ds}_{desc}")
     nul = [raw[0]["maxsim"], cen[0]["z_far"]]
     p_in = SC.combined_p(nul, [raw[2]["maxsim"], cen[2]["z_far"]])
     p_off = SC.combined_p(nul, [raw[1]["maxsim"], cen[1]["z_far"]])
+    if rule == "AA":   # aliasing-aware: also require a significant gap to the best far region
+        p_in = np.maximum(p_in, SC.conformal_p(cen[0]["z_gap"], cen[2]["z_gap"]))
+        p_off = np.maximum(p_off, SC.conformal_p(cen[0]["z_gap"], cen[1]["z_gap"]))
     inm = V.nearest_map_dist(ep) <= c["in_d"]; _, dt, da = V.top1_errors(ep)
     gross_thr = c["excl"]
     corr = V.correct(ep, *c["tol"]) & inm; near = inm & (dt <= gross_thr)
@@ -38,7 +41,7 @@ def main(dump, ds, desc="salad", mixes=(0.1, 0.3, 0.5), qs=(0.05, 0.1), seed=0):
                 r[f"BH{q}_FDR_5m"] = float((~y[acc]).mean()) if acc.any() else 0.0
                 r[f"BH{q}_power"] = float(acc[y].mean()) if y.any() else np.nan
             rows.append(r)
-    print(f"### {ds}/{desc} deployment batches (BH on SelfCal[min(maxsim, z_far+c)] p-values)")
+    print(f"### {ds}/{desc} deployment batches (BH on SelfCal {rule} p-values)")
     for mix in mixes:
         R = [r for r in rows if r["mix"] == mix]
         if not R: continue
@@ -47,8 +50,8 @@ def main(dump, ds, desc="salad", mixes=(0.1, 0.3, 0.5), qs=(0.05, 0.1), seed=0):
               f"(vs gross) {f('ECE_labelfree_gross')[0]:.3f} | " + " | ".join(
               f"BH q={q}: FDR_gross mean {f(f'BH{q}_FDR_gross')[0]:.3f} max {f(f'BH{q}_FDR_gross')[1]:.3f}, FDR_5m {f(f'BH{q}_FDR_5m')[0]:.3f}, power {f(f'BH{q}_power')[0]:.3f}" for q in qs))
     os.makedirs(os.path.join(os.path.dirname(__file__), "results"), exist_ok=True)
-    json.dump(rows, open(os.path.join(os.path.dirname(__file__), "results", f"fdr_{ds}_{desc}.json"), "w"), default=float, indent=1)
+    json.dump(rows, open(os.path.join(os.path.dirname(__file__), "results", f"fdr_{ds}_{desc}" + ("" if rule == "union" else "_AA") + ".json"), "w"), default=float, indent=1)
 
 
 if __name__ == "__main__":
-    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "salad")
+    main(sys.argv[1], sys.argv[2], sys.argv[3] if len(sys.argv) > 3 else "salad", rule=sys.argv[4] if len(sys.argv) > 4 else "union")

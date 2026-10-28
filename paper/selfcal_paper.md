@@ -177,7 +177,87 @@ off-map counterpart by an extra strong far competitor, which can only decrease $
 
 # 6. Experiments
 
-*(filled from `analysis/results/` — see §6 tables in the compiled version.)*
+## 6.1 Setup
+
+**Datasets.** *RobotCar-Seasons v2* [Sattler'18]: the map is the official `overcast-reference` rear-camera traversal
+(6,954 images, ~1.3 × 1.1 km) with poses from the official reconstruction (`all.nvm`); queries are the 1,906 rear
+images of the public training split in nine conditions (dawn, dusk, night, night-rain, overcast-summer/winter, rain,
+snow, sun), whose 6-DoF poses are released (test poses are withheld by the benchmark). A query is correct if the top-1
+reference is within the coarsest official threshold (5 m, 10°); we also report the finer official thresholds.
+*Extended-CMU-Seasons* [Toft'20]: the eleven slices with released query poses (6–8, 10–13, 21–24) share one world frame
+and are consecutive segments, so we merge their official databases into one 2,418-image city map; queries are the
+21,407 camera-0 images of 11 dates (Sep 2010 – Jul 2011), correct at (5 m, 10°). *Nordland* [Sünderhauf'13]: 4,500
+frame-aligned places per season (uniform subsample of the 35,768-frame route); summer is the map (winter in §6.6),
+spring/fall/winter are queries, correct within 2 places.
+
+**Off-map protocol.** We cannot rely on a few hand-picked unmapped streets, so we hold out the map in turn: the map is
+partitioned into 300 m blocks (200 places on Nordland); for each block, the block is removed and its queries farther
+than 40 m (10 places) from the remaining map are evaluated as *off-map*. This gives 1,386 (RobotCar), 14,117 (CMU) and
+12,180 (Nordland) off-map query instances spread over all conditions. In-map queries (within 5 m of a map image) are
+evaluated against the full map; in-map queries whose top-1 is farther than 25 m (5 places) are *aliasing* errors.
+The method's own null construction (map blocks, pseudo-queries) uses only the map and never sees queries.
+
+**Descriptors.** Frozen, off-the-shelf: NetVLAD (VGG16, Pitts30k, 4,096-d) [Arandjelović'16], CosPlace (ResNet-50,
+2,048-d) [Berton'22], MixVPR (ResNet-50, 4,096-d) [Ali-bey'23], DINOv2 ViT-B/14 CLS+mean (1,536-d) [Oquab'24], SALAD
+(8,448-d) [Izquierdo'24] and MegaLoc (8,448-d) [Berton'25]. All descriptors are extracted once at 322 × 322.
+
+**Baselines.** (a) *Threshold, benign→all*: split-conformal threshold on the max-similarity of off-map queries of the
+two most benign conditions (RobotCar: overcast-summer/winter; CMU: the two dates with the highest recall; Nordland:
+fall), applied to all conditions; (b) the same with aliasing errors added to the negatives; (c) *conformal LOCO*,
+the SAFEVPR protocol: calibrate on the labelled off-map queries of all *other* conditions and test on the held-out
+one; (d) *Quantile Transfer* [Rajani'26]: the benign threshold mapped through the quantile function of each deployment
+batch; (e) a learned logistic calibrator on margin, max-similarity and entropy (CRSG) trained on benign conditions;
+(f) the PA ratio [Hausler'21]; (g) parametric nulls: Gaussian z-norm with Bonferroni and the closed-form EVT spacing
+test; (h) an *oracle* that calibrates max-similarity with the labels of every deployment condition.
+
+**Metrics.** FAR on off-map queries per condition (target α), the number of conditions whose FAR is significantly above
+α (one-sided binomial test, Bonferroni over conditions), TPR on correct in-map queries, and the acceptance rate of
+aliasing errors.
+
+## 6.2 Main result
+
+Table 1 reports α = 0.05 for SALAD. Every label-calibrated method exceeds the target in at least one realistic dataset —
+the benign→all threshold in 5/9 RobotCar conditions (worst FAR 0.21 at night-rain) and 4/11 CMU dates; calibrating on
+all other labelled conditions (SAFEVPR protocol) still fails in 1/9, 4/11 and 2/3 conditions — and all of them accept a
+third to four fifths of the aliasing errors. Parametric nulls are either invalid (Gaussian z-norm: FAR 0.13–0.35) or
+anti-conservative under hubness (EVT spacing: night-rain 0.109). SelfCal-AA, which uses no labels, has **no
+significant violation in any of the 23 conditions**, accepts 0.0%, 1.5% and 5.7% of aliasing errors, and its TPR
+(0.988 / 0.853 / 0.754) is close to the oracle that holds labels for every condition (0.995 / 0.992 / 0.780).
+Without the aliasing guard, SelfCal reaches oracle power on RobotCar and CMU (0.994 / 0.956) while still controlling
+the off-map FAR. Fig. 2 shows the same picture for α ∈ [0.005, 0.2].
+
+## 6.3 Why it works
+
+Fig. 1 plots the survival function of the off-map statistic for every RobotCar condition against the map null.
+All conditions lie below the null for both max-similarity and z_far: appearance change makes unrelated queries
+*less* map-like than the map's own held-out blocks (T2). Table 3 quantifies the excess-risk bound Δ⁺ of T3: with the
+map null it is at most 0.052 (max-similarity) and 0.047 (z_far, centred) over all 23 conditions, whereas with a
+labelled benign null it reaches 0.255 (max-similarity, night-rain) — exactly the violations of Table 1. The
+invariant statistic matters for power: calibrating raw max-similarity on the map is valid but loses most of its
+power on Nordland (0.41 vs 0.84), where seasonal change lowers all similarities.
+
+## 6.4 Descriptors
+
+Table 2 repeats the comparison for six descriptors spanning a decade of VPR. ⏳
+
+## 6.5 Batches: FDR and label-free confidence
+
+With an off-map share of 10–50%, Benjamini–Hochberg on SelfCal p-values (q = 0.1) keeps the false-discovery rate of
+gross errors at 0.004–0.009 on RobotCar and 0.008–0.011 on CMU (max over conditions 0.046 / 0.023) with power 0.96–0.998,
+and the two-groups confidence has ECE 0.013–0.050 without labels (π̂₀ within 0.03–0.08 of the true off-map share).
+On Nordland, where 18.5% of in-map queries are gross aliasing errors that the union rule does not target, BH on the
+union p-values exceeds q (gross FDR 0.15); with the aliasing-aware p-values, max(p_comb, p_gap), BH keeps the gross FDR
+at 0.017–0.021 (max 0.030) with power 0.53–0.75. The label-free confidence is, however, poorly calibrated on Nordland
+(ECE ≈ 0.14): many correct matches on its repetitive scenery have non-significant gaps, which inflates π̂₀
+(0.47–0.91 vs. 0.27–0.57). We therefore recommend the p-values, not the two-groups confidence, on aliasing-prone maps.
+
+## 6.6 Robustness and ablations
+
+*Map in a hard condition.* Using Nordland **winter** as the map (queries summer/spring/fall) — so that map
+pseudo-queries are the degraded ones — SelfCal-AA keeps 0/3 violations (FAR 0.010, aliasing 0.022, TPR 0.593).
+*Map size.* Keeping 25% of the RobotCar map (635 × 592 m, 1,739 images, 650 pseudo-queries) gives FAR 0.000 and
+TPR 0.994; 50% gives 0.037 and 0.916. *Hyper-parameters.* Cell size (×0.5–2), exclusion radius (×0.4–2), block size
+(×0.5–2), δ (×0.6–2) and calibration-set size (497–4,747 pseudo-queries) change TPR by at most 0.05 and keep the worst-condition FAR at or below 0.073 at α = 0.05 (Table 4). *Centring* is essential on Nordland (TPR 0.754 → 0.329 without it) and neutral elsewhere.
 
 # 7. Limitations
 
