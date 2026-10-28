@@ -1,106 +1,80 @@
-# Handoff — SelfCal (for a FRESH chat window)
+# 03 — Handoff (cho khung chat mới)
 
-*Updated 2026-10-28 after Entry 16 (branch `claude/selfcal-aa`). Supersedes the earlier CCBF/CRSG version of this file (git history). Read this,
-then `RESEARCH_LOG.md` Entries 11–15 and `LITERATURE_GATE.md`. The paper is `paper/selfcal_paper.md`.*
+*Cập nhật 2026-10-28. Chỉ ghi mục tiêu, trạng thái, quyết định đã chốt, vị trí mọi thứ và việc tiếp theo. Chi tiết
+khoa học ở `01_SCIENTIFIC_FINDINGS.pdf`, chi tiết vận hành ở `02_ENGINEERING_OPS_NOTES.pdf`, tài khoản và dữ liệu ở
+`ENVIRONMENT_SUMMARY.pdf`. Thứ tự đọc: `00_READ_ME_FIRST.md`.*
 
-Repo `lhaochen118-ship-it/hmm-develop`, branch **`claude/selfcal-aa`** (current work; branched from `claude/elegant-brown-xvnecd`; no PRs).
-Kaggle user **`nhatlong1103`**, token in `~/.kaggle/access_token` (re-create it from the user's message if the
-container is new; do not write it into shell rc files).
+## 1. Mục tiêu
 
-## 1. Where the project is
+Viết một research paper hạng A/A\* (RA-L/IROS/ICRA trở lên) về **độ tin cậy của Visual Place Recognition**: chấp nhận
+hay từ chối match top-1, với **kiểm soát false-accept rate không cần nhãn** và bền vững với thay đổi ngoại hình và
+domain. Quy trình làm việc: `04_RESEARCH_WORKFLOW.pdf`.
 
-- **CRSG is dropped.** Gate 1 (`LITERATURE_GATE.md`) found it pre-empted (PA ratio, L2/RS-SD-SU, integrity MLPs,
-  SAFEVPR). It is not enough for A/A*.
-- **New contribution: SelfCal, "your map is its own calibration set".** It controls the off-map false-accept rate
-  (FAR) of VPR without labels and under appearance shift. It has four parts:
-  1. **Map pseudo-queries.** Each map image is queried against the map with its own 300 m block removed
-     (leave-one-block-out), so it is off-map by construction. This gives a free labelled null.
-  2. **Affine-invariant statistic** `z_far = (s1 − μ_far)/σ_far` over the maxima of 10 m cells farther than 25 m
-     from the top-1, computed after **centring the descriptors on the map mean** (reduces hubness).
-  3. **Combined split-conformal p-value**: `combined_p` (min of conformal p's of max-sim and z_far, re-calibrated by
-     leave-one-out null ranks).
-  4. **SelfCal-AA** (aliasing-aware): accept iff `max(p_comb, p_zgap) ≤ α`, where
-     `z_gap = (s1 − best far region)/σ_far`.
-- **Theory (paper §5):** T1 validity under exchangeability, T2 stochastic dominance ⇒ conservative, T3 FAR − α ≤ Δ⁺
-  (one-sided KS), T4 combination validity, T5 BH FDR (PRDS).
-- **Gate 2 (`LITERATURE_GATE.md`): novel.** Checked against RSF (Zaffar'25), map-density (Hussaini'26),
-  Trinh & Lyons, Schubert, meta-recognition, SAFEVPR and Quantile Transfer.
+## 2. Trạng thái hiện tại
 
-## 2. Headline results (adopted SelfCal-AA = Mondrian strata + domain gate; α = 0.05; 6 descriptors × 4 datasets = 24 settings, 192 conditions)
+- **Phương pháp:** SelfCal ("your map is its own calibration set"), có hai chế độ trên cùng một hạ tầng:
+    - **SelfCal-AA:** bền vững nhất, là method chính.
+    - **SelfCal-Gap:** power cao.
+- **Kết quả:** đủ cho 4 dataset × 6 descriptor, cùng ablation, domain lạ, FDR, map-size và Nordland lấy mùa đông làm
+  bản đồ.
+- **Paper:** `paper/selfcal_paper.md`, bản build là `paper/SelfCal_paper_full.pdf` (đã có Gap).
+  `paper/SelfCal_paper_AA_only.pdf` là bản chỉ-AA, giữ lại để đối chiếu.
+- **Mức đánh giá hiện tại:** A (RA-L/IROS khá). Để lên A\* còn thiếu:
+    - kiểm định độc lập cho các lựa chọn sau-khi-xem-dữ-liệu;
+    - power trên bản đồ lớn và dị biệt (MSLS);
+    - phần sequence có bảo đảm;
+    - và **kiểm tra novelty lần cuối** (việc đầu tiên của chat mới).
 
-See `RESEARCH_LOG.md` Entry 16 and `paper/tables.md` (built by `python3 paper/build_tables.py`).
+## 3. Quyết định đã chốt (không mở lại nếu không có bằng chứng mới)
 
-| method | labels | violating cond. | settings ≥1 viol. | mean TPR |
-|---|---|---|---|---|
-| **SelfCal-AA** | none | **0/192** | **0/24** | 0.646 (oracle 0.706; max worst-condition FAR 0.048) |
-| original AA rule (no strata, no gate) | none | 0/192 | 0/24 | 0.617 (worst 0.140) |
-| SUE / CRSG / threshold / LOCO / Quantile Transfer | labels | 16 / 32 / 36 / 51 / 79 | 10–24 / 24 | — |
+1. Bỏ CCBF/HMM-temperature và CRSG (trơ hoặc bị đi trước). Hướng chính là SelfCal.
+2. Luật được chọn:
+    - SelfCal-AA = Mondrian strata theo σ_far (B = 10, ≥ 50 mẫu/stratum) + domain gate (p_maxsim ≤ 0.8) + max(p_comb,
+     p_zgap).
+    - SelfCal-Gap = p_zgap trong cùng strata và gate.
+3. Báo cáo **cả hai** chế độ, khuyến nghị AA khi cần giả định yếu nhất.
+4. SelfCal theo chuỗi (Seq) **không** đưa vào claim chính, vì validity theo cửa sổ thất bại trên Nordland. Chỉ là
+   hướng mở.
+5. Branch:
+    - `claude/selfcal-aa`: ổn định, đã có Gap, **không ghi đè kết quả AA**.
+    - `claude/selfcal-seq`: thí nghiệm mở rộng (Seq exp11, demo định vị exp12, cache thống kê, tìm biến thể).
+    - `claude/elegant-brown-xvnecd`: lịch sử cũ.
+    - Không tạo PR.
+6. Toàn bộ tính toán nặng chạy trên Kaggle, 16 slot T4 (8 acc).
 
-Natural off-map (queries from other datasets/cities): 0/120 cells > α, max 0.007. MSLS power is the weak spot
-(0.460 vs oracle 0.661).
+## 4. Mọi thứ nằm ở đâu
 
-Robustness: Nordland with winter as the map passes 0/3. A 25 % RobotCar map gives FAR 0 and TPR 0.994. Ablations
-barely move the result, but centring is essential on Nordland (TPR 0.754 vs 0.329). Δ⁺ for the map null is at most
-0.052, against up to 0.255 for a labelled benign null. BH on the AA p-values keeps Nordland gross FDR at or below
-0.030.
-
-**Known weaknesses (stated in the paper's Limitations):**
-- DINOv2 CLS+mean stays valid but is conservative (TPR 0.06–0.33 vs oracle 0.39–0.70). Dual centring only lifts
-  this from 0.33 to 0.41, so it was not adopted.
-- Label-free confidence has poor ECE on Nordland (~0.14).
-- RobotCar test GT is withheld, so the evaluation uses the official map, official thresholds and the public train
-  split.
-- BoQ was not available: GitHub is blocked and there is no mirror. MixVPR, CosPlace, NetVLAD, MegaLoc and DINOv2 were
-  added instead.
-
-## 3. Code map
-
-| path | role |
+| Thứ | Vị trí |
 |---|---|
-| `nb15_src/` | Kaggle descriptor-dump notebook. `40_run.src` runs every descriptor in one image pass and writes fp16 `.npy` plus meta npz. The kernel dir needs a generated `15_sel.src` with `DUMP = [...]` and `DESCRIPTORS = [...]`. Build with `python automation/build_nb.py out.ipynb ../nb15_src`. |
-| `automation/run_kernel.py` | `run_kernel.py <kernel_dir> <out_dir> [stall=600] [max_restarts=4] [hard=10800] [silent_max=0] [--attach]`. Only a kernel QUEUED for more than 10 min is cancelled (`kaggle kernels delete -y`) and re-pushed. Silent-restart is OFF because Kaggle hides RUNNING logs. |
-| `automation/make_meta.py` | `kernel-metadata.json` (tier `t4` default, `rtx` for RTX PRO 6000). |
-| `automation/vpr_extra.py` | Offline builders for MixVPR, CosPlace, NetVLAD and MegaLoc (weights in dataset `nhatlong1103/vpr-descriptor-weights`). |
-| `analysis/vprlib.py` | Episode loaders (RobotCar, CMU merged, Nordland with `ref=`), metrics, BH, nearest-map distance. |
-| `analysis/selfcal.py` | Core method: `query_stats`, `lobo_stats`, `map_null`, `conformal_p`, `combined_p`, `SelfCalTest` = the adopted decision rule (Mondrian strata by sd_far, B=10, raw-similarity gate 0.8; `strata=1, gate=1` = original AA), plus the online class `SelfCalAA` (18 s offline for the 6954-image RobotCar map, ~1 ms/query batched; matches the batch statistics to 4e-6). |
-| `analysis/sc_eval.py` | `CFG` per dataset (cell, excl, k, block, off_d, in_d, tol). |
-| `analysis/eval_all.py` | Main comparison (all baselines). Writes `analysis/results/eval_<ds>_<desc>.json` and caches in `analysis/cache/` (git-ignored). |
-| `analysis/exp3,5,6,7,9,10` | FDR/confidence, ablation, dominance Δ⁺, map size, natural off-map, domain-shift variants (`--stats` re-scores cached statistics). |
-| `analysis/figures2.py` | Paper figures. |
-| `paper/` | `selfcal_paper.md` (source text). `build_tables.py` produces `tables.md`. `build_paper.py` produces `SelfCal_paper_full.md` and `.pdf`. |
+| Descriptor dumps (4.4 GB, public) | Kaggle `nhatlong1103/vpr-descriptor-dumps` (cấu trúc: `ENVIRONMENT_SUMMARY.pdf`) |
+| Ảnh gốc, trọng số, notebook tạo dump | `ENVIRONMENT_SUMMARY.pdf` §2; notebook nguồn `nb15_src/` (build bằng `automation/build_nb.py`) |
+| Method | `analysis/selfcal.py` (`SelfCalTest`, `SelfCalAA`), `analysis/vprlib.py`, `analysis/sc_eval.py` |
+| So sánh chính / các nghiên cứu phụ | `analysis/eval_all.py`; `exp3_fdr`, `exp5_ablation`, `exp6_dominance`, `exp7_mapsize`, `exp9_natural`, `exp10_shiftfix` |
+| Kết quả | `analysis/results/*.json` (AA và baseline); `analysis/results/gap/*.json` (Gap) |
+| Bảng / hình / paper | `paper/build_tables.py` → `paper/tables.md`; `analysis/figures2.py` → `analysis/figs/`; `paper/build_paper.py` |
+| Kaggle ops | `automation/fanout.py`, `make_eval_kernel.py`, `run_kernel.py`; token `~/.kaggle/tok_<user>` |
+| Nhật ký và novelty | `RESEARCH_LOG.md` (Entry 11–17), `LITERATURE_GATE.md` (Gate 1–4), `literature/VISUAL_LOCALIZATION_REVIEW.pdf` |
+| Seq / demo định vị | branch `claude/selfcal-seq`: `analysis/exp11_sequence.py`, `exp12_deploy.py`, `results/seq_*`, `deploy_*` |
 
-**Reproduce:** evaluations run on Kaggle: `automation/make_eval_kernel.py <dir> <slug> "eval_all.py <ds> <desc>;..." [--gpu] [--acc2]`,
-then `automation/run_kernel.py <dir> <out>`. Copy `<out>/results/*.json` to `analysis/results/` and run `python3 paper/build_paper.py`.
+**Tái lập nhanh:**
 
-## 4. Data (descriptor dumps, ~2.9 GB, NOT in git)
+```
+python3 automation/fanout.py /tmp/w v3 "eval_all.py rc salad;..."
+python3 paper/build_paper.py
+```
 
-The dumps are outputs of four Kaggle kernels. They were run on T4 and their datasets are `nhatlong1103/bundle`,
-`robotcar-seasons-v2`, `nordland-full-47-6gb`, `vpr-descriptor-weights` and the CMU dataset.
+Lệnh thứ nhất chạy thí nghiệm và tự gom kết quả. Lệnh thứ hai dựng lại bảng và PDF.
 
-| kernel | content | local path used last session (scratchpad, ephemeral) |
-|---|---|---|
-| `nhatlong1103/dive-vpr-nb15a-dump` | SALAD for RobotCar and Nordland | `out15a/dump` |
-| `nhatlong1103/dive-vpr-nb15b-dump` | SALAD for CMU | `out15b/dump` |
-| `nhatlong1103/dive-vpr-nb15c-dump` | DINOv2, NetVLAD, CosPlace, MixVPR and MegaLoc for RobotCar and Nordland | `out15c/dump` |
-| `nhatlong1103/dive-vpr-nb15d-dump` | the same five descriptors for CMU | `out15d/dump` |
+## 5. Việc tiếp theo (theo thứ tự)
 
-Fetch a dump in a new container with `kaggle kernels output nhatlong1103/dive-vpr-nb15a-dump -p <dir>`. Do not push a
-new version under these slugs, because that replaces their outputs.
-
-## 5. Next steps (if continuing toward A*)
-
-1. **Power for weak descriptors.** DINOv2 is the one setting where SelfCal is conservative. Candidates are a
-   per-descriptor statistic choice selected on the map null only, or sequential evidence (combining p-values over
-   consecutive frames, which stays valid by the T4 logic).
-2. **More datasets.** A fourth geo-tagged benchmark with GPS (MSLS val, Pitts30k or SF-XL) needs only the
-   leave-block-out protocol, no new labels. 4Seasons poses are now on Kaggle (`nhatlong1103/4seasons-poses`, pairs with `nhatlong1103/4seasons`).
-3. **Paper polish.** Turn the markdown into a LaTeX venue template and add a qualitative figure (accepted vs rejected
-   aliasing examples).
-
-## 6. Ops reminders (details in `handoff/02_ENGINEERING_OPS_NOTES.md`)
-
-- A T4 kernel starts at once and two can run concurrently. Use RTX only for large runs.
-- Datasets mount at `/kaggle/input/datasets/<owner>/<slug>`.
-- Do not run downloaded third-party code locally, because the sandbox classifier blocks it. Run it inside Kaggle
-  instead.
-- Restarting the container loses background waits. Re-attach with `run_kernel.py ... --attach`.
+1. **[Chat mới, làm đầu tiên] Đánh giá lại novelty của SelfCal-AA và SelfCal-Gap.** So với các paper, **chỉ đọc
+   paper, không đọc repo code**. Hướng dẫn chi tiết và danh sách so sánh ở `00_READ_ME_FIRST.md` §3. Ghi kết quả vào
+   `LITERATURE_GATE.md` (Gate 5) và báo user kết luận novel / trùng ở đâu.
+2. **Kiểm định độc lập các lựa chọn sau-khi-xem-dữ-liệu** (gate 0.8, B = 10, chế độ Gap) trên dataset mới chưa dùng
+   để chọn. Ứng viên: Pitts30k / SF-XL / Tokyo24-7 / 4Seasons (poses đã có `nhatlong1103/4seasons-poses`). Cần chạy
+   notebook dump mới.
+3. **Power trên MSLS:** null theo thành phố hoặc theo hướng nhìn, hoặc chọn biến strata tốt hơn. Dùng cache exp10
+   (`--stats`) để thử rẻ.
+4. **Sequence có bảo đảm:** cần thống kê bền với phụ thuộc theo thời gian (Seq hiện tại không hợp lệ trên Nordland).
+5. **Chuẩn bị nộp:** chuyển sang template LaTeX của venue, thêm hình định tính (ví dụ ảnh bị chấp nhận hoặc từ chối
+   do aliasing).

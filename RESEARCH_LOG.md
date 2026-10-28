@@ -18,6 +18,18 @@ Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Com
   null drawn from the map itself, which is SelfCal (Entry 12).
 
 
+## Entry 17 — SelfCal-Gap, sequence-level SelfCal, localisation demo (summary; full entry on branch `claude/selfcal-seq`)
+
+- **SelfCal-Gap** (z_gap only + strata + gate): 0/192 violations, TPR **0.746** (oracle 0.706, AA 0.646), MSLS 0.603,
+  worst point FAR 0.073.
+  - Reason it helps: z_far's dominance fails on MSLS (alone it reaches FAR 0.40–0.88 there).
+  - Ported here additively: `SelfCalTest(mode="gap")`, rows in `analysis/results/gap/`. The 1,275 AA rows of the
+    rerun equal this branch's results exactly.
+- **Sequence SelfCal** (window, map pseudo-sequences): large power gains, but window validity fails (Nordland MegaLoc
+  2–3/3 seasons). Not a claim.
+- **Localisation demo** (map with 30 % holes, 10 seeds): per-frame SelfCal-AA beats the label-calibrated threshold in
+  all 12 descriptor × dataset pairs (mean error 1.3–12.6× lower). Details in `handoff/01_SCIENTIFIC_FINDINGS.pdf`.
+
 ## Entry 16 — Full rerun with the adopted SelfCal-AA (Mondrian strata by sd_far + domain gate), 6 T4 on 3 accounts (2026-10-28)
 
 Branch `claude/selfcal-aa`. Rule = `selfcal.SelfCalTest` (B=10 strata of the null's sd_far, gate p_maxsim ≤ 0.8).

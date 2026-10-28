@@ -1,125 +1,119 @@
-# Engineering & Kaggle-Ops Lessons (Handoff)
+# 02 — Engineering & Operations Lessons
 
-> **User policy (2026-10-28): run ALL heavy compute on Kaggle, including CPU-only analysis.** Do not run long
-> evaluations in the local container (no GPU, 4 cores). Use `automation/make_eval_kernel.py <dir> <slug>
-> "eval_all.py <ds> <desc>;..."`, which uploads `analysis/` as dataset `<owner>/dive-vpr-analysis` and makes a
-> kernel that mounts the PUBLIC dump dataset `nhatlong1103/vpr-descriptor-dumps` (works from any account; new account:
-> `--owner <user>`, nothing to upload; tested end-to-end from acc3, results identical). Then run `automation/run_kernel.py <dir> <out>` and copy
-> `<out>/results/*.json` into `analysis/results/`. GPU (T4) is only for descriptor extraction. Local CPU is for quick
-> checks (< ~2 min) only. **Prefer `--gpu`** (T4): `selfcal.qm_stats` has a PyTorch backend (`SELFCAL_DEVICE=auto|cuda|torchcpu|numpy`).
-> It was validated against numpy on Kaggle (RobotCar identical, Nordland ≤ 0.00025 difference).
-> **User policy (2026-10-28, later): use ALL accounts' GPUs before any CPU kernel.** acc1 `nhatlong1103`
-> (`~/.kaggle/access_token`), acc2 `yuan1103` (`_acc2`, `--acc2`), acc3 `synchan5704` (`_acc3`, `--acc3`): 2 T4 each =
-> 6 concurrent GPU jobs. Fall back to CPU kernels only when all GPU slots are busy and the job is light.
+*Cập nhật 2026-10-28. Tài liệu này chỉ về **kỹ thuật và vận hành**: code, môi trường, Kaggle, cách chạy thí nghiệm,
+lỗi đã gặp và cách sửa, bài học. Bảng tài khoản, dataset và đường dẫn nằm trong `ENVIRONMENT_SUMMARY.pdf`; kết quả
+khoa học nằm trong `01_SCIENTIFIC_FINDINGS.pdf`.*
 
-*Kinh nghiệm code / vận hành positive + negative mà phiên này tìm ra. Dùng cho khung chat mới để tránh lặp lỗi và
-chạy nhanh hơn. Scripts tham chiếu trong `automation/`.*
+## 1. Chính sách tính toán (user chỉ định)
 
----
+1. **Mọi tính toán nặng chạy trên Kaggle**, kể cả phân tích chỉ cần CPU. Container local (không GPU, 4 nhân) chỉ
+   dùng cho kiểm tra nhanh, dưới khoảng 2 phút.
+2. **Dùng hết GPU T4 của mọi acc trước** (8 acc × 2 = 16 slot). Chỉ dùng kernel CPU khi hết GPU **và** job đủ nhẹ.
+3. Không ghi token vào `~/.bashrc` (bị từ chối). Token để ở `~/.kaggle/tok_<username>`; script tự đọc.
+4. Không chạy code bên thứ ba tải về ngay trong container (sandbox chặn). Chạy nó trong kernel Kaggle.
 
-## 1. Kaggle GPU sessions — các bài học QUAN TRỌNG NHẤT (nhiều cái học bằng lỗi)
+## 2. Pipeline đánh giá trên Kaggle (đang dùng, đã kiểm chứng)
 
-### 1.1 Ngắt (cancel) một GPU session
-- **KHÔNG có** lệnh cancel/stop/abort trong Kaggle token API (kiểm tra `dir(kaggle.api)`: chỉ có `kernels_delete`,
-  không có cancel).
-- **Push một version mới KHÔNG ngắt session đang queued/running** của kernel đó. (Đây là lỗi tôi mắc; user chỉ ra.)
-  Cố push đè khi đã có session cũ → lỗi *"Maximum batch GPU session count of 2 reached"*.
-- **Cách ngắt THẬT (đã verify):** `kaggle kernels delete -y <owner>/<slug>` → xóa kernel, chấm dứt run, giải phóng
-  GPU slot. Push lại sau đó sẽ tạo lại kernel mới. (Destructive với lịch sử version, nhưng không quan trọng.)
-- **Push bản CPU no-op (enable_gpu=False) KHÔNG đáng tin để ngắt** GPU session cũ (tôi đã thử, không hiệu quả như
-  mong đợi). Dùng `delete`.
+```
+python3 automation/fanout.py <work_dir> <prefix> "eval_all.py rc salad;eval_all.py msls megaloc;..." [n_kernels] [--accounts a,b] [--cpu]
+```
 
-### 1.2 Giới hạn & concurrency
-- Trần là **2 batch GPU session đồng thời** (chính lỗi "max 2" là bằng chứng trần ≥2). **Chạy song song 2 kernel
-  GPU là ĐƯỢC** — đã verify trực tiếp: NB13 + NB14 cùng chạy trên T4 (13:51–14:05).
-- **Tránh tích lũy session:** mỗi lần push retry mà không `delete` cái cũ sẽ ăn dần vào trần 2 → kẹt. Luôn `delete`
-  trước khi push lại cho cùng kernel nếu cái cũ còn đang chạy/queued.
+- `fanout.py` chia job theo vòng vào n kernel, rải trên (acc, slot): slot 0 của mọi acc trước, rồi đến slot 1. Nó
+  chờ dataset code ở trạng thái `ready`, chạy `run_kernel.py` cho từng kernel, chờ xong rồi copy `results/*.json`
+  vào `analysis/results/`.
+- `make_eval_kernel.py <dir> <slug> "<jobs>" "" [--gpu] [--owner <user>]`:
+    - upload `analysis/*.py` thành dataset code `<owner>/dive-vpr-analysis` (mỗi lần tạo một version mới);
+    - viết `run.py`: mount dataset dump public `nhatlong1103/vpr-descriptor-dumps`, symlink vào `dump_all/`, chạy job
+    song song (cpu − 1 luồng), lưu `results/`, `logs/`, `figs/`.
+    - Job có thể chứa token chữ `DUMP` ở chỗ cần đường dẫn dump (ví dụ `exp10_shiftfix.py salad DUMP`).
+- `run_kernel.py <dir> <out> 600 3 14400`: push, poll trạng thái, tải output. Kernel bị QUEUED quá 10 phút thì
+  `delete` rồi push lại. `--attach` để bám lại vào kernel đang chạy sau khi container khởi động lại.
+- **Backend GPU:** `selfcal.qm_stats` dùng PyTorch khi có CUDA (`SELFCAL_DEVICE=auto|cuda|torchcpu|numpy`).
+    - Đã đối chiếu với numpy: RobotCar trùng hoàn toàn, Nordland lệch ≤ 0.00025.
+    - Trọng số SUE phải để float32 như numpy; trước đó float64 làm lệch 3 vi phạm ở α = 0.01.
+- **Thời gian trên T4:**
+    - `eval_all` RobotCar/CMU/Nordland: 0.5–1 phút mỗi setting. MSLS: 27–36 phút.
+    - exp9 (CPU): 17–40 phút mỗi descriptor. exp10 mỗi descriptor: 11–17 phút.
+    - exp11/exp12: dưới 1 phút mỗi job.
+- **Cache thống kê:** exp10 lưu `shiftstats_<desc>.npz` gồm mọi thống kê raw và centred. `exp10_shiftfix.py <desc>
+  --stats <npz>` chấm lại biến thể mới trong vài giây (93 s → 2.5 s). Nên dùng cách này cho mọi tìm kiếm biến thể.
 
-### 1.3 "0 output" KHÔNG đồng nghĩa với treo
-- `kaggle kernels output <id>` và `kaggle kernels logs <id>` **trả log rất trễ** — thường chỉ lộ log khi kernel
-  **gần xong / xong**. Một kernel RUNNING với "0 stdout qua API" có thể vẫn đang chạy bình thường (startup, mount
-  dataset lớn). → **Đừng kết luận treo chỉ vì output API trống.**
-- Bằng chứng tin cậy hơn về "đã được cấp GPU": chờ dòng output đầu tiên xuất hiện (lag), hoặc đợi tới khi COMPLETE.
+## 3. Kaggle: bài học vận hành
 
-### 1.4 T4 vs RTX PRO 6000 (thực tế phiên này)
-- **RTX PRO 6000 có thể BẬN thật** → kernel queued **21 phút, 0 output** dù slot đã trống. Re-queue cũng vào đúng
-  GPU bận. Khi RTX bận, **retry không giúp**; cân nhắc T4.
-- **T4 instant, không hàng chờ**, và **chạy song song 2 kernel** → tổng thể thường **chắc + nhanh hơn** cho dữ liệu
-  cỡ vài chục nghìn ảnh.
-- **Phần sequential filter là CPU-bound (numpy)** → RTX KHÔNG tăng tốc phần này; RTX chỉ nhanh ở extraction
-  (SALAD forward).
-- **Throughput đo thực tế trên T4:** SALAD ~**16 ảnh/s** (NB13 ~12k ảnh extract trong ~12 phút); có lúc ~7–8 ảnh/s
-  khi T4 tải nặng. → ước lượng: ~10k ảnh ≈ 10–25 phút trên T4.
+- **Ngắt một session:** chỉ `kaggle kernels delete -y <owner>/<slug>` có tác dụng. Push version mới hay push bản CPU
+  "no-op" không ngắt session cũ. Cửa sổ interactive trên web phải tắt trên giao diện.
+- **Trần concurrency:** 2 session GPU mỗi acc. Push lại mà không `delete` sẽ ăn vào trần và gây lỗi *Maximum batch
+  GPU session count of 2*.
+- **Log trễ:** API `output`/`logs` chỉ lộ log gần lúc xong. Kernel RUNNING mà chưa có output không có nghĩa là treo.
+  Runner vì thế tắt chế độ silent-restart.
+- **T4 và RTX PRO 6000:** T4 cấp ngay và chạy song song được. RTX có lần xếp hàng 21 phút với 0 output. Chỉ dùng
+  RTX khi khối lượng extraction rất lớn.
+- **Dataset code versioning:** sau `make_eval_kernel` phải chờ `kaggle datasets status` báo `ready` rồi mới push
+  kernel (`fanout.py` làm sẵn). Không chờ thì kernel có thể mount version code cũ.
+- **Giới hạn metadata:** title dataset dài 6–50 ký tự, subtitle 20–80. Title dài quá thì upload hỏng sau khi đã đẩy
+  hết 4.4 GB.
+- **Chia sẻ dữ liệu giữa các acc:** output kernel riêng tư của acc khác không mount được. Giải pháp hiện tại là dataset
+  **public** `nhatlong1103/vpr-descriptor-dumps`; acc mới không cần upload gì. Hai bản dump riêng tư cũ trên acc 2
+  và acc 3 đã xoá.
+- **Upload:** khoảng 18 MB/s (4.4 GB mất khoảng 6 phút với `-r zip -q`). Dùng hard link (`cp -al`) để chuẩn bị thư
+  mục mà không tốn thêm dung lượng.
+- **Acc mới:** đã thử GPU T4 trên cả 8 acc. Acc chưa xác minh số điện thoại sẽ không được cấp GPU, nên cần thử một
+  job nhỏ trước.
 
-### 1.5 Stall-rule runner (chính sách user)
-- Chính sách user cho RTX: **15 phút output=0 → ngắt session cũ (delete) → tạo session mới; tối đa 4 lần; vẫn fail
-  thì kiểm tra lỗi.** Đã code đúng trong `automation/run_rtx2.py` (`free_and_restart()` dùng `kaggle kernels
-  delete -y` rồi push lại).
-- Với T4: không cần restart (instant). Dùng `automation/run_stall.py` (push + poll + decode), đặt `STALL` đủ lớn
-  (vd 1200–1500s) vì extraction lớn chỉ in output lần đầu sau vài phút.
+## 4. Code: cấu trúc và quy ước
 
----
+- `analysis/vprlib.py`: loader (`LOADERS[rc|cmu|nord|msls|nordw]`), metric, `nearest_map_dist`, `correct`,
+  `top1_errors`. CMU gộp 11 slice. MSLS gộp hai thành phố, SF dịch 1e7 m theo UTM.
+- `analysis/selfcal.py`:
+    - `query_stats`/`qm_stats` (chunk theo hàng, `reduceat` lấy max theo ô);
+    - `lobo_stats`, `map_null(stride=2)`, `conformal_p`, `combined_p`;
+    - `SelfCalTest(N, strata=10, gate=0.8, min_per=50, mode="aa"|"gap")`, `pack`, `selfcal_p`;
+    - lớp online `SelfCalAA` (khoảng 1 ms/query theo lô, 18 s chuẩn bị bản đồ RobotCar).
+- `analysis/sc_eval.py`: `CFG` cho từng dataset (cell 10 m, excl 25 m, k 10, block 300 m, off_d 40 m, in_d, tol).
+- Bảng paper: `paper/build_tables.py` (đọc `analysis/results/` và gộp thêm `results/gap/`) → `paper/tables.md`.
+  `paper/build_paper.py` → `SelfCal_paper_full.pdf`.
+- md → PDF: `python3 automation/md2pdf.py <in.md> <out.pdf>` (thuần Python, xhtml2pdf). Cần dòng trống trước mỗi
+  danh sách. Ô bảng không ngắt dòng được, nên tránh chuỗi code dài trong ô.
 
-## 2. Quy trình notebook (build-from-src) — hoạt động tốt
+## 5. Dữ liệu và loader: các điểm dễ sai
 
-- **Nguồn cell trong `nbX_src/*.src`**, marker `#%%CODE` / `#%%MARKDOWN`, ghép theo tên file. Build bằng
-  `automation/build_nb.py <out.ipynb> <src_dir>` → **compile-check mọi code cell** + validate nbformat. Rất hiệu
-  quả để bắt lỗi cú pháp trước khi push.
-- **Tái dùng block:** copy `10_p0.src` (config/paths/SALAD loader), `20_lib.src` (metrics/filter/ccbf),
-  `30_extract.src` (extraction), `40_*_load.src` (loader dataset) giữa các notebook → nhất quán, ít bug.
-- **Test logic local trước khi push:** exec các cell numpy (lib L.1–L.3 + cell thí nghiệm) trên **synthetic data**
-  đã bắt được nhiều bug (degenerate calibrator khi acc=1.0, unpack sai, off-map labels...). Luôn làm trước mỗi
-  push — tiết kiệm nhiều vòng Kaggle.
-- **Lưu ý:** synthetic thường **quá sạch** (softmax đã calibrated) → không thay thế được dữ liệu thật để đánh giá
-  khoa học; chỉ để validate code path.
+- **RobotCar `robotcar_v2_train.txt`:** pose 4×4 phẳng, translation nằm ở chỉ số [3, 7, 11]. Ảnh tham chiếu
+  `overcast-reference` không có trong file train; pose của nó lấy từ `3D-models/all.nvm`.
+- **CMU:** thư mục lồng `sliceN/sliceN/`; glob `**/slice*` bắt trùng nên phải dedup. Pose xyz là 3 số cuối. Chỉ dùng
+  camera c0.
+- **Nordland:** 4 mùa căn khung 1:1. Lấy mẫu con 4,500 trên 35,768 frame. Vị trí tính bằng frame.
+- **MSLS:** CSV khi tải từ Kaggle nằm trong thư mục lồng nên phải di chuyển. pandas 3 trả StringArray, phải
+  `np.asarray(..., dtype=str)` trước `np.savez`. Bỏ ảnh panorama.
+- **Thứ tự frame cho sequence** (`vprlib.frame_order`, chỉ có trên branch seq): timestamp nằm trong tên ảnh. Bước
+  giữa các frame liên tiếp khoảng 1 m, giống nhau giữa query và map.
 
-## 3. Loaders dataset — gotchas đã xử lý (quan trọng cho notebook mới)
+## 6. Lỗi đã gặp và cách sửa (theo nhóm)
 
-- **RobotCar `robotcar_v2_train.txt`:** dòng = `"<cond>/<cam>/<ts>.jpg"` + **4×4 pose phẳng (12 floats,
-  row-major)**. **Translation = flat index [3,7,11]** (KHÔNG phải `nums[4:7]` — bug cũ của NB2). Ảnh ở
-  `images/<cond>/<cond>/<cam>/...`; resolve robust bằng **index theo basename** (walk mount 1 lần). File chỉ chứa
-  **query conditions** (~200 ảnh/điều kiện); `overcast-reference` KHÔNG có trong train.txt (pose ở NVM/`.db`).
-- **CMU `camera-poses/*.txt`:** dòng = `"img_XXXXX_cN_<ts>us.jpg" qw qx qy qz tx ty tz` → **xyz = 3 float cuối**
-  (`nums[-3:]`). Mỗi slice ở `sliceN/sliceN/` (lồng!) với `database/`, `query/`, `camera-poses/` (≈11–12 file pose
-  theo **ngày = điều kiện**). Ảnh query ở `query/`. **BUG đã gặp:** glob `**/slice*` bắt cả `sliceN` lẫn
-  `sliceN/sliceN` → **trùng slice**; phải **dedup theo base dir**. Dùng **1 camera (c0)** để tránh lệch viewpoint.
-- **Nordland:** 4 mùa frame-aligned 1:1 (filename `images-NNNNN.png`). GT place = frame-id identity
-  (`gt_match_index`). Full 143k/mùa (35,768 mỗi mùa); subsample bằng `CONFIG.SMOKE_MAX_FRAMES`. **Path finder của
-  10_p0** (`_find_dir(["data"],["data","annotations"])`) có thể **false-match** robotcar images dir (chứa
-  "overcast-summer"/"winter") nếu attach cùng lúc — chú ý khi attach nhiều dataset.
-- **Pose-GT regime matters:** ở tol lỏng (5m) RobotCar/CMU gần như bão hòa → **sweep tolerance** {0.5,1,2,5}m để có
-  regime nhiều lỗi (reliability mới có ý nghĩa). Headline chọn tol có acc ≈ 0.8.
+| Lỗi | Cách sửa / bài học |
+|---|---|
+| `pkill -f <pattern>` giết luôn shell đang gọi (exit 144) | Dùng PID cụ thể; hoặc `TaskStop` cho tác vụ nền |
+| Chuỗi chờ nền tự push lại kernel sau khi metadata đã đổi acc, suýt tạo bản trùng | Dừng chuỗi cũ (TaskStop) trước khi chuyển job sang acc khác |
+| `sed` xoá nhầm dòng | Sửa file bằng Python replace có `assert` hoặc dùng Edit; kiểm tra lại ngay |
+| `exp9` dùng `sc.n` sau khi đổi API | Đổi API thì grep mọi chỗ gọi (`sc.test.n`) |
+| Định dạng chuỗi với giá trị `None` khi chỉ có 1 bản đồ | Dùng `nan` thay `None` |
+| Bộ chạy đặt đường dẫn dump sai vị trí đối số | Thêm token chữ `DUMP` |
+| Cùng một biến thể chạy lại nhiều lần, tốn Kaggle | Lưu cache thống kê trung gian (exp10 `--stats`) |
+| Kernel CPU chạy trong khi GPU acc khác rảnh (user nhắc) | Quy tắc: dùng hết GPU mọi acc trước |
+| Kết quả seed 0–2 lạc quan hơn 10 seed | Luôn dùng đủ seed (≥ 10) trước khi kết luận về demo |
 
-## 4. SALAD loader (đã verify, dùng lại nguyên)
-- Load trực tiếp qua `helper.get_backbone("dinov2_vitb14", {...})` + `helper.get_aggregator("SALAD", {...})`,
-  bypass VPRModel/Lightning; ckpt `bundle/checkpoints/dino_salad.ckpt`. Forward `aggregator(backbone(x))` → dim
-  **8448**, L2-normalized. (Chi tiết config trong `nb*_src/10_p0.src` `_try_salad`.)
-- DINOv2 CLS+mean (dim 1536) là fallback; ép dùng bằng cách để loop extractor chỉ `[("dinov2", _try_dinov2)]`.
+## 7. Bài học thành công và thất bại
 
-## 5. Metrics / numerics — đã kiểm chứng
-- **ECE không đủ** (bị game bởi base-rate khi acc đồng đều) → luôn đi kèm **AURC (risk–coverage)** và
-  **conf-AUROC** (phân biệt correct/incorrect).
-- **Logistic calibrator (`fit_logistic`)** degenerate khi fit-set có acc≈1.0 (không có lỗi để học) → fit trên tập
-  **pooled gồm cả điều kiện khó** (cross-fit 50/50) thay vì chỉ benign.
-- **Conformal:** dùng **Hoeffding UCB** (RCPS-style) để realized risk ≤ target thật sự finite-sample; prefix-risk
-  thuần sẽ overshoot.
-- numpy 2.x: `float(arr)` lỗi với size-1 ndim≥1 → `float(arr.reshape(()))`. `"X" in globals()` (không `dir()`).
-
-## 6. Môi trường cloud session này (khung chat mới cần biết)
-- **Không có** Kaggle token sẵn trong container cloud; phiên này user cấp token. Cài deps:
-  `pip install kaggle nbformat numpy python-dateutil python-slugify tqdm protobuf matplotlib`. Token:
-  `mkdir -p ~/.kaggle && echo <KGAT_...> > ~/.kaggle/access_token && chmod 600 ...` (Kaggle CLI 2.2.5 đọc file
-  này; cũng đọc env `KAGGLE_API_TOKEN`).
-- **md→PDF:** `pip install markdown xhtml2pdf`, rồi `python automation/md2pdf.py <in.md> <out.pdf>` (pure-python,
-  không cần system deps; `reportlab` cũng có sẵn).
-- Outbound HTTPS qua agent proxy (CA bundle `/root/.ccr/ca-bundle.crt`); `gh`/`gcloud`/`gsutil`/`bq` preconfigured.
-- GitHub: push lên branch `claude/elegant-brown-xvnecd` (đã dùng xuyên suốt). Dùng MCP `mcp__github__*` nếu cần PR.
-
-## 7. Những gì NÊN làm khác lần sau (negative lessons)
-1. **Luôn `delete` session RTX cũ trước khi push lại** (đừng dựa vào push-đè hay CPU-noop).
-2. **Đừng kết luận kernel treo từ "0 output"** — chờ đủ lâu hoặc tới terminal state.
-3. **Ưu tiên T4 cho dữ liệu vừa** (≤ vài chục nghìn ảnh): instant + song song 2 kernel, không rủi ro hàng chờ RTX.
-   Chỉ dùng RTX khi thật sự cần (rất nhiều ảnh) và kiểm tra GPU rảnh trước.
-4. **Test local synthetic trước mọi push** — đã cứu nhiều vòng.
-5. **Dedup khi glob cấu trúc lồng** (CMU `sliceN/sliceN`).
-6. **Chạy một thí nghiệm quyết định mỗi lần** (không fan-out nhiều run khi kết quả một run định hướng các run sau).
+- **Thành công:**
+    - Hiệu chuẩn bằng chính bản đồ, cache thống kê, chạy fan-out trên nhiều acc, dataset dump public.
+    - Đối chiếu từng bit sau mỗi thay đổi code (GPU với numpy, AA mặc định với code cũ).
+    - Kiểm tra local nhỏ trước khi push.
+- **Thất bại hoặc cần tránh:**
+    - Chọn biến thể sau khi xem dữ liệu mà không kiểm định độc lập (gate 0.8, B = 10, Gap): phải nói rõ và kiểm định
+    trên dữ liệu mới.
+    - Mở rộng sang sequence mà không kiểm tra exchangeability của cửa sổ theo từng điều kiện.
+    - Kết luận từ 3 seed.
+- **Quy trình git:**
+    - Branch ổn định `claude/selfcal-aa` không ghi đè. Thí nghiệm mở rộng làm trên branch riêng
+    (`claude/selfcal-seq`).
+    - Kết quả mới đặt ở thư mục riêng (`results/gap/`) thay vì sửa file cũ.
+    - Không tạo PR. Commit kèm trailer, không ghi model ID.
