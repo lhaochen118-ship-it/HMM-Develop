@@ -1,5 +1,8 @@
 # DIVE-VPR — reliability of visual place recognition (research repo)
 
+**Branch `claude/selfcal-seq`:** experimental extensions (SelfCal-Gap, sequence-level SelfCal, localisation demo).
+The stable SelfCal-AA version is on `claude/selfcal-aa`.
+
 | Path | What |
 |---|---|
 | `RESEARCH_LOG.md` | Honest experiment log (newest entry first). |

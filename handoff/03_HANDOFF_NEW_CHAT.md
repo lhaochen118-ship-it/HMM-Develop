@@ -3,7 +3,10 @@
 *Updated 2026-10-28 after Entry 16 (branch `claude/selfcal-aa`). Supersedes the earlier CCBF/CRSG version of this file (git history). Read this,
 then `RESEARCH_LOG.md` Entries 11–15 and `LITERATURE_GATE.md`. The paper is `paper/selfcal_paper.md`.*
 
-Repo `lhaochen118-ship-it/hmm-develop`, branch **`claude/selfcal-aa`** (current work; branched from `claude/elegant-brown-xvnecd`; no PRs).
+Repo `lhaochen118-ship-it/hmm-develop`. Branches (no PRs):
+- **`claude/selfcal-aa`**: the stable SelfCal-AA method, results and paper. Do not overwrite it.
+- **`claude/selfcal-seq`** (this branch): experimental extensions on top of it: SelfCal-Gap, sequence-level SelfCal
+  (exp11), localisation demo (exp12), cached-statistics search (exp10 `--stats`). See `RESEARCH_LOG.md` Entry 17.
 Kaggle user **`nhatlong1103`**, token in `~/.kaggle/access_token` (re-create it from the user's message if the
 container is new; do not write it into shell rc files).
 
