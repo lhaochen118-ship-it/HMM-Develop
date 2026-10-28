@@ -2,28 +2,28 @@
 """Run analysis/ evaluation jobs on a Kaggle CPU kernel instead of the local container (user policy).
 
 1. Uploads (or versions) the code dataset `<owner>/dive-vpr-analysis` with analysis/*.py.
-2. Writes a CPU script kernel that mounts the descriptor-dump kernels (kernel_sources), symlinks every dump into one
+2. Writes a CPU/GPU script kernel that mounts the public dump dataset, symlinks every dump into one
    directory, runs the jobs in parallel (one process per core) and saves results/*.json + logs to /kaggle/working.
 Then run it with:  python automation/run_kernel.py <kernel_dir> <out_dir>   and copy <out_dir>/results/*.json.
 
 Usage: make_eval_kernel.py <kernel_dir> <slug> "<script> <ds> <desc>;<script> <ds> <desc>;..." [dump_kernels,...] [--gpu]
-  --acc2/--acc3: use the 2nd/3rd Kaggle account (set KAGGLE_API_TOKEN=$(cat ~/.kaggle/access_token_accN) for both scripts)
+  --acc2/--acc3/--owner <user>: run under another Kaggle account (export KAGGLE_API_TOKEN for both scripts)
   --gpu : T4 kernel, SELFCAL_DEVICE=cuda (PyTorch backend in selfcal.qm_stats); default CPU/numpy.
   script = eval_all.py | exp9_natural.py | ... ; for exp9_natural.py write "exp9_natural.py <desc>" (dumps auto).
   Any other argument order: put the literal token DUMP where the merged dump directory goes, e.g. "exp10_shiftfix.py salad DUMP".
 """
 import sys, os, json, glob, shutil, subprocess
 
-# Account 1 (default, token ~/.kaggle/access_token): dumps are the outputs of its NB15/NB16 kernels.
-# Account 2/3 (--acc2 / --acc3, tokens ~/.kaggle/access_token_acc2 / _acc3 -> export KAGGLE_API_TOKEN for this script
-#   AND run_kernel.py): the same dumps re-uploaded as the private dataset <owner>/dive-vpr-dumps.
+# Descriptor dumps: the PUBLIC dataset nhatlong1103/vpr-descriptor-dumps (any account can mount it, no upload).
+# Account = whose token is in KAGGLE_API_TOKEN (default ~/.kaggle/access_token = nhatlong1103):
+#   --acc2 (yuan1103), --acc3 (synchan5704), or --owner <username> for any new account.
 ACC = 3 if "--acc3" in sys.argv else 2 if "--acc2" in sys.argv else 1
-OWNER = {1: "nhatlong1103", 2: "yuan1103", 3: "synchan5704"}[ACC]; CODE_DS = f"{OWNER}/dive-vpr-analysis"
-DUMPS = [] if ACC > 1 else [f"{OWNER}/dive-vpr-nb15a-dump", f"{OWNER}/dive-vpr-nb15b-dump", f"{OWNER}/dive-vpr-nb15c-dump",
-                            f"{OWNER}/dive-vpr-nb15d-dump", f"{OWNER}/dive-vpr-nb16a-msls", f"{OWNER}/dive-vpr-nb16b-msls"]
-DUMP_DS = [f"{OWNER}/dive-vpr-dumps"] if ACC > 1 else []
+OWNER = sys.argv[sys.argv.index("--owner") + 1] if "--owner" in sys.argv else {1: "nhatlong1103", 2: "yuan1103", 3: "synchan5704"}[ACC]
+CODE_DS = f"{OWNER}/dive-vpr-analysis"
+DUMPS = []
+DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps"]
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GPU = "--gpu" in sys.argv; argv = [a for a in sys.argv if a not in ("--gpu", "--acc2", "--acc3")]
+GPU = "--gpu" in sys.argv; argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--acc2", "--acc3", "--owner") and sys.argv[i - 1] != "--owner"]
 kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]
 dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
 
