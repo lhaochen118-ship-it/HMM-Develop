@@ -23,42 +23,7 @@ ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
 rho = c["excl"]
 
 
-def _ts(names):
-    return np.array([int(os.path.basename(str(n)).split(".")[0].split("_")[-1].rstrip("us")) for n in names], float)
-
-
-def sequences(times, groups, gap):
-    """sequence id per row: same group and consecutive (sorted by time) with time gap <= gap; plus position in sequence"""
-    order = np.lexsort((times, groups)); sid = np.empty(len(times), int); pos = np.empty(len(times), int)
-    cur, k, prev = -1, 0, None
-    for i in order:
-        if prev is None or groups[i] != groups[prev] or times[i] - times[prev] > gap: cur += 1; k = 0
-        sid[i], pos[i] = cur, k; k += 1; prev = i
-    return sid, pos
-
-
-def order_info():
-    """(q_sid, q_pos_in_seq, m_sid, m_pos_in_seq) in the loaders' row order"""
-    if ds == "rc":
-        m = np.load(os.path.join(dump, "meta", "rc.npz"), allow_pickle=True)
-        q = sequences(_ts(m["q_names"]), np.asarray(m["q_cond"]).astype(str), 2e6)
-        r = sequences(_ts(m["ref_names"]), np.zeros(len(m["ref_names"]), int), 30e6)
-        return q + r
-    if ds == "cmu":
-        qt, qg, mt, mg = [], [], [], []
-        for f in sorted(os.listdir(os.path.join(dump, "meta"))):
-            if not f.startswith("cmu_s") or not os.path.isfile(os.path.join(dump, desc, f"cmu_{f[4:-4]}_q.npy")): continue
-            m = np.load(os.path.join(dump, "meta", f), allow_pickle=True)
-            qt.append(_ts(m["q_names"])); qg += [f + str(x) for x in m["q_cond"]]
-            mt.append(_ts(m["db_names"])); mg += [f] * len(m["db_names"])
-        return sequences(np.concatenate(qt), np.array(qg), 2e6) + sequences(np.concatenate(mt), np.array(mg), 30e6)
-    if ds == "nord":
-        n = len(ep.m); qg = np.asarray(ep.q_cond).astype(str)
-        return sequences(np.tile(np.arange(n, dtype=float), len(ep.q) // n), qg, 1.5) + sequences(np.arange(n, dtype=float), np.zeros(n, int), 1.5)
-    raise SystemExit("no frame order for " + ds)
-
-
-q_sid, q_k, m_sid, m_k = order_info()
+q_sid, q_k, m_sid, m_k = V.frame_order(dump, ds, ep, desc)
 
 
 def windows(sid, k, L, valid):
