@@ -114,6 +114,7 @@ def load_msls(dump, desc="salad", cities=("cph", "sf")):
 
 
 LOADERS = {"rc": load_robotcar, "cmu": load_cmu_merged, "nord": load_nordland, "msls": load_msls,
+           "mslscph": lambda d, x="salad": load_msls(d, x, ("cph",)),
            "nordw": lambda d, x="salad": load_nordland(d, x, ref="winter")}
 
 
