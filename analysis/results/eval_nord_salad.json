@@ -721,6 +721,96 @@
    }
   },
   {
+   "method": "LabelCal[maxsim] (day, neg=off+alias)",
+   "alpha": 0.01,
+   "FAR": 0.0024630541871921183,
+   "worstFAR": 0.004679802955665025,
+   "n_viol": 0,
+   "n_cond": 3,
+   "TPR": 0.004026594250397977,
+   "alias_acc": 0.022444889779559118,
+   "per_cond": {
+    "fall": 0.00270935960591133,
+    "spring": 0.004679802955665025,
+    "winter": 0.0
+   }
+  },
+  {
+   "method": "LabelCal[maxsim] (day, neg=off+alias)",
+   "alpha": 0.05,
+   "FAR": 0.00993431855500821,
+   "worstFAR": 0.014532019704433498,
+   "n_viol": 0,
+   "n_cond": 3,
+   "TPR": 0.043449761213596776,
+   "alias_acc": 0.10100200400801604,
+   "per_cond": {
+    "fall": 0.014039408866995074,
+    "spring": 0.014532019704433498,
+    "winter": 0.0012315270935960591
+   }
+  },
+  {
+   "method": "LabelCal[maxsim] (day, neg=off+alias)",
+   "alpha": 0.1,
+   "FAR": 0.018555008210180624,
+   "worstFAR": 0.03399014778325123,
+   "n_viol": 0,
+   "n_cond": 3,
+   "TPR": 0.24590317445453694,
+   "alias_acc": 0.29178356713426856,
+   "per_cond": {
+    "fall": 0.017733990147783252,
+    "spring": 0.03399014778325123,
+    "winter": 0.003940886699507389
+   }
+  },
+  {
+   "method": "LabelCal[z_far] (day, neg=off+alias)",
+   "alpha": 0.01,
+   "FAR": 0.0,
+   "worstFAR": 0.0,
+   "n_viol": 0,
+   "n_cond": 3,
+   "TPR": 0.03333645472422511,
+   "alias_acc": 0.04408817635270541,
+   "per_cond": {
+    "fall": 0.0,
+    "spring": 0.0,
+    "winter": 0.0
+   }
+  },
+  {
+   "method": "LabelCal[z_far] (day, neg=off+alias)",
+   "alpha": 0.05,
+   "FAR": 0.004844006568144499,
+   "worstFAR": 0.007635467980295567,
+   "n_viol": 0,
+   "n_cond": 3,
+   "TPR": 0.12407528794830977,
+   "alias_acc": 0.17795591182364728,
+   "per_cond": {
+    "fall": 0.007635467980295567,
+    "spring": 0.006896551724137931,
+    "winter": 0.0
+   }
+  },
+  {
+   "method": "LabelCal[z_far] (day, neg=off+alias)",
+   "alpha": 0.1,
+   "FAR": 0.01568144499178982,
+   "worstFAR": 0.017241379310344827,
+   "n_viol": 0,
+   "n_cond": 3,
+   "TPR": 0.2727783500327746,
+   "alias_acc": 0.411623246492986,
+   "per_cond": {
+    "fall": 0.016748768472906402,
+    "spring": 0.017241379310344827,
+    "winter": 0.013054187192118226
+   }
+  },
+  {
    "method": "LabelCal[maxsim] (LOCO, SAFEVPR-style)",
    "alpha": 0.01,
    "FAR": 0.013957307060755337,

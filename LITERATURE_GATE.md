@@ -78,3 +78,24 @@ filtering and conformal abstention".
 
 **C — Chạy tiếp như cũ (không khuyến nghị):** reviewer sẽ trỏ ngay vào PA-score/L2 (Zaffar), RS/SD/SU (Miller),
 integrity-MLP (Claxton) và SAFEVPR.
+
+---
+
+# Gate 2 (2026-10-28) — novelty of the new direction: self-calibrating maps (SelfCal)
+
+Idea: the VPR map supplies labelled *off-map* queries for free (leave-one-spatial-block-out self-retrieval);
+split-conformal p-values against these pseudo-queries, with affine-invariant far-region statistics, give label-free,
+shift-robust false-accept control; an AND-rule with the gap to the best far region also suppresses aliasing.
+
+| Closest work | What it does with the map / scores | Difference |
+|---|---|---|
+| RSF (Zaffar et al. 2025, arXiv 2510.03751) | uses the reference set (images+poses) to **fine-tune** the descriptor | not acceptance, no guarantee |
+| Map-density selection (Hussaini et al. 2026, arXiv 2602.21473) | two reference traverses → predict local Recall@1 | needs 2 traversals + regression; no rejection test |
+| Adaptive negative-GMM thresholds (Trinh & Lyons 2025) | per-place thresholds from database negatives | raw scores (= our non-invariant SelfCal[maxsim] ablation, low power under shift), no guarantee |
+| Schubert et al. (robust-normal null) / meta-recognition (Scheirer 2011, EVT) | parametric null of the score distribution | = our "theory-only" baselines: invalid (FAR 0.13–0.35 at α=0.05) |
+| SAFEVPR (2026), Quantile Transfer (IROS'26) | labelled calibration (other conditions / calibration traversal) | violate on 1–4/11 conditions in our protocol; need labels |
+| Conformal outlier testing (Bates et al. 2023), conformal under shift (Barber et al. 2023) | theory | we instantiate: map pseudo-queries as the null sample; PRDS ⇒ BH |
+
+Searches (alphaXiv, 2 rounds): "database images as pseudo-queries threshold calibration", "label-free FDR place
+recognition", "EVT meta-recognition retrieval", "self-supervised calibration VPR" → no paper uses the map as a
+conformal null sample for VPR acceptance. **Verdict: novel; proceed.**

@@ -77,6 +77,10 @@ def evaluate(ep, c, desc, key=None):
     # --- label-calibrated on calibration conditions (split conformal on their OFF-MAP queries), transferred
     for st in ["maxsim", "margin", "PA", "z_far"]:
         methods[f"LabelCal[{st}] (day->all)"] = conformal(raw[1][st][cal & offm], raw[1][st], raw[2][st])
+    # label calibration whose negatives include in-map aliasing errors of the calibration conditions (fairer)
+    for st in ["maxsim", "z_far"]:
+        negs = np.r_[raw[1][st][cal & offm], raw[2][st][cal & alias]]
+        methods[f"LabelCal[{st}] (day, neg=off+alias)"] = conformal(negs, raw[1][st], raw[2][st])
     # SAFEVPR-style protocol: label-calibrate on ALL OTHER conditions (leave-one-condition-out), test on held-out one
     for st in ["maxsim", "z_far"]:
         def loco(a, st=st):
