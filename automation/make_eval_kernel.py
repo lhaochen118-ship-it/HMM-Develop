@@ -10,6 +10,7 @@ Usage: make_eval_kernel.py <kernel_dir> <slug> "<script> <ds> <desc>;<script> <d
   --acc2: use the second Kaggle account (set KAGGLE_API_TOKEN=$(cat ~/.kaggle/access_token_acc2) for both scripts)
   --gpu : T4 kernel, SELFCAL_DEVICE=cuda (PyTorch backend in selfcal.qm_stats); default CPU/numpy.
   script = eval_all.py | exp9_natural.py | ... ; for exp9_natural.py write "exp9_natural.py <desc>" (dumps auto).
+  Any other argument order: put the literal token DUMP where the merged dump directory goes, e.g. "exp10_shiftfix.py salad DUMP".
 """
 import sys, os, json, glob, shutil, subprocess
 
@@ -59,7 +60,8 @@ import torch
 print("dump dirs:", {s: len(os.listdir(os.path.join(D, s))) for s in sorted(os.listdir(D))}, "| cpus", os.cpu_count(), "| device", os.environ["SELFCAL_DEVICE"], "| cuda", torch.cuda.is_available(), flush=True)
 def run(j):
     script, args = j[0], j[1:]
-    cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
+    if "DUMP" in args: cmd = [sys.executable, script] + [D if a == "DUMP" else a for a in args]
+    else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
     t = time.time(); log = os.path.join(C, "logs", "_".join(j).replace(".py", "") + ".log")
     r = subprocess.run(cmd, cwd=C, stdout=open(log, "w"), stderr=subprocess.STDOUT)
     print(f"done {' '.join(j)} rc={r.returncode} {time.time()-t:.0f}s", flush=True); return r.returncode
