@@ -358,12 +358,12 @@ Finally we measure what false-accept control buys a robot. We remove a random 30
 robot regularly drives through unmapped areas, and fit SelfCal on the remaining map only. Every query traversal (CMU:
 130 sequences at about 1 m steps; Nordland: 3 seasons) is tracked by a position Kalman filter driven by simulated
 odometry with scale bias, heading random walk and noise. Every accepted VPR match becomes a 5 m position fix (Table 8,
-mean of 3 seeds). Accepting every top-1 match gives mean errors of 78–126 m on CMU. The label-calibrated threshold
-still accepts 440–2,250 wrong fixes and leaves 6–26% of the CMU frames more than 25 m off. SelfCal-AA accepts 4–60×
-fewer wrong fixes and lowers the mean error 2–8× in **every** descriptor–dataset pair: on CMU to 3.1–10.5 m (oracle
-2.7–3.2 m), on Nordland from 86–474 to 23–71 frames. The window test of §6.8 is the best rule on CMU for the weaker
-descriptors (NetVLAD 5.8 m, CosPlace 3.6 m) but worse than per-frame SelfCal on Nordland, where it accepts consistent
-aliasing — the caveat above in practice.
+mean of 10 seeds). Accepting every top-1 match gives mean errors of 78–114 m on CMU. The label-calibrated threshold
+still accepts 370–1,150 wrong fixes per run on CMU and leaves up to 16% of its frames more than 25 m off. SelfCal-AA
+accepts 1.5–27× fewer wrong fixes and lowers the mean error in **every** descriptor–dataset pair: by 1.3–2.7× on CMU
+(3.6–9.3 m against an oracle at 2.8–3.2 m) and by 3.9–12.6× on Nordland. The window test of §6.8 is on average *worse*
+than per-frame SelfCal-AA in this deployment (it accepts more consistent aliasing and map-edge matches), which confirms
+that its extra power on held-out windows does not translate into safer localisation.
 
 # 7. Limitations
 
