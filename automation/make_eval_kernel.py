@@ -20,6 +20,8 @@ import sys, os, json, glob, shutil, subprocess
 ACC = 3 if "--acc3" in sys.argv else 2 if "--acc2" in sys.argv else 1
 OWNER = sys.argv[sys.argv.index("--owner") + 1] if "--owner" in sys.argv else {1: "nhatlong1103", 2: "yuan1103", 3: "synchan5704"}[ACC]
 CODE_DS = f"{OWNER}/dive-vpr-analysis"
+_tok = os.path.expanduser(f"~/.kaggle/tok_{OWNER}")                     # per-account token file, if present
+if os.path.isfile(_tok): os.environ["KAGGLE_API_TOKEN"] = open(_tok).read().strip()
 DUMPS = []
 DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps"]
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))

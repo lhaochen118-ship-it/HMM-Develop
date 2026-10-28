@@ -73,21 +73,39 @@ descriptor hoặc dataset mới.
 
 BoQ vẫn chưa có trọng số (GitHub bị chặn, không có mirror).
 
-## 3. Tài khoản Kaggle
+## 3. Tài khoản Kaggle (8 acc × 2 T4 = 16 GPU chạy song song)
 
-| Acc | Username | Token trong container | Ghi chú |
-|---|---|---|---|
-| 1 | `nhatlong1103` | `~/.kaggle/access_token` (mặc định) | Chủ sở hữu dump public + dataset ảnh gốc |
-| 2 | `yuan1103` | `~/.kaggle/access_token_acc2` | |
-| 3 | `synchan5704` | `~/.kaggle/access_token_acc3` | |
+Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600). `~/.kaggle/access_token` là của acc 1. Các script
+`automation/make_eval_kernel.py`, `run_kernel.py` và `fanout.py` tự đọc đúng token theo tên acc, nên không cần
+`export`. Không ghi token vào `~/.bashrc`.
 
-Dùng acc 2/3 bằng cách đặt biến môi trường cho từng lệnh:
-`KAGGLE_API_TOKEN=$(cat ~/.kaggle/access_token_acc2) kaggle ...`. Không ghi token vào `~/.bashrc`.
+| # | Username | Ghi chú |
+|---|---|---|
+| 1 | `nhatlong1103` | Chủ dump public và dataset ảnh gốc |
+| 2 | `yuan1103` | |
+| 3 | `synchan5704` | |
+| 4 | `loinguyentran` | |
+| 5 | `yeshenhi` | |
+| 6 | `mucnokieu` | |
+| 7 | `huyenco` | |
+| 8 | `nguynduylm` | |
 
-Mỗi acc có 2 phiên GPU T4 chạy song song, tức 3 acc có **6 T4**. Quy tắc: chia job cho cả 6 slot GPU trước, chỉ dùng
-kernel CPU khi hết GPU và job đủ nhẹ (ví dụ `exp9_natural.py`, `exp3_fdr.py`).
+Cả 8 acc đã được thử chạy GPU T4 thành công (2026-10-28).
+
+**Quy tắc:**
+- Chia job cho cả 16 slot GPU trước.
+- Chỉ dùng kernel CPU khi hết GPU và job đủ nhẹ.
+- Thêm acc mới: lưu token vào `~/.kaggle/tok_<username>`. `fanout.py` tự nhận acc đó.
 
 ## 4. Chạy thí nghiệm trên Kaggle
+
+Cách nhanh nhất là chia tự động ra mọi acc và mọi slot GPU, rồi tự gom kết quả vào `analysis/results/`:
+
+```
+python3 automation/fanout.py <work_dir> <slug_prefix> "eval_all.py rc salad;eval_all.py cmu salad;..." [n_kernels] [--accounts a,b] [--cpu]
+```
+
+Chạy thủ công một kernel:
 
 ```
 python3 automation/make_eval_kernel.py <kernel_dir> <slug> "eval_all.py rc salad;eval_all.py cmu salad" "" --gpu [--acc2|--acc3]
@@ -95,7 +113,7 @@ python3 automation/run_kernel.py <kernel_dir> <out_dir> 600 3 14400
 cp <out_dir>/results/*.json analysis/results/
 ```
 
-- Acc mới: `--owner <username>` cùng `KAGGLE_API_TOKEN` của acc đó. Kernel tự mount dump public, không cần upload gì thêm.
+- Acc khác: `--owner <username>` (token tự đọc từ `~/.kaggle/tok_<username>`). Kernel tự mount dump public, không cần upload gì thêm.
 - `make_eval_kernel.py` upload `analysis/*.py` thành dataset code `<acc>/dive-vpr-analysis`, rồi viết một kernel chạy
   song song các job. `--gpu` bật backend PyTorch (`SELFCAL_DEVICE=cuda`).
 

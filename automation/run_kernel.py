@@ -20,6 +20,8 @@ HARD = int(sys.argv[5]) if len(sys.argv) > 5 else 10800
 SILENT_MAX = int(sys.argv[6]) if len(sys.argv) > 6 and sys.argv[6].isdigit() else 0
 ATTACH = "--attach" in sys.argv
 kid = json.load(open(os.path.join(kdir, "kernel-metadata.json")))["id"]
+_tok = os.path.expanduser(f"~/.kaggle/tok_{kid.split('/')[0]}")       # per-account token file (see ENVIRONMENT_SUMMARY)
+if os.path.isfile(_tok): os.environ["KAGGLE_API_TOKEN"] = open(_tok).read().strip()
 
 
 def kg(*a):
