@@ -36,7 +36,9 @@ nrm = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True)
 
 
 def pack(r, c):
-    return {"ms": r["maxsim"], "zf": c["z_far"], "zg": c["z_gap"], "sdf": c["sd_far"]}
+    """the four statistics of the rule + every raw (r_*) and map-centred (c_*) statistic, cached for later variants"""
+    return {"ms": r["maxsim"], "zf": c["z_far"], "zg": c["z_gap"], "sdf": c["sd_far"],
+            **{f"r_{k}": v for k, v in r.items()}, **{f"c_{k}": v for k, v in c.items()}}
 
 
 def aa(N, X):
@@ -65,7 +67,7 @@ def variants(N, X):
     for B in (5, 10):   # power variant + the domain-shift gate
         pm = out.get(f"Mondrian-sdf-{B}", mondrian(N, X, "sdf", B))
         out[f"Mondrian-sdf-{B}&ms<=0.8"] = np.where(p_ms <= 0.8, pm, 1.0)
-    out["SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)"] = SC.SelfCalTest(N).pvalue(**X)
+    out["SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)"] = SC.SelfCalTest(N).pvalue(**{k: X[k] for k in KEYS})
     return out
 
 
@@ -93,9 +95,9 @@ def save_stats(S, path):
     flat = {}
     for mk, d in S.items():
         for part in ("N", "O", "F"):
-            for key in KEYS: flat[f"{mk}|{part}|{key}"] = np.asarray(d[part][key], dtype=np.float64)
+            for key, v in d[part].items(): flat[f"{mk}|{part}|{key}"] = np.asarray(v, dtype=np.float64 if key in KEYS else np.float32)
         for sk, X in d["nat"].items():
-            for key in KEYS: flat[f"{mk}|nat:{sk}|{key}"] = np.asarray(X[key], dtype=np.float64)
+            for key, v in X.items(): flat[f"{mk}|nat:{sk}|{key}"] = np.asarray(v, dtype=np.float64 if key in KEYS else np.float32)
         for key in ("cond", "corr", "alias"): flat[f"{mk}|{key}"] = d[key]
     np.savez_compressed(path, **flat)
 
@@ -126,7 +128,7 @@ for mk, d in S.items():
         nat = {sk: float(np.mean(PN[sk][name] <= A)) for sk in PN}
         r[name] = dict(FAR=float(np.mean(PO[name][offm] <= A)), worst=float(max(fars.values())), n_viol=nv, n_cond=len(fars),
                        TPR=float(np.mean(PF[name][corr] <= A)), alias=float(np.mean(PF[name][alias] <= A)) if alias.any() else None,
-                       natural=nat, natural_max=float(max(nat.values())) if nat else None)
+                       natural=nat, natural_max=float(max(nat.values())) if nat else float("nan"))
         print(f"{desc:8s} map={mk:8s} {name:14s} LOBO worst {r[name]['worst']:.3f} viol {nv}/{len(fars)} TPR {r[name]['TPR']:.3f} "
               f"alias {r[name]['alias'] if r[name]['alias'] is None else round(r[name]['alias'], 3)} | natural max {r[name]['natural_max']:.3f} "
               + " ".join(f"{k}:{v:.3f}" for k, v in nat.items()), flush=True)
