@@ -51,18 +51,12 @@ def windows(sid, k, valid, Lw):
     return np.array(ends, int), np.array(W, int).reshape(-1, Lw)
 
 
-def fc_stat(p, xpos, W):
-    lp = -np.log(np.clip(p[W], 1e-12, 1)); X = xpos[W]
-    cons = np.c_[np.ones(len(W), bool), np.linalg.norm(X[:, 1:] - X[:, :-1], axis=-1) <= c["excl"]]
-    return (lp * cons).sum(1)
-
-
 null_ok = np.isfinite(Nr["maxsim"]) & np.isfinite(Nc["z_far"]) & ~half
 mk_sid, mk_k = m_sid[keep], m_k[keep]
 _, NW = windows(mk_sid, mk_k, null_ok, L); NW = NW[(bidM[NW] == bidM[NW[:, :1]]).all(1)]
-s_null = fc_stat(p_n, MP[np.nan_to_num(Nr["top"]).astype(int)], NW)          # top-1 positions of the map pseudo-queries
+s_null = SC.run_evidence(p_n, MP[np.nan_to_num(Nr["top"]).astype(int)], NW, c["excl"])   # top-1 positions of the map pseudo-queries
 qe, QW = windows(q_sid, q_k, np.ones(len(q), bool), L)
-p_seq = np.ones(len(q)); p_seq[qe] = SC.conformal_p(s_null, fc_stat(p_q, x_fix, QW))
+p_seq = np.ones(len(q)); p_seq[qe] = SC.conformal_p(s_null, SC.run_evidence(p_q, x_fix, QW, c["excl"]))
 
 # ---- label-calibrated baseline: split-conformal max-sim threshold on off-map queries of the two most benign conditions
 conds = sorted(set(ep.q_cond)); r1 = {cc: good_fix[(ep.q_cond == cc) & inm].mean() for cc in conds}

@@ -3,10 +3,9 @@ The null is built the SelfCal way: runs of L consecutive MAP images inside one h
 without that block, are off-map pseudo-sequences. A window statistic calibrated against these pseudo-windows gives a
 conformal p-value per window with no independence assumption between frames (dependence is in the null too).
 Window statistics (per-frame p_i = SelfCal-AA p-value against the per-item map null, top-1 positions x_i):
-  F  = mean_i -log p_i                       (evidence)
-  C  = fraction of consecutive frames whose top-1 positions are within rho of each other (geometric consistency)
-  FC = sum_i -log p_i * consistent_i         (evidence on consistent frames only)
-Variants: L=1 (per-frame SelfCal-AA), conformal on F, on FC, and combined_p(F, C).
+  F   = mean_i -log p_i   (evidence of the whole window; can vouch for a wrong last match — reported for contrast)
+  RUN = selfcal.run_evidence: -log p summed over the trailing run of frames whose consecutive top-1 positions agree
+        (within rho) with the last frame's match — the statistic we adopt.
 Off-map windows: all L frames LOBO off-map in the same held-out block. Correct window: last frame correct in-map.
 Cross-fitting (even blocks -> per-frame test, odd blocks -> pseudo-windows) makes the window p-value exactly valid.
 Usage: exp11_sequence.py <dump> <rc|cmu|nord> [desc] -> results/seq_<ds>_<desc>.json"""
@@ -58,9 +57,8 @@ null_ok = np.isfinite(Nr["maxsim"]) & np.isfinite(Nc["z_far"]) & ~half; off_ok =
 
 
 def wstats(p, top, W):
-    lp = -np.log(np.clip(p[W], 1e-12, 1)); X = ep.m_pos[top[W].astype(int)]
-    cons = np.r_["1", np.ones((len(W), 1), bool), np.linalg.norm(X[:, 1:] - X[:, :-1], axis=-1) <= rho] if W.shape[1] > 1 else np.ones((len(W), 1), bool)
-    return dict(F=lp.mean(1), C=cons[:, 1:].mean(1) if W.shape[1] > 1 else np.ones(len(W)), FC=(lp * cons).sum(1))
+    lp = -np.log(np.clip(p[W], 1e-12, 1))
+    return dict(F=lp.mean(1), RUN=SC.run_evidence(p, ep.m_pos[np.nan_to_num(top).astype(int)], W, rho))
 
 
 res = {"meta": dict(n_null=int(null_ok.sum()), n_off=int(off_ok.sum()), n_corr=int(corr.sum()), rho=rho)}
@@ -73,8 +71,7 @@ for L in LS:
     fe, FW = windows(q_sid, q_k, L, np.ones(len(q), bool))
     S0, So, Sf = wstats(p_null, Nr["top"], NW), wstats(p_off, Or_["top"], OW), wstats(p_full, Fr["top"], FW)
     P = {"F": (SC.conformal_p(S0["F"], So["F"]), SC.conformal_p(S0["F"], Sf["F"])),
-         "FC": (SC.conformal_p(S0["FC"], So["FC"]), SC.conformal_p(S0["FC"], Sf["FC"])),
-         "F+C": (SC.combined_p([S0["F"], S0["C"]], [So["F"], So["C"]]), SC.combined_p([S0["F"], S0["C"]], [Sf["F"], Sf["C"]]))}
+         "RUN": (SC.conformal_p(S0["RUN"], So["RUN"]), SC.conformal_p(S0["RUN"], Sf["RUN"]))}
     for name, (po, pf) in P.items():
         acc_off = np.zeros(len(q), bool); offm = np.zeros(len(q), bool); offm[oe] = True; acc_off[oe] = po <= A
         nv, fars = violations(acc_off, cond, offm, A)

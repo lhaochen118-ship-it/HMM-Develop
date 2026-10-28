@@ -229,6 +229,19 @@ def selfcal_p(raw_null, cen_null, raw_x, cen_x, **kw):
     return SelfCalTest(pack(raw_null, cen_null), **kw).pvalue(**pack(raw_x, cen_x))
 
 
+def run_evidence(p, xpos, W, rho):
+    """Sequence evidence for the match of the LAST frame of each window W (rows = L frame indices, oldest first):
+    sum of -log p over the trailing run of frames whose consecutive top-1 positions xpos stay within rho of each other.
+    A last frame whose match jumps away from its predecessor keeps only its own evidence, so past frames never vouch
+    for a match they do not agree with (entering unmapped areas, aliasing)."""
+    lp = -np.log(np.clip(p[W], 1e-12, 1)); X = xpos[W]
+    if W.shape[1] == 1: return lp[:, 0]
+    cons = np.linalg.norm(X[:, 1:] - X[:, :-1], axis=-1) <= rho                  # (n, L-1), pair j = frames j, j+1
+    run = np.cumprod(cons[:, ::-1], axis=1).sum(1)                               # consistent pairs ending at the last frame
+    take = np.arange(W.shape[1])[None, ::-1] <= run[:, None]                     # last run+1 frames
+    return (lp * take).sum(1)
+
+
 class SelfCalAA:
     """Deployment-time SelfCal-AA: everything query-independent is precomputed once from the map; accept iff p <= alpha.
     Defaults = the adopted rule (Mondrian by sd_far, B=10, raw-similarity gate 0.8); strata=1, gate=1 = original rule."""
