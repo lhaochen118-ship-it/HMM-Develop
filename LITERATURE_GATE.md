@@ -100,7 +100,7 @@ Searches (alphaXiv, 2 rounds): "database images as pseudo-queries threshold cali
 recognition", "EVT meta-recognition retrieval", "self-supervised calibration VPR" → no paper uses the map as a
 conformal null sample for VPR acceptance. **Verdict: novel; proceed.**
 
-## Gate 3 (2026-10-28): papers found while reviewing HMM/sequence VPR (see `literature/HMM_SEQUENCE_VPR_REVIEW.md`)
+## Gate 3 (2026-10-28): papers found while reviewing HMM/sequence VPR (see `literature/VISUAL_LOCALIZATION_REVIEW.md` §6)
 
 - **Trinh & Lyons, arXiv 2512.09071 (2025).** Per-place thresholds from "negative" similarity statistics of other
   places in the database. It overlaps with SelfCal's "use the map's own negatives", but it has no held-out spatial

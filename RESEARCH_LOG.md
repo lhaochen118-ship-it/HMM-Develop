@@ -57,7 +57,7 @@ season + night). NB15 loader added. Two T4 kernels `dive-vpr-nb16{a,b}-msls` dum
 **4Seasons poses** (user request): all 30 `reference_poses` archives + calibration downloaded from TUM and
 uploaded as Kaggle dataset `nhatlong1103/4seasons-poses` (layout scene/date like `nhatlong1103/4seasons`).
 
-**Literature:** `literature/HMM_SEQUENCE_VPR_REVIEW.md` (HMM/sequence VPR, anti-overlap checklist) and
+**Literature:** `literature/VISUAL_LOCALIZATION_REVIEW.md` §6 (HMM/sequence VPR, anti-overlap checklist) and
 LITERATURE_GATE Gate 3. Newly found related papers are Trinh & Lyons'25 (negative-stat thresholds), TAO'26
 (map-out protocol) and Vysotska ICRA'25. SelfCal is still novel, but these must be cited.
 
