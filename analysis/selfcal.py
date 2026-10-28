@@ -172,38 +172,79 @@ def combined_p(null_list, stat_list):
     return (1 + le) / (1 + n)
 
 
-class SelfCalAA:
-    """Deployment-time SelfCal-AA: everything query-independent is precomputed once from the map.
-    p(q) = max( recalibrated min(p_maxsim, p_zfar), p_zgap ); accept iff p <= alpha."""
+class _AACal:
+    """SelfCal-AA p-value against one (sub)set of map-null statistics: max(recalibrated min(p_ms, p_zf), p_zg)."""
 
-    def __init__(self, m_desc, m_pos, cell=10.0, excl=25.0, k=10, block=300.0, off_d=40.0, stride=2):
-        self.m_raw = m_desc.astype(np.float32); self.mu = self.m_raw.mean(0, keepdims=True)
-        n = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True)
-        self.m_c = n(self.m_raw - self.mu); self.k, self.excl = k, excl
-        cid, self.cent = V.map_cells(m_pos, cell); self.order = np.argsort(cid, kind="stable")
-        self.starts = np.r_[0, np.flatnonzero(np.diff(cid[self.order])) + 1]; self.top_cell_dist = None
-        self.m_pos = np.asarray(m_pos, float)
-        nr = map_null(self.m_raw, m_pos, block, off_d, cell, excl, k, stride)
-        nc = map_null(self.m_c, m_pos, block, off_d, cell, excl, k, stride)
-        N = np.column_stack([nr["maxsim"], nc["z_far"]]); ok = np.isfinite(N).all(1) & np.isfinite(nc["z_gap"])
-        self.null_ms, self.null_zf, self.null_zg = np.sort(N[ok, 0]), np.sort(N[ok, 1]), np.sort(nc["z_gap"][ok])
-        nn = ok.sum(); r = np.column_stack([(nn - np.searchsorted(np.sort(N[ok, j]), N[ok, j], "left")) / nn for j in range(2)])
-        self.c_null = np.sort(r.min(1)); self.n = nn
+    def __init__(self, ms, zf, zg):
+        self.ms, self.zf, self.zg, n = np.sort(ms), np.sort(zf), np.sort(zg), len(ms)
+        r = np.column_stack([(n - np.searchsorted(srt, x, "left")) / n for srt, x in ((self.ms, ms), (self.zf, zf))])
+        self.c_null, self.n = np.sort(r.min(1)), n
 
     @staticmethod
     def _p(srt, x):
         return (1 + len(srt) - np.searchsorted(srt, x, side="left")) / (1 + len(srt))
 
-    def pvalue(self, q_desc):
+    def p(self, ms, zf, zg):
+        m = np.minimum(self._p(self.ms, ms), self._p(self.zf, zf))
+        p_comb = (1 + np.searchsorted(self.c_null, m, side="right")) / (1 + self.n)
+        return np.maximum(p_comb, self._p(self.zg, zg))
+
+
+class SelfCalTest:
+    """The SelfCal-AA decision rule given the map-null statistics N = {ms, zf, zg, sdf} (raw max-sim; centred z_far,
+    z_gap, sd_far of the map pseudo-queries):
+      1. Mondrian strata: B quantile bins of the null's far-region spread sd_far (B reduced so that every bin keeps
+         >= min_per null items; with n_b items the smallest p-value is 1/(n_b+1), so choose min_per >= 1/alpha - 1);
+         the AA p-value of a query is computed against the null items of its own bin only.
+      2. Domain gate: the query's raw max-sim p-value w.r.t. the whole null must be <= gate (0.8: above the null's
+         20 % quantile), otherwise p = 1.
+    strata=1, gate=1 recovers the original SelfCal-AA."""
+
+    def __init__(self, N, strata=10, gate=0.8, min_per=50):
+        N = {k: np.asarray(N[k], float) for k in ("ms", "zf", "zg", "sdf")}
+        ok = np.isfinite(N["ms"]) & np.isfinite(N["zf"]) & np.isfinite(N["zg"]) & np.isfinite(N["sdf"])
+        self.B = max(1, min(strata, int(ok.sum()) // min_per)); self.gate = gate
+        self.edges = np.quantile(N["sdf"][ok], np.linspace(0, 1, self.B + 1)[1:-1])
+        bn = np.digitize(N["sdf"], self.edges)
+        self.cal = [_AACal(N["ms"][ok & (bn == b)], N["zf"][ok & (bn == b)], N["zg"][ok & (bn == b)]) for b in range(self.B)]
+        self.ms_all = np.sort(N["ms"][ok])
+
+    def pvalue(self, ms, zf, zg, sdf):
+        ms, zf, zg = np.asarray(ms, float), np.asarray(zf, float), np.asarray(zg, float)
+        bx = np.digitize(np.nan_to_num(np.asarray(sdf, float), nan=-1e9), self.edges); p = np.ones(len(ms))
+        for b in range(self.B):
+            mx = bx == b
+            if mx.any(): p[mx] = self.cal[b].p(ms[mx], zf[mx], zg[mx])
+        return np.where(_AACal._p(self.ms_all, ms) <= self.gate, p, 1.0)
+
+
+class SelfCalAA:
+    """Deployment-time SelfCal-AA: everything query-independent is precomputed once from the map; accept iff p <= alpha.
+    Defaults = the adopted rule (Mondrian by sd_far, B=10, raw-similarity gate 0.8); strata=1, gate=1 = original rule."""
+
+    def __init__(self, m_desc, m_pos, cell=10.0, excl=25.0, k=10, block=300.0, off_d=40.0, stride=2,
+                 strata=10, gate=0.8, min_per=50):
+        self.m_raw = m_desc.astype(np.float32); self.mu = self.m_raw.mean(0, keepdims=True)
+        n = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True)
+        self.m_c = n(self.m_raw - self.mu); self.k, self.excl = k, excl
+        cid, self.cent = V.map_cells(m_pos, cell); self.order = np.argsort(cid, kind="stable")
+        self.starts = np.r_[0, np.flatnonzero(np.diff(cid[self.order])) + 1]
+        self.m_pos = np.asarray(m_pos, float)
+        nr = map_null(self.m_raw, m_pos, block, off_d, cell, excl, k, stride)
+        nc = map_null(self.m_c, m_pos, block, off_d, cell, excl, k, stride)
+        self.test = SelfCalTest(dict(ms=nr["maxsim"], zf=nc["z_far"], zg=nc["z_gap"], sdf=nc["sd_far"]), strata, gate, min_per)
+
+    def stats(self, q_desc):
+        """per-query statistics (same definitions as query_stats on raw / centred similarities) + raw top-1 index"""
         q = np.atleast_2d(q_desc).astype(np.float32)
         s_raw = q @ self.m_raw.T; qc = q - self.mu; qc /= np.linalg.norm(qc, axis=1, keepdims=True); s_c = qc @ self.m_c.T
-        top = s_c.argmax(1)  # same retrieval as raw up to centring; use the raw top-1 for the reported match
-        top_raw = s_raw.argmax(1); s1_raw = s_raw[np.arange(len(q)), top_raw]
+        top_raw = s_raw.argmax(1); top_c = s_c.argmax(1); r = np.arange(len(q))
         Z = np.maximum.reduceat(s_c[:, self.order], self.starts, axis=1)
-        far = np.sqrt(((self.m_pos[top_raw][:, None, :] - self.cent[None]) ** 2).sum(-1)) > self.excl
+        far = np.sqrt(((self.m_pos[top_c][:, None, :] - self.cent[None]) ** 2).sum(-1)) > self.excl
         Zf = np.where(far, Z, np.nan); mu_f, sd_f = np.nanmean(Zf, 1), np.nanstd(Zf, 1) + 1e-9
-        s1_c = s_c[np.arange(len(q)), top_raw]; best_far = np.nanmax(Zf, 1)
-        z_far, z_gap = (s1_c - mu_f) / sd_f, (s1_c - best_far) / sd_f
-        m = np.minimum(self._p(self.null_ms, s1_raw), self._p(self.null_zf, z_far))
-        p_comb = (1 + np.searchsorted(self.c_null, m, side="right")) / (1 + self.n)
-        return np.maximum(p_comb, self._p(self.null_zg, z_gap)), top_raw
+        s1_c = s_c[r, top_c]
+        return dict(ms=s_raw[r, top_raw], zf=(s1_c - mu_f) / sd_f, zg=(s1_c - np.nanmax(Zf, 1)) / sd_f, sdf=sd_f), top_raw
+
+    def pvalue(self, q_desc):
+        X, top_raw = self.stats(q_desc)
+        return self.test.pvalue(**X), top_raw

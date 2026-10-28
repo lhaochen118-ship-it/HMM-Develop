@@ -65,6 +65,7 @@ def variants(N, X):
     for B in (5, 10):   # power variant + the domain-shift gate
         pm = out.get(f"Mondrian-sdf-{B}", mondrian(N, X, "sdf", B))
         out[f"Mondrian-sdf-{B}&ms<=0.8"] = np.where(p_ms <= 0.8, pm, 1.0)
+    out["SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)"] = SC.SelfCalTest(N).pvalue(**X)
     return out
 
 
