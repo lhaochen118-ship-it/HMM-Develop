@@ -17,7 +17,7 @@ def evaluate(ep, c, variant="centered", alphas=(0.01, 0.05, 0.1), verbose=True):
     q, m = SC.center(ep.q, ep.m) if variant == "centered" else (ep.q.astype(np.float32), ep.m.astype(np.float32))
     nul = SC.map_null(m, ep.m_pos, c["block"], c["off_d"], c["cell"], c["excl"], c["k"])
     off = SC.lobo_stats(m, ep.m_pos, c["block"], c["off_d"], q, ep.q_pos, c["cell"], c["excl"], c["k"])
-    full = SC.query_stats(q @ m.T, ep.m_pos, c["cell"], c["excl"], c["k"])
+    full = SC.qm_stats(q, m, ep.m_pos, c["cell"], c["excl"], c["k"])
     e2 = V.Episode(ep.name, q, m, ep.q_pos, ep.m_pos, ep.q_cond, ep.q_R, ep.m_R)
     inm = V.nearest_map_dist(e2) <= c["in_d"]; corr = V.correct(e2, *c["tol"]) & inm
     offm = np.isfinite(off["z_all"]); conds = sorted(set(ep.q_cond))

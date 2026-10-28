@@ -28,7 +28,7 @@ def signals(ep, c, centered, key=None):
     args = (c["block"], c["off_d"], c["cell"], c["excl"], c["k"])
     nul = SC.map_null(m, ep.m_pos, *args)
     off = SC.lobo_stats(m, ep.m_pos, c["block"], c["off_d"], q, ep.q_pos, c["cell"], c["excl"], c["k"])
-    full = SC.query_stats(q @ m.T, ep.m_pos, c["cell"], c["excl"], c["k"])
+    full = SC.qm_stats(q, m, ep.m_pos, c["cell"], c["excl"], c["k"])
     return nul, off, full, m.shape[0]
 
 

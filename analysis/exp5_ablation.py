@@ -21,7 +21,7 @@ def run(cell, excl, block_m, off_d_m, stride, centered=True, alphas=(0.05,)):
     nz = SC.lobo_stats(mz, ep.m_pos, block_m, off_d_m, mz[::stride], ep.m_pos[::stride], cell, excl, k)
     o_r = SC.lobo_stats(mr, ep.m_pos, c["block"], c["off_d"], qr, ep.q_pos, cell, excl, k)
     o_z = SC.lobo_stats(mz, ep.m_pos, c["block"], c["off_d"], qz, ep.q_pos, cell, excl, k)
-    f_r = SC.query_stats(qr @ mr.T, ep.m_pos, cell, excl, k); f_z = SC.query_stats(qz @ mz.T, ep.m_pos, cell, excl, k)
+    f_r = SC.qm_stats(qr, mr, ep.m_pos, cell, excl, k); f_z = SC.qm_stats(qz, mz, ep.m_pos, cell, excl, k)
     offm = np.isfinite(o_r["maxsim"]) & np.isfinite(o_z["z_far"])
     nul = [nr["maxsim"], nz["z_far"]]
     pco_o, pco_i = SC.combined_p(nul, [o_r["maxsim"], o_z["z_far"]]), SC.combined_p(nul, [f_r["maxsim"], f_z["z_far"]])

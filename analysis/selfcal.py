@@ -6,8 +6,25 @@ is then estimated from the MAP ITSELF: each map image, with its own spatial bloc
 pseudo-query that is off-map by construction. No human labels, no deployment labels. p-values are split-conformal
 w.r.t. these map pseudo-queries.
 """
+import os
 import numpy as np
 import vprlib as V
+
+# Compute backend for the heavy part (query x map similarities + per-cell statistics). SELFCAL_DEVICE=auto (default:
+# CUDA if available, else numpy), cuda, torchcpu (PyTorch on CPU, for testing) or numpy.
+try:
+    import torch
+    torch.backends.cuda.matmul.allow_tf32 = False
+except Exception:   # pragma: no cover
+    torch = None
+
+
+def _device():
+    want = os.environ.get("SELFCAL_DEVICE", "auto")
+    if torch is None or want == "numpy": return None
+    if want == "torchcpu": return "cpu"
+    if want in ("auto", "cuda") and torch.cuda.is_available(): return "cuda"
+    return None
 
 
 def center(q, m):
@@ -58,6 +75,53 @@ def _query_stats(S, m_pos, cent, order, starts, excl, k, sue_k, sue_lam):
     return out
 
 
+def qm_stats(q, m, m_pos, cell, excl, k, chunk=2048, sue_k=10, sue_lam=350.0):
+    """query_stats(q @ m.T, ...) computed on the GPU when available (identical statistics, float32 similarities)."""
+    dev = _device()
+    if dev is None:
+        return query_stats(np.asarray(q, np.float32) @ np.asarray(m, np.float32).T, m_pos, cell, excl, k, chunk, sue_k, sue_lam)
+    cid, cent = V.map_cells(m_pos, cell); nc = int(cid.max()) + 1
+    M = torch.as_tensor(np.asarray(m, np.float32), device=dev)
+    CID = torch.as_tensor(cid, device=dev, dtype=torch.long)
+    CENT = torch.as_tensor(np.asarray(cent, np.float64), device=dev); POS = torch.as_tensor(np.asarray(m_pos, np.float64), device=dev)
+    parts = []
+    for i in range(0, len(q), chunk):
+        Q = torch.as_tensor(np.asarray(q[i:i + chunk], np.float32), device=dev)
+        parts.append(_query_stats_torch(Q @ M.T, POS, CENT, CID, nc, excl, k, sue_k, sue_lam))
+    return {kk: np.concatenate([p[kk] for p in parts]) for kk in parts[0]}
+
+
+def _query_stats_torch(S, POS, CENT, CID, nc, excl, k, sue_k, sue_lam):
+    n = S.shape[0]; ninf = float("-inf")
+    Z = torch.full((n, nc), ninf, device=S.device, dtype=S.dtype).scatter_reduce(1, CID.expand(n, -1), S, reduce="amax", include_self=True)
+    s1, top = S.max(1)
+    dc = torch.cdist(POS[top], CENT)
+    Zf = torch.where(dc > excl, Z, torch.full_like(Z, ninf))
+    kk1 = min(k + 1, nc); top_k = torch.topk(Zf, kk1, dim=1).values
+    ok = torch.isfinite(top_k).all(1) & (kk1 == k + 1)
+    j = torch.arange(2, kk1 + 1, device=S.device, dtype=S.dtype)[None, :]
+    beta = torch.clamp((j * (top_k[:, :-1] - top_k[:, 1:])).mean(1), min=1e-9)
+    fin = torch.isfinite(Zf); cnt = fin.sum(1).clamp(min=1).double()
+    Zd = torch.where(fin, Zf, torch.zeros_like(Zf)).double(); mu_f = Zd.sum(1) / cnt
+    sd_f = torch.sqrt((torch.where(fin, Zf.double() - mu_f[:, None], torch.zeros_like(Zd)) ** 2).sum(1) / cnt) + 1e-9
+    mu, sd = S.mean(1), S.std(1, unbiased=False) + 1e-9
+    s2 = torch.topk(S, 2, dim=1).values[:, 1]
+    d1, d2 = torch.sqrt(torch.clamp(2 - 2 * s1, min=0)), torch.sqrt(torch.clamp(2 - 2 * s2, min=0))
+    pr = torch.softmax(S / 0.05, dim=1)
+    K = min(sue_k, S.shape[1]); sv, idx = torch.topk(S, K, dim=1)
+    dk = torch.sqrt(torch.clamp(2 - 2 * sv, min=0)).double(); w = torch.exp(-sue_lam * (dk - dk.min(1, keepdim=True).values))
+    w = w / w.sum(1, keepdim=True); P = POS[idx]; mp = (w[..., None] * P).sum(1, keepdim=True)
+    s1d, tk0 = s1.double(), top_k[:, 0].double()
+    raw = {"maxsim": s1, "margin": s1 - s2, "PA": -d1 / torch.clamp(d2, min=1e-9), "neg_entropy": (pr * torch.log(pr + 1e-12)).sum(1),
+           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2))}
+    out = {"T_spacing": (s1 - top_k[:, 0]) / beta, "T_level": (s1 - top_k[:, :k].mean(1)) / beta,
+           "z_far": (s1d - mu_f) / sd_f, "z_all": (s1 - mu) / sd, "z_gap": (s1d - tk0) / sd_f,
+           "d_far": s1d - mu_f, "d_gap": s1 - top_k[:, 0]}
+    res = {kk: torch.where(ok, v.double(), torch.full_like(v.double(), ninf)).cpu().numpy() for kk, v in out.items()}
+    res.update({kk: v.double().cpu().numpy() for kk, v in raw.items()})
+    return res
+
+
 def lobo_stats(m_desc, m_pos, block, off_d, q_desc, q_pos, cell, excl, k, chunk=1024):
     """Statistics of queries that are OFF-MAP under leave-one-block-out (NaN for queries never off-map)."""
     bid, _ = V.map_cells(m_pos, block)
@@ -74,7 +138,7 @@ def lobo_stats(m_desc, m_pos, block, off_d, q_desc, q_pos, cell, excl, k, chunk=
             d[i:i + chunk] = np.sqrt((((q_pos[qs[i:i + chunk], None] - m_pos[keep][None]) ** 2).sum(-1)).min(1))
         far = qs[d > off_d]
         if not len(far): continue
-        st = query_stats(q_desc[far].astype(np.float32) @ m_desc[keep].astype(np.float32).T, m_pos[keep], cell, excl, k)
+        st = qm_stats(q_desc[far], m_desc[keep], m_pos[keep], cell, excl, k)
         if out is None: out = {kk: np.full(len(q_pos), np.nan) for kk in st}
         for kk, v in st.items(): out[kk][far] = v
     return out

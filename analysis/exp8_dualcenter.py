@@ -19,12 +19,12 @@ for cc in set(ep.q_cond):
     sel = ep.q_cond == cc; q_dual[sel] = nrm(q[sel] - q[sel].mean(0, keepdims=True))
 args = (c["block"], c["off_d"], c["cell"], c["excl"], c["k"])
 nul_raw = SC.map_null(m, ep.m_pos, *args); off_raw = SC.lobo_stats(m, ep.m_pos, c["block"], c["off_d"], q, ep.q_pos, c["cell"], c["excl"], c["k"])
-full_raw = SC.query_stats(q @ m.T, ep.m_pos, c["cell"], c["excl"], c["k"])
+full_raw = SC.qm_stats(q, m, ep.m_pos, c["cell"], c["excl"], c["k"])
 nul_c = SC.map_null(mc, ep.m_pos, *args)
 res = {}
 for name, qq in [("map-centring", q_mapc), ("dual-centring", q_dual)]:
     off_c = SC.lobo_stats(mc, ep.m_pos, c["block"], c["off_d"], qq, ep.q_pos, c["cell"], c["excl"], c["k"])
-    full_c = SC.query_stats(qq @ mc.T, ep.m_pos, c["cell"], c["excl"], c["k"])
+    full_c = SC.qm_stats(qq, mc, ep.m_pos, c["cell"], c["excl"], c["k"])
     offm = np.isfinite(off_raw["maxsim"]) & np.isfinite(off_c["z_far"])
     for combo_name, nul, offs, fulls in [("combo(maxsim_raw, z_far_c)", [nul_raw["maxsim"], nul_c["z_far"]], [off_raw["maxsim"], off_c["z_far"]], [full_raw["maxsim"], full_c["z_far"]]),
                                           ("combo(maxsim_c, z_far_c)", [nul_c["maxsim"], nul_c["z_far"]], [off_c["maxsim"], off_c["z_far"]], [full_c["maxsim"], full_c["z_far"]])]:

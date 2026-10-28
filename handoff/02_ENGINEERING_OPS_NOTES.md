@@ -5,7 +5,8 @@
 > "eval_all.py <ds> <desc>;..."`, which uploads `analysis/` as dataset `nhatlong1103/dive-vpr-analysis` and makes a
 > CPU kernel that mounts the dump kernels. Then run `automation/run_kernel.py <dir> <out>` and copy
 > `<out>/results/*.json` into `analysis/results/`. GPU (T4) is only for descriptor extraction. Local CPU is for quick
-> checks (< ~2 min) only.
+> checks (< ~2 min) only. **Prefer `--gpu`** (T4): `selfcal.qm_stats` has a PyTorch backend (`SELFCAL_DEVICE=auto|cuda|torchcpu|numpy`).
+> It was validated against numpy on Kaggle (RobotCar identical, Nordland ≤ 0.00025 difference).
 
 *Kinh nghiệm code / vận hành positive + negative mà phiên này tìm ra. Dùng cho khung chat mới để tránh lặp lỗi và
 chạy nhanh hơn. Scripts tham chiếu trong `automation/`.*
