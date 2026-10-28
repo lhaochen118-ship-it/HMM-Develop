@@ -1,5 +1,12 @@
 # Engineering & Kaggle-Ops Lessons (Handoff)
 
+> **User policy (2026-10-28): run ALL heavy compute on Kaggle, including CPU-only analysis.** Do not run long
+> evaluations in the local container (no GPU, 4 cores). Use `automation/make_eval_kernel.py <dir> <slug>
+> "eval_all.py <ds> <desc>;..."`, which uploads `analysis/` as dataset `nhatlong1103/dive-vpr-analysis` and makes a
+> CPU kernel that mounts the dump kernels. Then run `automation/run_kernel.py <dir> <out>` and copy
+> `<out>/results/*.json` into `analysis/results/`. GPU (T4) is only for descriptor extraction. Local CPU is for quick
+> checks (< ~2 min) only.
+
 *Kinh nghiệm code / vận hành positive + negative mà phiên này tìm ra. Dùng cho khung chat mới để tránh lặp lỗi và
 chạy nhanh hơn. Scripts tham chiếu trong `automation/`.*
 
