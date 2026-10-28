@@ -68,6 +68,24 @@
 | stride 8 | 0.003 | 0.024 | 0.986 | 0.000 | 597 |
 | no centering | 0.002 | 0.007 | 0.980 | 0.000 | 2391 |
 
+**Nordland (3 seasons)**
+
+| variant | FAR | worst | TPR | aliasing | null n |
+|---|---|---|---|---|---|
+| default | 0.008 | 0.010 | 0.754 | 0.057 | 2030 |
+| cell x0.5 | 0.005 | 0.006 | 0.719 | 0.049 | 2030 |
+| cell x2.0 | 0.010 | 0.011 | 0.761 | 0.057 | 2030 |
+| excl x0.4 | 0.008 | 0.009 | 0.748 | 0.047 | 2030 |
+| excl x2.0 | 0.008 | 0.009 | 0.759 | 0.076 | 2030 |
+| block_m x0.5 | 0.001 | 0.001 | 0.566 | 0.044 | 1810 |
+| block_m x2.0 | 0.011 | 0.012 | 0.774 | 0.060 | 2140 |
+| off_d_m x0.6 | 0.008 | 0.009 | 0.752 | 0.057 | 2118 |
+| off_d_m x2.0 | 0.008 | 0.010 | 0.758 | 0.057 | 1810 |
+| stride 1 | 0.008 | 0.009 | 0.753 | 0.058 | 4060 |
+| stride 4 | 0.007 | 0.008 | 0.750 | 0.055 | 1015 |
+| stride 8 | 0.006 | 0.007 | 0.747 | 0.053 | 497 |
+| no centering | 0.005 | 0.006 | 0.329 | 0.086 | 2030 |
+
 ### Table 5. Deployment batches: BH on SelfCal p-values (SALAD), label-free confidence
 
 - RobotCar-Seasons (9 cond.), off-map share 0.1: π̂0 0.15 (true 0.14); ECE label-free 0.044; BH q=0.1: gross FDR mean 0.004 (max 0.014), power 0.998

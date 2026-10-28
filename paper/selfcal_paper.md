@@ -267,3 +267,53 @@ near-duplicate of a mapped area (e.g. two identical stations) is aliasing in dis
 hold out blocks (we merged the CMU slices into one city map). RobotCar ground truth exists only for the public training
 queries (test poses are withheld by the benchmark), so we apply the official thresholds to the top-1 reference pose of
 the 1,906 training queries. Strict levels (α ≤ 0.01) cost power on Extended-CMU.
+
+# 8. Conclusion
+
+A VPR map is more than a retrieval database: with its poses, it is a free, unlimited source of labelled off-map
+queries in its own environment. Calibrating affine-invariant, geometry-aware statistics against these pseudo-queries
+gives acceptance decisions whose false-accept rate is controlled without labels and survives the appearance changes
+that break label-based calibration, together with an aliasing guard, FDR control and calibrated confidence. Natural
+next steps are sequential evidence (accumulating p-values along a trajectory), maps that change over time, and
+combining SelfCal with geometric verification scores, which it can calibrate without modification.
+
+# References
+
+- [Ali-bey'23] A. Ali-bey, B. Chaib-draa, P. Giguère. MixVPR: Feature mixing for visual place recognition. WACV 2023.
+- [Angelopoulos'21] A. N. Angelopoulos, S. Bates. A gentle introduction to conformal prediction and distribution-free uncertainty quantification. arXiv:2107.07511.
+- [Arandjelović'16] R. Arandjelović, P. Gronat, A. Torii, T. Pajdla, J. Sivic. NetVLAD: CNN architecture for weakly supervised place recognition. CVPR 2016.
+- [Barber'23] R. F. Barber, E. J. Candès, A. Ramdas, R. J. Tibshirani. Conformal prediction beyond exchangeability. Annals of Statistics 2023.
+- [Bates'23] S. Bates, E. Candès, L. Lei, Y. Romano, M. Sesia. Testing for outliers with conformal p-values. Annals of Statistics 2023.
+- [Benjamini'95] Y. Benjamini, Y. Hochberg. Controlling the false discovery rate. JRSS-B 1995.
+- [Berton'22] G. Berton, C. Masone, B. Caputo. Rethinking visual geo-localization for large-scale applications (CosPlace). CVPR 2022.
+- [Berton'25] G. Berton, C. Masone. MegaLoc: One retrieval to place them all. CVPR Workshops 2025.
+- [Cai'22] K. Cai, C. X. Lu, X. Huang. STUN: Self-teaching uncertainty estimation for place recognition. IROS 2022.
+- [Carson'22] H. Carson, J. J. Ford, M. Milford. Predicting to improve: Integrity measures for assessing visual localization performance. RA-L 2022.
+- [Claxton'24] O. Claxton, C. Malone, H. Carson, J. J. Ford, G. Bolton, I. Shames, M. Milford. Improving visual place recognition based robot navigation by verifying localization estimates. RA-L 2024.
+- [Conneau'18] A. Conneau, G. Lample, M. Ranzato, L. Denoyer, H. Jégou. Word translation without parallel data (CSLS). ICLR 2018.
+- [Efron'01] B. Efron, R. Tibshirani, J. D. Storey, V. Tusher. Empirical Bayes analysis of a microarray experiment (local fdr). JASA 2001.
+- [Hausler'21] S. Hausler, T. Fischer, M. Milford. Unsupervised complementary-aware multi-process fusion for visual place recognition. arXiv:2112.04701.
+- [Hussaini'25] S. Hussaini, T. Fischer, M. Milford. Improving visual place recognition with sequence-matching receptiveness prediction. arXiv:2503.06840.
+- [Hussaini'26] S. Hussaini, T. Fischer, M. Milford. Automatic map density selection for locally-performant visual place recognition. arXiv:2602.21473.
+- [Izquierdo'24] S. Izquierdo, J. Civera. Optimal transport aggregation for visual place recognition (SALAD). CVPR 2024.
+- [KappaPlace'26] M. Yanko, Y. Shavit. KappaPlace: Learning hyperspherical uncertainty for visual place recognition via prototype-anchored supervision. arXiv:2605.19435.
+- [Lowe'04] D. G. Lowe. Distinctive image features from scale-invariant keypoints. IJCV 2004.
+- [Miller'26] E. Miller, M. Milford, M. B. Hafez, S. D. Ramchurn, S. Ehsan. Through the lens of doubt: Robust and efficient uncertainty estimation for visual place recognition. RA-L 2026 (arXiv:2510.13464).
+- [Oquab'24] M. Oquab et al. DINOv2: Learning robust visual features without supervision. TMLR 2024.
+- [Radovanović'10] M. Radovanović, A. Nanopoulos, M. Ivanović. Hubs in space: Popular nearest neighbors in high-dimensional data. JMLR 2010.
+- [Rajani'26] D. M. Rajani, M. Milford, T. Fischer. Quantile transfer for reliable operating point selection in visual place recognition. IROS 2026 (arXiv:2602.04401).
+- [RouteMHT'26] Z. Lu, K. Tanaka. Route-MHT: Multimodal transformer guardrails for thermal visual place recognition. arXiv:2607.04745.
+- [Sattler'18] T. Sattler et al. Benchmarking 6DOF outdoor visual localization in changing conditions. CVPR 2018.
+- [Scheirer'11] W. J. Scheirer, A. Rocha, R. J. Micheals, T. E. Boult. Meta-recognition: The theory and practice of recognition score analysis. TPAMI 2011.
+- [Schubert'21] S. Schubert, P. Neubert, P. Protzel. Beyond ANN: Exploiting structural knowledge for efficient place recognition. ICRA 2021.
+- [Sier'26] H. Sier, J. Zhang, Z. Zou, X. Yu, T. Westerlund. SAFEVPR: Patch-based conformal verification for safe cross-condition sequence visual place recognition. arXiv:2605.28048.
+- [Storey'02] J. D. Storey. A direct approach to false discovery rates. JRSS-B 2002.
+- [Sünderhauf'13] N. Sünderhauf, P. Neubert, P. Protzel. Are we there yet? Challenging SeqSLAM on a 3000 km journey across all four seasons. ICRA Workshops 2013.
+- [Suzuki'13] I. Suzuki, K. Hara, M. Shimbo, M. Saerens, K. Fukumizu. Centering similarity measures to reduce hubs. EMNLP 2013.
+- [Toft'20] C. Toft et al. Long-term visual localization revisited. TPAMI 2020.
+- [Trinh'25] N. Trinh, D. Lyons. Adaptive thresholding for visual place recognition using negative Gaussian mixture statistics. arXiv:2512.09071.
+- [Vovk'05] V. Vovk, A. Gammerman, G. Shafer. Algorithmic Learning in a Random World. Springer 2005.
+- [Vysotska'25] O. Vysotska, I. Bogoslavskyi, M. Hutter, C. Stachniss. Adaptive thresholding for sequence-based place recognition. ICRA 2025.
+- [Warburg'21] F. Warburg, M. Jørgensen, J. Civera, S. Hauberg. Bayesian triplet loss: Uncertainty quantification in image retrieval. ICCV 2021.
+- [Zaffar'24] M. Zaffar, L. Nan, J. F. P. Kooij. On the estimation of image-matching uncertainty in visual place recognition. CVPR 2024.
+- [Zaffar'25] M. Zaffar, L. Nan, S. Scherer, J. F. P. Kooij. The overlooked value of test-time reference sets in visual place recognition. arXiv:2510.03751.
