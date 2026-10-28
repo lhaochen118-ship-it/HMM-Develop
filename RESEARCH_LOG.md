@@ -18,56 +18,6 @@ Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Com
   null drawn from the map itself, which is SelfCal (Entry 12).
 
 
-## Entry 17 — MSLS power (SelfCal-Gap), sequence-level SelfCal (a caveat), localisation demo (2026-10-28)
-
-**1. Offline variant search.** exp10 now caches every statistic (`shiftstats_<desc>.npz`); variants re-score in
-seconds (`--stats`). On MSLS, z_far alone is *invalid* (worst condition 0.40–0.88: its dominance fails on this map),
-whereas z_gap alone is valid and the most powerful statistic. The AA rule max(comb(ms, z_far), z_gap) is valid
-because its z_gap branch is (intersection–union), but the z_far branch costs power.
-
-- **SelfCal-Gap** = z_gap only + Mondrian strata + domain gate (`SelfCalTest(mode="gap")`). On the cached statistics
-  (6 descriptors × 5 maps) it has 0/192 significant violations and natural off-map max 0.011.
-- Its TPR is 0.714 against 0.612 for AA: MSLS 0.595 vs 0.469, DINOv2 0.388 vs 0.218.
-- Its worst point FAR is 0.073 (5/30 cells above 0.05, none significant), and median aliasing acceptance is 0.027
-  (AA: 0.012).
-- Both are reported as two operating points: **AA is robust** (valid if either branch is dominated); **Gap has more
-  power** (valid if z_gap is dominated).
-- Caveat: chosen after looking at these data. A full eval_all rerun with both rules is running (v3).
-
-**2. Sequence-level SelfCal (exp11).** Window of L frames, calibrated on map pseudo-sequences and cross-fitted, so
-it is exact under exchangeability. The statistic is `run_evidence`: -log p summed over the trailing run of
-geometrically consistent matches. Whole-window evidence was rejected after it let past frames vouch for a wrong last
-match on Nordland.
-
-- **Power gains are large for weak settings:**
-
-  | setting | per frame | L = 5 |
-  |---|---|---|
-  | Nordland DINOv2 | 0.26 | 0.62 |
-  | Nordland NetVLAD | 0.44 | 0.71 |
-  | Nordland CosPlace | 0.45 | 0.82 |
-  | Nordland MixVPR | 0.59 | 0.88 |
-
-- **Validity does NOT hold everywhere.**
-  - Nordland MegaLoc has 2–3/3 significant violations for L ≥ 3 (worst 0.081); CosPlace has 1/3.
-  - RobotCar point FARs reach 0.10 (not significant).
-- Reason: per-frame statistics stay dominated, but the *temporal dependence* of off-map retrievals is
-  condition-dependent. Snowy winter frames keep retrieving the same wrong place, giving longer consistent runs than
-  the map's own pseudo-sequences, so window exchangeability fails.
-- Averaging e-values would be valid under any dependence but is far weaker than the per-frame test.
-- **Verdict:** exploratory extension with an explicit caveat, not a guaranteed contribution.
-
-**3. Localisation demo (exp12).** Map with 30 % of its 300 m blocks removed; position Kalman filter with drifting
-odometry; accepted VPR matches become 5 m fixes; 3 seeds; CMU and Nordland × 6 descriptors (`paper/tables.md`
-Table 8).
-
-- **SelfCal-AA per frame beats the label-calibrated threshold in every row:**
-  - mean error 2–8× lower (CMU NetVLAD 10.5 vs 41.5 m; Nordland NetVLAD 71 vs 474 frames);
-  - 4–60× fewer wrong fixes;
-  - on CMU, frames off by more than 25 m drop from 6–26 % to 0.1–10 %.
-- **SelfCal-Seq** is best on CMU for NetVLAD/CosPlace (5.8 / 3.6 m, near the oracle) but worse than per-frame on
-  Nordland. There it accepts consistent aliasing (repetitive railway), in line with point 2.
-
 ## Entry 16 — Full rerun with the adopted SelfCal-AA (Mondrian strata by sd_far + domain gate), 6 T4 on 3 accounts (2026-10-28)
 
 Branch `claude/selfcal-aa`. Rule = `selfcal.SelfCalTest` (B=10 strata of the null's sd_far, gate p_maxsim ≤ 0.8).

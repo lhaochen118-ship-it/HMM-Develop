@@ -62,7 +62,7 @@ def _query_stats(S, m_pos, cent, order, starts, excl, k, sue_k, sue_lam):
     dk = np.sqrt(np.maximum(2 - 2 * np.take_along_axis(S, idx, 1), 0)); w = np.exp(-sue_lam * (dk - dk.min(1, keepdims=True)))
     w /= w.sum(1, keepdims=True); P = m_pos[idx]; mp = (w[..., None] * P).sum(1, keepdims=True)
     raw = {"maxsim": s1, "margin": s1 - s2, "PA": -d1 / np.maximum(d2, 1e-9), "neg_entropy": (pr * np.log(pr + 1e-12)).sum(1),
-           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2)), "mu_far": mu_f, "sd_far": sd_f, "top": top.astype(float)}
+           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2)), "mu_far": mu_f, "sd_far": sd_f}
     out = {"T_spacing": (s1 - top_k[:, 0]) / beta,                 # EVS spacing statistic (F(2,2k) under ideal null)
            "T_level": (s1 - top_k[:, :k].mean(1)) / beta,         # level above the top-k far maxima, in tail units
            "z_far": (s1 - mu_f) / sd_f,                            # standardised vs far region maxima
@@ -113,7 +113,7 @@ def _query_stats_torch(S, POS, CENT, CID, nc, excl, k, sue_k, sue_lam):
     w = w / w.sum(1, keepdim=True); P = POS[idx]; mp = (w[..., None] * P).sum(1, keepdim=True)
     s1d, tk0 = s1.double(), top_k[:, 0].double()
     raw = {"maxsim": s1, "margin": s1 - s2, "PA": -d1 / torch.clamp(d2, min=1e-9), "neg_entropy": (pr * torch.log(pr + 1e-12)).sum(1),
-           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2)), "mu_far": mu_f, "sd_far": sd_f, "top": top}
+           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2)), "mu_far": mu_f, "sd_far": sd_f}
     out = {"T_spacing": (s1 - top_k[:, 0]) / beta, "T_level": (s1 - top_k[:, :k].mean(1)) / beta,
            "z_far": (s1d - mu_f) / sd_f, "z_all": (s1 - mu) / sd, "z_gap": (s1d - tk0) / sd_f,
            "d_far": s1d - mu_f, "d_gap": s1 - top_k[:, 0]}
@@ -139,7 +139,6 @@ def lobo_stats(m_desc, m_pos, block, off_d, q_desc, q_pos, cell, excl, k, chunk=
         far = qs[d > off_d]
         if not len(far): continue
         st = qm_stats(q_desc[far], m_desc[keep], m_pos[keep], cell, excl, k)
-        st["top"] = np.flatnonzero(keep)[st["top"].astype(int)].astype(float)   # top-1 index in the FULL map
         if out is None: out = {kk: np.full(len(q_pos), np.nan) for kk in st}
         for kk, v in st.items(): out[kk][far] = v
     return out
@@ -199,14 +198,12 @@ class SelfCalTest:
          the AA p-value of a query is computed against the null items of its own bin only.
       2. Domain gate: the query's raw max-sim p-value w.r.t. the whole null must be <= gate (0.8: above the null's
          20 % quantile), otherwise p = 1.
-    strata=1, gate=1 recovers the original SelfCal-AA.
-    mode="aa" (default): max(recalibrated min(p_ms, p_zfar), p_zgap) — valid if EITHER branch is dominated.
-    mode="gap" (SelfCal-Gap): p_zgap alone — more power, valid only if z_gap is dominated."""
+    strata=1, gate=1 recovers the original SelfCal-AA."""
 
-    def __init__(self, N, strata=10, gate=0.8, min_per=50, mode="aa"):
+    def __init__(self, N, strata=10, gate=0.8, min_per=50):
         N = {k: np.asarray(N[k], float) for k in ("ms", "zf", "zg", "sdf")}
         ok = np.isfinite(N["ms"]) & np.isfinite(N["zf"]) & np.isfinite(N["zg"]) & np.isfinite(N["sdf"])
-        self.B = max(1, min(strata, int(ok.sum()) // min_per)); self.gate, self.mode = gate, mode
+        self.B = max(1, min(strata, int(ok.sum()) // min_per)); self.gate = gate
         self.edges = np.quantile(N["sdf"][ok], np.linspace(0, 1, self.B + 1)[1:-1])
         bn = np.digitize(N["sdf"], self.edges)
         self.cal = [_AACal(N["ms"][ok & (bn == b)], N["zf"][ok & (bn == b)], N["zg"][ok & (bn == b)]) for b in range(self.B)]
@@ -217,8 +214,7 @@ class SelfCalTest:
         bx = np.digitize(np.nan_to_num(np.asarray(sdf, float), nan=-1e9), self.edges); p = np.ones(len(ms))
         for b in range(self.B):
             mx = bx == b
-            if not mx.any(): continue
-            p[mx] = self.cal[b].p(ms[mx], zf[mx], zg[mx]) if self.mode == "aa" else _AACal._p(self.cal[b].zg, zg[mx])
+            if mx.any(): p[mx] = self.cal[b].p(ms[mx], zf[mx], zg[mx])
         return np.where(_AACal._p(self.ms_all, ms) <= self.gate, p, 1.0)
 
 
@@ -230,19 +226,6 @@ def pack(raw, cen):
 def selfcal_p(raw_null, cen_null, raw_x, cen_x, **kw):
     """SelfCal-AA p-values of queries (raw_x, cen_x) against the map null (raw_null, cen_null); kw -> SelfCalTest"""
     return SelfCalTest(pack(raw_null, cen_null), **kw).pvalue(**pack(raw_x, cen_x))
-
-
-def run_evidence(p, xpos, W, rho):
-    """Sequence evidence for the match of the LAST frame of each window W (rows = L frame indices, oldest first):
-    sum of -log p over the trailing run of frames whose consecutive top-1 positions xpos stay within rho of each other.
-    A last frame whose match jumps away from its predecessor keeps only its own evidence, so past frames never vouch
-    for a match they do not agree with (entering unmapped areas, aliasing)."""
-    lp = -np.log(np.clip(p[W], 1e-12, 1)); X = xpos[W]
-    if W.shape[1] == 1: return lp[:, 0]
-    cons = np.linalg.norm(X[:, 1:] - X[:, :-1], axis=-1) <= rho                  # (n, L-1), pair j = frames j, j+1
-    run = np.cumprod(cons[:, ::-1], axis=1).sum(1)                               # consistent pairs ending at the last frame
-    take = np.arange(W.shape[1])[None, ::-1] <= run[:, None]                     # last run+1 frames
-    return (lp * take).sum(1)
 
 
 class SelfCalAA:

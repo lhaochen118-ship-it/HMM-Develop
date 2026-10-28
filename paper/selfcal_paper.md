@@ -166,13 +166,6 @@ accept iff $\max\{p_{comb},p_{z_{gap}}\}\le\alpha$ **and** $p_{\max s}(q)\le\gam
 $\gamma=0.8$ (the raw max-similarity must exceed the 20 % quantile of the map null). The gate is inactive for
 almost every true match (mean TPR 0.648 → 0.646 over 24 settings) but removes the foreign-domain false accepts (§6.7).
 
-**Two operating points.** SelfCal-AA requires both the combination and the gap to be significant, so it stays valid
-when *either* branch is dominated by the map null (intersection–union, as for the gate). Where the far-region level
-$z_{far}$ is not dominated (we observe this on MSLS) its branch is still harmless for validity but costs power.
-**SelfCal-Gap** uses the gap alone, $p=p_{z_{gap}}$ within the same Mondrian strata and behind the same gate: it is
-valid whenever $z_{gap}$ is dominated and has markedly more power (§6.4). We report both and recommend SelfCal-AA when
-validity must hold under the weakest assumptions.
-
 **Batches.** With p-values of a deployment batch, Benjamini–Hochberg controls the false-discovery rate, and the
 two-groups model (Storey's $\hat\pi_0$, Grenander density estimate) turns $p$ into a calibrated probability of a true
 match, $1-\widehat{\mathrm{lfdr}}(p)$ — again without labels.
@@ -335,36 +328,6 @@ false-accept rate is 0.007** (Table 6). The gate costs 0.002 TPR on average, and
 are covered: the invariant statistics are dominated under appearance shift, and foreign images fall below the map's
 own raw-similarity quantile under domain shift.
 
-## 6.8 Sequences: more power, but a caveat
-
-Robots observe sequences, so evidence can be pooled over the last $L$ frames. We calibrate a window statistic the
-SelfCal way: runs of $L$ consecutive *map* images inside a held-out block are off-map pseudo-sequences. To make the
-window p-value exact, the per-frame test is fitted on the map items of even blocks and the pseudo-windows are drawn
-from odd blocks (cross-fitting). As statistic we sum $-\log p$ over the trailing run of frames whose consecutive top-1
-positions agree within $\rho$. A last frame whose match jumps away keeps only its own evidence, so earlier frames never
-vouch for a match they disagree with (a whole-window average does, and fails on Nordland). Table 7 shows large power
-gains where single frames are weak: Nordland TPR rises from 0.26 to 0.62 (DINOv2), 0.44 to 0.71 (NetVLAD) and 0.59 to
-0.88 (MixVPR) with $L=5$. Validity, however, does **not** carry over everywhere. With MegaLoc on Nordland, 2–3 of the 3
-seasons are significantly above α for $L\ge3$ (worst 0.081). The per-frame statistics remain dominated, but the
-*temporal dependence* of off-map retrievals depends on the condition: snowy frames keep retrieving the same wrong
-place, giving longer consistent runs than the map's own pseudo-sequences. Exchangeability of windows is therefore a
-stronger assumption than exchangeability of frames. Averaging e-values would be valid under any dependence but is far
-weaker than the per-frame test. We leave dependence-robust sequential calibration to future work and do not include
-the window test in our claims.
-
-## 6.9 Downstream: localisation on a map with holes
-
-Finally we measure what false-accept control buys a robot. We remove a random 30% of the 300 m map blocks, so that the
-robot regularly drives through unmapped areas, and fit SelfCal on the remaining map only. Every query traversal (CMU:
-130 sequences at about 1 m steps; Nordland: 3 seasons) is tracked by a position Kalman filter driven by simulated
-odometry with scale bias, heading random walk and noise. Every accepted VPR match becomes a 5 m position fix (Table 8,
-mean of 3 seeds). Accepting every top-1 match gives mean errors of 78–126 m on CMU. The label-calibrated threshold
-still accepts 440–2,250 wrong fixes and leaves 6–26% of the CMU frames more than 25 m off. SelfCal-AA accepts 4–60×
-fewer wrong fixes and lowers the mean error 2–8× in **every** descriptor–dataset pair: on CMU to 3.1–10.5 m (oracle
-2.7–3.2 m), on Nordland from 86–474 to 23–71 frames. The window test of §6.8 is the best rule on CMU for the weaker
-descriptors (NetVLAD 5.8 m, CosPlace 3.6 m) but worse than per-frame SelfCal on Nordland, where it accepts consistent
-aliasing — the caveat above in practice.
-
 # 7. Limitations
 
 The aliasing guard is supported empirically, not by a theorem. The guarantees concern the *off-map* null and assume
@@ -382,7 +345,9 @@ A VPR map is more than a retrieval database: with its poses, it is a free, unlim
 queries in its own environment. Calibrating affine-invariant, geometry-aware statistics against these pseudo-queries
 gives acceptance decisions whose false-accept rate is controlled without labels and survives both the appearance
 changes that break label-based calibration and queries from foreign cities and datasets, together with an aliasing
-guard, FDR control and calibrated confidence. Natural next steps are dependence-robust sequential evidence (§6.8), maps that change over time, and combining SelfCal with geometric verification scores, which it can calibrate without modification.
+guard, FDR control and calibrated confidence. Natural next steps are sequential evidence (accumulating p-values along a
+trajectory, calibrated on map pseudo-sequences), maps that change over time, and combining SelfCal with geometric
+verification scores, which it can calibrate without modification.
 
 # References
 

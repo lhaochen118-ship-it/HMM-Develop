@@ -149,21 +149,6 @@
     "msls-sf": 0.0005
    },
    "natural_max": 0.0035
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
-   "FAR": 0.0036075036075036075,
-   "worst": 0.021739130434782608,
-   "n_viol": 0,
-   "n_cond": 9,
-   "TPR": 0.8425735797399042,
-   "alias": 0.012121212121212121,
-   "natural": {
-    "cmu": 0.0,
-    "nord": 0.0,
-    "msls-cph": 0.0035,
-    "msls-sf": 0.0005
-   },
-   "natural_max": 0.0035
   }
  },
  "cmu": {
@@ -303,21 +288,6 @@
    "natural_max": 0.0015
   },
   "Mondrian-sdf-10&ms<=0.8": {
-   "FAR": 0.019834242402776793,
-   "worst": 0.030110935023771792,
-   "n_viol": 0,
-   "n_cond": 11,
-   "TPR": 0.8340158623192162,
-   "alias": 0.0018148820326678765,
-   "natural": {
-    "rc": 0.0,
-    "nord": 0.0,
-    "msls-cph": 0.001,
-    "msls-sf": 0.0005
-   },
-   "natural_max": 0.001
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
    "FAR": 0.019834242402776793,
    "worst": 0.030110935023771792,
    "n_viol": 0,
@@ -483,21 +453,6 @@
     "msls-sf": 0.0
    },
    "natural_max": 0.0
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
-   "FAR": 0.008866995073891626,
-   "worst": 0.01921182266009852,
-   "n_viol": 0,
-   "n_cond": 3,
-   "TPR": 0.49988420565076425,
-   "alias": 0.012425116485467052,
-   "natural": {
-    "rc": 0.0,
-    "cmu": 0.0,
-    "msls-cph": 0.0,
-    "msls-sf": 0.0
-   },
-   "natural_max": 0.0
   }
  },
  "msls-cph": {
@@ -650,21 +605,6 @@
     "msls-sf": 0.0
    },
    "natural_max": 0.0005
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
-   "FAR": 0.010259505129752565,
-   "worst": 0.013282732447817837,
-   "n_viol": 0,
-   "n_cond": 5,
-   "TPR": 0.55790381712314,
-   "alias": 0.0210016155088853,
-   "natural": {
-    "rc": 0.0,
-    "cmu": 0.0,
-    "nord": 0.0005,
-    "msls-sf": 0.0
-   },
-   "natural_max": 0.0005
   }
  },
  "msls-sf": {
@@ -804,21 +744,6 @@
    "natural_max": 0.0
   },
   "Mondrian-sdf-10&ms<=0.8": {
-   "FAR": 0.011353711790393014,
-   "worst": 0.019261637239165328,
-   "n_viol": 0,
-   "n_cond": 4,
-   "TPR": 0.6504683840749415,
-   "alias": 0.1876484560570071,
-   "natural": {
-    "rc": 0.0,
-    "cmu": 0.0,
-    "nord": 0.0,
-    "msls-cph": 0.0
-   },
-   "natural_max": 0.0
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
    "FAR": 0.011353711790393014,
    "worst": 0.019261637239165328,
    "n_viol": 0,

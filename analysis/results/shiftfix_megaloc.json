@@ -149,21 +149,6 @@
     "msls-sf": 0.0015
    },
    "natural_max": 0.0045
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
-   "FAR": 0.015873015873015872,
-   "worst": 0.040268456375838924,
-   "n_viol": 0,
-   "n_cond": 9,
-   "TPR": 0.9959396751740139,
-   "alias": 0.06493506493506493,
-   "natural": {
-    "cmu": 0.001,
-    "nord": 0.0005,
-    "msls-cph": 0.0045,
-    "msls-sf": 0.0015
-   },
-   "natural_max": 0.0045
   }
  },
  "cmu": {
@@ -303,21 +288,6 @@
    "natural_max": 0.0
   },
   "Mondrian-sdf-10&ms<=0.8": {
-   "FAR": 0.013104767301834668,
-   "worst": 0.031323414252153486,
-   "n_viol": 0,
-   "n_cond": 11,
-   "TPR": 0.9539812291855888,
-   "alias": 0.0,
-   "natural": {
-    "rc": 0.0,
-    "nord": 0.0,
-    "msls-cph": 0.0,
-    "msls-sf": 0.0
-   },
-   "natural_max": 0.0
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
    "FAR": 0.013104767301834668,
    "worst": 0.031323414252153486,
    "n_viol": 0,
@@ -483,21 +453,6 @@
     "msls-sf": 0.0
    },
    "natural_max": 0.0
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
-   "FAR": 0.011576354679802956,
-   "worst": 0.013793103448275862,
-   "n_viol": 0,
-   "n_cond": 3,
-   "TPR": 0.8689041349898016,
-   "alias": 0.06870229007633588,
-   "natural": {
-    "rc": 0.0,
-    "cmu": 0.0,
-    "msls-cph": 0.0,
-    "msls-sf": 0.0
-   },
-   "natural_max": 0.0
   }
  },
  "msls-cph": {
@@ -650,21 +605,6 @@
     "msls-sf": 0.0
    },
    "natural_max": 0.0
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
-   "FAR": 0.02112251056125528,
-   "worst": 0.0328125,
-   "n_viol": 0,
-   "n_cond": 5,
-   "TPR": 0.8620253164556962,
-   "alias": 0.3072463768115942,
-   "natural": {
-    "rc": 0.0,
-    "cmu": 0.0,
-    "nord": 0.0,
-    "msls-sf": 0.0
-   },
-   "natural_max": 0.0
   }
  },
  "msls-sf": {
@@ -804,21 +744,6 @@
    "natural_max": 0.0
   },
   "Mondrian-sdf-10&ms<=0.8": {
-   "FAR": 0.013682678311499273,
-   "worst": 0.01765650080256822,
-   "n_viol": 0,
-   "n_cond": 4,
-   "TPR": 0.8867610324729392,
-   "alias": 0.44871794871794873,
-   "natural": {
-    "rc": 0.0,
-    "cmu": 0.0,
-    "nord": 0.0,
-    "msls-cph": 0.0
-   },
-   "natural_max": 0.0
-  },
-  "SelfCal-AA (adopted: SelfCalTest B=10, gate 0.8)": {
    "FAR": 0.013682678311499273,
    "worst": 0.01765650080256822,
    "n_viol": 0,
