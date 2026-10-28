@@ -7,6 +7,9 @@
 > `<out>/results/*.json` into `analysis/results/`. GPU (T4) is only for descriptor extraction. Local CPU is for quick
 > checks (< ~2 min) only. **Prefer `--gpu`** (T4): `selfcal.qm_stats` has a PyTorch backend (`SELFCAL_DEVICE=auto|cuda|torchcpu|numpy`).
 > It was validated against numpy on Kaggle (RobotCar identical, Nordland ≤ 0.00025 difference).
+> **User policy (2026-10-28, later): use BOTH accounts' GPUs before any CPU kernel.** acc1 `nhatlong1103`
+> (`~/.kaggle/access_token`) and acc2 `yuan1103` (`~/.kaggle/access_token_acc2`, `--acc2`) give 2 T4 sessions each,
+> so 4 concurrent GPU jobs. Split the jobs over all 4 GPU slots. Fall back to CPU kernels only when all 4 are busy.
 
 *Kinh nghiệm code / vận hành positive + negative mà phiên này tìm ra. Dùng cho khung chat mới để tránh lặp lỗi và
 chạy nhanh hơn. Scripts tham chiếu trong `automation/`.*
