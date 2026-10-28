@@ -1,5 +1,7 @@
 # DIVE-HMM → CRSG — Scientific Findings & Contributions (Handoff)
 
+> **Superseded (2026-10-28):** CRSG was dropped after the literature gate. The current contribution is SelfCal; see `handoff/03_HANDOFF_NEW_CHAT.md`, `RESEARCH_LOG.md` Entries 11–13 and `paper/selfcal_paper.md`. The negative findings below (CCBF inert, temperature scaling) are still valid.
+
 *Chi tiết toàn bộ phát hiện khoa học positive + negative của phiên làm việc. Mọi con số đã verify trên Kaggle
 (T4/khi ghi rõ). Đọc kèm `RESEARCH_LOG.md` (nhật ký 10 entry) và `PAPER_DRAFT.md` (bản thảo) trong repo.*
 

@@ -1,98 +1,103 @@
-# Handoff — Context & How to Continue (for a FRESH chat window)
+# Handoff — SelfCal (for a FRESH chat window)
 
-*Tài liệu này để khung chat mới nắm ngữ cảnh + tiến độ và tiếp tục được ngay. KHÔNG trùng nội dung với:
-`handoff/01_SCIENTIFIC_FINDINGS.pdf` (khoa học) và `handoff/02_ENGINEERING_OPS_NOTES.pdf` (code/vận hành). Đọc 2
-file đó + `RESEARCH_LOG.md` + `PAPER_DRAFT.md` + `RESULTS.md` trước khi hành động.*
+*Updated 2026-10-28 after Entry 13. Supersedes the earlier CCBF/CRSG version of this file (git history). Read this,
+then `RESEARCH_LOG.md` Entries 11–13, `LITERATURE_GATE.md` and `RESULTS.md`. The paper is `paper/selfcal_paper.md`.*
 
-Ngày chuyển giao: 2026-10-28. Repo: `lhaochen118-ship-it/hmm-develop`, branch **`claude/elegant-brown-xvnecd`**
-(mọi commit nằm ở đây). Kaggle user: **`nhatlong1103`**.
+Repo `lhaochen118-ship-it/hmm-develop`, branch **`claude/elegant-brown-xvnecd`** (all work lives here; no PRs).
+Kaggle user **`nhatlong1103`**, token in `~/.kaggle/access_token` (re-create it from the user's message if the
+container is new; do not write it into shell rc files).
 
----
+## 1. Where the project is
 
-## 1. Dự án đang ở đâu (1 đoạn)
+- **CRSG is dropped.** Gate 1 (`LITERATURE_GATE.md`) found it pre-empted (PA ratio, L2/RS-SD-SU, integrity MLPs,
+  SAFEVPR). It is not enough for A/A*.
+- **New contribution: SelfCal, "your map is its own calibration set".** It controls the off-map false-accept rate
+  (FAR) of VPR without labels and under appearance shift. It has four parts:
+  1. **Map pseudo-queries.** Each map image is queried against the map with its own 300 m block removed
+     (leave-one-block-out), so it is off-map by construction. This gives a free labelled null.
+  2. **Affine-invariant statistic** `z_far = (s1 − μ_far)/σ_far` over the maxima of 10 m cells farther than 25 m
+     from the top-1, computed after **centring the descriptors on the map mean** (reduces hubness).
+  3. **Combined split-conformal p-value**: `combined_p` (min of conformal p's of max-sim and z_far, re-calibrated by
+     leave-one-out null ranks).
+  4. **SelfCal-AA** (aliasing-aware): accept iff `max(p_comb, p_zgap) ≤ α`, where
+     `z_gap = (s1 − best far region)/σ_far`.
+- **Theory (paper §5):** T1 validity under exchangeability, T2 stochastic dominance ⇒ conservative, T3 FAR − α ≤ Δ⁺
+  (one-sided KS), T4 combination validity, T5 BH FDR (PRDS).
+- **Gate 2 (`LITERATURE_GATE.md`): novel.** Checked against RSF (Zaffar'25), map-density (Hussaini'26),
+  Trinh & Lyons, Schubert, meta-recognition, SAFEVPR and Quantile Transfer.
 
-Khởi đầu là ý tưởng **CCBF** (bộ lọc Bayes place×condition + temperature theo điều kiện). Qua ~9 thí nghiệm trên
-Kaggle, CCBF bị chứng minh **trơ**, pivot sang đóng góp mới **CRSG** (calibrated retrieval-score geometry) —
-đã verify trên **3 dataset (RobotCar, CMU, Nordland) + 2 descriptor (SALAD, DINOv2) + conformal guarantees +
-full-scale**. Bản thảo paper + bảng kết quả + nhật ký đã viết và push. **Gói contribution core coi như xong.**
-Việc còn lại là các đòn bẩy nặng để chắc A* (xem §4).
+## 2. Headline results (α = 0.05; 6 descriptors × 3 datasets = 18 settings, 138 deployment conditions)
 
-## 2. Bản đồ repo (những gì cần biết)
+| method | labels | violating cond. | settings ≥1 viol. | mean TPR |
+|---|---|---|---|---|
+| **SelfCal-AA** | none | **0/138** | **0/18** | 0.676 (median aliasing-accept 0.008, max worst FAR 0.040) |
+| SelfCal | none | 0/138 | 0/18 | 0.718 (Oracle 0.721) |
+| Conformal LOCO (SAFEVPR protocol) | other cond. | 38/138 | 18/18 | — |
+| Quantile Transfer | benign | 64/138 | — | — |
+| Threshold benign→all / CRSG | benign | 25/138 each | — | — |
 
-| File / thư mục | Nội dung |
+Robustness: Nordland with winter as the map passes 0/3. A 25 % RobotCar map gives FAR 0 and TPR 0.994. Ablations
+barely move the result, but centring is essential on Nordland (TPR 0.754 vs 0.329). Δ⁺ for the map null is at most
+0.052, against up to 0.255 for a labelled benign null. BH on the AA p-values keeps Nordland gross FDR at or below
+0.030.
+
+**Known weaknesses (stated in the paper's Limitations):**
+- DINOv2 CLS+mean stays valid but is conservative (TPR 0.06–0.33 vs oracle 0.39–0.70). Dual centring only lifts
+  this from 0.33 to 0.41, so it was not adopted.
+- Label-free confidence has poor ECE on Nordland (~0.14).
+- RobotCar test GT is withheld, so the evaluation uses the official map, official thresholds and the public train
+  split.
+- BoQ was not available: GitHub is blocked and there is no mirror. MixVPR, CosPlace, NetVLAD, MegaLoc and DINOv2 were
+  added instead.
+
+## 3. Code map
+
+| path | role |
 |---|---|
-| `PAPER_DRAFT.md` | Bản thảo paper: abstract, setup, §3 why remedies fail, §4 CRSG method, §5 results (5.1–5.6), contributions, limitations. **Điểm khởi đầu để viết full paper.** |
-| `RESULTS.md` | Bảng master: 3 dataset × method × metric (reliability + off-map + conformal + scale). |
-| `RESEARCH_LOG.md` | Nhật ký honest 10 entry (Entry 1→10, newest-at-top). Toàn bộ reasoning + số liệu từng thí nghiệm. |
-| `handoff/01..03` | 3 file chuyển giao (khoa học / vận hành / cái này). |
-| `CCBF_methodology.md` | Method+Theory CŨ của CCBF (4 định lý). CCBF đã bị bỏ — giữ làm tham chiếu, phần lý thuyết temperature không còn là contribution. |
-| `DIVE_HMM_CCBF_NB3..14.ipynb` + `nbX_src/` | Notebook + source build-from-src (xem bảng §3). |
-| `automation/` | `build_nb.py`, `run_stall.py` (T4 runner), `run_rtx2.py` (RTX runner có delete-restart), `make_meta.py` (T4/RTX metadata), `md2pdf.py`. |
-| `HANDOFF_CCBF.md/.pdf` | Handoff CŨ (thời CCBF) — đã lỗi thời về khoa học; giữ cho lịch sử. |
+| `nb15_src/` | Kaggle descriptor-dump notebook. `40_run.src` runs every descriptor in one image pass and writes fp16 `.npy` plus meta npz. The kernel dir needs a generated `15_sel.src` with `DUMP = [...]` and `DESCRIPTORS = [...]`. Build with `python automation/build_nb.py out.ipynb ../nb15_src`. |
+| `automation/run_kernel.py` | `run_kernel.py <kernel_dir> <out_dir> [stall=600] [max_restarts=4] [hard=10800] [silent_max=0] [--attach]`. Only a kernel QUEUED for more than 10 min is cancelled (`kaggle kernels delete -y`) and re-pushed. Silent-restart is OFF because Kaggle hides RUNNING logs. |
+| `automation/make_meta.py` | `kernel-metadata.json` (tier `t4` default, `rtx` for RTX PRO 6000). |
+| `automation/vpr_extra.py` | Offline builders for MixVPR, CosPlace, NetVLAD and MegaLoc (weights in dataset `nhatlong1103/vpr-descriptor-weights`). |
+| `analysis/vprlib.py` | Episode loaders (RobotCar, CMU merged, Nordland with `ref=`), metrics, BH, nearest-map distance. |
+| `analysis/selfcal.py` | Core method: `query_stats`, `lobo_stats`, `map_null`, `conformal_p`, `combined_p`, plus the online class `SelfCalAA` (24 s offline for a 6954-image map, ~10 ms/query). |
+| `analysis/sc_eval.py` | `CFG` per dataset (cell, excl, k, block, off_d, in_d, tol). |
+| `analysis/eval_all.py` | Main comparison (all baselines). Writes `analysis/results/eval_<ds>_<desc>.json` and caches in `analysis/cache/` (git-ignored). |
+| `analysis/exp3..exp8` | FDR/confidence, aliasing, ablation, dominance Δ⁺, map size, dual centring. |
+| `analysis/run_descriptors.sh`, `summarize.py`, `figures2.py` | Batch eval, summary tables, paper figures. |
+| `paper/` | `selfcal_paper.md` (source text). `build_tables.py` produces `tables.md`. `build_paper.py` produces `SelfCal_paper_full.md` and `.pdf`. |
 
-## 3. Các notebook & kernel đã có (Kaggle slug `nhatlong1103/<slug>`)
+**Reproduce:** run `bash analysis/run_descriptors.sh <dump_rc_nord> <dump_cmu> salad,megaloc,dinov2,mixvpr,cosplace,netvlad`,
+then `python3 analysis/figures2.py <dump> ...`, then `python3 paper/build_paper.py`.
 
-| NB | Kernel slug | Mục đích | Trạng thái/kết quả |
-|---|---|---|---|
-| NB3 | dive-hmm-ccbf-nb3 | RobotCar per-condition τ diagnostic | DONE — τ inert (pivot) |
-| NB4 | dive-hmm-ccbf-nb4 | RobotCar reliability gating | DONE — filter/CCBF fail |
-| NB5 | dive-hmm-ccbf-nb5 | Diagnose + instantaneous calibration probe | DONE — breakthrough (margin) |
-| NB6 | dive-hmm-ccbf-nb6 | CRSG validation (tolerance sweep) RobotCar | DONE — CRSG dominates |
-| NB7 | dive-hmm-ccbf-nb7 | Cross-dataset Nordland | DONE — regime-dependence |
-| NB8 | dive-hmm-ccbf-nb8 | Unified "calibrate the belief" | DONE — calibration can't rescue filter |
-| NB9 | dive-hmm-ccbf-nb9 | Descriptor-agnostic (DINOv2) | DONE — calibration/off-map agnostic |
-| NB11 | dive-hmm-ccbf-nb11 | CMU single-slice | DONE — CRSG dominates |
-| NB12 | dive-hmm-ccbf-nb12 | Conformal risk control | DONE — C1/C2/C3 |
-| NB13 | dive-hmm-ccbf-nb13 | Nordland large-scale (3000/mùa, T4) | DONE — scale consistent |
-| NB14 | dive-hmm-ccbf-nb14 | CMU multi-slice large-scale (T4) | DONE — scale consistent |
-| (probe) | dive-hmm-cmu-probe | CMU structure probe | DONE |
+## 4. Data (descriptor dumps, ~2.9 GB, NOT in git)
 
-Mỗi NB build từ `nbX_src/` bằng `python automation/build_nb.py <out.ipynb> ../nbX_src`. Chạy bằng
-`automation/run_stall.py` (T4) hoặc `run_rtx2.py` (RTX). CRSG core nằm ở `nb6_src/50_method.src`; conformal ở
-`nb12_src/50_conformal.src`; CMU multi-slice ở `nb14_src/40_cmu_multi.src`.
+The dumps are outputs of four Kaggle kernels. They were run on T4 and their datasets are `nhatlong1103/bundle`,
+`robotcar-seasons-v2`, `nordland-full-47-6gb`, `vpr-descriptor-weights` and the CMU dataset.
 
-## 4. VIỆC TIẾP THEO (user chỉ định, theo thứ tự)
+| kernel | content | local path used last session (scratchpad, ephemeral) |
+|---|---|---|
+| `nhatlong1103/dive-vpr-nb15a-dump` | SALAD for RobotCar and Nordland | `out15a/dump` |
+| `nhatlong1103/dive-vpr-nb15b-dump` | SALAD for CMU | `out15b/dump` |
+| `nhatlong1103/dive-vpr-nb15c-dump` | DINOv2, NetVLAD, CosPlace, MixVPR and MegaLoc for RobotCar and Nordland | `out15c/dump` |
+| `nhatlong1103/dive-vpr-nb15d-dump` | the same five descriptors for CMU | `out15d/dump` |
 
-### Bước 0 (GATE) — Kiểm tra trùng lặp với literature
-Trước khi đầu tư thêm: **kiểm tra contribution CRSG + reality-check có trùng ý tưởng paper nào không.**
-- Từ khóa tìm: "visual place recognition uncertainty / calibration", "selective prediction VPR", "retrieval
-  score margin confidence", "conformal prediction place recognition / retrieval", "out-of-distribution VPR /
-  off-map detection", "SUE place recognition uncertainty (Zaffar 2024)", "when does sequence help VPR".
-- Cần phân biệt rõ CRSG với: SUE (Zaffar CVPR'24 — chỉ NN-distance), temperature scaling, SeqSLAM/HMM-VPR,
-  learned uncertainty heads (BTL, STUN), conformal prediction cho image retrieval.
-- **Nếu trùng mạnh** → quay lại Phase 2 (sinh ý tưởng), dùng các asset đã có (reliability protocol, regime-
-  dependence finding) làm điểm tựa.
-- **Nếu không trùng** → tiến hành các bước dưới.
+Fetch a dump in a new container with `kaggle kernels output nhatlong1103/dive-vpr-nb15a-dump -p <dir>`. Do not push a
+new version under these slugs, because that replaces their outputs.
 
-### Bước 1 — Benchmark RobotCar-Seasons CHÍNH THỨC (ưu tiên cao nhất cho credibility)
-- Dùng **test split chuẩn** (`robotcar_v2_test.txt`) + **ngưỡng chuẩn 0.25m/0.5m/5m** (+ góc 2°/5°/10° nếu khai
-  thác được rotation từ quaternion/pose). Hiện tại đang dùng pose-GT tự dựng từ train.txt → cần thay bằng protocol
-  chính thức để reviewer tin.
-- Lưu ý: cần poses cho `overcast-reference` (map) — lấy từ `3D-models/all.nvm` hoặc `.db` (chưa làm). Hoặc dùng
-  đúng submission format của benchmark RobotCar-Seasons.
+## 5. Next steps (if continuing toward A*)
 
-### Bước 2 — Thêm descriptor (BoQ / MixVPR) — **quy trình user yêu cầu**
-- CRSG mới test SALAD + DINOv2 (cùng backbone DINOv2). Thêm descriptor **khác hẳn** (BoQ, MixVPR) để claim
-  descriptor-agnostic mạnh.
-- **Quy trình bắt buộc (user chỉ định):** descriptor cần tải → **tải về MÁY CỦA USER** (cung cấp lệnh/script hoặc
-  dùng cơ chế download-to-user-machine) → **upload lên thành Kaggle dataset** → **tự import vào notebook** và chạy.
-  (Khung chat mới cần hỏi/hướng dẫn user hoặc dùng công cụ phù hợp để đưa file về máy user rồi lên Kaggle.)
-- Trọng số BoQ/MixVPR không có trong `bundle` hiện tại → phải thêm.
+1. **Power for weak descriptors.** DINOv2 is the one setting where SelfCal is conservative. Candidates are a
+   per-descriptor statistic choice selected on the map null only, or sequential evidence (combining p-values over
+   consecutive frames, which stays valid by the T4 logic).
+2. **More datasets.** A fourth geo-tagged benchmark with GPS (MSLS val, Pitts30k or SF-XL) needs only the
+   leave-block-out protocol, no new labels. The 4Seasons Kaggle copy has no poses and cannot be used.
+3. **Paper polish.** Turn the markdown into a LaTeX venue template and add a qualitative figure (accepted vs rejected
+   aliasing examples).
 
-### Bước 3 — Figures + viết full paper
-- Figures cần: reliability diagrams, risk–coverage curves, ECE-vs-tolerance, bảng cross-dataset. Notebook nên
-  lưu PNG vào `/kaggle/working` rồi pull về (hiện các NB chỉ in số, chưa lưu hình).
-- Viết full paper từ `PAPER_DRAFT.md` (đã có khung + số thật).
+## 6. Ops reminders (details in `handoff/02_ENGINEERING_OPS_NOTES.md`)
 
-## 5. Khôi phục vận hành nhanh (khung chat mới làm ngay khi bắt đầu)
-1. Cài deps + token Kaggle (xem `handoff/02` §6). Verify: `kaggle kernels list --mine | head`.
-2. Branch đang là `claude/elegant-brown-xvnecd`; `git pull` để chắc chắn mới nhất.
-3. Đọc `RESEARCH_LOG.md` (10 entry) + `PAPER_DRAFT.md` + 2 file handoff khoa học/vận hành.
-4. Làm **Bước 0 (literature gate)** trước khi code thêm.
-
-## 6. Nguyên tắc giữ nguyên (từ user)
-- Tự chủ, **không hỏi quyết định** trừ khi thật sự cần; cứ chạy.
-- **Trung thực khoa học**: báo số đúng như nó là, kể cả negative; không oversell.
-- GPU RTX PRO 6000 cho large-scale; **nhưng** ưu tiên T4 nếu RTX bận (đã chứng minh T4 nhanh + chắc cho cỡ dữ
-  liệu hiện tại). Stall RTX 15 phút → delete + restart, tối đa 4 lần, rồi check lỗi.
-- Mỗi push: test local synthetic trước; build bằng `build_nb.py`; commit + push lên branch.
+- A T4 kernel starts at once and two can run concurrently. Use RTX only for large runs.
+- Datasets mount at `/kaggle/input/datasets/<owner>/<slug>`.
+- Do not run downloaded third-party code locally, because the sandbox classifier blocks it. Run it inside Kaggle
+  instead.
+- Restarting the container loses background waits. Re-attach with `run_kernel.py ... --attach`.

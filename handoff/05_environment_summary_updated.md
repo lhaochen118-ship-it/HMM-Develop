@@ -1,5 +1,7 @@
 # DIVE-HMM / CRSG — Dataset & Environment Summary (Updated 2026-10-28)
 
+> **Status update (2026-10-28):** the research direction is now SelfCal (label-free off-map false-accept control). MixVPR, CosPlace, NetVLAD and MegaLoc weights are in the Kaggle dataset `nhatlong1103/vpr-descriptor-weights`; BoQ is still unavailable. See `handoff/03_HANDOFF_NEW_CHAT.md`.
+
 *Bản cập nhật của "hmm_datasets_environment_summary". Giữ phần mô tả datasets + Offline Bundle; cập nhật hướng
 nghiên cứu (CCBF/B2 → CRSG reliability), bổ sung **định dạng pose-GT đã phát hiện** (quan trọng cho notebook) và
 **bài học vận hành T4/RTX** + **asset còn thiếu (BoQ/MixVPR)**.*

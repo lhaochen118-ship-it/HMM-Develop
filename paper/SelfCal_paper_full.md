@@ -150,8 +150,10 @@ the true place is a strong far competitor, so $z_{gap}$ is small.
 two-groups model (Storey's $\hat\pi_0$, Grenander density estimate) turns $p$ into a calibrated probability of a true
 match, $1-\widehat{\mathrm{lfdr}}(p)$ — again without labels.
 
-**Cost.** Offline: one self-retrieval pass over the map ($O(N^2d)$; seconds for $N\approx7{,}000$). Online: the
-similarity vector (needed for retrieval anyway), cell maxima and a binary search.
+**Cost.** Offline: one self-retrieval pass over the map with block hold-out — 24 s on 4 CPU cores for the
+6,954-image RobotCar map (8,448-d SALAD). Online: the similarity vector (needed for retrieval anyway), its centred
+counterpart, cell maxima (one `reduceat`) and three binary searches — about 10 ms per query on CPU in NumPy, both
+similarity products included.
 
 # 5. Guarantees
 

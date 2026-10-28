@@ -1,5 +1,7 @@
 # Research Workflow — Updated (2026-10-28)
 
+> **Status update (2026-10-28):** Phases 1–4 were redone for the SelfCal direction (gate → idea → Kaggle verification → paper). Current state and next steps: `handoff/03_HANDOFF_NEW_CHAT.md`.
+
 *Bản cập nhật của "Research Workflow" gốc, bổ sung TRẠNG THÁI HIỆN TẠI và VIỆC TIẾP THEO theo tiến độ dự án
 DIVE-HMM → CRSG. Phần quy trình (Phase 1–5) giữ nguyên tinh thần bản gốc; phần cuối là mapping tiến độ + next steps.*
 
