@@ -1,7 +1,7 @@
 # Handoff — SelfCal (for a FRESH chat window)
 
 *Updated 2026-10-28 after Entry 13. Supersedes the earlier CCBF/CRSG version of this file (git history). Read this,
-then `RESEARCH_LOG.md` Entries 11–13, `LITERATURE_GATE.md` and `RESULTS.md`. The paper is `paper/selfcal_paper.md`.*
+then `RESEARCH_LOG.md` Entries 11–14, `LITERATURE_GATE.md` and `RESULTS.md`. The paper is `paper/selfcal_paper.md`.*
 
 Repo `lhaochen118-ship-it/hmm-develop`, branch **`claude/elegant-brown-xvnecd`** (all work lives here; no PRs).
 Kaggle user **`nhatlong1103`**, token in `~/.kaggle/access_token` (re-create it from the user's message if the
@@ -63,11 +63,11 @@ barely move the result, but centring is essential on Nordland (TPR 0.754 vs 0.32
 | `analysis/sc_eval.py` | `CFG` per dataset (cell, excl, k, block, off_d, in_d, tol). |
 | `analysis/eval_all.py` | Main comparison (all baselines). Writes `analysis/results/eval_<ds>_<desc>.json` and caches in `analysis/cache/` (git-ignored). |
 | `analysis/exp3..exp8` | FDR/confidence, aliasing, ablation, dominance Δ⁺, map size, dual centring. |
-| `analysis/run_descriptors.sh`, `summarize.py`, `figures2.py` | Batch eval, summary tables, paper figures. |
+| `analysis/summarize.py`, `figures2.py` | Summary tables, paper figures. |
 | `paper/` | `selfcal_paper.md` (source text). `build_tables.py` produces `tables.md`. `build_paper.py` produces `SelfCal_paper_full.md` and `.pdf`. |
 
-**Reproduce:** run `bash analysis/run_descriptors.sh <dump_rc_nord> <dump_cmu> salad,megaloc,dinov2,mixvpr,cosplace,netvlad`,
-then `python3 analysis/figures2.py <dump> ...`, then `python3 paper/build_paper.py`.
+**Reproduce:** evaluations run on Kaggle: `automation/make_eval_kernel.py <dir> <slug> "eval_all.py <ds> <desc>;..." [--gpu] [--acc2]`,
+then `automation/run_kernel.py <dir> <out>`. Copy `<out>/results/*.json` to `analysis/results/` and run `python3 paper/build_paper.py`.
 
 ## 4. Data (descriptor dumps, ~2.9 GB, NOT in git)
 
