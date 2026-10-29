@@ -83,7 +83,7 @@ Mỗi ô ghi trung bình trên 6 descriptor × 3 lưới block, kèm (giá trị
 | RUN (không odometry) | 0.016 (0.09) [0.07] | 0.027 (0.07) [0.06] | 0.033 (0.08) [0.05] | 0.019 (0.04) [0.05] | 0.016 (0.05) [0.02] | 0.015 (0.06) [0.02] |
 | label-calibrated (SAFEVPR-style) | 0.044 (0.12) [0.12] | 0.044 (0.09) [0.09] | 0.016 (0.03) [0.02] | 0.022 (0.04) [0.04] | 0.010 (0.04) [0.01] | 0.025 (0.07) [0.02] |
 | **ANCH (ours)** | 0.016 (0.09) [0.07] | 0.022 (0.05) [0.05] | 0.020 (0.04) [0.03] | 0.020 (0.04) [0.05] | 0.014 (0.04) [0.02] | 0.015 (0.07) [0.02] |
-| **ANCHR (ours, không cần hướng)** | 0.014 (0.03) [0.07] | – | 0.013 (0.02) [0.03] | – | 0.008 (0.03) [0.01] | – |
+| **ANCHR (ours, không cần hướng)** | 0.017 (0.09) [0.07] | 0.023 (0.06) [0.05] | 0.020 (0.04) [0.03] | 0.020 (0.05) [0.05] | 0.014 (0.05) [0.02] | 0.015 (0.06) [0.02] |
 
 ### Bảng 2 — Power
 
@@ -95,7 +95,7 @@ Mỗi ô ghi: tỷ lệ frame on-map có match đúng được chứng nhận / 
 | RUN (không odometry) | 0.67 / 2 | 0.78 / 6 | 0.73 / 23 | 0.76 / 8 | 0.70 / 28 | 0.29 / 8 |
 | label-calibrated (cần nhãn) | 0.77 | 0.87 | 0.87 | 0.85 | 0.86 | 0.49 |
 | **ANCH (ours)** | 0.68 / 2 | 0.82 / 4 | 0.86 / 24 | 0.83 / 4 | 0.77 / 28 | 0.37 / 6 |
-| **ANCHR (ours)** | 0.59 / 2 | – | 0.78 / 27 | – | 0.63 / 31 | – |
+| **ANCHR (ours)** | 0.65 / 2 | 0.80 / 5 | 0.86 / 24 | 0.81 / 5 | 0.75 / 28 | 0.35 / 6 |
 
 ### Bảng 3 — Power theo descriptor: ANCH so với per-frame SelfCal
 
@@ -120,7 +120,7 @@ Mỗi ô là trung bình trên descriptor và lưới block. n = số đoạn nu
 | CMU-S. | 30 | – | 0.035 | 0.031 | 28 |
 | CMU-S. | 60 | – | – | 0.072 | – |
 | Nordland | 10 | 0.001 | 0.020 | 0.042 | 198 |
-| Nordland | 30 | – | 0.023 | 0.043 | 66 |
+| Nordland | 30 | – | 0.023 | 0.044 | 66 |
 | Nordland | 60 | – | 0.005 | 0.040 | 33 |
 | 4S office | 10 | 0.002 | 0.020 | 0.047 | 101 |
 | 4S office | 30 | – | 0.013 | 0.041 | 31 |
@@ -140,9 +140,9 @@ Mỗi ô là trung bình trên các nguồn query và descriptor, kèm (giá tr�
 
 | Bản đồ | per-frame | ANCH | ANCHR | nguồn query |
 |---|---|---|---|---|
-| 4S countryside | 0.000 (0.001) | 0.000 (0.000) | 0.000 (0.000) | 4S office, 4S old town, CMU-S., RobotCar-S. |
-| 4S office | 0.000 (0.000) | 0.001 (0.005) | 0.006 (0.016) | 4S countryside, 4S old town, CMU-S., RobotCar-S. |
-| 4S old town | 0.005 (0.021) | 0.004 (0.027) | 0.003 (0.020) | 4S countryside, 4S office, CMU-S., RobotCar-S. |
+| 4S countryside | 0.000 (0.002) | 0.000 (0.000) | 0.000 (0.000) | 4S office, 4S old town, CMU-S., RobotCar-S. |
+| 4S office | 0.000 (0.001) | 0.000 (0.005) | 0.001 (0.016) | 4S countryside, 4S old town, CMU-S., RobotCar-S. |
+| 4S old town | 0.005 (0.024) | 0.003 (0.027) | 0.002 (0.020) | 4S countryside, 4S office, CMU-S., RobotCar-S. |
 | CMU-S. | 0.000 (0.002) | 0.000 (0.000) | 0.000 (0.000) | 4S countryside, 4S office, 4S old town, RobotCar-S. |
 
 ### Bảng 6 — Điều hướng khép kín, bản đồ khuyết 30 % block
