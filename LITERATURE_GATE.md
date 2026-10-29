@@ -3,6 +3,38 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 6 (2026-10-29): HMM sequence localization — EVT-HMM and certified sequential localization (web search + abstracts)
+
+Searches: HMM/sequence VPR 2025–26; Bayes-filter overconfidence with correlated observations; anytime-valid /
+e-process localization; conformal sequential place recognition; EVT/Gumbel score normalisation in place recognition;
+tuning-free sequence matching; conformal scan statistics / segment-level false alarm; relocalization integrity.
+
+| Work | What it does | Relation |
+|---|---|---|
+| Xu, Fischer, Sünderhauf, Milford, RA-L'21 (arXiv 2107.07707) | Topometric filter with off-map state; off-map emission = k-th best likelihood; λ from the first query; parameters tuned per VPR method on training traverses; R@99%P | Baseline `hmm_kth`. No calibration, no FAR guarantee. |
+| Xu et al. RA-L'20 (2105.03091), Doan ICCV'19, MPF RA-L'19, Hansen & Browning'14 | HMM / Bayes filter / Viterbi over map images; heuristic emissions and thresholds | HMM baselines. |
+| SAFEVPR (2605.28048) | Conformal accept/reject for sequence VPR; Mondrian LTT; validity only empirical under condition shift | Closest "guarantee" work: labelled calibration, per-decision FDR, no excursion-level guarantee. |
+| TRAIL (Kloepfer & Wenzel 2026), Route-MHT/TAO (2607.04745) | Learned CRF with dustbin; multi-hypothesis Procrustes for map-out | No calibration or guarantee. |
+| Topometric AV localization with FF3D (2608.06021), SG2Loc (2606.11880) | Particle filters over places / scene graphs | Sequential belief, no off-map guarantee. |
+| VLM auditing of VPR (2607.12818) | Instance-level VLM verification, FAR 12 % | Empirical, per-instance. |
+| Claxton et al. RA-L'24 (2407.08162), integrity measures (IEEE 9830823) | Supervised integrity monitors | Need labels, no guarantee. |
+| Lajoie & Beltrame RA-L'23 (2203.04446) | Self-supervised domain calibration from pose-graph optimisation | Fine-tunes the network; no test/guarantee. |
+| Scheirer et al. (meta-recognition, W-score, EVT) | Weibull fit to non-match tail for score normalisation | Prior use of EVT for recognition scores; not in an HMM, not for VPR off-map. |
+| Conformal anomaly detection / scan martingales (2605.13642, 2606.11949) | Conformal p-values per window; per-window coverage ≠ time-uniform | Statistical background; the segment-as-unit calibration for dependent data is the standard remedy, not applied to localization. |
+
+**Verdict:**
+
+- **EVT-HMM** (Gumbel-tail emission + phantom off-map place, tuning-free) is novel as a combination. Empirically it is
+  not better than the tuned Xu'21 baseline (Entry 18). It is kept as an ablation, not as the contribution.
+- **Certified sequential localization:**
+  - odometry-gated Viterbi run evidence on per-frame map-calibrated p-values;
+  - calibrated with *held-out segments of the map's own traversal* as exchangeable units;
+  - this gives a label-free bound on P(any false acceptance during an off-map excursion), valid under arbitrary
+    within-segment dependence.
+
+  No paper found does this. Novel; proceed. Must cite SAFEVPR, Xu'21, exp11/SelfCal (own), conformal anomaly
+  detection.
+
 ## Gate 1 (2026-10-28, condensed): CRSG — pre-empted, dropped
 
 CRSG (a label-calibrated logistic gate on margin / max-sim / entropy, plus conformal risk control) overlaps existing

@@ -28,6 +28,10 @@ import vprlib as V, selfcal as SC
 from sc_eval import CFG
 
 A = 0.05
+ALPHAS = (0.01, 0.05, 0.1)
+KINDS = ("FRAME", "RUN", "RUNO", "ANCH")
+COUPLE = "--lmax30" not in sys.argv          # default: evidence horizon Lmax = guarantee horizon H
+sys.argv = [a for a in sys.argv if a != "--lmax30"]
 
 
 def odometry_sim(pos, sid, k, rng, R=None, scale_sd=0.03, step_sd=0.05):
@@ -62,6 +66,12 @@ def running(p, top, order, o, m_pos, kind, rho, rho_o, Lmax, alt=None):
     if alt is not None:
         p2, t2, msk = alt; use = ~msk[order]; P[use] = p2[order][use]; T[use] = t2[order][use]
     lp = -np.log(np.clip(P, 1e-12, 1)); X = m_pos[np.nan_to_num(T).astype(int)]; O = o[order]
+    if kind == "ANCH":            # all frames of the last Lmax whose match agrees with the last frame's hypothesis + odometry
+        for t in range(n):
+            j0 = max(0, t - Lmax + 1)
+            ok = np.linalg.norm((X[t] - X[j0:t + 1]) - (O[t] - O[j0:t + 1]), axis=1) <= rho_o
+            out[t] = lp[j0:t + 1][ok].sum()
+        return out
     for t in range(n):
         s = lp[t]
         if kind != "FRAME":
@@ -91,7 +101,7 @@ def main():
     if ds.startswith("4s:"): ep = V.load_4seasons(dump, desc, ds[3:]); c = CFG["cmu"]
     else: ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
     q_sid, q_k, m_sid, m_k = V.frame_order(dump, ds, ep, desc)
-    nord = ds in ("nord", "nordw"); rho = c["excl"]; rho_o = 1.0 if nord else 5.0; Lmax = 30
+    nord = ds in ("nord", "nordw"); rho = c["excl"]; rho_o = 1.0 if nord else 5.0; LMAX0 = 30
     HS = (5, 8) if ds == "rc" else (10, 30, 60)
     cond = np.asarray(ep.q_cond).astype(str); conds = sorted(set(cond))
     q_seqs = [np.where(q_sid == s)[0][np.argsort(q_k[q_sid == s])] for s in np.unique(q_sid)]
@@ -101,7 +111,7 @@ def main():
     Fr, Fc = SC.qm_stats(q, mr, ep.m_pos, c["cell"], c["excl"], c["k"]), SC.qm_stats(qc, mc, ep.m_pos, c["cell"], c["excl"], c["k"])
     inm = V.nearest_map_dist(ep) <= c["in_d"]; corr = V.correct(ep, *c["tol"]) & inm; _, dt, _ = V.top1_errors(ep)
     alias = inm & (dt > c["excl"])
-    out = {"ds": ds, "desc": desc, "alpha": A, "rho_o": rho_o, "Lmax": Lmax, "runs": []}
+    out = {"ds": ds, "desc": desc, "alpha": A, "rho_o": rho_o, "Lmax": "H" if COUPLE else LMAX0, "runs": []}
     for seed in range(seeds):
         t0 = time.time(); rng = np.random.default_rng(seed)
         V.GRID_OFFSET = None if seed == 0 else rng.uniform(0, 1, 2)
@@ -122,7 +132,8 @@ def main():
         else:
             o_q = odometry_sim(ep.q_pos, q_sid, q_k, rng); o_m = odometry_sim(ep.m_pos, m_sid, m_k, rng)
         run = {"seed": seed, "n_null_items": int(null_ok.sum()), "n_off": int(off_ok.sum()), "rows": []}
-        for kind in ("FRAME", "RUN", "RUNO"):
+        for kind, H in [(k, h) for k in KINDS for h in HS]:
+            Lmax = H if COUPLE else LMAX0
             Rn = np.full(len(ep.m), np.nan); Ri = np.full(len(q), np.nan); Rl = np.full(len(q), np.nan); Rf = np.full(len(q), np.nan)
             for order in m_seqs:
                 for ch in chunks(order, null_ok, bid): Rn[ch] = running(p_null, Nr["top"], np.array(ch), o_m, ep.m_pos, kind, rho, rho_o, Lmax)
@@ -136,7 +147,7 @@ def main():
                     lo = max(0, ii.min() - Lmax); sl = order[lo:ii.max() + 1]
                     r = running(p_off, Or_["top"], sl, o_q, ep.m_pos, kind, rho, rho_o, Lmax, alt=(p_full, Fr["top"], msk))
                     Rl[sl[msk[sl]]] = r[msk[sl]]
-            for H in HS:
+            for A in ALPHAS:
                 nseg = [s for order in m_seqs for ch in chunks(order, null_ok, bid) for s in (ch[i:i + H] for i in range(0, len(ch) - H + 1, H))]
                 oseg = [s for order in q_seqs for ch in chunks(order, off_ok, qb) for s in (ch[i:i + H] for i in range(0, len(ch) - H + 1, H))]
                 if len(nseg) < 1 / A or not oseg: continue
@@ -145,18 +156,28 @@ def main():
                 fi = np.array([Ri[s].max() > thr for s in oseg]); fl = np.array([Rl[s].max() > thr for s in oseg])
                 oc = np.array([cond[s[0]] for s in oseg])
                 acc = Rf > thr
+                # label-calibrated baseline: threshold = conformal quantile of LABELLED off-map segments of the calibration
+                # conditions (deployment-like data with labels, SAFEVPR / Quantile-Transfer style); tested on the others
+                cal = c.get("calib") or sorted(conds, key=lambda x: -corr[cond == x].mean())[:2]
+                lc = np.sort([Ri[s].max() for s, x in zip(oseg, oc) if x in cal]); kl = int(np.ceil((1 - A) * (len(lc) + 1)))
+                thr_l = lc[kl - 1] if 0 < kl <= len(lc) else np.inf
+                fl_l = np.array([Ri[s].max() > thr_l for s in oseg]); acc_l = Rf > thr_l
                 lat = []
                 for order in q_seqs:
                     hit = np.flatnonzero(acc[order] & corr[order])
                     lat.append(hit[0] if len(hit) else len(order))
-                row = dict(kind=kind, H=H, n_null_seg=len(ns), n_off_seg=len(oseg), thr=float(thr),
+                row = dict(alpha=A, kind=kind, H=H, Lmax=Lmax, n_null_seg=len(ns), n_off_seg=len(oseg), thr=float(thr),
                            FAR_iso=float(fi.mean()), FAR_lead=float(fl.mean()),
                            cond_iso={x: float(fi[oc == x].mean()) for x in conds if (oc == x).sum() >= 10},
                            cond_lead={x: float(fl[oc == x].mean()) for x in conds if (oc == x).sum() >= 10},
                            TPR=float(acc[corr].mean()), alias=float(acc[alias].mean()) if alias.any() else None,
                            cond_TPR={x: float(acc[corr & (cond == x)].mean()) for x in conds if (corr & (cond == x)).any()},
-                           latency_med=float(np.median(lat)), latency_mean=float(np.mean(lat)))
+                           latency_med=float(np.median(lat)), latency_mean=float(np.mean(lat)),
+                           label=dict(calib=list(cal), thr=float(thr_l), FAR=float(fl_l[~np.isin(oc, cal)].mean()),
+                                      cond={x: float(fl_l[oc == x].mean()) for x in conds if x not in cal and (oc == x).sum() >= 10},
+                                      TPR=float(acc_l[corr].mean())))
                 run["rows"].append(row)
+                if A != 0.05: continue
                 print(f"{ds}/{desc} s{seed} {kind:5s} H={H:2d} nullseg {len(ns):4d} offseg {len(oseg):5d} | FAR iso {row['FAR_iso']:.3f} "
                       f"(worst {max(row['cond_iso'].values() or [0]):.3f}) lead {row['FAR_lead']:.3f} (worst {max(row['cond_lead'].values() or [0]):.3f}) "
                       f"| TPR {row['TPR']:.3f} alias {row['alias']} latency {row['latency_med']:.0f}", flush=True)
