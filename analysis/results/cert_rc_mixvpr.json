@@ -1593,6 +1593,402 @@
       },
       "TPR": 0.8425925925925926
      }
+    },
+    {
+     "alpha": 0.01,
+     "kind": "ANCHR",
+     "H": 5,
+     "Lmax": 5,
+     "n_null_seg": 733,
+     "n_off_seg": 220,
+     "thr": 17.229812394407137,
+     "FAR_iso": 0.004545454545454545,
+     "FAR_lead": 0.004545454545454545,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.041666666666666664
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.041666666666666664
+     },
+     "TPR": 0.5537037037037037,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.6057692307692307,
+      "dusk": 0.6235294117647059,
+      "night": 0.15315315315315314,
+      "night-rain": 0.20422535211267606,
+      "overcast-summer": 0.6338028169014085,
+      "overcast-winter": 0.6108108108108108,
+      "rain": 0.6432432432432432,
+      "snow": 0.6513761467889908,
+      "sun": 0.5851063829787234
+     },
+     "latency_med": 3.0,
+     "latency_mean": 4.226666666666667,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": Infinity,
+      "FAR": 0.0,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.0,
+       "night": 0.0,
+       "night-rain": 0.0,
+       "rain": 0.0,
+       "snow": 0.0,
+       "sun": 0.0
+      },
+      "TPR": 0.0
+     }
+    },
+    {
+     "alpha": 0.05,
+     "kind": "ANCHR",
+     "H": 5,
+     "Lmax": 5,
+     "n_null_seg": 733,
+     "n_off_seg": 220,
+     "thr": 12.494914336312927,
+     "FAR_iso": 0.004545454545454545,
+     "FAR_lead": 0.004545454545454545,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.041666666666666664
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.041666666666666664
+     },
+     "TPR": 0.6845679012345679,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.7403846153846154,
+      "dusk": 0.7529411764705882,
+      "night": 0.26126126126126126,
+      "night-rain": 0.3380281690140845,
+      "overcast-summer": 0.755868544600939,
+      "overcast-winter": 0.7513513513513513,
+      "rain": 0.7621621621621621,
+      "snow": 0.7798165137614679,
+      "sun": 0.7393617021276596
+     },
+     "latency_med": 2.0,
+     "latency_mean": 3.3244444444444445,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 6.267424053439129,
+      "FAR": 0.03468208092485549,
+      "cond": {
+       "dawn": 0.03571428571428571,
+       "dusk": 0.0,
+       "night": 0.041666666666666664,
+       "night-rain": 0.0,
+       "rain": 0.047619047619047616,
+       "snow": 0.0,
+       "sun": 0.125
+      },
+      "TPR": 0.8265432098765432
+     }
+    },
+    {
+     "alpha": 0.1,
+     "kind": "ANCHR",
+     "H": 5,
+     "Lmax": 5,
+     "n_null_seg": 733,
+     "n_off_seg": 220,
+     "thr": 9.322119149515906,
+     "FAR_iso": 0.004545454545454545,
+     "FAR_lead": 0.004545454545454545,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.041666666666666664
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.041666666666666664
+     },
+     "TPR": 0.7598765432098765,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.8125,
+      "dusk": 0.8058823529411765,
+      "night": 0.4594594594594595,
+      "night-rain": 0.4647887323943662,
+      "overcast-summer": 0.8028169014084507,
+      "overcast-winter": 0.8216216216216217,
+      "rain": 0.8216216216216217,
+      "snow": 0.8394495412844036,
+      "sun": 0.7978723404255319
+     },
+     "latency_med": 2.0,
+     "latency_mean": 2.7866666666666666,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 4.55406386430587,
+      "FAR": 0.08670520231213873,
+      "cond": {
+       "dawn": 0.07142857142857142,
+       "dusk": 0.0,
+       "night": 0.08333333333333333,
+       "night-rain": 0.0,
+       "rain": 0.23809523809523808,
+       "snow": 0.034482758620689655,
+       "sun": 0.20833333333333334
+      },
+      "TPR": 0.9419753086419753
+     }
+    },
+    {
+     "alpha": 0.01,
+     "kind": "ANCHR",
+     "H": 8,
+     "Lmax": 8,
+     "n_null_seg": 453,
+     "n_off_seg": 127,
+     "thr": 29.041597232419274,
+     "FAR_iso": 0.0,
+     "FAR_lead": 0.0,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "TPR": 0.2796296296296296,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.3125,
+      "dusk": 0.31176470588235294,
+      "night": 0.05405405405405406,
+      "night-rain": 0.1056338028169014,
+      "overcast-summer": 0.323943661971831,
+      "overcast-winter": 0.31891891891891894,
+      "rain": 0.2972972972972973,
+      "snow": 0.3394495412844037,
+      "sun": 0.30319148936170215
+     },
+     "latency_med": 6.0,
+     "latency_mean": 6.426666666666667,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": Infinity,
+      "FAR": 0.0,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.0,
+       "night": 0.0,
+       "night-rain": 0.0,
+       "rain": 0.0,
+       "snow": 0.0,
+       "sun": 0.0
+      },
+      "TPR": 0.0
+     }
+    },
+    {
+     "alpha": 0.05,
+     "kind": "ANCHR",
+     "H": 8,
+     "Lmax": 8,
+     "n_null_seg": 453,
+     "n_off_seg": 127,
+     "thr": 18.484673999559426,
+     "FAR_iso": 0.007874015748031496,
+     "FAR_lead": 0.007874015748031496,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.07142857142857142
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.07142857142857142
+     },
+     "TPR": 0.5746913580246914,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.6298076923076923,
+      "dusk": 0.6294117647058823,
+      "night": 0.21621621621621623,
+      "night-rain": 0.28169014084507044,
+      "overcast-summer": 0.647887323943662,
+      "overcast-winter": 0.6162162162162163,
+      "rain": 0.6432432432432432,
+      "snow": 0.6513761467889908,
+      "sun": 0.6170212765957447
+     },
+     "latency_med": 3.0,
+     "latency_mean": 4.231111111111111,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 7.880222926879695,
+      "FAR": 0.03,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.0,
+       "night": 0.08333333333333333,
+       "night-rain": 0.0,
+       "rain": 0.07692307692307693,
+       "snow": 0.0,
+       "sun": 0.07142857142857142
+      },
+      "TPR": 0.8314814814814815
+     }
+    },
+    {
+     "alpha": 0.1,
+     "kind": "ANCHR",
+     "H": 8,
+     "Lmax": 8,
+     "n_null_seg": 453,
+     "n_off_seg": 127,
+     "thr": 13.415672109937717,
+     "FAR_iso": 0.007874015748031496,
+     "FAR_lead": 0.007874015748031496,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.07142857142857142
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.07142857142857142
+     },
+     "TPR": 0.6962962962962963,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.75,
+      "dusk": 0.7529411764705882,
+      "night": 0.36036036036036034,
+      "night-rain": 0.3873239436619718,
+      "overcast-summer": 0.755868544600939,
+      "overcast-winter": 0.7513513513513513,
+      "rain": 0.7621621621621621,
+      "snow": 0.7660550458715596,
+      "sun": 0.75
+     },
+     "latency_med": 2.0,
+     "latency_mean": 3.3333333333333335,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 6.215552222732288,
+      "FAR": 0.05,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.0,
+       "night": 0.08333333333333333,
+       "night-rain": 0.0,
+       "rain": 0.15384615384615385,
+       "snow": 0.058823529411764705,
+       "sun": 0.07142857142857142
+      },
+      "TPR": 0.8376543209876544
+     }
     }
    ]
   },
@@ -3183,6 +3579,402 @@
        "sun": 0.07692307692307693
       },
       "TPR": 0.9487654320987654
+     }
+    },
+    {
+     "alpha": 0.01,
+     "kind": "ANCHR",
+     "H": 5,
+     "Lmax": 5,
+     "n_null_seg": 395,
+     "n_off_seg": 204,
+     "thr": 27.647145437557118,
+     "FAR_iso": 0.0,
+     "FAR_lead": 0.0,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "TPR": 0.0,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "latency_med": 9.0,
+     "latency_mean": 8.471111111111112,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": Infinity,
+      "FAR": 0.0,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.0,
+       "night": 0.0,
+       "night-rain": 0.0,
+       "rain": 0.0,
+       "snow": 0.0,
+       "sun": 0.0
+      },
+      "TPR": 0.0
+     }
+    },
+    {
+     "alpha": 0.05,
+     "kind": "ANCHR",
+     "H": 5,
+     "Lmax": 5,
+     "n_null_seg": 395,
+     "n_off_seg": 204,
+     "thr": 21.078438636260156,
+     "FAR_iso": 0.004901960784313725,
+     "FAR_lead": 0.004901960784313725,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.043478260869565216
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.043478260869565216
+     },
+     "TPR": 0.5524691358024691,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.5961538461538461,
+      "dusk": 0.6352941176470588,
+      "night": 0.11711711711711711,
+      "night-rain": 0.2112676056338028,
+      "overcast-summer": 0.6338028169014085,
+      "overcast-winter": 0.6162162162162163,
+      "rain": 0.6432432432432432,
+      "snow": 0.6513761467889908,
+      "sun": 0.5851063829787234
+     },
+     "latency_med": 3.0,
+     "latency_mean": 4.262222222222222,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 5.225819702491466,
+      "FAR": 0.055900621118012424,
+      "cond": {
+       "dawn": 0.038461538461538464,
+       "dusk": 0.043478260869565216,
+       "night": 0.047619047619047616,
+       "night-rain": 0.0,
+       "rain": 0.15789473684210525,
+       "snow": 0.0,
+       "sun": 0.13043478260869565
+      },
+      "TPR": 0.9388888888888889
+     }
+    },
+    {
+     "alpha": 0.1,
+     "kind": "ANCHR",
+     "H": 5,
+     "Lmax": 5,
+     "n_null_seg": 395,
+     "n_off_seg": 204,
+     "thr": 13.387349138352738,
+     "FAR_iso": 0.004901960784313725,
+     "FAR_lead": 0.004901960784313725,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.043478260869565216
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.043478260869565216
+     },
+     "TPR": 0.6907407407407408,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.7403846153846154,
+      "dusk": 0.7588235294117647,
+      "night": 0.27927927927927926,
+      "night-rain": 0.3591549295774648,
+      "overcast-summer": 0.7605633802816901,
+      "overcast-winter": 0.7621621621621621,
+      "rain": 0.7621621621621621,
+      "snow": 0.7798165137614679,
+      "sun": 0.7446808510638298
+     },
+     "latency_med": 2.0,
+     "latency_mean": 3.2933333333333334,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 4.551294305862319,
+      "FAR": 0.062111801242236024,
+      "cond": {
+       "dawn": 0.038461538461538464,
+       "dusk": 0.043478260869565216,
+       "night": 0.09523809523809523,
+       "night-rain": 0.0,
+       "rain": 0.15789473684210525,
+       "snow": 0.0,
+       "sun": 0.13043478260869565
+      },
+      "TPR": 0.9407407407407408
+     }
+    },
+    {
+     "alpha": 0.01,
+     "kind": "ANCHR",
+     "H": 8,
+     "Lmax": 8,
+     "n_null_seg": 243,
+     "n_off_seg": 116,
+     "thr": 43.53433322277216,
+     "FAR_iso": 0.0,
+     "FAR_lead": 0.0,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "TPR": 0.17160493827160495,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.20192307692307693,
+      "dusk": 0.21176470588235294,
+      "night": 0.02702702702702703,
+      "night-rain": 0.035211267605633804,
+      "overcast-summer": 0.20187793427230047,
+      "overcast-winter": 0.15675675675675677,
+      "rain": 0.1945945945945946,
+      "snow": 0.23853211009174313,
+      "sun": 0.1702127659574468
+     },
+     "latency_med": 7.0,
+     "latency_mean": 7.217777777777778,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": Infinity,
+      "FAR": 0.0,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.0,
+       "night": 0.0,
+       "night-rain": 0.0,
+       "rain": 0.0,
+       "snow": 0.0,
+       "sun": 0.0
+      },
+      "TPR": 0.0
+     }
+    },
+    {
+     "alpha": 0.05,
+     "kind": "ANCHR",
+     "H": 8,
+     "Lmax": 8,
+     "n_null_seg": 243,
+     "n_off_seg": 116,
+     "thr": 30.449522191020463,
+     "FAR_iso": 0.0,
+     "FAR_lead": 0.0,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "TPR": 0.35987654320987655,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.40865384615384615,
+      "dusk": 0.4,
+      "night": 0.09009009009009009,
+      "night-rain": 0.15492957746478872,
+      "overcast-summer": 0.41784037558685444,
+      "overcast-winter": 0.3891891891891892,
+      "rain": 0.3783783783783784,
+      "snow": 0.44036697247706424,
+      "sun": 0.3776595744680851
+     },
+     "latency_med": 5.0,
+     "latency_mean": 5.8533333333333335,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 8.155836122057204,
+      "FAR": 0.01098901098901099,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.0,
+       "night": 0.0,
+       "night-rain": 0.0,
+       "rain": 0.0,
+       "snow": 0.0,
+       "sun": 0.07692307692307693
+      },
+      "TPR": 0.8296296296296296
+     }
+    },
+    {
+     "alpha": 0.1,
+     "kind": "ANCHR",
+     "H": 8,
+     "Lmax": 8,
+     "n_null_seg": 243,
+     "n_off_seg": 116,
+     "thr": 19.71085324855386,
+     "FAR_iso": 0.008620689655172414,
+     "FAR_lead": 0.008620689655172414,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.07692307692307693
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.07692307692307693
+     },
+     "TPR": 0.5814814814814815,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.6298076923076923,
+      "dusk": 0.6411764705882353,
+      "night": 0.2072072072072072,
+      "night-rain": 0.2887323943661972,
+      "overcast-summer": 0.647887323943662,
+      "overcast-winter": 0.6432432432432432,
+      "rain": 0.6432432432432432,
+      "snow": 0.6605504587155964,
+      "sun": 0.6276595744680851
+     },
+     "latency_med": 3.0,
+     "latency_mean": 4.182222222222222,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 5.951227745269633,
+      "FAR": 0.06593406593406594,
+      "cond": {
+       "dawn": 0.07142857142857142,
+       "dusk": 0.0,
+       "night": 0.0,
+       "night-rain": 0.0,
+       "rain": 0.25,
+       "snow": 0.06666666666666667,
+       "sun": 0.07692307692307693
+      },
+      "TPR": 0.8401234567901235
      }
     }
    ]
@@ -4775,8 +5567,405 @@
       },
       "TPR": 0.9623456790123457
      }
+    },
+    {
+     "alpha": 0.01,
+     "kind": "ANCHR",
+     "H": 5,
+     "Lmax": 5,
+     "n_null_seg": 270,
+     "n_off_seg": 202,
+     "thr": 19.660377566995987,
+     "FAR_iso": 0.0049504950495049506,
+     "FAR_lead": 0.0049504950495049506,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.05
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.05
+     },
+     "TPR": 0.5574074074074075,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.6057692307692307,
+      "dusk": 0.6352941176470588,
+      "night": 0.12612612612612611,
+      "night-rain": 0.2112676056338028,
+      "overcast-summer": 0.6338028169014085,
+      "overcast-winter": 0.6324324324324324,
+      "rain": 0.6432432432432432,
+      "snow": 0.6513761467889908,
+      "sun": 0.5957446808510638
+     },
+     "latency_med": 3.0,
+     "latency_mean": 4.235555555555556,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": Infinity,
+      "FAR": 0.0,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.0,
+       "night": 0.0,
+       "night-rain": 0.0,
+       "rain": 0.0,
+       "snow": 0.0,
+       "sun": 0.0
+      },
+      "TPR": 0.0
+     }
+    },
+    {
+     "alpha": 0.05,
+     "kind": "ANCHR",
+     "H": 5,
+     "Lmax": 5,
+     "n_null_seg": 270,
+     "n_off_seg": 202,
+     "thr": 11.394933183904293,
+     "FAR_iso": 0.0049504950495049506,
+     "FAR_lead": 0.0049504950495049506,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.05
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.05
+     },
+     "TPR": 0.8061728395061728,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.8798076923076923,
+      "dusk": 0.8764705882352941,
+      "night": 0.4144144144144144,
+      "night-rain": 0.43661971830985913,
+      "overcast-summer": 0.8779342723004695,
+      "overcast-winter": 0.8702702702702703,
+      "rain": 0.8810810810810811,
+      "snow": 0.8853211009174312,
+      "sun": 0.8617021276595744
+     },
+     "latency_med": 1.0,
+     "latency_mean": 2.493333333333333,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 5.132826822271786,
+      "FAR": 0.04487179487179487,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.05555555555555555,
+       "night": 0.045454545454545456,
+       "night-rain": 0.0,
+       "rain": 0.043478260869565216,
+       "snow": 0.037037037037037035,
+       "sun": 0.15
+      },
+      "TPR": 0.9401234567901234
+     }
+    },
+    {
+     "alpha": 0.1,
+     "kind": "ANCHR",
+     "H": 5,
+     "Lmax": 5,
+     "n_null_seg": 270,
+     "n_off_seg": 202,
+     "thr": 9.492594283142619,
+     "FAR_iso": 0.01485148514851485,
+     "FAR_lead": 0.01485148514851485,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.05555555555555555,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.041666666666666664,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.05
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.05555555555555555,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.041666666666666664,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.05
+     },
+     "TPR": 0.8135802469135802,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.8798076923076923,
+      "dusk": 0.8764705882352941,
+      "night": 0.4594594594594595,
+      "night-rain": 0.4507042253521127,
+      "overcast-summer": 0.8779342723004695,
+      "overcast-winter": 0.8810810810810811,
+      "rain": 0.8810810810810811,
+      "snow": 0.8899082568807339,
+      "sun": 0.8723404255319149
+     },
+     "latency_med": 1.0,
+     "latency_mean": 2.448888888888889,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 3.34109345759245,
+      "FAR": 0.10256410256410256,
+      "cond": {
+       "dawn": 0.125,
+       "dusk": 0.1111111111111111,
+       "night": 0.045454545454545456,
+       "night-rain": 0.0,
+       "rain": 0.17391304347826086,
+       "snow": 0.1111111111111111,
+       "sun": 0.15
+      },
+      "TPR": 0.9530864197530864
+     }
+    },
+    {
+     "alpha": 0.01,
+     "kind": "ANCHR",
+     "H": 8,
+     "Lmax": 8,
+     "n_null_seg": 167,
+     "n_off_seg": 117,
+     "thr": 31.00233211321825,
+     "FAR_iso": 0.0,
+     "FAR_lead": 0.0,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.0
+     },
+     "TPR": 0.36234567901234566,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.40384615384615385,
+      "dusk": 0.3941176470588235,
+      "night": 0.10810810810810811,
+      "night-rain": 0.13380281690140844,
+      "overcast-summer": 0.40375586854460094,
+      "overcast-winter": 0.41081081081081083,
+      "rain": 0.3945945945945946,
+      "snow": 0.44036697247706424,
+      "sun": 0.39361702127659576
+     },
+     "latency_med": 5.0,
+     "latency_mean": 5.84,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": Infinity,
+      "FAR": 0.0,
+      "cond": {
+       "dawn": 0.0,
+       "dusk": 0.0,
+       "night": 0.0,
+       "night-rain": 0.0,
+       "rain": 0.0,
+       "snow": 0.0,
+       "sun": 0.0
+      },
+      "TPR": 0.0
+     }
+    },
+    {
+     "alpha": 0.05,
+     "kind": "ANCHR",
+     "H": 8,
+     "Lmax": 8,
+     "n_null_seg": 167,
+     "n_off_seg": 117,
+     "thr": 21.04754326632657,
+     "FAR_iso": 0.008547008547008548,
+     "FAR_lead": 0.008547008547008548,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.08333333333333333
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.0,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.08333333333333333
+     },
+     "TPR": 0.5820987654320988,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.6346153846153846,
+      "dusk": 0.6411764705882353,
+      "night": 0.2072072072072072,
+      "night-rain": 0.29577464788732394,
+      "overcast-summer": 0.647887323943662,
+      "overcast-winter": 0.6324324324324324,
+      "rain": 0.6432432432432432,
+      "snow": 0.6605504587155964,
+      "sun": 0.6329787234042553
+     },
+     "latency_med": 3.0,
+     "latency_mean": 4.177777777777778,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 5.132826822271786,
+      "FAR": 0.06593406593406594,
+      "cond": {
+       "dawn": 0.07142857142857142,
+       "dusk": 0.0,
+       "night": 0.07692307692307693,
+       "night-rain": 0.0,
+       "rain": 0.08333333333333333,
+       "snow": 0.07692307692307693,
+       "sun": 0.16666666666666666
+      },
+      "TPR": 0.9493827160493827
+     }
+    },
+    {
+     "alpha": 0.1,
+     "kind": "ANCHR",
+     "H": 8,
+     "Lmax": 8,
+     "n_null_seg": 167,
+     "n_off_seg": 117,
+     "thr": 12.777140297679171,
+     "FAR_iso": 0.017094017094017096,
+     "FAR_lead": 0.017094017094017096,
+     "cond_iso": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.07692307692307693,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.08333333333333333
+     },
+     "cond_lead": {
+      "dawn": 0.0,
+      "dusk": 0.0,
+      "night": 0.07692307692307693,
+      "night-rain": 0.0,
+      "overcast-summer": 0.0,
+      "overcast-winter": 0.0,
+      "rain": 0.0,
+      "snow": 0.0,
+      "sun": 0.08333333333333333
+     },
+     "TPR": 0.7080246913580247,
+     "alias": 0.0,
+     "cond_TPR": {
+      "dawn": 0.7596153846153846,
+      "dusk": 0.7588235294117647,
+      "night": 0.3963963963963964,
+      "night-rain": 0.39436619718309857,
+      "overcast-summer": 0.7652582159624414,
+      "overcast-winter": 0.772972972972973,
+      "rain": 0.7621621621621621,
+      "snow": 0.7798165137614679,
+      "sun": 0.7606382978723404
+     },
+     "latency_med": 2.0,
+     "latency_mean": 3.2533333333333334,
+     "label": {
+      "calib": [
+       "overcast-summer",
+       "overcast-winter"
+      ],
+      "thr": 3.9538962295938926,
+      "FAR": 0.07692307692307693,
+      "cond": {
+       "dawn": 0.07142857142857142,
+       "dusk": 0.09090909090909091,
+       "night": 0.07692307692307693,
+       "night-rain": 0.0,
+       "rain": 0.08333333333333333,
+       "snow": 0.07692307692307693,
+       "sun": 0.16666666666666666
+      },
+      "TPR": 0.9611111111111111
+     }
     }
    ]
   }
- ]
+ ],
+ "noise": 1.0
 }
