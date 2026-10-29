@@ -160,6 +160,52 @@ log ARL₀ / KL của Lorden cho bài toán phát hiện thay đổi.
   - a_t có thể dự đoán (`cpc_pred`).
 - ARL₀ được kiểm bằng thực nghiệm trên mọi dataset (§5).
 
+## 3b. Mở rộng: cổng dự đoán (PG) và trạng thái off-map dead-reckoning (DR)
+
+*Code: `analysis/nav_demo.py`, hàm `cpc_joint`; luật `CPC-HMM +PG`, `+DR`, `+PG+DR`.*
+
+**Chẩn đoán dẫn tới mở rộng** (Boreas, `navframes_*.npz`, 2026-10-29):
+
+- FL của CPC-HMM trên Boreas **không** chủ yếu là độ trễ khi rời bản đồ. 47–72 % frame FL (MegaLoc, SALAD) nằm > 100
+  frame sau frame on-map cuối, trong đoạn off-map dài > 100 frame. Một rò rỉ p_out = 0.6 đặt đúng tại mép bản đồ (oracle) không đổi FL.
+- Fix sai của CPC-HMM ở rất xa: trung vị 111–182 m, p90 tới 954 m. Fix sai của Xu'21 chỉ cách 37–56 m (vùng xám ở mép).
+  Sai số điều hướng do vài chuỗi fix sai liên tiếp, nhất quán với odometry, ở một đoạn đường aliasing cách xa.
+- Cơ chế: trong lỗ bản đồ, chuỗi vị trí (không có trạng thái off-map) buộc phải đặt khối lượng lên bản đồ, nên trôi tới
+  đoạn aliasing Y. Cổng "top-1 khớp MAP hậu nghiệm" khi đó luôn đúng (MAP đã chạy theo top-1), và bằng chứng yếu nhưng
+  phụ thuộc (p ≈ 0.15 nhiều frame liền) tích luỹ thành báo on.
+- Trạng thái off-map của Xu'21 **không có vị trí**: vào lại bản đồ phân bố đều, nên cũng không ngăn được nhảy xa.
+
+**Mô hình.** Chạy chung hai chuỗi; b_t = P(x_t | on_t).
+
+1. *Trạng thái off-map dead-reckoning (DR).* Ghost G_t = N(μ_t, s_t²): μ là vị trí fix báo cuối cùng, cộng dồn odometry
+   khi đang off; s_t = s₀ + κ·(quãng đường từ fix cuối), với s₀ = excl và κ = 0.05 (cùng mô hình nhiễu của bộ lọc điều
+   hướng). Không có tham số tune bằng nhãn. Dự đoán chuỗi vị trí, có điều kiện on:
+
+   > b_t^pred ∝ P(on_{t−1})(1−p_out) · K∗b_{t−1} + P(off_{t−1}) · p_in · G_t
+
+   (DR tắt: G_t đều trên bản đồ, như Xu'21.)
+2. *Cổng dự đoán (PG).* g_t = Σ_{j: ‖m_j − m_top,t‖ ≤ excl} b_t^pred(j), tức xác suất dự đoán (trước khi thấy ảnh t, ngoài
+   vị trí top-1) rằng robot ở nơi top-1. Bằng chứng frame:
+
+   > ẽ^top_t = a_t + g_t · (e^top_t − a_t)
+
+**Bổ đề 4 (PG giữ tính e-value).** Vì e^top ≥ a (p ≤ 1, a ≤ 1) và g_t ∈ [0, 1], ta có a ≤ ẽ^top_t ≤ e^top_t từng
+điểm. Do đó E_{H0}[ẽ^top_t | F_{t−1}] ≤ E_{H0}[e^top_t | F_{t−1}] ≤ 1 dưới D, với **mọi** g_t, kể cả g_t phụ thuộc vào
+frame t qua m_top. Bổ đề 2 (luỹ thừa, trung bình) áp dụng nguyên vẹn.
+
+**Hệ quả 5.** Định lý 1 (ARL₀ ≥ (1−p_in)/p_in − R₀) giữ nguyên cho +PG, +DR, +PG+DR: DR chỉ đổi phân phối của chuỗi
+vị trí, không đổi LR_t ngoài qua g_t, và chuỗi hiện diện giữ p_out ≥ p_in.
+
+**Vì sao giảm fix sai xa.** Khi robot ở sâu trong lỗ, P(off) cao nên b^pred bị chi phối bởi G_t (gần vị trí
+dead-reckoning thật). Nơi aliasing Y cách xa ghost có g_t ≈ 0, nên ẽ^top = a < 1: bằng chứng âm, chuỗi hiện diện ở off.
+Khi robot ra khỏi lỗ đúng chỗ ghost dự đoán, g_t ≈ 1 ngay, nên độ trễ vào lại không tăng. Nếu ghost sai (khoá nhầm
+trước khi rời bản đồ), s_t tăng tuyến tính theo quãng đường, nên G_t loang dần và tái định vị toàn cục vẫn khả thi.
+
+**Liên hệ tài liệu.** "Gate" theo mật độ dự đoán và "coasting" (dự đoán track khi không có đo) là khái niệm chuẩn của
+IPDA/tracking. Điểm mới ở đây: (i) gate tác động lên một e-value hiệu chuẩn bằng bản đồ và chứng minh được là vẫn giữ
+tính e-value, nên giữ bảo đảm ARL₀; (ii) trạng thái off-map của HMM-VPR mang vị trí dead-reckoning thay vì không có vị
+trí (Xu'21, Hansen–Browning'14).
+
 ## 4. Định vị so với công trình gần nhất
 
 | | Bằng chứng on/off | Cần mô hình hoặc nhãn | Bảo đảm |
