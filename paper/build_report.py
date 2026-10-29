@@ -382,6 +382,53 @@ def main():
         A("- Đưa e-value ANCH vào mà không luỹ thừa 1/H làm FL trên CMU tăng lên 0.15. Đây chính là lỗi đếm lặp bằng chứng "
           "phụ thuộc (nguyên nhân 2) xuất hiện ở tầng hiện diện.")
         A("")
+    gg = [x for x in nav if x["runs"] and "CPC-HMM +GG" in x["runs"][0]["rules"]]
+    if gg:
+        A("### 5.4 Cổng dead-reckoning (CPC-HMM +GG) — sửa fix sai ở xa trong lỗ bản đồ")
+        A("")
+        A("**Chẩn đoán (Boreas, `nav_demo --dump`).** Fix sai của CPC-HMM nằm rất xa vị trí thật (trung vị 111–182 m, p90 "
+          "tới 954 m), sâu trong lỗ bản đồ (47–72 % frame báo sai cách frame on-map cuối > 100 frame). Fix sai của Xu'21 chỉ "
+          "cách 37–56 m. Trong lỗ, chuỗi vị trí trôi tới một đoạn đường giống (aliasing), cổng \"top-1 khớp MAP\" luôn qua, "
+          "và bằng chứng yếu nhưng phụ thuộc tích luỹ thành báo on. Các thử nghiệm p_out lớn hơn, p_out theo KL₀, rò rỉ ở mép "
+          "bản đồ, cổng dự đoán (PG) và trạng thái off-map dead-reckoning cho việc vào lại (DR) đều không sửa được.")
+        A("")
+        A("**Cơ chế.** Khi chưa báo nơi nào (P(on_{t−1}) ≤ ½), e-value top-1 được nhân với")
+        A("")
+        A("> g_t = (1−ρ)·exp(−d_t² / 2s_t²) + ρ,  d_t = ‖m_top,t − μ_t‖,  s_t = excl + κ·(quãng đường từ fix báo cuối)")
+        A("")
+        A("- μ_t là vị trí fix báo cuối cùng cộng odometry; κ = 0.05 (cùng mô hình nhiễu của bộ lọc điều hướng).")
+        A("- ρ = 0.1 là xác suất tiên nghiệm ghost sai: lối thoát sau một lần báo sai. Không có sàn (ρ = 0.01), Nordland bị khoá "
+          "chết. ρ chọn sau khi xem Boreas và Nordland, cố định cho mọi dataset.")
+        A("- a ≤ ẽ ≤ e^top từng điểm, nên ẽ vẫn là e-value và cận ARL₀ ≥ (1−p_in)/p_in − R₀ giữ nguyên (`paper/cpc_theory.md` §3b).")
+        A("- Baseline công bằng: cùng cổng dead-reckoning (dạng cứng, 2s) áp hậu kiểm lên fix của Xu'21 và certified (`+DRgate`).")
+        A("")
+        cols = [("HMM off-map (labels)", "Xu'21 (nhãn)"), ("HMM off-map (labels) +DRgate", "Xu'21 + DR gate"), ("certified (ours)", "certified"),
+                ("certified (ours) +DRgate", "certified + DR gate"), ("CPC-HMM (ours)", "CPC-HMM"), ("CPC-HMM +GG(rho=.01)", "CPC +GG (ρ = 0.01)"),
+                ("CPC-HMM +GG", "**CPC-HMM +GG (ρ = 0.1)**")]
+        A("Sai số điều hướng trung bình (p95) trên descriptor và 3 seed, bản đồ khuyết 30 % (Nordland: frame; còn lại: m).")
+        A("")
+        A("| Dataset | #desc | " + " | ".join(n for _, n in cols) + " |"); A("|---|---|" + "---|" * len(cols))
+        for d, n in DS:
+            ns = [x for x in gg if x["ds"] == d]
+            if not ns: continue
+            cells = []
+            for k, _ in cols:
+                v = [run["rules"][k] for x in ns for run in x["runs"] if k in run["rules"]]
+                cells.append(f"{np.mean([y['err_mean'] for y in v]):.1f} ({np.mean([y['err_p95'] for y in v]):.0f})" if v else "–")
+            A(f"| {n} | {len(ns)} | " + " | ".join(cells) + " |")
+        A("")
+        bo = sorted([x for x in gg if x["ds"] == "boreas"], key=lambda x: x["desc"])
+        if bo:
+            A("**Boreas theo descriptor** (sai số trung bình, m / số fix sai trung bình mỗi seed):")
+            A("")
+            A("| Descriptor | " + " | ".join(n for _, n in cols) + " |"); A("|---|" + "---|" * len(cols))
+            for x in bo:
+                cells = []
+                for k, _ in cols:
+                    v = [run["rules"][k] for run in x["runs"] if k in run["rules"]]
+                    cells.append(f"{np.mean([y['err_mean'] for y in v]):.1f} / {np.mean([y['wrong_fixes'] for y in v]):.0f}" if v else "–")
+                A(f"| {x['desc']} | " + " | ".join(cells) + " |")
+            A("")
     A("## 6. Kết luận")
     A("")
     A("- **Hợp lệ.** Bảo đảm theo đoạn giữ ở mọi bộ dữ liệu và descriptor, không dùng nhãn (Bảng 1, 4, 5). Baseline hiệu "
