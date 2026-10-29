@@ -29,3 +29,6 @@ analysis/results/summary_*.md
 analysis/results/*.npz
 paper/figs/
 handoff/fonts/
+
+# Kaggle tokens (local only, never commit: repo is public)
+KAGGLE_TOKENS.md

@@ -77,7 +77,7 @@ BoQ vẫn chưa có trọng số (GitHub bị chặn, không có mirror).
 
 ## 3. Tài khoản Kaggle (8 acc × 2 T4 = 16 GPU chạy song song)
 
-Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); danh sách token ở `KAGGLE_TOKENS.md` (nếu có). `~/.kaggle/access_token` là của acc 1. Các script
+Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo public nên token không nằm trong git; lấy từ tin nhắn của user (thứ tự trùng bảng dưới). `~/.kaggle/access_token` là của acc 1. Các script
 `automation/make_eval_kernel.py`, `run_kernel.py` và `fanout.py` tự đọc đúng token theo tên acc, nên không cần
 `export`. Không ghi token vào `~/.bashrc`.
 

@@ -29,7 +29,7 @@ Các bước user gợi ý (theo thứ tự):
 | 5 | `literature/VISUAL_LOCALIZATION_REVIEW.md` | Tổng quan visual localization, HMM/sequence VPR (§6) | trước khi làm idea |
 | 6 | `LITERATURE_GATE.md` | Các lần kiểm tra novelty trước (Gate 1–5); Gate 3 liệt kê paper HMM/sequence | trước khi chốt idea |
 | 7 | `RESEARCH_LOG.md` | Nhật ký thí nghiệm hướng cũ (CCBF/HMM filter, SelfCal) | chỉ khi cần tra |
-| — | `KAGGLE_TOKENS.md` (nếu có) | Token API của 8 acc | khi container mới |
+| — | `KAGGLE_TOKENS.md` | Token API của 8 acc. **Chỉ có ở local, bị `.gitignore`** vì repo public; container mới không có file này | khi container mới |
 
 ## 3. Repo có gì (sau khi dọn)
 
@@ -116,6 +116,8 @@ Bám paper cơ sở Sattler'18 (Aachen Day-Night, RobotCar Seasons, CMU Seasons;
 ## 6. Môi trường tối thiểu (container mới)
 
 - `pip install kaggle markdown xhtml2pdf` (numpy, scipy, torch có sẵn).
-- Token: `~/.kaggle/tok_<username>` cho 8 acc, `~/.kaggle/access_token` = acc 1 (`nhatlong1103`). Tạo lại từ
-  `KAGGLE_TOKENS.md` hoặc tin nhắn của user. Không ghi vào `~/.bashrc`.
+- Token: `~/.kaggle/tok_<username>` cho 8 acc, `~/.kaggle/access_token` = acc 1 (`nhatlong1103`). Repo là
+  **public**, nên token **không** nằm trong git: tạo lại từ tin nhắn của user (thứ tự token trong tin nhắn trùng thứ
+  tự acc 1–8 ở `ENVIRONMENT_SUMMARY.md` §3; kiểm tra bằng `KAGGLE_API_TOKEN=<tok> kaggle kernels list --mine`).
+  Không ghi vào `~/.bashrc`, không commit token.
 - Mọi tính toán nặng chạy trên Kaggle.
