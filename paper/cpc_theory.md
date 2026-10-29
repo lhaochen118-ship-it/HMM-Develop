@@ -201,6 +201,28 @@ dead-reckoning thật). Nơi aliasing Y cách xa ghost có g_t ≈ 0, nên ẽ^t
 Khi robot ra khỏi lỗ đúng chỗ ghost dự đoán, g_t ≈ 1 ngay, nên độ trễ vào lại không tăng. Nếu ghost sai (khoá nhầm
 trước khi rời bản đồ), s_t tăng tuyến tính theo quãng đường, nên G_t loang dần và tái định vị toàn cục vẫn khả thi.
 
+**Kết quả của PG và DR (navH/navHc): trung tính.** Boreas CosPlace 27.6 → 24.3 m; 4S countryside 52.2 → 51.9 m. Lý do:
+trong lỗ bản đồ, P(on) dao động ở vài phần trăm, vẫn ≫ p_in. Vì vậy b^pred vẫn do K∗b_{t−1} chi phối: chuỗi vị trí giữ
+bộ nhớ và tự trôi tới Y; khối lượng vào lại không bao giờ có tác dụng.
+
+**3. Cổng dead-reckoning (GG), phiên bản giữ lại.** Khi chưa báo nơi nào (P(on_{t−1}) ≤ ½) và đã có fix trước đó:
+
+> g_t = 1[‖m_top − m_x̂‖ ≤ excl] · [ (1−ρ)·exp(−d_t²/2s_t²) + ρ ],  d_t = ‖m_top,t − μ_t‖
+
+- μ_t là vị trí fix báo cuối cùng, cộng dồn odometry; s_t = excl + κ·(quãng đường từ fix đó), κ = 0.05.
+- Chuỗi vị trí giữ nguyên như CPC-HMM; chỉ cổng thay đổi.
+- Bổ đề 4 áp dụng (g_t ∈ [0, 1]), nên ARL₀ giữ nguyên.
+- **Sàn ρ** là xác suất tiên nghiệm rằng chính ghost sai. Nếu không có sàn (hoặc ρ = 0.01), một lần báo sai sẽ neo ghost
+  sai và chặn mọi fix đúng về sau. Trên Nordland CosPlace, recall giảm 0.74 → 0.31. Với ρ = 0.1 thì recall giữ 0.73,
+  và mức giảm fix sai trên Boreas vẫn còn (thử offline). ρ được chọn sau khi xem Boreas và Nordland, cố định cho mọi
+  dataset; ρ = 0.01 được báo cáo như ablation.
+- Giới hạn cổng theo quãng đường (chỉ áp trong 10–20·excl) bị loại: mất phần lớn mức giảm trên Boreas, vì nhiều lần báo
+  sai bắt đầu > 200 m sau fix đúng cuối.
+
+**Baseline công bằng.** Cùng cổng dead-reckoning, dạng cứng (giữ fix mở đầu chuỗi nếu cách ghost ≤ 2s), áp hậu kiểm lên
+fix của Xu'21, SelfCal và certified (`+DRgate`). Dạng cứng không có lối thoát nên khoá chết trên Nordland: Xu'21+DRgate
+có 0 fix đúng.
+
 **Liên hệ tài liệu.** "Gate" theo mật độ dự đoán và "coasting" (dự đoán track khi không có đo) là khái niệm chuẩn của
 IPDA/tracking. Điểm mới ở đây: (i) gate tác động lên một e-value hiệu chuẩn bằng bản đồ và chứng minh được là vẫn giữ
 tính e-value, nên giữ bảo đảm ARL₀; (ii) trạng thái off-map của HMM-VPR mang vị trí dead-reckoning thay vì không có vị
