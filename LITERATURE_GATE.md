@@ -178,3 +178,34 @@ retrieval, face ID, re-ID, LiDAR PR; label-free FAR control under shift; new ver
    metadata (e.g. landmark retrieval or re-ID with identity hold-out) against COVE/Bhatta-style baselines — this would
    turn the overlap with biometrics into evidence of generality; (iv) a testable diagnostic for the dominance
    assumption at deployment time without labels.
+
+## Gate 7 — CPC-HMM (2026-10-29): is the presence-chain fix for HMM localization novel?
+
+CPC-HMM = (i) place chain with affine-invariant emission (s − s_max)/(τ·σ_far), no off-map state; (ii) a separate 2-state
+presence chain p_in = p_out = p fed by a belief-independent e-value LR_t = ½(e_top + e_R^(1/H)) built from map-calibrated
+SelfCal p-values (Beta(a,1) mixture fitted by EM per traversal); (iii) gate: e_top only counts when top-1 agrees with the
+place MAP; (iv) the odds recursion is dominated by a Shiryaev–Roberts statistic ⇒ ARL₀ ≥ (1−p)/p − R₀ for e-values.
+
+| Component | Closest prior work | Overlap |
+|---|---|---|
+| HMM over map images + odometry for VPR | Hansen & Browning IROS'14; Doan et al. ICCV'19, HM4 RA-L'20; Hausler MPF'19 | Full: standard. Not a contribution. |
+| Off-map / new-place state in the HMM | Xu et al. RA-L'21 (arXiv 2107.07707): off-map state, emission from k-th best match | Same goal. Our diagnosis is that its evidence is shift-invariant (posterior unchanged by s → s + c·1) and its E₀ is condition-dependent. That diagnosis is new. |
+| Separate existence (presence) Markov chain beside the state estimate | IPDA / JIPDA (Mušicki'94), Bernoulli filters (Ristic): target-existence probability | Strong structural cousin. A factorized existence chain is not new in tracking. New is feeding it with map-calibrated e-values, and its use for map-relative VPR localization. Must be cited. |
+| e-values → CUSUM / Shiryaev–Roberts with ARL₀ bound | Shin, Ramdas & Rinaldo, "E-detectors" (NEJSDS'23/24) | The ARL₀ ≥ threshold argument is theirs. Our step is only that the HMM presence recursion with symmetric switching p is dominated by an SR e-detector with threshold (1−p)/p. Present it as an application, not a theorem of ours. |
+| p-value → e-value via a Beta(a,1) alternative fitted by EM | BUM model (Pounds & Morris'03); p-to-e calibrators (Vovk & Wang'21) | Standard. |
+| e-process monitoring of a vision system | "Detecting Object Tracking Failure via Sequential Hypothesis Testing" (arXiv 2602.12983, 2026): e-process on tracker quality, Ville bound | Same spirit, but for tracking failure with no HMM or localization. Cite as closest "e-process for vision monitoring". |
+| Conformal acceptance for (sequence) VPR | SAFEVPR (arXiv 2605.28048): LTT/FDR with labels | Different: it needs labelled calibration, has no HMM, and is not a sequential detector. |
+| Kidnap / failure detection in MCL | Gutmann & Fox augmented MCL (likelihood history, thresholds) | Heuristic thresholds, no guarantee. |
+
+### Verdict
+
+1. **Not novel as separate parts.** Existence chains (IPDA), e-detectors (SR/CUSUM on e-values), p-to-e calibration and HMM-VPR
+   all exist. None of them may be claimed alone.
+2. **Novel as a combination and as a diagnosis.** No paper found (searched 2026-10-29: HMM-VPR, off-map HMM, e-value/anytime-valid
+   VPR, conformal VPR, kidnap detection) that (a) shows the HMM's off-map decision is invariant to absolute similarity
+   level and hence condition-dependent, and (b) fixes it by an existence chain driven by label-free, map-calibrated e-values
+   with an ARL₀ guarantee, (c) keeps that evidence belief-independent to break lock-in.
+3. **Strength:** RA-L/ICRA level if the experiments hold, i.e. it beats Xu'21 without labels on most datasets. A*-level only with
+   (i) a clear win on the long real-odometry benchmark (Boreas currently FAILS, see RESEARCH_LOG), (ii) the ARL₀ check across
+   datasets, (iii) honest positioning against IPDA and e-detectors. As of now it is best presented as a module of the certified
+   sequential localization work, not as a standalone paper.
