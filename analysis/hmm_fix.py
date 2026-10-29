@@ -32,6 +32,9 @@ from hmm_diag import DiagFilter, auroc, recall_at_fl
 from cert_seq import odometry_sim, odometry_real, running, chunks
 
 A = 0.05
+DROP = 0.3                                   # share of map blocks removed (off-map excursions); --drop f overrides
+if "--drop" in sys.argv:
+    i = sys.argv.index("--drop"); DROP = float(sys.argv[i + 1]); del sys.argv[i:i + 2]
 
 
 def beta_em(p, iters=200):
@@ -52,10 +55,10 @@ def main():
     cond = np.asarray(ep.q_cond).astype(str); conds = sorted(set(cond))
     seqs = [np.where(q_sid == s)[0][np.argsort(q_k[q_sid == s])] for s in np.unique(q_sid)]
     q = ep.q.astype(np.float32); nrm = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True)
-    out = {"ds": ds, "desc": desc, "runs": []}
+    out = {"ds": ds, "desc": desc, "drop": DROP, "runs": []}
     for seed in range(seeds):
         t0 = time.time(); rng = np.random.default_rng(seed); bid, _ = V.map_cells(ep.m_pos, c["block"]); ub = np.unique(bid)
-        keep = ~np.isin(bid, rng.choice(ub, int(round(0.3 * len(ub))), replace=False)); mp = ep.m_pos[keep]
+        keep = ~np.isin(bid, rng.choice(ub, int(round(DROP * len(ub))), replace=False)); mp = ep.m_pos[keep]
         M = ep.m[keep].astype(np.float32); mu = M.mean(0, keepdims=True); Mc = nrm(M - mu); qc = nrm(q - mu)
         S = sims(q, M); dmap, _ = cKDTree(mp).query(ep.q_pos); onm, offm = dmap <= c["in_d"], dmap > c["off_d"]
         # map-calibrated per-frame evidence (SelfCal-AA on the reduced map; no labels)
@@ -244,7 +247,7 @@ def main():
                   f"ECE {r['ECE']:.3f} overconf {r['overconf']:+.3f} | conf-wrong {r['confident_wrong_frames']:.3f} | nav {r['nav_mean']:.1f} p95 {r['nav_p95']:.1f} "
                   f"| ARL0 {r['ARL0']:.0f} re-entry {r['reentry_delay']:.1f} (n {r['n_reentry']})", flush=True)
     os.makedirs("results", exist_ok=True)
-    json.dump(out, open(f"results/hmmfix_{ds.replace(':', '_')}_{desc}.json", "w"), indent=1, default=float)
+    json.dump(out, open(f"results/hmmfix{'' if DROP == 0.3 else f'_d{round(DROP * 100)}'}_{ds.replace(':', '_')}_{desc}.json", "w"), indent=1, default=float)
 
 
 if __name__ == "__main__":

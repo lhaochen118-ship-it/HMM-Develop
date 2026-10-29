@@ -231,7 +231,7 @@ def main():
         A("")
     # ------------------------------------------------------------------ HMM weakness analysis + fix
     diag = [json.load(open(f)) for f in glob.glob(os.path.join(R, "hmmdiag_*.json"))]
-    fix = [json.load(open(f)) for f in glob.glob(os.path.join(R, "hmmfix_*.json"))]
+    fix = [x for x in (json.load(open(f)) for f in glob.glob(os.path.join(R, "hmmfix_*.json"))) if x.get("drop", 0.3) == 0.3]
     if diag:
         A("## 5. Vì sao HMM thua baseline, và cơ chế sửa")
         A("")
