@@ -80,11 +80,11 @@ def main():
         smax = S.max(1, keepdims=True); srt = -np.sort(-S, 1)
         rel = (S - smax) / (tau * sdf[:, None])                                                         # affine-invariant relative part
 
-        def run(logE, logoff, subset=None):
+        def run(logE, logoff, subset=None, filt=None):
             est = np.full(len(q), -1); conf = np.zeros(len(q)); offp = np.ones(len(q))
             for idx in seqs:
                 if subset is not None and not subset[idx].any(): continue
-                e, cf, of, _ = F.run(logE[idx], U[idx], None if logoff is None else logoff[idx]); est[idx], conf[idx], offp[idx] = e, cf, of
+                e, cf, of, _ = (filt or F).run(logE[idx], U[idx], None if logoff is None else logoff[idx]); est[idx], conf[idx], offp[idx] = e, cf, of
             return est, conf, offp
 
         def metrics(est, conf, offp, gate=None):
@@ -98,6 +98,22 @@ def main():
             bad = rep & ((err > c["excl"]) | offm); r["confident_wrong_frames"] = float((bad & (score > 0.9)).mean())
             r["share_err_confident_wrong"] = float(err[bad & (score > 0.9)].sum() / max(err[rep].sum(), 1e-9))
             r["cond_recall"] = {cn: float((rep & ok)[onm & (cond == cn)].mean()) for cn in conds if (onm & (cond == cn)).any()}
+            # ARL0: off-map frames per false-report onset (CUSUM view of the presence chain: >= (1-p)/p for sequential e-values);
+            # re-entry delay: frames from re-entering the map (off-map run followed by on-map) to the first correct report
+            onsets, delays = 0, []
+            for idx in seqs:
+                rp, of, on, gk = rep[idx], offm[idx], onm[idx], (rep & ok)[idx]
+                onsets += int((of & rp & ~np.r_[False, rp[:-1]]).sum())
+                last, nxt_off = 0, np.r_[np.flatnonzero(of), len(idx)]
+                for i in range(len(idx)):
+                    if of[i]: last = -1
+                    elif on[i]:
+                        if last == -1:                                      # censored at the next off-map frame
+                            end = nxt_off[np.searchsorted(nxt_off, i)]; j = np.flatnonzero(gk[i:end])
+                            delays.append(int(j[0]) if len(j) else end - i)
+                        last = 1
+            r["ARL0"] = float(offm.sum() / max(onsets, 1)); r["reentry_delay"] = float(np.mean(delays)) if delays else float("nan")
+            r["n_reentry"] = len(delays)
             # navigation: Kalman filter with the HMM's reported places as fixes (sigma 5 m)
             e_nav = np.full(len(q), np.nan); xr = mp[np.maximum(est, 0)]
             for idx in seqs:
@@ -125,6 +141,9 @@ def main():
         best = best or (0, 0.01, 20); T, kk = best[1], best[2]
         res["xu21_tuned"] = metrics(*run((S - smax) / T, (srt[:, kk - 1] - smax[:, 0]) / T)); res["xu21_tuned"]["T_k"] = [T, kk]
         res["hmm_nooff_tuned"] = metrics(*run((S - smax) / T, None))
+        # same T, k with a symmetric off-map switching prior (p_in = p_out = 0.01): isolates the prior from the evidence
+        Fs = DiagFilter(mp, 1.0 if nord else 2.0, 6.0 if nord else 15.0, tol, c["excl"], p_out=0.01, p_in=0.01)
+        res["xu21_sym"] = metrics(*run((S - smax) / T, (srt[:, kk - 1] - smax[:, 0]) / T, filt=Fs))
         # CEE ablations (label-free)
         res["rel"] = metrics(*run(rel, (srt[:, kk - 1] - smax[:, 0]) / (tau * sdf)))                  # affine-invariant + k-th best
         res["abs_naive"] = metrics(*run(lam[:, None] + rel, np.zeros(len(q))))                          # presence LR, 1/N counted twice
@@ -222,7 +241,8 @@ def main():
         print(f"[{ds}/{desc} s{seed}] r_lam {np.mean(list(r_fit.values())):.2f} tau {tau:.2f} rho {rho.mean():.2f} w {w.mean():.2f} a {np.mean([v[0] for v in a_fit.values()]):.2f} ({time.time()-t0:.0f}s)", flush=True)
         for n, r in res.items():
             print(f"   {n:16s} recall {r['recall']:.3f} wrong {r['wrong']:.3f} FL {r['FL']:.3f} | AUROC {r['auroc']:.3f} R@FL5 {r['R_FL5']:.3f} "
-                  f"ECE {r['ECE']:.3f} overconf {r['overconf']:+.3f} | conf-wrong {r['confident_wrong_frames']:.3f} | nav {r['nav_mean']:.1f} p95 {r['nav_p95']:.1f}", flush=True)
+                  f"ECE {r['ECE']:.3f} overconf {r['overconf']:+.3f} | conf-wrong {r['confident_wrong_frames']:.3f} | nav {r['nav_mean']:.1f} p95 {r['nav_p95']:.1f} "
+                  f"| ARL0 {r['ARL0']:.0f} re-entry {r['reentry_delay']:.1f} (n {r['n_reentry']})", flush=True)
     os.makedirs("results", exist_ok=True)
     json.dump(out, open(f"results/hmmfix_{ds.replace(':', '_')}_{desc}.json", "w"), indent=1, default=float)
 

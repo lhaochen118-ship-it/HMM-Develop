@@ -210,9 +210,10 @@ def main():
         A("")
     # Table 6 navigation
     if nav:
-        rules = ["accept all", "label threshold", "SelfCal frame", "HMM off-map (labels)", "certified (ours)", "oracle"]
+        rules = ["accept all", "label threshold", "SelfCal frame", "HMM off-map (labels)", "CPC-HMM (ours)", "certified (ours)", "oracle"]
         rn = {"accept all": "accept-all", "label threshold": "ngưỡng max-sim (nhãn)", "SelfCal frame": "per-frame SelfCal",
-              "HMM off-map (labels)": "HMM off-map Xu'21 (nhãn)", "certified (ours)": "**ours**", "oracle": "oracle"}
+              "HMM off-map (labels)": "HMM off-map Xu'21 (nhãn)", "CPC-HMM (ours)": "**CPC-HMM (mục 5)**",
+              "certified (ours)": "**certified**", "oracle": "oracle"}
         A("### Bảng 6 — Điều hướng khép kín, bản đồ khuyết 30 % block")
         A("")
         A("Kalman filter chạy odometry trôi và nhận các fix được chấp nhận (σ = 5 m). Mỗi ô ghi sai số vị trí trung bình "
@@ -234,6 +235,22 @@ def main():
     if diag:
         A("## 5. Vì sao HMM thua baseline, và cơ chế sửa")
         A("")
+        if nav:
+            A("### 5.0 HMM thua baseline ở đâu")
+            A("")
+            A("Lấy từ Bảng 6: sai số điều hướng trung bình (p95), cùng giao thức. Cột \"HMM thua\" đánh dấu khi HMM Xu'21, dù "
+              "được tune bằng nhãn, có sai số trung bình lớn hơn baseline không nhãn đơn giản nhất (per-frame SelfCal).")
+            A("")
+            A("| Dataset | HMM Xu'21 (nhãn) | per-frame SelfCal | HMM thua? | CPC-HMM | CPC-HMM / Xu'21 |"); A("|---|---|---|---|---|---|")
+            for d, n in DS:
+                ns = [x for x in nav if x["ds"] == d]
+                g = lambda k, f: [run["rules"][k][f] for x in ns for run in x["runs"] if k in run["rules"]]
+                h, b, c_ = g("HMM off-map (labels)", "err_mean"), g("SelfCal frame", "err_mean"), g("CPC-HMM (ours)", "err_mean")
+                if not h or not b: continue
+                hp, bp, cp = g("HMM off-map (labels)", "err_p95"), g("SelfCal frame", "err_p95"), g("CPC-HMM (ours)", "err_p95")
+                A(f"| {n} | {np.mean(h):.1f} ({np.mean(hp):.0f}) | {np.mean(b):.1f} ({np.mean(bp):.0f}) | "
+                  f"{'có' if np.mean(h) > np.mean(b) else 'không'} | " + (f"{np.mean(c_):.1f} ({np.mean(cp):.0f}) | {np.mean(c_) / np.mean(h):.2f}× |" if c_ else "– | – |"))
+            A("")
         A("### 5.1 Chẩn đoán (`analysis/hmm_diag.py`)")
         A("")
         A("Thiết lập: HMM chuẩn (lọc tiến trên các ảnh bản đồ, chuyển trạng thái theo odometry, emission exp(s/T), có hoặc "
@@ -310,18 +327,13 @@ def main():
         A("")
         A("- **Quyết định:** báo nơi MAP của chuỗi vị trí khi P(on) > 0.5. Độ tin cậy là P(on) × độ tập trung posterior.")
         A("")
-        A("**Vì sao sửa được:**")
-        A("")
-        A("- **Mệnh đề 1:** bằng chứng hiện diện là mức tuyệt đối đã hiệu chuẩn, sửa nguyên nhân 1.")
-        A("- **Mệnh đề 3:** p-value của thống kê max đã trả giá cho N nơi, nên phải đi vào một chuỗi on/off riêng. Đưa vào "
-          "từng trạng thái thì hoặc đếm phạt hai lần (`abs_naive`: quá bảo thủ), hoặc vi phạm giả định độc lập giữa prior "
-          "và quan sát (`abs`: FL ≈ 0.9).")
-        A("- **Bài học từ 5.1:** bằng chứng hiện diện tính từ top-1, không từ niềm tin của HMM, nên không bị cuốn vào vòng "
-          "khoá nhầm.")
-        A("- **Không cần nhãn hay tune:** τ và a ước lượng từ bản đồ và từ chính dòng p-value.")
+        A("- **Ngưỡng báo sai:** với p_in = p_out = p, odds của chuỗi hiện diện bị chặn bởi thống kê Shiryaev–Roberts "
+          "R_t ≤ (R_{t−1} + 1)·LR_t, nên số frame off-map trung bình trước một lần báo on sai thoả ARL₀ ≥ (1−p)/p − R₀ "
+          "(≈ 98 frame khi p = 0.01). Bảo đảm này không cần nhãn, vì LR_t là e-value.")
         A("")
     if fix:
-        MM = [("xu21_tuned", "HMM + off-map Xu'21 (T, k tune bằng nhãn)"), ("hmm_nooff_tuned", "HMM không off-map (T tune)"),
+        MM = [("xu21_tuned", "HMM + off-map Xu'21 (T, k tune bằng nhãn)"), ("xu21_sym", "Xu'21, prior đối xứng p_in = p_out = 0.01"),
+              ("hmm_nooff_tuned", "HMM không off-map (T tune)"),
               ("rel", "chỉ emission bất biến affine"), ("abs_naive", "e-value nhân vào từng nơi (đếm 1/N hai lần)"),
               ("fac_now", "CPC, prior lệch (p_in = 0.05)"), ("fac_ess_pr", "CPC + giảm theo ESS"),
               ("fac_anch_mix", "CPC + ANCH không luỹ thừa (đếm lặp)"), ("fac_now_sym", "CPC, chỉ e-value top-1"),
@@ -342,6 +354,22 @@ def main():
                 cells.append(f"{g('recall'):.2f} / {g('FL'):.3f} / {g('R_FL5'):.2f} / {g('ECE'):.2f} / {g('nav_mean'):.1f} ({g('nav_p95'):.0f})")
             A(f"| {mn} | " + " | ".join(cells) + " |")
         A("")
+        # CUSUM / Shiryaev-Roberts check (Proposition 4): ARL0 and re-entry delay
+        if any("ARL0" in run["methods"].get("fac_anchT_mix", {}) for x in fix for run in x["runs"]):
+            A("**Kiểm chứng ngưỡng báo sai.** ARL₀ là số frame off-map trên mỗi lần bắt đầu báo on sai. Cận lý thuyết là ≥ 98 khi "
+              "p_in = 0.01 và LR là e-value. Độ trễ vào lại là số frame từ khi vào lại bản đồ đến fix đúng đầu tiên. Mỗi ô ghi "
+              "ARL₀ / độ trễ vào lại.")
+            A("")
+            A("| Phương pháp | " + " | ".join(n for _, n in dsx) + " |"); A("|---|" + "---|" * len(dsx))
+            for m, mn in [("xu21_tuned", "HMM + off-map Xu'21 (nhãn)"), ("xu21_sym", "Xu'21, prior đối xứng"),
+                          ("fac_now", "CPC, p_in = 0.05 (cận ≥ 18)"), ("fac_now_sym", "CPC, chỉ e^top"),
+                          ("fac_anch_mix", "CPC, e^R không luỹ thừa"), ("fac_anchT_mix", "**CPC-HMM đầy đủ**")]:
+                cells = []
+                for d, _ in dsx:
+                    v = [run["methods"][m] for x in fix if x["ds"] == d for run in x["runs"] if "ARL0" in run["methods"].get(m, {})]
+                    cells.append(f"{np.nanmedian([y['ARL0'] for y in v]):.0f} / {np.nanmean([y['reentry_delay'] for y in v]):.1f}" if v else "–")
+                A(f"| {mn} | " + " | ".join(cells) + " |")
+            A("")
         A("**Thử nghiệm âm tính (giữ lại để tránh lặp lại):**")
         A("")
         A("- Bằng chứng hiện diện tính tại nơi MAP của HMM (`fac_pc`), trên Nordland CosPlace: FL 0.08, sai số điều hướng "
