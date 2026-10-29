@@ -82,6 +82,33 @@
      "err_p95": 5.706485311821598,
      "frac_gt_rho": 0.07881481481481481
     },
+    "CPC-HMM +PG": {
+     "wrong_fixes": 190,
+     "correct_fixes": 6840,
+     "FAR_offmap": 0.006870229007633588,
+     "err_mean": 15.168481958722193,
+     "err_median": 0.9665388518085365,
+     "err_p95": 82.52966430763831,
+     "frac_gt_rho": 0.29088888888888886
+    },
+    "CPC-HMM +DR": {
+     "wrong_fixes": 193,
+     "correct_fixes": 6866,
+     "FAR_offmap": 0.006870229007633588,
+     "err_mean": 19.64833694420585,
+     "err_median": 0.9947747260092683,
+     "err_p95": 143.499328502203,
+     "frac_gt_rho": 0.30014814814814816
+    },
+    "CPC-HMM +PG+DR": {
+     "wrong_fixes": 185,
+     "correct_fixes": 6849,
+     "FAR_offmap": 0.006870229007633588,
+     "err_mean": 19.00005657114782,
+     "err_median": 0.9871955998762587,
+     "err_p95": 143.499328502203,
+     "frac_gt_rho": 0.2945185185185185
+    },
     "certified (ours)": {
      "wrong_fixes": 115,
      "correct_fixes": 5291,
@@ -117,8 +144,8 @@
      "wrong_fixes": 7110,
      "correct_fixes": 6387,
      "FAR_offmap": 1.0,
-     "err_mean": 420.6174851192215,
-     "err_median": 275.16810050610115,
+     "err_mean": 420.57533961211413,
+     "err_median": 275.16550880083514,
      "err_p95": 1497.873892603839,
      "frac_gt_rho": 0.9748148148148148
     },
@@ -126,10 +153,10 @@
      "wrong_fixes": 789,
      "correct_fixes": 2539,
      "FAR_offmap": 0.03740458015267176,
-     "err_mean": 294.4359248777044,
-     "err_median": 139.37886834270876,
+     "err_mean": 294.6388489815621,
+     "err_median": 140.5350665942899,
      "err_p95": 1098.0059979062348,
-     "frac_gt_rho": 0.9168148148148149
+     "frac_gt_rho": 0.9167407407407407
     },
     "SelfCal frame": {
      "wrong_fixes": 60,
@@ -185,6 +212,33 @@
      "err_p95": 260.1269001005735,
      "frac_gt_rho": 0.9602962962962963
     },
+    "CPC-HMM +PG": {
+     "wrong_fixes": 187,
+     "correct_fixes": 7225,
+     "FAR_offmap": 0.0055979643765903305,
+     "err_mean": 29.269859564934624,
+     "err_median": 8.387779967413508,
+     "err_p95": 123.83937888549995,
+     "frac_gt_rho": 0.9097777777777778
+    },
+    "CPC-HMM +DR": {
+     "wrong_fixes": 181,
+     "correct_fixes": 7269,
+     "FAR_offmap": 0.0055979643765903305,
+     "err_mean": 26.712233554203554,
+     "err_median": 7.957057544427471,
+     "err_p95": 115.52797445771532,
+     "frac_gt_rho": 0.9159259259259259
+    },
+    "CPC-HMM +PG+DR": {
+     "wrong_fixes": 176,
+     "correct_fixes": 7245,
+     "FAR_offmap": 0.0055979643765903305,
+     "err_mean": 26.525358546608818,
+     "err_median": 7.943846325033405,
+     "err_p95": 113.61837838844488,
+     "frac_gt_rho": 0.9175555555555556
+    },
     "certified (ours)": {
      "wrong_fixes": 89,
      "correct_fixes": 5680,
@@ -220,17 +274,17 @@
      "wrong_fixes": 7346,
      "correct_fixes": 6154,
      "FAR_offmap": 1.0,
-     "err_mean": 345.3840068961522,
-     "err_median": 264.373536968739,
+     "err_mean": 345.3529394263329,
+     "err_median": 264.3735369233925,
      "err_p95": 1016.6094987798771,
-     "frac_gt_rho": 0.9756296296296296
+     "frac_gt_rho": 0.9753333333333334
     },
     "label threshold": {
      "wrong_fixes": 1011,
      "correct_fixes": 2789,
      "FAR_offmap": 0.03697916666666667,
-     "err_mean": 257.35687676212746,
-     "err_median": 147.7182649618676,
+     "err_mean": 257.5728138085981,
+     "err_median": 148.60759440148468,
      "err_p95": 1015.920884097153,
      "frac_gt_rho": 0.946
     },
@@ -287,6 +341,33 @@
      "err_median": 7.8049061359996585,
      "err_p95": 51.14328590811183,
      "frac_gt_rho": 0.6708888888888889
+    },
+    "CPC-HMM +PG": {
+     "wrong_fixes": 313,
+     "correct_fixes": 7143,
+     "FAR_offmap": 0.03411458333333333,
+     "err_mean": 48.43793191935774,
+     "err_median": 3.8892258382868476,
+     "err_p95": 470.543939288148,
+     "frac_gt_rho": 0.3908888888888889
+    },
+    "CPC-HMM +DR": {
+     "wrong_fixes": 314,
+     "correct_fixes": 7189,
+     "FAR_offmap": 0.03463541666666667,
+     "err_mean": 43.7609529580121,
+     "err_median": 3.562331044933785,
+     "err_p95": 425.8641069392918,
+     "frac_gt_rho": 0.3357037037037037
+    },
+    "CPC-HMM +PG+DR": {
+     "wrong_fixes": 303,
+     "correct_fixes": 7174,
+     "FAR_offmap": 0.03333333333333333,
+     "err_mean": 43.728888985821726,
+     "err_median": 3.605549761305838,
+     "err_p95": 425.8641069392918,
+     "frac_gt_rho": 0.3425925925925926
     },
     "certified (ours)": {
      "wrong_fixes": 119,

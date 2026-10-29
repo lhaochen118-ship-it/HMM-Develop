@@ -28,7 +28,7 @@ if DUMP: sys.argv.remove("--dump")
 KAPPA = 0.05                                   # ghost position uncertainty growth per metre of odometry (as the nav filter)
 
 
-def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01, gate="pred", ghost=True, s0=25.0, eps=1e-4):
+def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01, gate="pred", ghost=True, s0=25.0, eps=1e-4, couple=True):
     """CPC-HMM with the place and presence chains run JOINTLY on one sequence (needed for the two couplings below).
     b_t = P(x_t | on_t): place chain without off-map state (DiagFilter transitions, affine-invariant emission `rel`).
     Couplings (both label-free; both keep LR_t an e-value, so the ARL0 bound of the presence chain is unchanged):
@@ -36,7 +36,10 @@ def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01,
         DEAD-RECKONED OFF-MAP STATE (ghost): position of the last reported fix propagated by odometry, sd s0 + KAPPA * path
         length (ghost=True); ghost=False -> G uniform (position-less off-map state, as Xu'21).
       * gate of the top-1 e-value: 'post' = 1[top-1 within excl of the posterior MAP] (CPC-HMM), 'pred' = g_t = PREDICTED
-        place mass b_pred within excl of the top-1 (F_{t-1}-measurable kernel); e~ = a + g (e_top - a) <= e_top pointwise.
+        place mass b_pred within excl of the top-1 (F_{t-1}-measurable kernel); e~ = a + g (e_top - a) <= e_top pointwise;
+        'ghost' = 'post' x, while no place is reported (P(on_{t-1}) <= 1/2), the DEAD-RECKONING gate g = exp(-d^2 / 2 s^2),
+        d = |m_top - ghost|: an off-map stretch cannot be reported at a place the odometry says the robot cannot be.
+    couple=False: place chain exactly as CPC-HMM (b_pred = K*b), only the gate changes.
     e_top = a p^(a-1), e_a = a (gate-off value), e_r = (e^R)^(1/H). Returns (est, pon)."""
     L, n = rel.shape; pos = Fp.pos; b = np.full(n, 1.0 / n); pon = 0.5
     est = np.empty(L, int); out = np.empty(L); mu, s, have = None, s0, False
@@ -52,16 +55,32 @@ def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01,
                 G = np.exp(-0.5 * ((pos - mu) ** 2).sum(1) / s ** 2); sg = G.sum()
                 G = G / sg if sg > 1e-12 else np.full(n, 1.0 / n)
             else: G = np.full(n, 1.0 / n)
-            b = (w_on * nb + w_off * G) / (w_on + w_off); b = (1 - eps) * b + eps / n
+            b = (w_on * nb + w_off * G) / (w_on + w_off) if couple else nb; b = (1 - eps) * b + eps / n
             pr = w_on + w_off
         else: pr = 0.5
         g = b[excl_nbr[top[t]]].sum() if gate == "pred" else None
         b = b * np.exp(rel[t] - rel[t].max()); b /= b.sum(); j = int(b.argmax()); est[t] = j
-        if gate == "post": g = float(np.linalg.norm(pos[top[t]] - pos[j]) <= Fp.far)
+        if gate in ("post", "ghost"): g = float(np.linalg.norm(pos[top[t]] - pos[j]) <= Fp.far)
+        if gate == "ghost" and have and pon <= 0.5: g *= float(np.exp(-0.5 * ((pos[top[t]] - mu) ** 2).sum() / s ** 2))
         ee = 0.5 * (e_a[t] + min(g, 1.0) * (e_top[t] - e_a[t]) + e_r[t])
         lo = np.log(pr / (1 - pr)) + np.log(max(ee, 1e-300)); pon = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); out[t] = pon
         if pon > 0.5: mu, s, have = pos[j].astype(float), s0, True        # ghost = last reported fix (+ odometry while off)
     return est, out
+
+
+def dr_gate(acc, xf, seqs, U, s0):
+    """fairness baseline: the same dead-reckoning gate applied post hoc to any rule's fixes. A fix that STARTS a reporting
+    streak (previous frame not reported) is kept only if it lies within 2 s of the ghost (last kept fix + odometry,
+    s = s0 + KAPPA * path since that fix)."""
+    out = np.zeros(len(acc), bool)
+    for idx in seqs:
+        have, prev = False, False
+        for t in idx:
+            if have: mu = mu + U[t]; s = s + KAPPA * np.linalg.norm(U[t])
+            ok = acc[t] and (prev or not have or np.linalg.norm(xf[t] - mu) <= 2 * s)
+            if ok: mu, s, have = xf[t].astype(float), s0, True
+            out[t] = prev = ok
+    return out
 
 
 def main():
@@ -169,10 +188,10 @@ def main():
         # joint CPC-HMM variants (cpc_joint): predictive gate (PG) and/or dead-reckoned off-map state (DR)
         e_top1, e_a1, e_r1 = np.exp(lam), np.exp(loga), e_R ** (1.0 / H)
         nbr_x = cKDTree(MP).query_ball_point(MP, c["excl"]); joint = {}
-        for jn, gt, gh in (("CPC-HMM +PG", "pred", False), ("CPC-HMM +DR", "post", True), ("CPC-HMM +PG+DR", "pred", True)):
+        for jn, gt, gh, cp in (("CPC-HMM +PG+DR", "pred", True, True), ("CPC-HMM +GG", "ghost", False, False), ("CPC-HMM +GG+DR", "ghost", True, True)):
             ej, pj = np.zeros(len(q), int), np.zeros(len(q))
             for idx in q_seqs:
-                ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], e_top1[idx], e_a1[idx], e_r1[idx], top[idx], nbr_x, gate=gt, ghost=gh, s0=c["excl"])
+                ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], e_top1[idx], e_a1[idx], e_r1[idx], top[idx], nbr_x, gate=gt, ghost=gh, s0=c["excl"], couple=cp)
             joint[jn] = (pj > 0.5, MP[ej], pj)
         if DUMP:
             os.makedirs("results", exist_ok=True)
@@ -186,6 +205,8 @@ def main():
                  "HMM off-map (labels)": acc_h, "CPC-HMM (ours)": acc_c,
                  **{f"CPC-HMM p_out={po}": a for po, a in acc_po.items()}, **{k: v[0] for k, v in joint.items()},
                  "certified (ours)": Rq > thr, "oracle": good}
+        for bn, xb in (("HMM off-map (labels)", x_hmm), ("SelfCal frame", x_fix), ("certified (ours)", x_fix)):
+            rules[bn + " +DRgate"] = dr_gate(rules[bn], xb, q_seqs, U, c["excl"])
         hz = [0] if ep.q_pos.shape[1] == 1 else ([0, 1] if ep.q_pos.shape[1] == 2 else list(np.argsort(ep.q_pos.var(0))[1:]))
 
         def track(acc, xf=None):
