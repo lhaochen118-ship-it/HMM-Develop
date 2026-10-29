@@ -7,6 +7,46 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 21 — Boreas failure analysis, CPC-HMM theory, asymmetric presence switching (2026-10-29, evening)
+
+**Theory** (`paper/cpc_theory.md`):
+
+- Predictable e-values.
+- The gate, the tempering and the average all preserve the e-value property.
+- **Theorem:** the presence odds are dominated by a Shiryaev–Roberts e-detector, so ARL₀ ≥ (1−p_in)/p_in − R₀ whenever
+  p_out ≥ p_in.
+- The re-entry delay is ≈ log((1−p)/p)/KL₁.
+- **Lemma (Anderson):** a noise-free odometry null is conservative.
+
+**Empirical ARL₀** (fix5) is 762–3930 frames on the long-sequence datasets, all above the bound of 98. Xu'21 gets 41 on
+CMU.
+
+**Boreas root causes** (`nav_demo --dump`, offline `analysis/navdiag.py`):
+
+1. **Data bug.** The wheel-pulse counter has one discontinuity in 4/13 sequences, a single step of 8.7 km. It broke the
+   place chain: 2 % correct while top-1 was 99 % correct.
+   - Fixed in `cert_seq.odometry_wheel`.
+   - Every Boreas result before 14:00 UTC is void.
+   - After the fix, CPC-HMM navigation error: MegaLoc 107 → 34 m, SALAD 58 → 12.7 m. Xu'21 still has 7.0 / 5.0 m.
+2. **Remaining FL 0.07–0.085 is mostly the EXIT LAG of the presence chain, not false onsets.**
+   - A smaller p makes FL worse.
+   - With asymmetric switching (p_in = 0.01 keeps ARL₀; p_out up), offline:
+     - Boreas MegaLoc: FL 0.029 → 0.007 at recall 0.956 (p_out = 0.2);
+     - Nordland and 4S countryside lose a lot of recall.
+   - Full navigation grid with `CPC-HMM p_out ∈ {0.05, 0.1, 0.2}`: runs navF/navFc/navG.
+3. **e_R violates D_R.** P(p^R ≤ 0.01 | off) = 0.059 on 4S countryside; P(p^R ≤ 0.05 | off) = 0.075 on Boreas MegaLoc.
+   p^top is super-uniform everywhere.
+   - The violations sit deep inside long off-map runs, i.e. coherent aliasing.
+   - The noise-free odometry null did NOT help (0.059 → 0.059). Still open.
+
+**Robustness to map holes** (navigation error of `hmm_fix`, CPC vs Xu'21):
+
+- **50 %:** CPC wins everywhere except RobotCar. Boreas 13.7 vs 40.8; Nordland 23.8 vs 169; 4S office 26.3 vs 79.1.
+- **10 %:** CPC loses on 4S old town (44 vs 30).
+
+**Verdict.** CPC-HMM beats Xu'21 on 5/7 datasets without labels. It still loses on Boreas at 30 % holes (21 vs 6 m) and
+on RobotCar (2.1 vs 1.3 m). Next steps: `handoff/03_HANDOFF.md` §5.
+
 ## Entry 20 — Why the HMM loses to simple baselines, and the CPC-HMM fix (2026-10-29)
 
 **Where the HMM lost:**

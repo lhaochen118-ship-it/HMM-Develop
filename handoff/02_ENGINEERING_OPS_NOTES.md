@@ -1,9 +1,10 @@
 # 02 — Engineering & Operations Lessons
 
-*Cập nhật 2026-10-29 (branch `hmm-navigation`). Tài liệu này chỉ về **kỹ thuật và vận hành**: code, môi trường, Kaggle,
-cách chạy thí nghiệm, lỗi đã gặp và cách sửa, bài học. Viết trong giai đoạn SelfCal; hạ tầng Kaggle và các điểm dễ sai
-của loader vẫn đúng cho hướng HMM. Các script thí nghiệm SelfCal được nhắc tới (`eval_all.py`, `exp*`) nay chỉ còn ở
-branch `claude/selfcal-aa` / `claude/selfcal-seq`. Bảng tài khoản và dataset: `ENVIRONMENT_SUMMARY.md`.*
+*Cập nhật 2026-10-29 cuối ngày (branch `hmm-navigation` → `hmm-navigation-2`). Tài liệu này chỉ về **kỹ thuật và vận
+hành**: code, môi trường, Kaggle, cách chạy thí nghiệm, lỗi đã gặp và cách sửa, bài học. §1–§7 viết trong giai đoạn
+SelfCal và vẫn đúng. **§8 là các bài học mới của vòng HMM-navigation; nên đọc trước.** Các script SelfCal được nhắc tới
+(`eval_all.py`, `exp*`) chỉ còn ở branch `claude/selfcal-aa` / `claude/selfcal-seq`. Bảng tài khoản và dataset:
+`ENVIRONMENT_SUMMARY.md`.*
 
 ## 1. Chính sách tính toán (user chỉ định)
 
@@ -118,3 +119,101 @@ python3 automation/fanout.py <work_dir> <prefix> "eval_all.py rc salad;eval_all.
     (`claude/selfcal-seq`).
     - Kết quả mới đặt ở thư mục riêng (`results/gap/`) thay vì sửa file cũ.
     - Không tạo PR. Commit kèm trailer, không ghi model ID.
+
+
+## 8. Vòng HMM-navigation (2026-10-29): bài học mới
+
+### 8.1 Script mới
+
+| Script | Việc | Ghi chú |
+|---|---|---|
+| `analysis/cert_seq.py` | Certified sequential localization (FRAME/RUN/RUNO/ANCH/ANCHR) | `cert_seq.py <dump> <ds> <desc> [seeds]`; `--lmax30`, `--rho`, `--noise` |
+| `analysis/cert_natural.py` | Off-map tự nhiên (query của cảnh khác) | |
+| `analysis/nav_demo.py` | Điều hướng khép kín, mọi luật chấp nhận | `--dump` lưu mảng từng frame `navframes_*.npz` |
+| `analysis/hmm_diag.py` | Chẩn đoán HMM (D1–D5) | |
+| `analysis/hmm_fix.py` | CPC-HMM + ablation + baseline Xu'21 | `--drop f` (đổi tỷ lệ lỗ, file `hmmfix_dXX_*`), `--simnull` |
+| `analysis/hmm_eval.py`, `seq_odo.py` | Vòng đầu (EVT-HMM, RUNO) | |
+| `automation/make_dump4s.py`, `make_dump_boreas.py`, `upload_4s_dump.py`, `upload_boreas.py`, `launch_boreas.py` | Tạo và public dump 4Seasons/Boreas | |
+| `automation/reattach.py` | Bám lại vào kernel đang chạy, kéo output, copy kết quả | `--skip <regex>` |
+| `automation/resume.py` | Sau khi container khởi động lại: gắn lại mọi kernel chưa xong của các run trong `runs/active_runs.txt` | bỏ qua run có fanout còn sống |
+| `automation/pull_kernels.py` | Kéo output của kernel liệt kê trong `handoff/RUNNING_KERNELS.md` | dùng cho chat mới |
+| `paper/build_cert_tables.py`, `build_report.py` | Bảng và báo cáo PDF ngắn | |
+
+**Thời gian chạy:**
+
+- `hmm_fix` Boreas: khoảng 3.2 giờ mỗi seed trên CPU, vì vòng lặp Python của bộ lọc trên 76 k frame × 6 k trạng thái và
+  nhiều biến thể.
+- `nav_demo` Boreas 3 seed: khoảng 1–2 giờ trên T4.
+- Các dataset khác: 5–40 phút mỗi job.
+
+### 8.2 Kaggle
+
+- **Trần phiên:** 2 GPU và **5 CPU mỗi acc**. Lỗi "Maximum batch CPU session count of 5" làm kernel không push được.
+  `fanout.py` có failover sang acc khác khi push lỗi, nhưng chỉ trong danh sách `--accounts`.
+- **Kernel thừa chiếm slot:** khi đã dừng collector, kernel vẫn chạy trên Kaggle tới khi xong. Huỷ bằng
+  `kaggle kernels delete -y <acc>/<slug>`. Lệnh này chạy được khi gọi **từng lệnh một**; vòng `for` có `delete` bị bộ
+  phân loại an toàn chặn ("Unverifiable Deletion Scope"). Khi bị chặn thì gửi user danh sách để xoá tay.
+- **Acc `mucnokieu`:** GPU thường bị người khác dùng, nên chỉ dùng cho CPU.
+- **Kernel dùng code tại lúc push:** `make_eval_kernel` version lại dataset code mỗi lần. Sửa code sau khi push không ảnh
+  hưởng kernel đang chạy. Hai fanout cùng lúc trên một acc có thể đè version của nhau, nên **khởi chạy tuần tự** (chờ
+  dòng `launched` trong log) rồi mới gọi fanout tiếp.
+- **Kernel có internet** tải được S3 public của Boreas (khoảng 40 MB/s). Dữ liệu lớn nên tải và dump trong kernel thay vì
+  trong container.
+- **T4 phải dùng fp16.** bf16 bị giả lập nên chậm khoảng 7×.
+- **Publish dataset:** ảnh Boreas khoảng 13 GB, chia 4 dataset (`--part i/4`) cho vừa đĩa container. Dùng hard link,
+  không copy.
+
+### 8.3 Container và tiến trình nền
+
+- **Container khởi động lại nhiều lần trong ngày** (3 lần ngày 29/10): mất mọi tiến trình monitor (`fanout`,
+  `run_kernel`). Scratchpad và repo vẫn còn, và kernel trên Kaggle vẫn chạy.
+  - Quy trình phục hồi: `python3 automation/resume.py <scratchpad>/runs`.
+  - Ghi tên run mới vào `runs/active_runs.txt` ngay khi khởi chạy.
+- **Monitor chết vì lỗi proxy** (`ProxyError ... IntrospectToken`) nhưng vẫn ghi `STATUS=DONE:error`, dù kernel vẫn
+  RUNNING. Kiểm tra `kaggle kernels status`, đổi tên log rồi `reattach.py`.
+- **`resume.py` từng gắn lại kernel mà fanout còn đang push** (race). Đã sửa: bỏ qua run có fanout còn sống.
+- **Tác vụ nền của Claude có trần 2 giờ.** Waiter chờ lâu bị giết. Dùng lượt kiểm tra hẹn giờ (`send_later` hoặc
+  trigger hằng giờ) thay vì waiter dài.
+- **Waiter chờ một đợt đã bị dừng sẽ chờ mãi** (ví dụ fix2). Khi dừng collector của một đợt thì dừng luôn waiter của nó.
+- **Không dùng `sleep` dài trong lệnh foreground** (bị chặn). Dùng `until <điều kiện>; do sleep 15; done` trong lệnh nền.
+
+### 8.4 Quản lý kết quả
+
+- **Collector của đợt cũ có thể ghi đè kết quả mới** nếu xong sau. Hai cách xử lý:
+  - dừng collector cũ (kill PID; kernel vẫn chạy);
+  - hoặc chép lại kết quả của đợt mới sau cùng, vì output nằm ở `<run>/<slug>_out/results/`.
+- **Kết quả Boreas trước khi sửa odometry** (2026-10-29 14:00 UTC; các run bor1/bor2/fix4/fix5/nav3/bdiag/bd50) **không
+  dùng được**. Run sau sửa: bfix, bd50b, enull, navF, navFc, navG, fix7.
+- **File 1 seed ghi đè file 3 seed:** các run chẩn đoán (`cdiag`, `enull`) ghi `nav_<ds>_<desc>.json` với 1 seed. Khi
+  tổng hợp, kiểm tra `len(runs)`.
+- **Tổng hợp:**
+  - `paper/build_cert_tables.py` → `paper/cert_tables.md`;
+  - `paper/build_report.py` → `paper/BAO_CAO_CertSeq.{md,pdf}`;
+  - lọc file `hmmfix_*` theo khoá `drop` (0.3 = lưới chính).
+
+### 8.5 Lỗi code đã gặp (vòng này)
+
+| Lỗi | Sửa |
+|---|---|
+| 4Seasons: `re` chưa import; biến `T` che `torchvision.transforms` | import; đổi thành `TT` |
+| 4Seasons: chỉ 21/30 recording có ảnh | chia part theo recording có thư mục cam0 |
+| 4Seasons: căn khung GNSS↔VIO sai | brute-force tổ hợp phép biến đổi; sai số giữa recording 0.34 m |
+| `cert_seq`: UnboundLocalError `A` | đổi biến vòng lặp thành `al` |
+| `hmm_eval`: est rác | khởi tạo −1 |
+| `hmm_fix`: index lỗi null ANCH | `map_null` dùng stride 2, nên phải dùng chỉ số `sub` |
+| Tự tương quan gộp bị lệch | trừ trung bình theo từng sequence |
+| **Boreas: bước odometry 8.7 km** (đứt bộ đếm xung `dmi.csv`) | chặn trong `odometry_wheel`: bước ≤ 0 hoặc > 10 × trung vị thì thay bằng trung vị |
+| Lệnh `rm` có biến bị chặn | đường dẫn chữ hoặc `"${M:?}"` |
+
+### 8.6 Bài học
+
+- **Thành công:**
+  - Dump descriptor + kernel CPU/GPU cho mọi thí nghiệm.
+  - Dataset public dùng chung.
+  - `--dump` từng frame để chẩn đoán offline. Nhờ nó mới tìm được lỗi odometry Boreas và độ trễ khi rời bản đồ.
+  - Quét tham số offline trên npz thay vì chạy lại Kaggle.
+- **Thất bại hoặc cần tránh:**
+  - Tin kết quả của dataset mới mà chưa kiểm odometry. Lỗi 8.7 km làm hỏng một vòng chạy Boreas.
+  - Khởi chạy nhiều fanout song song làm đè dataset code.
+  - Giả thuyết "nhiễu odometry gây vi phạm D_R" được sửa và chạy trước khi kiểm bằng dữ liệu có sẵn. Lẽ ra nên đo vị trí
+    vi phạm (theo khoảng cách tới mép đoạn) trước.

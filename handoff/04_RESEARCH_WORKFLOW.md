@@ -1,6 +1,6 @@
 # 04 — Research Workflow (cập nhật 2026-10-29)
 
-*Quy trình chuẩn của dự án (giữ tinh thần bản gốc `RESEARCH_WORKFLOW_original.pdf`) và trạng thái hiện tại của từng
+*Cập nhật cuối ngày 2026-10-29 (branch `hmm-navigation-2`). Quy trình chuẩn của dự án (giữ tinh thần bản gốc `RESEARCH_WORKFLOW_original.pdf`) và trạng thái hiện tại của từng
 phase. Không lặp chi tiết vận hành (`02`) hay việc tiếp theo cụ thể (`00`).*
 
 ## Mục tiêu
@@ -24,18 +24,18 @@ thuyết phục, câu chuyện ở mức paper.
 6. **Viết paper và bàn giao.** Bảng sinh tự động từ `analysis/results/`. Tài liệu bàn giao 00–04 cùng
    environment summary.
 
-## Trạng thái theo phase (hướng HMM-navigation, 2026-10-29)
+## Trạng thái theo phase (hướng HMM-navigation, cuối ngày 2026-10-29)
 
 | Phase | Trạng thái |
 |---|---|
-| 1 | Chưa làm cho hướng mới. Cần Gate 6 (HMM / sequence visual localization) trong `LITERATURE_GATE.md`. |
-| 2 | Chưa có ý tưởng chốt. Gợi ý ban đầu ở `00_READ_ME_FIRST.md` §5. |
-| 3 | Chưa làm. |
-| 4 | Có sẵn dump global descriptor cho 4 dataset × 6 descriptor (cần audit lại, Bước 1). Thiếu odometry/chuỗi có VO, local features cho 6DOF, Aachen. |
-| 5 | Hạ tầng Kaggle sẵn sàng (`automation/`). Chưa có code HMM trên branch này. |
-| 6 | Chưa làm. |
+| 1 | **Xong.** Gate 6 (certified sequential) và Gate 7 (CPC-HMM: IPDA, e-detectors, SAFEVPR, Xu'21) trong `LITERATURE_GATE.md`. |
+| 2 | **Hai ý tưởng đã chốt.** (A) Certified sequential localization: bảo đảm theo đoạn off-map, không nhãn. (B) CPC-HMM: chuỗi vị trí bất biến affine + chuỗi hiện diện nuôi bằng e-value hiệu chuẩn bằng bản đồ. |
+| 3 | **Có phương pháp và lý thuyết đầy đủ.** Định lý theo đoạn cho A; ARL₀ (Shiryaev–Roberts), độ trễ, Anderson cho B (`paper/cpc_theory.md`). |
+| 4 | **Có 7 dataset × 6 descriptor.** RobotCar, CMU, Nordland, 4Seasons ×3 (VIO thật), Boreas (bánh xe + gyro thật; đã sửa lỗi bộ đếm). Có thể thêm benchmark chuỗi dài nếu cần (NCLT, Oxford RobotCar gốc). |
+| 5 | **Đang lặp ở vòng CPC-HMM.** Thắng Xu'21 trên 5/7; thua Boreas (khuyết 30 %) và RobotCar. Đang chạy lưới tách p_in/p_out và fix7. |
+| 6 | **Báo cáo ngắn** `paper/BAO_CAO_CertSeq.pdf` (tiếng Việt, không hình). Không viết paper. Bàn giao 00–04 + `RUNNING_KERNELS.md`. |
 
-Lịch sử hướng trước (CCBF → CRSG → SelfCal): xem `RESEARCH_LOG.md` và branch `claude/selfcal-aa`.
+Lịch sử hướng trước (CCBF → CRSG → SelfCal): xem `RESEARCH_LOG.md` (Entry ≤ 17) và branch `claude/selfcal-aa`.
 
 ## Nguyên tắc làm việc (rút ra từ dự án)
 
@@ -43,3 +43,8 @@ Lịch sử hướng trước (CCBF → CRSG → SelfCal): xem `RESEARCH_LOG.md`
 - Mọi biến thể chọn sau khi xem dữ liệu phải được ghi rõ và kiểm định trên dữ liệu mới.
 - Branch ổn định không bị ghi đè; mở rộng làm trên branch riêng; kết quả mới để ở thư mục riêng.
 - Báo cáo kết quả tiêu cực trung thực: chúng là phát hiện, không phải thứ cần giấu.
+- Trước khi kết luận trên dataset mới: kiểm dữ liệu đầu vào (odometry, pose, thứ tự frame) bằng chẩn đoán từng frame.
+  Lỗi bộ đếm Boreas đã làm hỏng một vòng chạy.
+- Đo vị trí và điều kiện xảy ra lỗi (`--dump` + phân tích offline) **trước** khi đề xuất bản sửa và chạy lại.
+- Chọn siêu tham số bằng lý thuyết hoặc dữ liệu không nhãn, một cấu hình chung cho mọi dataset; quét tham số chỉ là
+  ablation.

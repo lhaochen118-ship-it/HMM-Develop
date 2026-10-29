@@ -1,6 +1,6 @@
 # Datasets & Environment Summary
 
-*Cập nhật 2026-10-29 (branch `hmm-navigation`). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
+*Cập nhật cuối ngày 2026-10-29 (branch `hmm-navigation` → `hmm-navigation-2`). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
 đề bài và việc tiếp theo ở `handoff/00_READ_ME_FIRST.md`. Kết quả audit dữ liệu (Bước 1): `DATA_AUDIT.md`. Dataset mới
 cho hướng HMM (chuỗi dài + odometry thật): **§1b 4Seasons dump** và **§1c Boreas** bên dưới.*
 
@@ -125,6 +125,11 @@ img/<seq>/<timestamp_us>.jpg        (các dataset boreas-vpr-images-k)
 - Query: 13 sequence đại diện (`V.BOREAS_Q`: tuyết 01/2021, chiều tối 04/2021, đêm 09/2021, hè, thu).
 - Odometry thật (`cert_seq.odometry_wheel`): quãng đường = pulse × hệ số, hướng = gyro. Hệ số, dấu và hướng ban đầu
   được hiệu chỉnh trên 50 frame đầu của mỗi sequence.
+- **Lỗi dữ liệu đã biết:** `dmi.csv` của 4/13 sequence query có một chỗ đứt bộ đếm xung, nội suy thành một bước 8.7 km:
+  `2021-01-15-12-17`, `2021-01-26-11-22`, `2021-04-15-18-55`, `2021-06-17-17-52`.
+  - `odometry_wheel` thay mọi bước ≤ 0 hoặc > 10 × trung vị bằng trung vị (sửa 2026-10-29 khoảng 14:00 UTC).
+  - Kết quả Boreas trước mốc này không dùng được.
+  - Sau khi sửa, odometry trôi khoảng 2–6 m trên 8 km.
 
 **Runner:** `make_eval_kernel.py` mount sẵn `vpr-descriptor-dumps`, `vpr-dumps-4seasons` và `boreas-vpr-dump`
 (`DUMP_DS`).
@@ -169,6 +174,9 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo pub
 
 Cả 8 acc đã được thử chạy GPU T4 thành công (2026-10-28); cả 8 token xác thực được với API (2026-10-29).
 
+**Trần phiên Kaggle:** 2 GPU và **5 CPU** mỗi acc. GPU của `mucnokieu` thường bị người khác dùng, nên chỉ dùng acc này
+cho CPU.
+
 **Quy tắc:**
 
 - Chia job cho cả 16 slot GPU trước.
@@ -207,3 +215,8 @@ cp <out_dir>/results/*.json analysis/results/
 - Mọi tính toán nặng chạy trên Kaggle.
 
 - Không chạy code bên thứ ba tải về trong container; chạy nó trong kernel Kaggle.
+- **Container hay khởi động lại** (mất các tiến trình monitor; scratchpad và repo vẫn còn).
+  - Phục hồi: `python3 automation/resume.py <scratchpad>/runs` (danh sách run ở `runs/active_runs.txt`).
+  - Khung chat mới, không có scratchpad cũ: `python3 automation/pull_kernels.py` kéo output các kernel trong
+    `handoff/RUNNING_KERNELS.md`.
+- Gói cần: `pip install kaggle markdown xhtml2pdf`. md → pdf: `python3 automation/md2pdf.py <in.md> <out.pdf>`.
