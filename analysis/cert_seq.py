@@ -147,11 +147,11 @@ def main():
                     lo = max(0, ii.min() - Lmax); sl = order[lo:ii.max() + 1]
                     r = running(p_off, Or_["top"], sl, o_q, ep.m_pos, kind, rho, rho_o, Lmax, alt=(p_full, Fr["top"], msk))
                     Rl[sl[msk[sl]]] = r[msk[sl]]
-            for A in ALPHAS:
+            for al in ALPHAS:
                 nseg = [s for order in m_seqs for ch in chunks(order, null_ok, bid) for s in (ch[i:i + H] for i in range(0, len(ch) - H + 1, H))]
                 oseg = [s for order in q_seqs for ch in chunks(order, off_ok, qb) for s in (ch[i:i + H] for i in range(0, len(ch) - H + 1, H))]
-                if len(nseg) < 1 / A or not oseg: continue
-                ns = np.sort([Rn[s].max() for s in nseg]); kq = int(np.ceil((1 - A) * (len(ns) + 1)))
+                if len(nseg) < 1 / al or not oseg: continue
+                ns = np.sort([Rn[s].max() for s in nseg]); kq = int(np.ceil((1 - al) * (len(ns) + 1)))
                 thr = ns[kq - 1] if kq <= len(ns) else np.inf
                 fi = np.array([Ri[s].max() > thr for s in oseg]); fl = np.array([Rl[s].max() > thr for s in oseg])
                 oc = np.array([cond[s[0]] for s in oseg])
@@ -159,14 +159,14 @@ def main():
                 # label-calibrated baseline: threshold = conformal quantile of LABELLED off-map segments of the calibration
                 # conditions (deployment-like data with labels, SAFEVPR / Quantile-Transfer style); tested on the others
                 cal = c.get("calib") or sorted(conds, key=lambda x: -corr[cond == x].mean())[:2]
-                lc = np.sort([Ri[s].max() for s, x in zip(oseg, oc) if x in cal]); kl = int(np.ceil((1 - A) * (len(lc) + 1)))
+                lc = np.sort([Ri[s].max() for s, x in zip(oseg, oc) if x in cal]); kl = int(np.ceil((1 - al) * (len(lc) + 1)))
                 thr_l = lc[kl - 1] if 0 < kl <= len(lc) else np.inf
                 fl_l = np.array([Ri[s].max() > thr_l for s in oseg]); acc_l = Rf > thr_l
                 lat = []
                 for order in q_seqs:
                     hit = np.flatnonzero(acc[order] & corr[order])
                     lat.append(hit[0] if len(hit) else len(order))
-                row = dict(alpha=A, kind=kind, H=H, Lmax=Lmax, n_null_seg=len(ns), n_off_seg=len(oseg), thr=float(thr),
+                row = dict(alpha=al, kind=kind, H=H, Lmax=Lmax, n_null_seg=len(ns), n_off_seg=len(oseg), thr=float(thr),
                            FAR_iso=float(fi.mean()), FAR_lead=float(fl.mean()),
                            cond_iso={x: float(fi[oc == x].mean()) for x in conds if (oc == x).sum() >= 10},
                            cond_lead={x: float(fl[oc == x].mean()) for x in conds if (oc == x).sum() >= 10},
@@ -177,7 +177,7 @@ def main():
                                       cond={x: float(fl_l[oc == x].mean()) for x in conds if x not in cal and (oc == x).sum() >= 10},
                                       TPR=float(acc_l[corr].mean())))
                 run["rows"].append(row)
-                if A != 0.05: continue
+                if al != 0.05: continue
                 print(f"{ds}/{desc} s{seed} {kind:5s} H={H:2d} nullseg {len(ns):4d} offseg {len(oseg):5d} | FAR iso {row['FAR_iso']:.3f} "
                       f"(worst {max(row['cond_iso'].values() or [0]):.3f}) lead {row['FAR_lead']:.3f} (worst {max(row['cond_lead'].values() or [0]):.3f}) "
                       f"| TPR {row['TPR']:.3f} alias {row['alias']} latency {row['latency_med']:.0f}", flush=True)

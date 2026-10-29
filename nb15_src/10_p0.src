@@ -27,7 +27,7 @@ def log(step, status, msg=""):
     print({"ok": "[ OK ]", "warn": "[WARN]", "fail": "[FAIL]", "info": "[info]"}.get(status, "[??]"), step + ":", msg, flush=True)
 torch.manual_seed(0); np.random.seed(0)
 DEVICE = "cuda" if torch.cuda.is_available() else "cpu"
-BF16_OK = (DEVICE == "cuda" and torch.cuda.is_bf16_supported())
+BF16_OK = (DEVICE == "cuda" and torch.cuda.get_device_capability()[0] >= 8)   # T4 (sm75) only emulates bf16 -> very slow; use fp16
 print("torch", torch.__version__, "| device", DEVICE, "| bf16", BF16_OK, flush=True)
 if DEVICE == "cuda": print("GPU:", torch.cuda.get_device_properties(0).name, flush=True)
 

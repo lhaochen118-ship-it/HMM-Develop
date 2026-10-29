@@ -1,0 +1,169 @@
+{
+ "ds": "nord",
+ "desc": "salad",
+ "H": 10,
+ "runs": [
+  {
+   "seed": 0,
+   "n_map": 3100,
+   "n_null_seg": 139,
+   "thr": 4.409603402444116,
+   "off_frac": 0.2911111111111111,
+   "rules": {
+    "accept all": {
+     "wrong_fixes": 6008,
+     "correct_fixes": 7486,
+     "FAR_offmap": 1.0,
+     "err_mean": 436.06513362601663,
+     "err_median": 124.62358809041814,
+     "err_p95": 2377.483428051888,
+     "frac_gt_rho": 0.9762962962962963
+    },
+    "label threshold": {
+     "wrong_fixes": 1184,
+     "correct_fixes": 4933,
+     "FAR_offmap": 0.03740458015267176,
+     "err_mean": 78.90726829949811,
+     "err_median": 29.04255455207192,
+     "err_p95": 351.3702444235915,
+     "frac_gt_rho": 0.7858518518518518
+    },
+    "SelfCal frame": {
+     "wrong_fixes": 151,
+     "correct_fixes": 5948,
+     "FAR_offmap": 0.015776081424936386,
+     "err_mean": 35.05611453919017,
+     "err_median": 9.528665440815018,
+     "err_p95": 204.4313683781491,
+     "frac_gt_rho": 0.6355555555555555
+    },
+    "certified (ours)": {
+     "wrong_fixes": 80,
+     "correct_fixes": 7022,
+     "FAR_offmap": 0.003816793893129771,
+     "err_mean": 4.639276284432125,
+     "err_median": 1.055949940377559,
+     "err_p95": 23.780252078900237,
+     "frac_gt_rho": 0.21244444444444444
+    },
+    "oracle": {
+     "wrong_fixes": 0,
+     "correct_fixes": 7486,
+     "FAR_offmap": 0.0,
+     "err_mean": 0.6092950021955474,
+     "err_median": 0.32306988428820205,
+     "err_p95": 2.2016604650016913,
+     "frac_gt_rho": 0.0
+    }
+   }
+  },
+  {
+   "seed": 1,
+   "n_map": 3100,
+   "n_null_seg": 139,
+   "thr": 4.31748811353631,
+   "off_frac": 0.2911111111111111,
+   "rules": {
+    "accept all": {
+     "wrong_fixes": 5892,
+     "correct_fixes": 7604,
+     "FAR_offmap": 1.0,
+     "err_mean": 342.3208866832585,
+     "err_median": 181.9664166325208,
+     "err_p95": 1202.541212556661,
+     "frac_gt_rho": 0.9571111111111111
+    },
+    "label threshold": {
+     "wrong_fixes": 1000,
+     "correct_fixes": 4834,
+     "FAR_offmap": 0.03486005089058524,
+     "err_mean": 94.26640580589026,
+     "err_median": 28.14965408127756,
+     "err_p95": 384.0542131951383,
+     "frac_gt_rho": 0.8408888888888889
+    },
+    "SelfCal frame": {
+     "wrong_fixes": 133,
+     "correct_fixes": 6074,
+     "FAR_offmap": 0.013994910941475827,
+     "err_mean": 27.828199585065313,
+     "err_median": 10.7911193506352,
+     "err_p95": 106.13124916903428,
+     "frac_gt_rho": 0.8855555555555555
+    },
+    "certified (ours)": {
+     "wrong_fixes": 110,
+     "correct_fixes": 7169,
+     "FAR_offmap": 0.010178117048346057,
+     "err_mean": 12.399925226062388,
+     "err_median": 7.629332493810011,
+     "err_p95": 33.904228413474,
+     "frac_gt_rho": 0.8734074074074074
+    },
+    "oracle": {
+     "wrong_fixes": 0,
+     "correct_fixes": 7604,
+     "FAR_offmap": 0.0,
+     "err_mean": 9.741892098469028,
+     "err_median": 7.481887898116383,
+     "err_p95": 23.79444140006429,
+     "frac_gt_rho": 0.9534074074074074
+    }
+   }
+  },
+  {
+   "seed": 2,
+   "n_map": 3100,
+   "n_null_seg": 141,
+   "thr": 3.925268232178167,
+   "off_frac": 0.28444444444444444,
+   "rules": {
+    "accept all": {
+     "wrong_fixes": 6147,
+     "correct_fixes": 7348,
+     "FAR_offmap": 1.0,
+     "err_mean": 297.98044342521536,
+     "err_median": 161.5034897958078,
+     "err_p95": 1169.4562172823603,
+     "frac_gt_rho": 0.9332592592592592
+    },
+    "label threshold": {
+     "wrong_fixes": 1306,
+     "correct_fixes": 4937,
+     "FAR_offmap": 0.03567708333333333,
+     "err_mean": 80.68915237440063,
+     "err_median": 41.557362502933756,
+     "err_p95": 335.91125230337957,
+     "frac_gt_rho": 0.8002222222222222
+    },
+    "SelfCal frame": {
+     "wrong_fixes": 170,
+     "correct_fixes": 5433,
+     "FAR_offmap": 0.009895833333333333,
+     "err_mean": 10.166997124658492,
+     "err_median": 4.167527791210773,
+     "err_p95": 47.34099602649471,
+     "frac_gt_rho": 0.38711111111111113
+    },
+    "certified (ours)": {
+     "wrong_fixes": 137,
+     "correct_fixes": 6910,
+     "FAR_offmap": 0.005208333333333333,
+     "err_mean": 6.207069381555547,
+     "err_median": 3.3228312517680934,
+     "err_p95": 20.66786950358975,
+     "frac_gt_rho": 0.2677037037037037
+    },
+    "oracle": {
+     "wrong_fixes": 0,
+     "correct_fixes": 7348,
+     "FAR_offmap": 0.0,
+     "err_mean": 3.638410587564596,
+     "err_median": 3.153524602256681,
+     "err_p95": 8.580673304714864,
+     "frac_gt_rho": 0.19244444444444445
+    }
+   }
+  }
+ ]
+}
