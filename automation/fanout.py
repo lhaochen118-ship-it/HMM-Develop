@@ -29,14 +29,33 @@ for acc in sorted({slots[k % len(slots)][0] for k in range(nk)}):
     for _ in range(40):
         if subprocess.run(["kaggle", "datasets", "status", f"{acc}/dive-vpr-analysis"], capture_output=True, text=True, env=env).stdout.strip().endswith("ready"): break
         time.sleep(10)
-for k in range(nk):
+def make(kd, slug, part, acc, gpu):
+    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + (["--gpu"] if gpu else [])
+    return subprocess.run(cmd, capture_output=True, text=True)
+
+
+def launch(k):
     slug = f"{prefix}-{k + 1}"
-    procs.append(subprocess.Popen([sys.executable, os.path.join(ROOT, "automation", "run_kernel.py"), os.path.join(work, slug),
-                                   os.path.join(work, slug + "_out"), "600", "3", "14400"], stdout=open(os.path.join(work, slug + ".log"), "w"), stderr=subprocess.STDOUT))
-    time.sleep(2)
+    return subprocess.Popen([sys.executable, os.path.join(ROOT, "automation", "run_kernel.py"), os.path.join(work, slug),
+                             os.path.join(work, slug + "_out"), "600", "4", "14400"], stdout=open(os.path.join(work, slug + ".log"), "w"), stderr=subprocess.STDOUT)
+
+
+procs = {}
+for k in range(nk):
+    procs[k] = launch(k); time.sleep(2)
 print(f"launched {nk} kernels", flush=True)
-for k, p in enumerate(procs):
-    p.wait(); slug = f"{prefix}-{k + 1}"; log = open(os.path.join(work, slug + ".log")).read()
-    res = glob.glob(os.path.join(work, slug + "_out", "results", "*.json"))
-    for f in res: shutil.copy(f, os.path.join(ROOT, "analysis", "results"))
-    print(f"{slug}: {'OK' if 'STATUS=DONE:complete' in log else 'FAILED'} {len(res)} results, rc!=0: {log.count('rc=') - log.count('rc=0')}", flush=True)
+# failover: a kernel whose push hit the account's GPU-session cap (account busy elsewhere) moves to the next account
+tried = {k: {slots[k % len(slots)][0]} for k in range(nk)}
+while procs:
+    for k, p in list(procs.items()):
+        if p.poll() is None: continue
+        del procs[k]; slug = f"{prefix}-{k + 1}"; log = open(os.path.join(work, slug + ".log")).read()
+        gpu = k < len(slots) and "--cpu" not in sys.argv
+        if "STATUS=PUSH_FAILED" in log and len(tried[k]) < len(ACCOUNTS):
+            acc = [a for a in ACCOUNTS[k % len(ACCOUNTS):] + ACCOUNTS if a not in tried[k]][0]; tried[k].add(acc)
+            make(os.path.join(work, slug), slug, jobs[k::nk], acc, gpu); time.sleep(40)
+            print(f"{slug}: push failed -> retry on {acc}", flush=True); procs[k] = launch(k); continue
+        res = glob.glob(os.path.join(work, slug + "_out", "results", "*.json"))
+        for f in res: shutil.copy(f, os.path.join(ROOT, "analysis", "results"))
+        print(f"{slug}: {'OK' if 'STATUS=DONE:complete' in log else 'FAILED'} {len(res)} results, rc!=0: {log.count('rc=') - log.count('rc=0')}", flush=True)
+    time.sleep(15)
