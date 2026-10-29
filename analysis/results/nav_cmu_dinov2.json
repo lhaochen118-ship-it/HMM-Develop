@@ -7,7 +7,7 @@
    "seed": 0,
    "n_map": 1725,
    "n_null_seg": 63,
-   "thr": 10.452454811496224,
+   "thr": 10.542866267412892,
    "off_frac": 0.2537508763729843,
    "rules": {
     "accept all": {
@@ -46,14 +46,23 @@
      "err_p95": 12.633829118992525,
      "frac_gt_rho": 0.00836644075718626
     },
+    "CPC-HMM (ours)": {
+     "wrong_fixes": 694,
+     "correct_fixes": 7681,
+     "FAR_offmap": 0.06649475041444096,
+     "err_mean": 5.147188994313312,
+     "err_median": 2.61190131195719,
+     "err_p95": 15.939552729323287,
+     "frac_gt_rho": 0.019864454311755084
+    },
     "certified (ours)": {
-     "wrong_fixes": 418,
-     "correct_fixes": 6418,
-     "FAR_offmap": 0.033707865168539325,
-     "err_mean": 5.6536863859955915,
-     "err_median": 2.4004944260770698,
-     "err_p95": 18.45157891357442,
-     "frac_gt_rho": 0.03687777518111708
+     "wrong_fixes": 416,
+     "correct_fixes": 6412,
+     "FAR_offmap": 0.03352366918401179,
+     "err_mean": 5.348618956081112,
+     "err_median": 2.397624164862033,
+     "err_p95": 18.388210284067572,
+     "frac_gt_rho": 0.02692217807899042
     },
     "oracle": {
      "wrong_fixes": 0,
@@ -112,6 +121,15 @@
      "err_median": 2.4525190066685454,
      "err_p95": 59.24320398281782,
      "frac_gt_rho": 0.07899041832203786
+    },
+    "CPC-HMM (ours)": {
+     "wrong_fixes": 55,
+     "correct_fixes": 9421,
+     "FAR_offmap": 0.0,
+     "err_mean": 3.995035360271064,
+     "err_median": 2.5436192569096434,
+     "err_p95": 13.127767392949712,
+     "frac_gt_rho": 0.00560878709978967
     },
     "certified (ours)": {
      "wrong_fixes": 30,
@@ -179,6 +197,15 @@
      "err_median": 2.4732661402940037,
      "err_p95": 12.735654787544918,
      "frac_gt_rho": 0.006777284412245852
+    },
+    "CPC-HMM (ours)": {
+     "wrong_fixes": 36,
+     "correct_fixes": 8895,
+     "FAR_offmap": 0.00032175032175032174,
+     "err_mean": 3.7211961791616237,
+     "err_median": 2.424505766468359,
+     "err_p95": 11.621243688730594,
+     "frac_gt_rho": 0.0021032951624211263
     },
     "certified (ours)": {
      "wrong_fixes": 0,

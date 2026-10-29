@@ -14,7 +14,7 @@
      "wrong_fixes": 9801,
      "correct_fixes": 3697,
      "FAR_offmap": 1.0,
-     "err_mean": 641.9169495047076,
+     "err_mean": 641.9054735444257,
      "err_median": 430.2976705640658,
      "err_p95": 1996.0848551400238,
      "frac_gt_rho": 0.9947407407407407
@@ -45,6 +45,15 @@
      "err_median": 1.4532283011790241,
      "err_p95": 24.288992510278376,
      "frac_gt_rho": 0.3145925925925926
+    },
+    "CPC-HMM (ours)": {
+     "wrong_fixes": 195,
+     "correct_fixes": 4394,
+     "FAR_offmap": 0.012977099236641221,
+     "err_mean": 8.366429546289497,
+     "err_median": 2.0187719405643065,
+     "err_p95": 60.56895942165025,
+     "frac_gt_rho": 0.23037037037037036
     },
     "certified (ours)": {
      "wrong_fixes": 27,
@@ -81,9 +90,9 @@
      "wrong_fixes": 9596,
      "correct_fixes": 3903,
      "FAR_offmap": 1.0,
-     "err_mean": 659.9438573477431,
+     "err_mean": 659.9310341970362,
      "err_median": 493.41261700113455,
-     "err_p95": 1810.152147350752,
+     "err_p95": 1810.1521472402883,
      "frac_gt_rho": 0.9971851851851852
     },
     "label threshold": {
@@ -112,6 +121,15 @@
      "err_median": 12.02238330125465,
      "err_p95": 97.24113654878026,
      "frac_gt_rho": 0.9224444444444444
+    },
+    "CPC-HMM (ours)": {
+     "wrong_fixes": 144,
+     "correct_fixes": 3685,
+     "FAR_offmap": 0.0066157760814249365,
+     "err_mean": 60.84541928585485,
+     "err_median": 15.694744658672107,
+     "err_p95": 260.7749994617432,
+     "frac_gt_rho": 0.91
     },
     "certified (ours)": {
      "wrong_fixes": 151,
@@ -179,6 +197,15 @@
      "err_median": 30.329275556693915,
      "err_p95": 379.84680752814245,
      "frac_gt_rho": 0.7794074074074074
+    },
+    "CPC-HMM (ours)": {
+     "wrong_fixes": 150,
+     "correct_fixes": 3504,
+     "FAR_offmap": 0.0,
+     "err_mean": 15.098596945148236,
+     "err_median": 7.634995106916904,
+     "err_p95": 49.43448032392742,
+     "frac_gt_rho": 0.6637037037037037
     },
     "certified (ours)": {
      "wrong_fixes": 160,
