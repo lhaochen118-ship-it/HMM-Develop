@@ -239,7 +239,37 @@ def main():
                     lo = np.log(pr / (1 - pr)) + ll[t]; pr = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon[t] = pr
             res[name] = metrics(est, conf, 1 - pon)
         res["fac_mix"]["n_null_conf"] = int(len(nul_conf))
-        run_rec = {"seed": seed, "tau": tau, "a_fit": a_fit, "rho_mean": float(rho.mean()), "w_mean": float(w.mean()), "r_lambda": r_fit, "methods": res}
+
+        # THEORY CHECKS of the presence chain (CPC-HMM = fac_anchT_mix):
+        # (1) switching-probability sweep: odds O_t <= (O_{t-1} + p/(1-p)) LR_t, i.e. dominated by a Shiryaev-Roberts e-detector
+        #     -> ARL0 >= (1-p)/p - R0; re-entry delay ~ log((1-p)/p) / KL1 (Wald), KL1 = E_on[log LR_t]
+        # (2) PREDICTABLE e-values: a_t refitted every 25 frames on the traversal's PAST frames only (no look-ahead), so
+        #     LR_t is an e-value conditionally on the past under the map-null dominance assumption (an e-process)
+        def presence(ee, p):
+            ll = np.log(np.maximum(ee, 1e-300)); pon = np.zeros(len(q))
+            for idx in seqs:
+                pr = 0.5
+                for t in idx:
+                    pr = (1 - p) * pr + p * (1 - pr)
+                    lo = np.log(pr / (1 - pr)) + ll[t]; pr = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon[t] = pr
+            return pon
+
+        def predictable(pv):
+            e, a_t = np.ones(len(q)), np.ones(len(q))
+            for cn in conds:
+                order = np.concatenate([i for i in seqs if cond[i[0]] == cn]); a = 1.0       # a = 1: no evidence yet
+                for j, t in enumerate(order):
+                    if j >= 25 and j % 25 == 0: a, _ = beta_em(pv[order[:j]], iters=50)
+                    a_t[t] = a; e[t] = a * np.clip(pv[t], 1e-6, 1) ** (a - 1)
+            return e, a_t
+
+        ee_cpc = 0.5 * (e_top_g + e_anch ** (1.0 / Hh)); lcpc = np.log(np.maximum(ee_cpc, 1e-300))
+        run_kl = {"KL_on": float(lcpc[onm].mean()), "KL_off": float(lcpc[offm].mean()), "KL_on_correct": float(lcpc[onm & (np.linalg.norm(ep.q_pos - mp[est], axis=1) <= tol)].mean())}
+        for pp in (0.001, 0.003, 0.03, 0.1):
+            res[f"cpc_p{pp}"] = metrics(est, conf, 1 - presence(ee_cpc, pp))
+        e1p, a1p = predictable(p); e3p, _ = predictable(pR)
+        res["cpc_pred"] = metrics(est, conf, 1 - presence(0.5 * (np.where(agree, e1p, a1p) + e3p ** (1.0 / Hh)), 0.01))
+        run_rec = {"seed": seed, "tau": tau, "a_fit": a_fit, "rho_mean": float(rho.mean()), "w_mean": float(w.mean()), "r_lambda": r_fit, "KL": run_kl, "methods": res}
         out["runs"].append(run_rec)
         print(f"[{ds}/{desc} s{seed}] r_lam {np.mean(list(r_fit.values())):.2f} tau {tau:.2f} rho {rho.mean():.2f} w {w.mean():.2f} a {np.mean([v[0] for v in a_fit.values()]):.2f} ({time.time()-t0:.0f}s)", flush=True)
         for n, r in res.items():

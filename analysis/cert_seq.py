@@ -75,6 +75,8 @@ def odometry_wheel(ep, sid, k, n_cal=50):
     for s in np.unique(sid):
         idx = np.where(sid == s)[0]; idx = idx[np.argsort(k[idx])]; n = min(n_cal, len(idx) - 1)
         dp = np.diff(ep.q_dmi[idx]); g = ep.q_pos[idx]; dg = np.diff(g, axis=0)
+        # pulse-counter discontinuities (log gaps / counter resets in dmi.csv: one step of ~8.7 km in 4 sequences) -> median step
+        md = np.median(dp[dp > 0]) if (dp > 0).any() else 1.0; dp = np.where((dp <= 0) | (dp > 10 * md), md, dp)
         scale = np.linalg.norm(dg[:n], axis=1).sum() / max(dp[:n].sum(), 1e-9)
         best = None
         for sign in (1.0, -1.0):
