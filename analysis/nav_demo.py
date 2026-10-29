@@ -25,6 +25,43 @@ from hmm_fix import beta_em
 A, SIG_FIX, DROP = 0.05, 5.0, 0.3
 DUMP = "--dump" in sys.argv                    # also save per-frame arrays (results/navframes_<ds>_<desc>_s<seed>.npz)
 if DUMP: sys.argv.remove("--dump")
+KAPPA = 0.05                                   # ghost position uncertainty growth per metre of odometry (as the nav filter)
+
+
+def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01, gate="pred", ghost=True, s0=25.0, eps=1e-4):
+    """CPC-HMM with the place and presence chains run JOINTLY on one sequence (needed for the two couplings below).
+    b_t = P(x_t | on_t): place chain without off-map state (DiagFilter transitions, affine-invariant emission `rel`).
+    Couplings (both label-free; both keep LR_t an e-value, so the ARL0 bound of the presence chain is unchanged):
+      * off->on re-entry: P(x_t | on_t) = [P(on_{t-1})(1-p_out) K*b_{t-1} + P(off_{t-1}) p_in G_t] / norm, where G_t is the
+        DEAD-RECKONED OFF-MAP STATE (ghost): position of the last reported fix propagated by odometry, sd s0 + KAPPA * path
+        length (ghost=True); ghost=False -> G uniform (position-less off-map state, as Xu'21).
+      * gate of the top-1 e-value: 'post' = 1[top-1 within excl of the posterior MAP] (CPC-HMM), 'pred' = g_t = PREDICTED
+        place mass b_pred within excl of the top-1 (F_{t-1}-measurable kernel); e~ = a + g (e_top - a) <= e_top pointwise.
+    e_top = a p^(a-1), e_a = a (gate-off value), e_r = (e^R)^(1/H). Returns (est, pon)."""
+    L, n = rel.shape; pos = Fp.pos; b = np.full(n, 1.0 / n); pon = 0.5
+    est = np.empty(L, int); out = np.empty(L); mu, s, have = None, s0, False
+    for t in range(L):
+        if t > 0:
+            w = np.exp(-0.5 * ((Fp.D - U[t][None]) ** 2).sum(1) / Fp.sigma ** 2)
+            z = np.bincount(Fp.ii, w, n); z[z == 0] = 1
+            nb = np.bincount(Fp.jj, b[Fp.ii] * w / z[Fp.ii], n); nb /= nb.sum()
+            w_on, w_off = pon * (1 - p_out), (1 - pon) * p_in
+            if have:
+                mu = mu + U[t]; s = s + KAPPA * np.linalg.norm(U[t])
+            if ghost and have:
+                G = np.exp(-0.5 * ((pos - mu) ** 2).sum(1) / s ** 2); sg = G.sum()
+                G = G / sg if sg > 1e-12 else np.full(n, 1.0 / n)
+            else: G = np.full(n, 1.0 / n)
+            b = (w_on * nb + w_off * G) / (w_on + w_off); b = (1 - eps) * b + eps / n
+            pr = w_on + w_off
+        else: pr = 0.5
+        g = b[excl_nbr[top[t]]].sum() if gate == "pred" else None
+        b = b * np.exp(rel[t] - rel[t].max()); b /= b.sum(); j = int(b.argmax()); est[t] = j
+        if gate == "post": g = float(np.linalg.norm(pos[top[t]] - pos[j]) <= Fp.far)
+        ee = 0.5 * (e_a[t] + min(g, 1.0) * (e_top[t] - e_a[t]) + e_r[t])
+        lo = np.log(pr / (1 - pr)) + np.log(max(ee, 1e-300)); pon = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); out[t] = pon
+        if pon > 0.5: mu, s, have = pos[j].astype(float), s0, True        # ghost = last reported fix (+ odometry while off)
+    return est, out
 
 
 def main():
@@ -129,15 +166,26 @@ def main():
         # the map, ~ log((1-p_out)/p_out) / |E0 log LR| (the dominant source of off-map fixes)
         pon = presence(0.01, 0.01); acc_c = pon > 0.5; x_cpc = MP[est_c]
         acc_po = {po: presence(0.01, po) > 0.5 for po in (0.05, 0.1, 0.2)}
+        # joint CPC-HMM variants (cpc_joint): predictive gate (PG) and/or dead-reckoned off-map state (DR)
+        e_top1, e_a1, e_r1 = np.exp(lam), np.exp(loga), e_R ** (1.0 / H)
+        nbr_x = cKDTree(MP).query_ball_point(MP, c["excl"]); joint = {}
+        for jn, gt, gh in (("CPC-HMM +PG", "pred", False), ("CPC-HMM +DR", "post", True), ("CPC-HMM +PG+DR", "pred", True)):
+            ej, pj = np.zeros(len(q), int), np.zeros(len(q))
+            for idx in q_seqs:
+                ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], e_top1[idx], e_a1[idx], e_r1[idx], top[idx], nbr_x, gate=gt, ghost=gh, s0=c["excl"])
+            joint[jn] = (pj > 0.5, MP[ej], pj)
         if DUMP:
             os.makedirs("results", exist_ok=True)
             np.savez_compressed(f"results/navframes_{ds.replace(':', '_')}_{desc}_s{seed}.npz", pon=pon, est_c=est_c, top=top, e_h=e_h,
                                 err_top=err_top, err_cpc=np.linalg.norm(x_cpc - ep.q_pos, axis=1), err_hmm=np.linalg.norm(x_hmm - ep.q_pos, axis=1),
                                 inm=inm, offm=offm, cond=cond, q_sid=q_sid, q_k=q_k, p_frame=p_frame, pR=pR, Rq=Rq, thr=thr, lam=lam, loga=loga,
-                                e_R=e_R, agree=agree, maxsim=Fr["maxsim"], q_pos=ep.q_pos, o_q=o_q, excl=c["excl"], tol=c["tol"][0])
+                                e_R=e_R, agree=agree, maxsim=Fr["maxsim"], q_pos=ep.q_pos, o_q=o_q, excl=c["excl"], tol=c["tol"][0],
+                                **{"pon_" + k.split()[-1].replace("+", "_"): v[2] for k, v in joint.items()},
+                                **{"err_" + k.split()[-1].replace("+", "_"): np.linalg.norm(v[1] - ep.q_pos, axis=1) for k, v in joint.items()})
         rules = {"accept all": np.ones(len(q), bool), "label threshold": Fr["maxsim"] > thr_ms, "SelfCal frame": p_frame <= A,
                  "HMM off-map (labels)": acc_h, "CPC-HMM (ours)": acc_c,
-                 **{f"CPC-HMM p_out={po}": a for po, a in acc_po.items()}, "certified (ours)": Rq > thr, "oracle": good}
+                 **{f"CPC-HMM p_out={po}": a for po, a in acc_po.items()}, **{k: v[0] for k, v in joint.items()},
+                 "certified (ours)": Rq > thr, "oracle": good}
         hz = [0] if ep.q_pos.shape[1] == 1 else ([0, 1] if ep.q_pos.shape[1] == 2 else list(np.argsort(ep.q_pos.var(0))[1:]))
 
         def track(acc, xf=None):
@@ -161,7 +209,7 @@ def main():
         run = {"seed": seed, "n_map": int(keep.sum()), "n_null_seg": len(ns), "thr": float(thr), "off_frac": float(offm.mean()), "rules": {}}
         run["hmm_T_k"] = [best[1], best[2]]
         for name, acc in rules.items():
-            xf = x_hmm if name.startswith("HMM") else (x_cpc if name.startswith("CPC") else x_fix)
+            xf = x_hmm if name.startswith("HMM") else joint[name][1] if name in joint else (x_cpc if name.startswith("CPC") else x_fix)
             e = track(acc, xf); err_f = np.linalg.norm(xf - ep.q_pos, axis=1)
             gd, bd = inm & (err_f <= c["excl"]), offm | (err_f > c["excl"])
             run["rules"][name] = dict(wrong_fixes=int((acc & bd).sum()), correct_fixes=int((acc & gd).sum()), FAR_offmap=float(acc[offm].mean()),
