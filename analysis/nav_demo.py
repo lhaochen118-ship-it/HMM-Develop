@@ -105,7 +105,13 @@ def main():
         est_c = np.zeros(len(q), int)
         for idx in q_seqs: est_c[idx], _, _, _ = Fp.run(rel[idx], U[idx])
         lam = np.zeros(len(q)); loga = np.zeros(len(q)); e_R = np.zeros(len(q))
-        rn = np.sort(Rn[np.isfinite(Rn)]); pR = (1 + len(rn) - np.searchsorted(rn, Rq, side="left")) / (1 + len(rn))
+        # CPC-HMM presence e-value: the R null uses NOISE-FREE map odometry (exact map poses). Adding independent symmetric
+        # unimodal noise to the displacements can only lower P(|dx - do| <= rho_o) (Anderson), so this null dominates R of
+        # off-map queries under any real odometry -> super-uniform p^R (the simulated-noise null was sub-uniform on Boreas/4S)
+        Rn0 = np.full(len(MP), np.nan)
+        for order in m_seqs:
+            for ch in chunks(order, null_ok, bidM): Rn0[ch] = running(p_n, Nr["top"], np.array(ch), MP.astype(float), MP, "ANCH", c["excl"], rho_o, H)
+        rn = np.sort(Rn0[np.isfinite(Rn0)]); pR = (1 + len(rn) - np.searchsorted(rn, Rq, side="left")) / (1 + len(rn))
         for cn in conds:
             m = cond == cn; a1, _ = beta_em(p_frame[m]); a2, _ = beta_em(pR[m])
             lam[m] = np.log(a1) + (a1 - 1) * np.log(np.clip(p_frame[m], 1e-6, 1)); loga[m] = np.log(a1)

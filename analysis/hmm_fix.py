@@ -32,6 +32,8 @@ from hmm_diag import DiagFilter, auroc, recall_at_fl
 from cert_seq import odometry_sim, odometry_real, running, chunks
 
 A = 0.05
+EXACT_NULL = "--simnull" not in sys.argv     # --simnull: old map-null odometry (simulated noise), for the ablation
+if not EXACT_NULL: sys.argv.remove("--simnull")
 DROP = 0.3                                   # share of map blocks removed (off-map excursions); --drop f overrides
 if "--drop" in sys.argv:
     i = sys.argv.index("--drop"); DROP = float(sys.argv[i + 1]); del sys.argv[i:i + 2]
@@ -220,7 +222,9 @@ def main():
         sub = np.arange(0, len(mp), 2)                                       # map_null(stride=2): rows of Nr/Nc = map items sub
         ok_n = np.isfinite(Nr["maxsim"]) & np.isfinite(Nc["z_far"])
         p_n = SC.SelfCalTest(SC.pack(Nr, Nc)).pvalue(**SC.pack(Nr, Nc))
-        o_m = odometry_sim(mp[sub], np.zeros(len(sub), int), np.arange(len(sub)), rng); Rn = np.full(len(sub), np.nan)
+        # noise-free map odometry (exact map poses): by Anderson's inequality this null dominates R of off-map queries under
+        # any real odometry with symmetric unimodal noise (a simulated-noise null was sub-uniform on Boreas / 4Seasons)
+        o_m = mp[sub].astype(float) if EXACT_NULL else odometry_sim(mp[sub], np.zeros(len(sub), int), np.arange(len(sub)), rng); Rn = np.full(len(sub), np.nan)
         for ch in chunks(np.arange(len(sub)), ok_n, bidk[sub]): Rn[ch] = running(p_n, Nr["top"], np.array(ch), o_m, mp, "ANCH", c["excl"], rho_o, Hh)
         rn = np.sort(Rn[np.isfinite(Rn)]); Rq = np.zeros(len(q))
         for idx in seqs: Rq[idx] = running(p, Fr["top"], idx, o, mp, "ANCH", c["excl"], rho_o, Hh)
