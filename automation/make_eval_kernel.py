@@ -23,7 +23,7 @@ CODE_DS = f"{OWNER}/dive-vpr-analysis"
 _tok = os.path.expanduser(f"~/.kaggle/tok_{OWNER}")                     # per-account token file, if present
 if os.path.isfile(_tok): os.environ["KAGGLE_API_TOKEN"] = open(_tok).read().strip()
 DUMPS = []
-DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps"]
+DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps", "nhatlong1103/vpr-dumps-4seasons"]   # + boreas-vpr when published
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 GPU = "--gpu" in sys.argv; argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--acc2", "--acc3", "--owner") and sys.argv[i - 1] != "--owner"]
 kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]

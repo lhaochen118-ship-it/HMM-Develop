@@ -58,6 +58,31 @@ def odometry_vio(ep, sid, k):
     return o
 
 
+def odometry_wheel(ep, sid, k, n_cal=50):
+    """real wheel + gyro dead reckoning (Boreas): distance = pulse increments x scale, heading = h0 + sign x integrated
+    gyro yaw. scale, sign and the initial heading h0 are calibrated per sequence on its first n_cal frames only."""
+    o = np.zeros_like(ep.q_pos)
+    for s in np.unique(sid):
+        idx = np.where(sid == s)[0]; idx = idx[np.argsort(k[idx])]; n = min(n_cal, len(idx) - 1)
+        dp = np.diff(ep.q_dmi[idx]); g = ep.q_pos[idx]; dg = np.diff(g, axis=0)
+        scale = np.linalg.norm(dg[:n], axis=1).sum() / max(dp[:n].sum(), 1e-9)
+        best = None
+        for sign in (1.0, -1.0):
+            yaw = sign * (ep.q_gyro[idx] - ep.q_gyro[idx[0]])
+            h0 = np.arctan2(dg[:n, 1], dg[:n, 0]) - yaw[1:n + 1]; h0 = np.arctan2(np.sin(h0).mean(), np.cos(h0).mean())
+            steps = (scale * dp)[:, None] * np.stack([np.cos(h0 + yaw[1:]), np.sin(h0 + yaw[1:])], 1)
+            oo = np.vstack([[0, 0], np.cumsum(steps, 0)]); err = np.linalg.norm(oo[:n + 1] - (g[:n + 1] - g[0]), axis=1).mean()
+            if best is None or err < best[0]: best = (err, oo)
+        o[idx] = best[1]
+    return o
+
+
+def odometry_real(ep, sid, k):
+    if hasattr(ep, "q_vio"): return odometry_vio(ep, sid, k)
+    if hasattr(ep, "q_dmi"): return odometry_wheel(ep, sid, k)
+    return None
+
+
 def running(p, top, order, o, m_pos, kind, rho, rho_o, Lmax, alt=None):
     """running statistic at every frame listed in `order` (one sequence, time order). alt=(p2, top2, mask): frames with
     mask False use (p2, top2) instead (lead-in frames matched against the full map)."""
@@ -99,6 +124,7 @@ def chunks(order, ok, block):
 def main():
     dump, ds, desc = sys.argv[1], sys.argv[2], sys.argv[3]; seeds = int(sys.argv[4]) if len(sys.argv) > 4 else 3
     if ds.startswith("4s:"): ep = V.load_4seasons(dump, desc, ds[3:]); c = CFG["cmu"]
+    elif ds == "boreas": ep = V.load_boreas(dump, desc); c = CFG["cmu"]
     else: ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
     q_sid, q_k, m_sid, m_k = V.frame_order(dump, ds, ep, desc)
     nord = ds in ("nord", "nordw"); rho = c["excl"]; rho_o = 1.0 if nord else 5.0; LMAX0 = 30
@@ -126,9 +152,9 @@ def main():
         _, nn = cKDTree(ep.m_pos).query(ep.q_pos); qb = bid[nn]
         null_ok = np.isfinite(Nr["maxsim"]) & np.isfinite(Nc["z_far"]) & ~half
         off_ok = np.isfinite(Or_["maxsim"]) & np.isfinite(Oc["z_far"])
-        if hasattr(ep, "q_vio"):
-            o_q = odometry_vio(ep, q_sid, q_k)
-            o_m = odometry_sim(ep.m_pos, m_sid, m_k, rng)          # map pseudo-trajectories: simulated (map VIO not loaded)
+        if hasattr(ep, "q_vio") or hasattr(ep, "q_dmi"):
+            o_q = odometry_real(ep, q_sid, q_k)
+            o_m = odometry_sim(ep.m_pos, m_sid, m_k, rng)          # map pseudo-trajectories: simulated odometry
         else:
             o_q = odometry_sim(ep.q_pos, q_sid, q_k, rng); o_m = odometry_sim(ep.m_pos, m_sid, m_k, rng)
         run = {"seed": seed, "n_null_items": int(null_ok.sum()), "n_off": int(off_ok.sum()), "rows": []}

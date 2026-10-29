@@ -17,7 +17,7 @@ from scipy.spatial import cKDTree
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import vprlib as V, selfcal as SC
 from sc_eval import CFG
-from cert_seq import running, chunks, odometry_sim, odometry_vio
+from cert_seq import running, chunks, odometry_sim, odometry_real
 
 A, SIG_FIX, DROP = 0.05, 5.0, 0.3
 
@@ -26,6 +26,7 @@ def main():
     dump, ds, desc = sys.argv[1], sys.argv[2], sys.argv[3]
     seeds = int(sys.argv[4]) if len(sys.argv) > 4 else 3; H = int(sys.argv[5]) if len(sys.argv) > 5 else 10
     if ds.startswith("4s:"): ep = V.load_4seasons(dump, desc, ds[3:]); c = CFG["cmu"]
+    elif ds == "boreas": ep = V.load_boreas(dump, desc); c = CFG["cmu"]
     else: ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
     q_sid, q_k, m_sid, m_k = V.frame_order(dump, ds, ep, desc)
     nord = ds in ("nord", "nordw"); rho_o = 1.0 if nord else 5.0
@@ -52,7 +53,8 @@ def main():
         kidx = np.flatnonzero(keep); m_sid_k, m_k_k = m_sid[keep], m_k[keep]
         m_seqs = [np.where(m_sid_k == s)[0][np.argsort(m_k_k[m_sid_k == s])] for s in np.unique(m_sid_k)]
         o_m = odometry_sim(MP, m_sid_k, m_k_k, rng)
-        o_q = odometry_vio(ep, q_sid, q_k) if hasattr(ep, "q_vio") else odometry_sim(ep.q_pos, q_sid, q_k, rng)
+        real = hasattr(ep, "q_vio") or hasattr(ep, "q_dmi")
+        o_q = odometry_real(ep, q_sid, q_k) if real else odometry_sim(ep.q_pos, q_sid, q_k, rng)
         null_ok = np.isfinite(Nr["maxsim"]) & np.isfinite(Nc["z_far"]) & ~half
         Rn = np.full(len(MP), np.nan)
         for order in m_seqs:
@@ -75,7 +77,7 @@ def main():
             for idx in q_seqs:
                 x = ep.q_pos[idx[0]].copy(); P = 1.0; est[idx[0]] = x; thh = 0.0; sc = 1 + r.normal(0, 0.03)
                 for a, b in zip(idx[:-1], idx[1:]):
-                    if hasattr(ep, "q_vio"): u = o_q[b] - o_q[a]                         # real VIO increment (aligned)
+                    if real: u = o_q[b] - o_q[a]                                          # real VIO / wheel+gyro increment
                     else:
                         d = ep.q_pos[b] - ep.q_pos[a]; u = d * sc; thh += r.normal(0, np.deg2rad(0.3))
                         if len(hz) == 2:

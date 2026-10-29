@@ -136,6 +136,21 @@ def load_4seasons(dump, desc="salad", scene="office_loop", ref=None):
     return ep
 
 
+def load_boreas(dump, desc="salad", ref=None):
+    """Boreas (one ~8 km route driven over a year; all sequences share one ENU frame): map = reference sequence (default
+    the earliest dumped one), queries = all other sequences (condition = sequence name). Positions are 2-D (easting,
+    northing). ep.q_dmi / ep.q_gyro = raw wheel-encoder pulse count and integrated IMU yaw at every query frame (real
+    odometry); ep.q_rec = sequence of every query row (rows in time order)."""
+    seqs = sorted(f[7:-4] for f in os.listdir(os.path.join(dump, "meta")) if f.startswith("boreas_")
+                  and os.path.isfile(os.path.join(dump, desc, f[:-4] + ".npy")))
+    ref = ref or seqs[0]; M = {r: np.load(os.path.join(dump, "meta", f"boreas_{r}.npz"), allow_pickle=True) for r in seqs}
+    D = {r: np.load(os.path.join(dump, desc, f"boreas_{r}.npy")) for r in seqs}; qr = [r for r in seqs if r != ref]
+    cat = lambda f: np.concatenate([f(r) for r in qr])
+    ep = Episode("boreas", cat(lambda r: D[r]), D[ref], cat(lambda r: M[r]["C"][:, :2]), M[ref]["C"][:, :2], cat(lambda r: np.array([r] * len(D[r]))))
+    ep.q_dmi, ep.q_gyro, ep.q_rec, ep.ref = cat(lambda r: M[r]["dmi"]), cat(lambda r: M[r]["gyro_yaw"]), cat(lambda r: np.array([r] * len(D[r]))), ref
+    return ep
+
+
 # --------------------------------------------------------------------------- frame order (sequences)
 def _ts(names):
     return np.array([int(os.path.basename(str(n)).split(".")[0].split("_")[-1].rstrip("us")) for n in names], float)
@@ -169,7 +184,7 @@ def frame_order(dump, ds, ep, desc="salad"):
         n = len(ep.m); qg = np.asarray(ep.q_cond).astype(str)
         return sequences(np.tile(np.arange(n, dtype=float), len(ep.q) // n), qg, 1.5) + \
             sequences(np.arange(n, dtype=float), np.zeros(n, int), 1.5)
-    if ds.startswith("4s"):
+    if ds.startswith("4s") or ds == "boreas":
         _, qs = np.unique(ep.q_rec, return_inverse=True); qk = np.empty(len(qs), int)
         for s_ in np.unique(qs): qk[qs == s_] = np.arange((qs == s_).sum())
         return qs, qk, np.zeros(len(ep.m), int), np.arange(len(ep.m))
