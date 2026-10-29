@@ -82,31 +82,22 @@
      "err_p95": 23.600718378358003,
      "frac_gt_rho": 0.04416427044164271
     },
-    "CPC-HMM +PG+DR": {
-     "wrong_fixes": 46,
-     "correct_fixes": 10158,
-     "FAR_offmap": 0.0,
-     "err_mean": 7.567889406939427,
-     "err_median": 5.321669444390089,
-     "err_p95": 23.522656457893873,
-     "frac_gt_rho": 0.03605397036053971
-    },
     "CPC-HMM +GG": {
+     "wrong_fixes": 45,
+     "correct_fixes": 10155,
+     "FAR_offmap": 0.0,
+     "err_mean": 7.576451492440624,
+     "err_median": 5.324833233223368,
+     "err_p95": 23.55981411779566,
+     "frac_gt_rho": 0.0364226203642262
+    },
+    "CPC-HMM +GG(rho=.01)": {
      "wrong_fixes": 45,
      "correct_fixes": 10154,
      "FAR_offmap": 0.0,
      "err_mean": 7.578464523271634,
      "err_median": 5.327350340787667,
      "err_p95": 23.571992959935656,
-     "frac_gt_rho": 0.0364963503649635
-    },
-    "CPC-HMM +GG+DR": {
-     "wrong_fixes": 45,
-     "correct_fixes": 10154,
-     "FAR_offmap": 0.0,
-     "err_mean": 7.580995499329465,
-     "err_median": 5.326457826389959,
-     "err_p95": 23.577383715043432,
      "frac_gt_rho": 0.0364963503649635
     },
     "certified (ours)": {
@@ -239,32 +230,23 @@
      "err_p95": 21.809250877828724,
      "frac_gt_rho": 0.0363488903634889
     },
-    "CPC-HMM +PG+DR": {
-     "wrong_fixes": 473,
-     "correct_fixes": 8718,
-     "FAR_offmap": 0.04371742906774754,
-     "err_mean": 8.091025515326185,
-     "err_median": 6.062621339988374,
-     "err_p95": 21.39129639358605,
-     "frac_gt_rho": 0.027648750276487503
-    },
     "CPC-HMM +GG": {
+     "wrong_fixes": 344,
+     "correct_fixes": 8720,
+     "FAR_offmap": 0.030978575564562825,
+     "err_mean": 7.959139727066347,
+     "err_median": 5.932022331158005,
+     "err_p95": 21.579826321523633,
+     "frac_gt_rho": 0.026395340263953404
+    },
+    "CPC-HMM +GG(rho=.01)": {
      "wrong_fixes": 326,
      "correct_fixes": 8719,
      "FAR_offmap": 0.030978575564562825,
-     "err_mean": 8.099210026601721,
-     "err_median": 5.902440442091506,
-     "err_p95": 22.47029006683087,
-     "frac_gt_rho": 0.0327361203273612
-    },
-    "CPC-HMM +GG+DR": {
-     "wrong_fixes": 326,
-     "correct_fixes": 8720,
-     "FAR_offmap": 0.030978575564562825,
-     "err_mean": 8.100689164439082,
-     "err_median": 5.904029585474131,
-     "err_p95": 22.463563998990214,
-     "frac_gt_rho": 0.0327361203273612
+     "err_mean": 8.070344281837805,
+     "err_median": 5.904833622735206,
+     "err_p95": 22.323381366585906,
+     "frac_gt_rho": 0.030819140308191405
     },
     "certified (ours)": {
      "wrong_fixes": 83,
@@ -396,32 +378,23 @@
      "err_p95": 21.552850493162932,
      "frac_gt_rho": 0.021381700213817002
     },
-    "CPC-HMM +PG+DR": {
-     "wrong_fixes": 392,
-     "correct_fixes": 10186,
-     "FAR_offmap": 0.04437609841827768,
-     "err_mean": 7.202129852966787,
-     "err_median": 5.125829473891057,
-     "err_p95": 22.253117849755824,
-     "frac_gt_rho": 0.0310403303104033
-    },
     "CPC-HMM +GG": {
      "wrong_fixes": 388,
-     "correct_fixes": 9969,
+     "correct_fixes": 10180,
      "FAR_offmap": 0.04305799648506151,
-     "err_mean": 7.537103810046263,
-     "err_median": 5.312227590119689,
-     "err_p95": 23.326531702217288,
-     "frac_gt_rho": 0.0406989604069896
+     "err_mean": 7.296653745798407,
+     "err_median": 5.193012082047212,
+     "err_p95": 22.495095959097426,
+     "frac_gt_rho": 0.0323674703236747
     },
-    "CPC-HMM +GG+DR": {
-     "wrong_fixes": 392,
-     "correct_fixes": 9948,
-     "FAR_offmap": 0.04437609841827768,
-     "err_mean": 7.548783952484444,
-     "err_median": 5.312249681980142,
-     "err_p95": 23.315321533375695,
-     "frac_gt_rho": 0.0406989604069896
+    "CPC-HMM +GG(rho=.01)": {
+     "wrong_fixes": 388,
+     "correct_fixes": 10023,
+     "FAR_offmap": 0.04305799648506151,
+     "err_mean": 7.477108411726014,
+     "err_median": 5.291365643970244,
+     "err_p95": 23.153068884442014,
+     "frac_gt_rho": 0.038781980387819805
     },
     "certified (ours)": {
      "wrong_fixes": 20,
