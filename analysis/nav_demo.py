@@ -19,6 +19,8 @@ import vprlib as V, selfcal as SC
 from sc_eval import CFG
 from cert_seq import running, chunks, odometry_sim, odometry_real
 from hmm_eval import Filter
+from hmm_diag import DiagFilter
+from hmm_fix import beta_em
 
 A, SIG_FIX, DROP = 0.05, 5.0, 0.3
 
@@ -92,8 +94,30 @@ def main():
         best = best or (0, 0.01, 20)
         e_h = hmm_fix(best[1], best[2], np.ones(len(q), bool)); acc_h = e_h >= 0
         x_hmm = MP[np.maximum(e_h, 0)]
+        # CPC-HMM (hmm_fix.py, method fac_anchT_mix): place chain with affine-invariant emission + presence chain fed by the
+        # mixed belief-independent e-value 1/2 (e_top + e_R^(1/H)); fixes = place MAP whenever P(on) > 0.5 (label-free)
+        zf = Nc["z_far"][np.isfinite(Nc["z_far"])]; tau = float(zf.std() * np.sqrt(6) / np.pi)
+        sdf = np.maximum(np.nan_to_num(Fr["sd_far"], nan=np.nanmedian(Fr["sd_far"])), 1e-4)
+        rel = (S - smax) / (tau * sdf[:, None])
+        Fp = DiagFilter(MP, 1.0 if nord else 2.0, 6.0 if nord else 15.0, c["tol"][0], c["excl"])
+        est_c = np.zeros(len(q), int)
+        for idx in q_seqs: est_c[idx], _, _, _ = Fp.run(rel[idx], U[idx])
+        lam = np.zeros(len(q)); loga = np.zeros(len(q)); e_R = np.zeros(len(q))
+        rn = np.sort(Rn[np.isfinite(Rn)]); pR = (1 + len(rn) - np.searchsorted(rn, Rq, side="left")) / (1 + len(rn))
+        for cn in conds:
+            m = cond == cn; a1, _ = beta_em(p_frame[m]); a2, _ = beta_em(pR[m])
+            lam[m] = np.log(a1) + (a1 - 1) * np.log(np.clip(p_frame[m], 1e-6, 1)); loga[m] = np.log(a1)
+            e_R[m] = a2 * np.clip(pR[m], 1e-6, 1) ** (a2 - 1)
+        agree = np.linalg.norm(MP[top] - MP[est_c], axis=1) <= c["excl"]
+        ee = 0.5 * (np.exp(np.where(agree, lam, loga)) + e_R ** (1.0 / H)); ll = np.log(np.maximum(ee, 1e-300))
+        pon = np.zeros(len(q))
+        for idx in q_seqs:
+            pr = 0.5
+            for t in idx:
+                pr = 0.99 * pr + 0.01 * (1 - pr); lo = np.log(pr / (1 - pr)) + ll[t]; pr = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon[t] = pr
+        acc_c = pon > 0.5; x_cpc = MP[est_c]
         rules = {"accept all": np.ones(len(q), bool), "label threshold": Fr["maxsim"] > thr_ms, "SelfCal frame": p_frame <= A,
-                 "HMM off-map (labels)": acc_h, "certified (ours)": Rq > thr, "oracle": good}
+                 "HMM off-map (labels)": acc_h, "CPC-HMM (ours)": acc_c, "certified (ours)": Rq > thr, "oracle": good}
         hz = [0] if ep.q_pos.shape[1] == 1 else ([0, 1] if ep.q_pos.shape[1] == 2 else list(np.argsort(ep.q_pos.var(0))[1:]))
 
         def track(acc, xf=None):
@@ -117,7 +141,7 @@ def main():
         run = {"seed": seed, "n_map": int(keep.sum()), "n_null_seg": len(ns), "thr": float(thr), "off_frac": float(offm.mean()), "rules": {}}
         run["hmm_T_k"] = [best[1], best[2]]
         for name, acc in rules.items():
-            xf = x_hmm if name.startswith("HMM") else x_fix
+            xf = x_hmm if name.startswith("HMM") else (x_cpc if name.startswith("CPC") else x_fix)
             e = track(acc, xf); err_f = np.linalg.norm(xf - ep.q_pos, axis=1)
             gd, bd = inm & (err_f <= c["excl"]), offm | (err_f > c["excl"])
             run["rules"][name] = dict(wrong_fixes=int((acc & bd).sum()), correct_fixes=int((acc & gd).sum()), FAR_offmap=float(acc[offm].mean()),
