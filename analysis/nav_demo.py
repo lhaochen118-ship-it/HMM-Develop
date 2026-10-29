@@ -18,6 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import vprlib as V, selfcal as SC
 from sc_eval import CFG
 from cert_seq import running, chunks, odometry_sim, odometry_real
+from hmm_eval import Filter
 
 A, SIG_FIX, DROP = 0.05, 5.0, 0.3
 
@@ -68,11 +69,35 @@ def main():
         r1 = {x: good[(cond == x) & inm].mean() for x in conds}; benign = sorted(conds, key=lambda x: -r1[x])[:2]
         cal = np.sort(Fr["maxsim"][offm & np.isin(cond, benign)]); kl = int(np.ceil((len(cal) + 1) * (1 - A)))
         thr_ms = cal[min(len(cal) - 1, kl - 1)] if len(cal) else np.inf
+        # HMM with an off-map state (Xu et al. RA-L'21 style): emission exp(s/T), off-map emission exp(s_(k)/T); fixes = MAP
+        # place whenever the off-map state is not the argmax. T, k tuned WITH LABELS on the benign conditions: most correct
+        # fixes subject to off-map FAR <= alpha there (the label-calibrated operating point of that family).
+        S = q @ M.T; srt = -np.sort(-S, 1); smax = S.max(1, keepdims=True)
+        U = np.zeros_like(ep.q_pos)
+        for idx in q_seqs: U[idx[1:]] = np.diff(o_q[idx], axis=0)
+        Fh = Filter(MP, 1.0 if nord else 2.0, 6.0 if nord else 15.0, conf_r=c["tol"][0])
+        def hmm_fix(T, kk, subset):
+            est = np.full(len(q), -1)
+            for idx in q_seqs:
+                if not subset[idx].any(): continue
+                e, _ = Fh.run(np.exp((S[idx] - smax[idx]) / T), U[idx], np.exp((srt[idx, kk - 1] - smax[idx, 0]) / T)); est[idx] = e
+            return est
+        bsel = np.isin(cond, benign); best = None
+        for T in (0.01, 0.02, 0.05):
+            for kk in (5, 10, 20):
+                e = hmm_fix(T, kk, bsel); acc_b = (e >= 0) & bsel
+                far_b = acc_b[offm & bsel].mean() if (offm & bsel).any() else 0
+                ok_b = (acc_b & (np.linalg.norm(MP[np.maximum(e, 0)] - ep.q_pos, axis=1) <= c["excl"]))[bsel].sum()
+                if far_b <= A and (best is None or ok_b > best[0]): best = (ok_b, T, kk)
+        best = best or (0, 0.01, 20)
+        e_h = hmm_fix(best[1], best[2], np.ones(len(q), bool)); acc_h = e_h >= 0
+        x_hmm = MP[np.maximum(e_h, 0)]
         rules = {"accept all": np.ones(len(q), bool), "label threshold": Fr["maxsim"] > thr_ms, "SelfCal frame": p_frame <= A,
-                 "certified (ours)": Rq > thr, "oracle": good}
+                 "HMM off-map (labels)": acc_h, "certified (ours)": Rq > thr, "oracle": good}
         hz = [0] if ep.q_pos.shape[1] == 1 else ([0, 1] if ep.q_pos.shape[1] == 2 else list(np.argsort(ep.q_pos.var(0))[1:]))
 
-        def track(acc):
+        def track(acc, xf=None):
+            xf = x_fix if xf is None else xf
             r = np.random.default_rng(seed + 7); est = np.full_like(ep.q_pos, np.nan)
             for idx in q_seqs:
                 x = ep.q_pos[idx[0]].copy(); P = 1.0; est[idx[0]] = x; thh = 0.0; sc = 1 + r.normal(0, 0.03)
@@ -85,14 +110,17 @@ def main():
                         u = u + r.normal(0, 0.02 * np.linalg.norm(d) / np.sqrt(len(d)) + 1e-3, len(d))
                     x = x + u; P = P + (0.05 * np.linalg.norm(u)) ** 2 + 1e-4
                     if acc[b]:
-                        K = P / (P + SIG_FIX ** 2); x = x + K * (x_fix[b] - x); P = (1 - K) * P
+                        K = P / (P + SIG_FIX ** 2); x = x + K * (xf[b] - x); P = (1 - K) * P
                     est[b] = x
             return np.linalg.norm(est - ep.q_pos, axis=1)
 
         run = {"seed": seed, "n_map": int(keep.sum()), "n_null_seg": len(ns), "thr": float(thr), "off_frac": float(offm.mean()), "rules": {}}
+        run["hmm_T_k"] = [best[1], best[2]]
         for name, acc in rules.items():
-            e = track(acc)
-            run["rules"][name] = dict(wrong_fixes=int((acc & bad).sum()), correct_fixes=int((acc & good).sum()), FAR_offmap=float(acc[offm].mean()),
+            xf = x_hmm if name.startswith("HMM") else x_fix
+            e = track(acc, xf); err_f = np.linalg.norm(xf - ep.q_pos, axis=1)
+            gd, bd = inm & (err_f <= c["excl"]), offm | (err_f > c["excl"])
+            run["rules"][name] = dict(wrong_fixes=int((acc & bd).sum()), correct_fixes=int((acc & gd).sum()), FAR_offmap=float(acc[offm].mean()),
                                       err_mean=float(np.nanmean(e)), err_median=float(np.nanmedian(e)), err_p95=float(np.nanpercentile(e, 95)),
                                       frac_gt_rho=float(np.nanmean(e > c["excl"])))
             rr = run["rules"][name]
