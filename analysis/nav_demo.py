@@ -28,7 +28,7 @@ if DUMP: sys.argv.remove("--dump")
 KAPPA = 0.05                                   # ghost position uncertainty growth per metre of odometry (as the nav filter)
 
 
-def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01, gate="pred", ghost=True, s0=25.0, eps=1e-4, couple=True):
+def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01, gate="pred", ghost=True, s0=25.0, eps=1e-4, couple=True, rho=0.1):
     """CPC-HMM with the place and presence chains run JOINTLY on one sequence (needed for the two couplings below).
     b_t = P(x_t | on_t): place chain without off-map state (DiagFilter transitions, affine-invariant emission `rel`).
     Couplings (both label-free; both keep LR_t an e-value, so the ARL0 bound of the presence chain is unchanged):
@@ -38,7 +38,9 @@ def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01,
       * gate of the top-1 e-value: 'post' = 1[top-1 within excl of the posterior MAP] (CPC-HMM), 'pred' = g_t = PREDICTED
         place mass b_pred within excl of the top-1 (F_{t-1}-measurable kernel); e~ = a + g (e_top - a) <= e_top pointwise;
         'ghost' = 'post' x, while no place is reported (P(on_{t-1}) <= 1/2), the DEAD-RECKONING gate g = exp(-d^2 / 2 s^2),
-        d = |m_top - ghost|: an off-map stretch cannot be reported at a place the odometry says the robot cannot be.
+        d = |m_top - ghost|: an off-map stretch cannot be reported at a place the odometry says the robot cannot be;
+        g is floored at rho (prior that the ghost is wrong, 0.1) so evidence still re-localises after a wrong report
+        (rho = 0.01 locks out on Nordland after one wrong report: recall 0.74 -> 0.31; rho = 0.1 keeps the Boreas gain).
     couple=False: place chain exactly as CPC-HMM (b_pred = K*b), only the gate changes.
     e_top = a p^(a-1), e_a = a (gate-off value), e_r = (e^R)^(1/H). Returns (est, pon)."""
     L, n = rel.shape; pos = Fp.pos; b = np.full(n, 1.0 / n); pon = 0.5
@@ -61,7 +63,8 @@ def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01,
         g = b[excl_nbr[top[t]]].sum() if gate == "pred" else None
         b = b * np.exp(rel[t] - rel[t].max()); b /= b.sum(); j = int(b.argmax()); est[t] = j
         if gate in ("post", "ghost"): g = float(np.linalg.norm(pos[top[t]] - pos[j]) <= Fp.far)
-        if gate == "ghost" and have and pon <= 0.5: g *= float(np.exp(-0.5 * ((pos[top[t]] - mu) ** 2).sum() / s ** 2))
+        if gate == "ghost" and have and pon <= 0.5:                   # floor rho: prior that the ghost itself is wrong (lock-out escape)
+            g *= (1 - rho) * float(np.exp(-0.5 * ((pos[top[t]] - mu) ** 2).sum() / s ** 2)) + rho
         ee = 0.5 * (e_a[t] + min(g, 1.0) * (e_top[t] - e_a[t]) + e_r[t])
         lo = np.log(pr / (1 - pr)) + np.log(max(ee, 1e-300)); pon = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); out[t] = pon
         if pon > 0.5: mu, s, have = pos[j].astype(float), s0, True        # ghost = last reported fix (+ odometry while off)
@@ -188,17 +191,17 @@ def main():
         # joint CPC-HMM variants (cpc_joint): predictive gate (PG) and/or dead-reckoned off-map state (DR)
         e_top1, e_a1, e_r1 = np.exp(lam), np.exp(loga), e_R ** (1.0 / H)
         nbr_x = cKDTree(MP).query_ball_point(MP, c["excl"]); joint = {}
-        for jn, gt, gh, cp in (("CPC-HMM +PG+DR", "pred", True, True), ("CPC-HMM +GG", "ghost", False, False), ("CPC-HMM +GG+DR", "ghost", True, True)):
+        for jn, gt, gh, cp, rh in (("CPC-HMM +GG", "ghost", False, False, 0.1), ("CPC-HMM +GG(rho=.01)", "ghost", False, False, 0.01)):
             ej, pj = np.zeros(len(q), int), np.zeros(len(q))
             for idx in q_seqs:
-                ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], e_top1[idx], e_a1[idx], e_r1[idx], top[idx], nbr_x, gate=gt, ghost=gh, s0=c["excl"], couple=cp)
+                ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], e_top1[idx], e_a1[idx], e_r1[idx], top[idx], nbr_x, gate=gt, ghost=gh, s0=c["excl"], couple=cp, rho=rh)
             joint[jn] = (pj > 0.5, MP[ej], pj)
         if DUMP:
             os.makedirs("results", exist_ok=True)
             np.savez_compressed(f"results/navframes_{ds.replace(':', '_')}_{desc}_s{seed}.npz", pon=pon, est_c=est_c, top=top, e_h=e_h,
                                 err_top=err_top, err_cpc=np.linalg.norm(x_cpc - ep.q_pos, axis=1), err_hmm=np.linalg.norm(x_hmm - ep.q_pos, axis=1),
                                 inm=inm, offm=offm, cond=cond, q_sid=q_sid, q_k=q_k, p_frame=p_frame, pR=pR, Rq=Rq, thr=thr, lam=lam, loga=loga,
-                                e_R=e_R, agree=agree, maxsim=Fr["maxsim"], q_pos=ep.q_pos, o_q=o_q, excl=c["excl"], tol=c["tol"][0],
+                                e_R=e_R, agree=agree, maxsim=Fr["maxsim"], q_pos=ep.q_pos, o_q=o_q, x_top=x_fix, x_cpc=x_cpc, x_hmm=x_hmm, U=U, excl=c["excl"], tol=c["tol"][0],
                                 **{"pon_" + k.split()[-1].replace("+", "_"): v[2] for k, v in joint.items()},
                                 **{"err_" + k.split()[-1].replace("+", "_"): np.linalg.norm(v[1] - ep.q_pos, axis=1) for k, v in joint.items()})
         rules = {"accept all": np.ones(len(q), bool), "label threshold": Fr["maxsim"] > thr_ms, "SelfCal frame": p_frame <= A,
