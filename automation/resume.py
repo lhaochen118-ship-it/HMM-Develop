@@ -11,6 +11,7 @@ active = [l.strip() for l in open(os.path.join(runs, "active_runs.txt")) if l.st
 ps = subprocess.run(["ps", "-eo", "args"], capture_output=True, text=True).stdout
 todo = []
 for r in active:
+    if f"{os.path.join(runs, r)} " in ps: continue                 # its fanout is alive (it monitors its own kernels)
     for meta in sorted(glob.glob(os.path.join(runs, r, "*", "kernel-metadata.json"))):
         kd = os.path.dirname(meta)
         logs = [kd + ".log", kd + ".attach.log"]
