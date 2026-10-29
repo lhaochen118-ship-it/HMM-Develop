@@ -249,12 +249,12 @@ def main():
         #     -> ARL0 >= (1-p)/p - R0; re-entry delay ~ log((1-p)/p) / KL1 (Wald), KL1 = E_on[log LR_t]
         # (2) PREDICTABLE e-values: a_t refitted every 25 frames on the traversal's PAST frames only (no look-ahead), so
         #     LR_t is an e-value conditionally on the past under the map-null dominance assumption (an e-process)
-        def presence(ee, p):
-            ll = np.log(np.maximum(ee, 1e-300)); pon = np.zeros(len(q))
+        def presence(ee, p, p_out=None):
+            ll = np.log(np.maximum(ee, 1e-300)); pon = np.zeros(len(q)); p_out = p if p_out is None else p_out
             for idx in seqs:
                 pr = 0.5
                 for t in idx:
-                    pr = (1 - p) * pr + p * (1 - pr)
+                    pr = (1 - p_out) * pr + p * (1 - pr)
                     lo = np.log(pr / (1 - pr)) + ll[t]; pr = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon[t] = pr
             return pon
 
@@ -271,6 +271,8 @@ def main():
         run_kl = {"KL_on": float(lcpc[onm].mean()), "KL_off": float(lcpc[offm].mean()), "KL_on_correct": float(lcpc[onm & (np.linalg.norm(ep.q_pos - mp[est], axis=1) <= tol)].mean())}
         for pp in (0.001, 0.003, 0.03, 0.1):
             res[f"cpc_p{pp}"] = metrics(est, conf, 1 - presence(ee_cpc, pp))
+        for po in (0.05, 0.1, 0.2):                                         # asymmetric: fast exit, same ARL0 bound
+            res[f"cpc_pout{po}"] = metrics(est, conf, 1 - presence(ee_cpc, 0.01, po))
         e1p, a1p = predictable(p); e3p, _ = predictable(pR)
         res["cpc_pred"] = metrics(est, conf, 1 - presence(0.5 * (np.where(agree, e1p, a1p) + e3p ** (1.0 / Hh)), 0.01))
         run_rec = {"seed": seed, "tau": tau, "a_fit": a_fit, "rho_mean": float(rho.mean()), "w_mean": float(w.mean()), "r_lambda": r_fit, "KL": run_kl, "methods": res}

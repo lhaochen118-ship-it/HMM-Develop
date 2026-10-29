@@ -118,12 +118,17 @@ def main():
             e_R[m] = a2 * np.clip(pR[m], 1e-6, 1) ** (a2 - 1)
         agree = np.linalg.norm(MP[top] - MP[est_c], axis=1) <= c["excl"]
         ee = 0.5 * (np.exp(np.where(agree, lam, loga)) + e_R ** (1.0 / H)); ll = np.log(np.maximum(ee, 1e-300))
-        pon = np.zeros(len(q))
-        for idx in q_seqs:
-            pr = 0.5
-            for t in idx:
-                pr = 0.99 * pr + 0.01 * (1 - pr); lo = np.log(pr / (1 - pr)) + ll[t]; pr = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon[t] = pr
-        acc_c = pon > 0.5; x_cpc = MP[est_c]
+        def presence(p_in, p_out):
+            pon = np.zeros(len(q))
+            for idx in q_seqs:
+                pr = 0.5
+                for t in idx:
+                    pr = (1 - p_out) * pr + p_in * (1 - pr); lo = np.log(pr / (1 - pr)) + ll[t]; pr = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon[t] = pr
+            return pon
+        # p_in sets the false-onset bound ARL0 >= (1-p_in)/p_in (needs p_out >= p_in); p_out sets the exit lag after leaving
+        # the map, ~ log((1-p_out)/p_out) / |E0 log LR| (the dominant source of off-map fixes)
+        pon = presence(0.01, 0.01); acc_c = pon > 0.5; x_cpc = MP[est_c]
+        acc_po = {po: presence(0.01, po) > 0.5 for po in (0.05, 0.1, 0.2)}
         if DUMP:
             os.makedirs("results", exist_ok=True)
             np.savez_compressed(f"results/navframes_{ds.replace(':', '_')}_{desc}_s{seed}.npz", pon=pon, est_c=est_c, top=top, e_h=e_h,
@@ -131,7 +136,8 @@ def main():
                                 inm=inm, offm=offm, cond=cond, q_sid=q_sid, q_k=q_k, p_frame=p_frame, pR=pR, Rq=Rq, thr=thr, lam=lam, loga=loga,
                                 e_R=e_R, agree=agree, maxsim=Fr["maxsim"], q_pos=ep.q_pos, o_q=o_q, excl=c["excl"], tol=c["tol"][0])
         rules = {"accept all": np.ones(len(q), bool), "label threshold": Fr["maxsim"] > thr_ms, "SelfCal frame": p_frame <= A,
-                 "HMM off-map (labels)": acc_h, "CPC-HMM (ours)": acc_c, "certified (ours)": Rq > thr, "oracle": good}
+                 "HMM off-map (labels)": acc_h, "CPC-HMM (ours)": acc_c,
+                 **{f"CPC-HMM p_out={po}": a for po, a in acc_po.items()}, "certified (ours)": Rq > thr, "oracle": good}
         hz = [0] if ep.q_pos.shape[1] == 1 else ([0, 1] if ep.q_pos.shape[1] == 2 else list(np.argsort(ep.q_pos.var(0))[1:]))
 
         def track(acc, xf=None):
