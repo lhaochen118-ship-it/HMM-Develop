@@ -34,11 +34,21 @@ COUPLE = "--lmax30" not in sys.argv          # default: evidence horizon Lmax = 
 sys.argv = [a for a in sys.argv if a != "--lmax30"]
 
 
+def _opt(name, default):
+    if name in sys.argv:
+        i = sys.argv.index(name); v = float(sys.argv[i + 1]); del sys.argv[i:i + 2]; return v
+    return default
+
+
+RHO_O = _opt("--rho", None)                  # ablation: odometry consistency tolerance (default 5 m / 1 frame)
+NOISE = _opt("--noise", 1.0)                 # ablation: multiplies the simulated odometry noise (scale + step)
+
+
 def odometry_sim(pos, sid, k, rng, R=None, scale_sd=0.03, step_sd=0.05):
     """integrated simulated odometry o_t in the WORLD frame of the first frame of each sequence: body-frame increments
     (with scale error and noise) are re-rotated by the GT orientation, i.e. the heading is assumed known (compass/VIO
     attitude); returned as cumulative positions per sequence"""
-    o = np.zeros_like(pos)
+    scale_sd, step_sd = scale_sd * NOISE, step_sd * NOISE; o = np.zeros_like(pos)
     for s in np.unique(sid):
         idx = np.where(sid == s)[0]; idx = idx[np.argsort(k[idx])]; dx = np.diff(pos[idx], axis=0)
         noisy = (1 + rng.normal(0, scale_sd)) * dx + rng.normal(0, 1, dx.shape) * step_sd * np.linalg.norm(dx, axis=1, keepdims=True)
@@ -141,7 +151,7 @@ def main():
     elif ds == "boreas": ep = V.load_boreas(dump, desc); c = CFG["cmu"]
     else: ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
     q_sid, q_k, m_sid, m_k = V.frame_order(dump, ds, ep, desc)
-    nord = ds in ("nord", "nordw"); rho = c["excl"]; rho_o = 1.0 if nord else 5.0; LMAX0 = 30
+    nord = ds in ("nord", "nordw"); rho = c["excl"]; rho_o = RHO_O or (1.0 if nord else 5.0); LMAX0 = 30
     HS = (5, 8) if ds == "rc" else (10, 30, 60)
     cond = np.asarray(ep.q_cond).astype(str); conds = sorted(set(cond))
     q_seqs = [np.where(q_sid == s)[0][np.argsort(q_k[q_sid == s])] for s in np.unique(q_sid)]
@@ -223,7 +233,9 @@ def main():
                       f"| TPR {row['TPR']:.3f} alias {row['alias']} latency {row['latency_med']:.0f}", flush=True)
         out["runs"].append(run); print(f"seed {seed} done in {time.time() - t0:.0f}s", flush=True)
     os.makedirs("results", exist_ok=True)
-    json.dump(out, open(f"results/cert_{ds.replace(':', '_')}_{desc}.json", "w"), indent=1, default=float)
+    tag = ("" if RHO_O is None else f"_rho{RHO_O:g}") + ("" if NOISE == 1.0 else f"_noise{NOISE:g}")
+    out.update(rho_o=rho_o, noise=NOISE)
+    json.dump(out, open(f"results/cert{tag}_{ds.replace(':', '_')}_{desc}.json", "w"), indent=1, default=float)
 
 
 if __name__ == "__main__":
