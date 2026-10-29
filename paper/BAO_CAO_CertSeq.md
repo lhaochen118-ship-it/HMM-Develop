@@ -157,7 +157,89 @@ Kalman filter chạy odometry trôi và nhận các fix được chấp nhận (
 | 4S old town | 277.0 (845) | 68.0 (253) | 50.4 (201) | – | 37.0 (134) | 21.1 (74) |
 | 4S countryside | 110.0 (473) | 54.3 (184) | 66.2 (209) | – | 51.5 (171) | 17.8 (54) |
 
-## 5. Kết luận
+## 5. Vì sao HMM thua baseline, và cơ chế sửa
+
+### 5.1 Chẩn đoán (`analysis/hmm_diag.py`)
+
+Thiết lập: HMM chuẩn (lọc tiến trên các ảnh bản đồ, chuyển trạng thái theo odometry, emission exp(s/T), có hoặc không có trạng thái off-map của Xu'21) trên bản đồ khuyết 30 % block. Mỗi ô là trung bình trên descriptor.
+
+Các cột:
+
+- **R@FL5:** tỷ lệ frame on-map đúng được nhận khi giới hạn định vị sai off-map ở 5 %.
+- **conf, acc:** độ tin cậy trung bình so với độ chính xác thật.
+- **khoá nhầm:** tỷ lệ frame sai mà vẫn tin > 0.9 / tỷ lệ tổng sai số do các frame đó gây ra.
+- **r, VIF:** tự tương quan trễ 1 của dòng bằng chứng, và hệ số phóng đại phương sai (1+r)/(1−r).
+- **D5:** thay đổi lớn nhất của posterior khi cộng một hằng số ngẫu nhiên vào mọi similarity của từng frame.
+
+| Dataset | R@FL5 max-sim thô | R@FL5 posterior HMM | R@FL5 HMM+off-map | conf / acc | ECE | khoá nhầm | r (VIF) | D5 |
+|---|---|---|---|---|---|---|---|---|
+| RobotCar-S. | 0.65 | 0.53 | 0.59 | 0.86 / 0.75 | 0.11 | 0.11 / 0.24 | – (chuỗi < 20 frame) | 1e-06 |
+| CMU-S. | 0.74 | 0.43 | 0.59 | 0.94 / 0.83 | 0.12 | 0.19 / 0.53 | 0.98 (127×) | 3e-06 |
+| Nordland | 0.39 | 0.63 | 0.68 | 0.93 / 0.86 | 0.07 | 0.14 / 0.39 | 0.79 (8×) | 4e-06 |
+| 4S office | 0.69 | 0.44 | 0.69 | 0.94 / 0.85 | 0.08 | 0.13 / 0.49 | 0.98 (87×) | 3e-06 |
+| 4S old town | 0.58 | 0.30 | 0.52 | 0.91 / 0.71 | 0.20 | 0.20 / 0.44 | 0.99 (136×) | 3e-06 |
+| 4S countryside | 0.28 | 0.16 | 0.29 | 0.86 / 0.59 | 0.28 | 0.19 / 0.38 | 0.98 (130×) | 3e-06 |
+
+**Nguyên nhân gốc (được số liệu xác nhận):**
+
+1. **Bất biến bằng chứng tương đối (D1, D5).**
+   - Emission softmax p(s_t | j) ∝ exp(s_tj / T) cho posterior bất biến khi s_t → s_t + c_t·1. Trạng thái off-map của Xu'21, exp(s₍ₖ₎/T), cũng bất biến như vậy, nên chỉ đo được độ nhọn s_max − s₍ₖ₎.
+   - Nhưng câu hỏi "robot có ở trong bản đồ không" là câu hỏi về mức tuyệt đối: LR(j : ∅) = f₁(s_j) / f₀(s_j). HMM về cấu trúc không thấy được sự vắng mặt.
+   - Max-sim thô thắng posterior trên RobotCar, CMU và 4Seasons. Nordland là ngoại lệ: ở đó mức similarity bị mùa đông làm dịch, nên cần mức tuyệt đối đã được hiệu chuẩn bất biến affine, không phải mức thô.
+2. **Đếm lặp bằng chứng phụ thuộc (D2, D3, D4).**
+   - HMM giả định quan sát độc lập khi biết trạng thái, nhưng bằng chứng của các frame liên tiếp có r ≈ 0.8–0.99.
+   - Var(Σd_t) ≈ nσ²(1+r)/(1−r), trong khi HMM tính như nσ²: đếm thừa 4–200×.
+   - Hệ quả: posterior quá tự tin (conf > acc) và khoá nhầm chỗ. Các frame sai mà vẫn tin > 0.9 gây ra khoảng 40 % tổng sai số.
+3. **Vòng phản hồi khoá nhầm.** Mọi bằng chứng tính từ chính niềm tin của HMM đều tự xác nhận khi đã khoá nhầm. Thí nghiệm `fac_pc` và `fac_mix` đều thất bại vì lý do này (mục 5.3).
+
+### 5.2 Cơ chế đề xuất: CPC-HMM (HMM với chuỗi hiện diện đã hiệu chuẩn)
+
+Tách HMM thành 2 chuỗi:
+
+- **Chuỗi vị trí ("ở đâu")** là HMM chuẩn không có trạng thái off-map, với emission tương đối bất biến affine và không cần tune:
+
+  > log e_t(j) = (s_tj − max_i s_ti) / (τ · σ_far,t)
+
+  Ở đây σ_far,t là độ trải của các cực đại vùng xa của chính frame t, và τ là thang Gumbel của null bản đồ (z_far của các pseudo-query leave-block-out).
+- **Chuỗi hiện diện ("có trong bản đồ không")** gồm 2 trạng thái on/off:
+
+  > P(on_t | ·) ∝ [ (1−p_out)·P(on_{t−1}) + p_in·P(off_{t−1}) ] · LR_t,  với LR_t = a · p_t^(a−1)
+
+  - p_t là p-value SelfCal-AA của top-1, hiệu chuẩn bằng bản đồ (bất biến affine, có cổng max-sim). Dưới H0, p_t ~ U(0,1) nên E[LR_t] = 1, tức LR_t là một e-value.
+  - Tham số a lấy từ EM không nhãn trên dòng p-value của chính chuyến đi: π₀·U + (1−π₀)·Beta(a,1).
+  - **Cổng độc lập niềm tin:** khi top-1 không khớp với nơi MAP của chuỗi vị trí (lệch > 25 m), frame đó được tính là p = 1.
+  - Prior đối xứng p_in = p_out = 0.01.
+- **Quyết định:** báo nơi MAP của chuỗi vị trí khi P(on) > 0.5. Độ tin cậy là P(on) × độ tập trung posterior.
+
+**Vì sao sửa được:**
+
+- **Mệnh đề 1:** bằng chứng hiện diện là mức tuyệt đối đã hiệu chuẩn, sửa nguyên nhân 1.
+- **Mệnh đề 3:** p-value của thống kê max đã trả giá cho N nơi, nên phải đi vào một chuỗi on/off riêng. Đưa vào từng trạng thái thì hoặc đếm phạt hai lần (`abs_naive`: quá bảo thủ), hoặc vi phạm giả định độc lập giữa prior và quan sát (`abs`: FL ≈ 0.9).
+- **Bài học từ 5.1:** bằng chứng hiện diện tính từ top-1, không từ niềm tin của HMM, nên không bị cuốn vào vòng khoá nhầm.
+- **Không cần nhãn hay tune:** τ và a ước lượng từ bản đồ và từ chính dòng p-value.
+
+### 5.3 Kết quả: CPC-HMM so với HMM Xu'21 (`analysis/hmm_fix.py`)
+
+Bản đồ khuyết 30 %, 6 descriptor × 2 seed. Mỗi ô ghi: recall on-map / định vị sai off-map (FL) / recall ở 5 % FL / ECE / sai số điều hướng trung bình (p95). Nordland tính bằng frame, các dataset khác tính bằng mét.
+
+| Phương pháp | RobotCar-S. | Nordland | 4S old town |
+|---|---|---|---|
+| HMM + off-map Xu'21 (T, k tune bằng nhãn) | 0.63 / 0.048 / 0.64 / 0.19 / 1.0 (1) | 0.74 / 0.014 / 0.79 / 0.17 / 52.9 (285) | 0.60 / 0.091 / 0.61 / 0.18 / 100.9 (457) |
+| HMM không off-map (T tune) | 0.80 / 1.000 / 0.59 / 0.08 / 25.6 (138) | 0.92 / 1.000 / 0.60 / 0.04 / 290.9 (1560) | 0.73 / 1.000 / 0.22 / 0.12 / 247.4 (878) |
+| chỉ emission bất biến affine | 0.61 / 0.085 / 0.62 / 0.21 / 1.9 (7) | 0.71 / 0.064 / 0.68 / 0.19 / 161.2 (1201) | 0.60 / 0.131 / 0.54 / 0.18 / 135.1 (610) |
+| e-value nhân vào từng nơi (đếm 1/N hai lần) | 0.26 / 0.000 / 0.69 / 0.59 / 0.2 (0) | 0.32 / 0.000 / 0.53 / 0.42 / 18.6 (65) | 0.46 / 0.001 / 0.54 / 0.26 / 40.6 (132) |
+| CPC, prior lệch (p_in = 0.05) | 0.75 / 0.112 / 0.72 / 0.09 / 4.0 (22) | 0.78 / 0.309 / 0.67 / 0.16 / 114.5 (597) | 0.68 / 0.338 / 0.56 / 0.12 / 141.2 (637) |
+| CPC + giảm theo ESS | 0.73 / 0.039 / 0.71 / 0.10 / 1.3 (1) | 0.59 / 0.015 / 0.69 / 0.27 / 22.5 (116) | 0.60 / 0.055 / 0.56 / 0.15 / 58.2 (232) |
+| **CPC-HMM (đề xuất, không nhãn)** | 0.73 / 0.038 / 0.72 / 0.09 / 1.3 (1) | 0.56 / 0.004 / 0.71 / 0.28 / 16.4 (58) | 0.59 / 0.023 / 0.61 / 0.10 / 46.4 (208) |
+
+**Thử nghiệm âm tính (giữ lại để tránh lặp lại):**
+
+- Bằng chứng hiện diện tính tại nơi MAP của HMM (`fac_pc`), trên Nordland CosPlace: FL 0.08, sai số điều hướng 315 frame.
+- Thêm e-value từ độ tập trung posterior, hiệu chuẩn bằng null bản đồ (`fac_mix`): recall 0.85 nhưng FL 0.14, sai số điều hướng 280 frame.
+- Cả hai cùng một nguyên nhân: thống kê lấy từ niềm tin của HMM bị nhiễm khoá nhầm.
+- Giảm theo độ dư thừa (ESS) giúp hạn chế khoá nhầm nhưng làm giảm khả năng xếp hạng. Nó là tuỳ chọn, không nằm trong cấu hình chính.
+
+## 6. Kết luận
 
 - **Hợp lệ.** Bảo đảm theo đoạn giữ ở mọi bộ dữ liệu và descriptor, không dùng nhãn (Bảng 1, 4, 5). Baseline hiệu chuẩn bằng nhãn kiểu SAFEVPR vượt α trên RobotCar và CMU.
 - **Power.** Số frame đúng được chứng nhận tăng 2–7× so với kiểm định từng frame, và fix đầu tiên đến sớm hơn nhiều (Bảng 2, 3).
