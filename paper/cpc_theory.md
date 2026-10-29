@@ -101,6 +101,24 @@ E[e^top_t | F_{t−1}] ≤ 1.
 - *Trung bình.* ½(e₁ + e₂) là e-value với mọi kiểu phụ thuộc giữa e₁ và e₂.
 - Vì vậy LR_t là e-value có điều kiện dưới D và D_R.
 
+**Bổ đề 3 (null bảo thủ theo odometry, cho D_R).**
+
+- *Phát biểu.* Kiểm khớp của ANCH tại trễ j là 1[‖Δx − Δo‖ ≤ ρ_o]. Giả sử odometry thật là Δo = Δg + ε, với ε độc lập,
+  đối xứng và đơn đỉnh (log-concave). Khi đó, với mọi phân phối đối xứng đơn đỉnh của a = Δx − Δg:
+
+  > P(‖a − ε‖ ≤ ρ_o) ≤ P(‖a‖ ≤ ρ_o)
+
+- *Chứng minh.* Hệ quả của bất đẳng thức Anderson: hình cầu là tập lồi đối xứng, và tích chập với một phân phối đối xứng
+  đơn đỉnh không làm tăng xác suất của tập đó.
+- *Hệ quả.* Null R tính trên traversal của bản đồ với odometry không nhiễu (Δo = Δg) trội ngẫu nhiên hơn R của query
+  off-map với mọi odometry thật. Vì vậy p^R super-uniform, tức D_R đúng một cách bảo thủ.
+- *Thực nghiệm.* Null dùng odometry mô phỏng có nhiễu (3 % scale, 5 % step) cho p^R sub-uniform khi odometry thật chính
+  xác hơn mô phỏng:
+  - 4S countryside: P(p^R ≤ 0.01 | off) = 0.059;
+  - Boreas MegaLoc: P(p^R ≤ 0.05 | off) = 0.075.
+
+  Trong khi đó p^top vẫn super-uniform ở mọi dataset. Đây là nguyên nhân CPC-HMM báo on sai 7–8.5 % trên Boreas.
+
 **Định lý 1 (ARL₀ của chuỗi hiện diện).**
 
 - *Phát biểu.* Giả sử LR_t là e-value có điều kiện dưới H0 và p_in ≤ p_out. Gọi τ₀ là thời điểm báo on sai đầu tiên
