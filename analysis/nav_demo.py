@@ -23,6 +23,8 @@ from hmm_diag import DiagFilter
 from hmm_fix import beta_em
 
 A, SIG_FIX, DROP = 0.05, 5.0, 0.3
+DUMP = "--dump" in sys.argv                    # also save per-frame arrays (results/navframes_<ds>_<desc>_s<seed>.npz)
+if DUMP: sys.argv.remove("--dump")
 
 
 def main():
@@ -116,6 +118,12 @@ def main():
             for t in idx:
                 pr = 0.99 * pr + 0.01 * (1 - pr); lo = np.log(pr / (1 - pr)) + ll[t]; pr = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon[t] = pr
         acc_c = pon > 0.5; x_cpc = MP[est_c]
+        if DUMP:
+            os.makedirs("results", exist_ok=True)
+            np.savez_compressed(f"results/navframes_{ds.replace(':', '_')}_{desc}_s{seed}.npz", pon=pon, est_c=est_c, top=top, e_h=e_h,
+                                err_top=err_top, err_cpc=np.linalg.norm(x_cpc - ep.q_pos, axis=1), err_hmm=np.linalg.norm(x_hmm - ep.q_pos, axis=1),
+                                inm=inm, offm=offm, cond=cond, q_sid=q_sid, q_k=q_k, p_frame=p_frame, pR=pR, Rq=Rq, thr=thr, lam=lam, loga=loga,
+                                e_R=e_R, agree=agree, maxsim=Fr["maxsim"], q_pos=ep.q_pos, o_q=o_q, excl=c["excl"], tol=c["tol"][0])
         rules = {"accept all": np.ones(len(q), bool), "label threshold": Fr["maxsim"] > thr_ms, "SelfCal frame": p_frame <= A,
                  "HMM off-map (labels)": acc_h, "CPC-HMM (ours)": acc_c, "certified (ours)": Rq > thr, "oracle": good}
         hz = [0] if ep.q_pos.shape[1] == 1 else ([0, 1] if ep.q_pos.shape[1] == 2 else list(np.argsort(ep.q_pos.var(0))[1:]))
