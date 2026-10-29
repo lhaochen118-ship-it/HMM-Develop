@@ -382,7 +382,7 @@ def main():
         A("- Đưa e-value ANCH vào mà không luỹ thừa 1/H làm FL trên CMU tăng lên 0.15. Đây chính là lỗi đếm lặp bằng chứng "
           "phụ thuộc (nguyên nhân 2) xuất hiện ở tầng hiện diện.")
         A("")
-    gg = [x for x in nav if x["runs"] and "CPC-HMM +GG" in x["runs"][0]["rules"]]
+    gg = [x for x in nav if x["runs"] and "CPC-HMM +GG(rho=.01)" in x["runs"][0]["rules"]]
     if gg:
         A("### 5.4 Cổng dead-reckoning (CPC-HMM +GG) — sửa fix sai ở xa trong lỗ bản đồ")
         A("")
