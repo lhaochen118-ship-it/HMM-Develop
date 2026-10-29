@@ -29,7 +29,7 @@ from sc_eval import CFG
 
 A = 0.05
 ALPHAS = (0.01, 0.05, 0.1)
-KINDS = ("FRAME", "RUN", "RUNO", "ANCH")
+KINDS = ("FRAME", "RUN", "RUNO", "ANCH", "ANCHR")
 COUPLE = "--lmax30" not in sys.argv          # default: evidence horizon Lmax = guarantee horizon H
 sys.argv = [a for a in sys.argv if a != "--lmax30"]
 
@@ -91,7 +91,21 @@ def running(p, top, order, o, m_pos, kind, rho, rho_o, Lmax, alt=None):
     if alt is not None:
         p2, t2, msk = alt; use = ~msk[order]; P[use] = p2[order][use]; T[use] = t2[order][use]
     lp = -np.log(np.clip(P, 1e-12, 1)); X = m_pos[np.nan_to_num(T).astype(int)]; O = o[order]
-    if kind == "ANCH":            # all frames of the last Lmax whose match agrees with the last frame's hypothesis + odometry
+    if kind == "ANCHR" and X.shape[1] >= 2:   # ANCH with the odometry->map heading unknown (fitted per window, 1-D RANSAC)
+        X2, O2 = X[:, :2], O[:, :2]
+        for t in range(n):
+            j0 = max(0, t - Lmax + 1); dX = X2[t] - X2[j0:t]; dO = O2[t] - O2[j0:t]
+            if not len(dX): out[t] = lp[t]; continue
+            nO = np.linalg.norm(dO, axis=1); still = nO < rho_o
+            ok_best = still & (np.linalg.norm(dX, axis=1) <= rho_o)
+            th = np.arctan2(dX[:, 1], dX[:, 0]) - np.arctan2(dO[:, 1], dO[:, 0])
+            for a in th[~still]:
+                c_, s_ = np.cos(a), np.sin(a); rO = np.stack([c_ * dO[:, 0] - s_ * dO[:, 1], s_ * dO[:, 0] + c_ * dO[:, 1]], 1)
+                ok = np.linalg.norm(dX - rO, axis=1) <= rho_o
+                if lp[j0:t][ok].sum() > lp[j0:t][ok_best].sum(): ok_best = ok
+            out[t] = lp[t] + lp[j0:t][ok_best].sum()
+        return out
+    if kind in ("ANCH", "ANCHR"):  # all frames of the last Lmax whose match agrees with the last frame's hypothesis + odometry
         for t in range(n):
             j0 = max(0, t - Lmax + 1)
             ok = np.linalg.norm((X[t] - X[j0:t + 1]) - (O[t] - O[j0:t + 1]), axis=1) <= rho_o

@@ -7,6 +7,67 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 19 — Certified sequential localization: excursion-level guarantee from the map (2026-10-29)
+
+**Method** (`analysis/cert_seq.py`; draft `paper/certseq_draft.md`).
+
+- Per-frame SelfCal-AA p-values (cross-fitted).
+- Odometry-anchored sequence evidence R_t: the sum of −log p over frames of the last H whose top-1 is consistent with
+  the current hypothesis plus the odometry (ANCH). ANCHR additionally fits the unknown odometry→map heading per window.
+- Calibration: the conformal quantile of max R over H-frame segments of the map's own held-out traversal.
+- Guarantee: P(any false acceptance during an H-frame off-map excursion) ≤ α under segment exchangeability. It is exact
+  for any within-segment dependence, which is why the window-level calibration of exp11 / seq_odo failed.
+
+**Validity** (6 descriptors × 3 random block grids, α = 0.05, H = 10, RobotCar H = 5).
+
+- Mean excursion FAR of ANCH, worst condition in brackets:
+
+  | RobotCar | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+  |---|---|---|---|---|---|
+  | 0.016 [0.067] | 0.022 [0.052] | 0.020 [0.033] | 0.020 [0.049] | 0.014 [0.022] | 0.015 [0.025] |
+
+- α = 0.01 / 0.1 track the target (`paper/cert_tables.md` Table 3).
+- The label-calibrated baseline (same statistic, threshold from labelled off-map segments of the 2 most benign
+  conditions) violates on RobotCar and CMU: mean FAR 0.044, worst condition 0.125 / 0.089.
+
+**Power** (share of correct frames accepted, ANCH vs per-frame SelfCal):
+
+| Nordland | CMU | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|
+| 0.86 vs 0.44 | 0.82 vs 0.62 | 0.83 vs 0.31 | 0.77 vs 0.43 | 0.37 vs 0.19 |
+
+- Latency to the first certified fix drops by 5–20×.
+- Alias acceptance ≤ 0.03.
+- RobotCar's 9-frame snippets are too short to accumulate evidence: 0.68 vs 0.77. This is kept as a stated
+  limitation; long-sequence benchmarks were added instead (user instruction).
+- ANCHR (no heading needed) on CMU CosPlace: FAR 0.037 vs 0.030 for ANCH, power equal (0.883).
+
+**Navigation** (Kalman filter + drifting odometry, 30 % map holes, `nav_demo.py`). Mean position error with certified
+fixes vs per-frame SelfCal vs label threshold vs accept-all:
+
+| dataset | certified | per-frame SelfCal | label threshold | accept-all |
+|---|---|---|---|---|
+| Nordland, 6 desc. (frames) | 7.7–34.8 | 21.7–72.4 | 85–475 | – |
+| CMU (m) | ≈ oracle (2.8–5.0 vs 2.7–3.2) | – | – | – |
+| 4Seasons, real VIO | best or tied in most | – | – | – |
+
+The Xu'21-style HMM with a label-tuned off-map state (added to nav_demo) gives many correct fixes, but has
+catastrophic lock-ins. On Nordland CosPlace: mean 167, p95 1416 frames, vs 10.2 / 53 for the certified method.
+
+**New data:**
+
+- `nhatlong1103/vpr-dumps-4seasons` (public): 18 recordings, 62,875 frames, real VIO.
+- Boreas from public S3 (31 sequences of one 8 km route over a year, wheel + gyro odometry):
+  `automation/make_dump_boreas.py`, 15 T4 kernels running.
+- `4seasons-poses` and `vpr-descriptor-weights` made public.
+
+**Next:**
+
+- Final round with ANCHR on every dataset including Boreas.
+- Natural off-map (`cert_natural.py`: queries of other scenes/datasets).
+- Ablations: ρ_o and odometry noise.
+- Paper.
+
 ## Entry 18 — HMM direction, first round: data audit, sequence validity root cause, EVT-HMM (2026-10-29)
 
 **Data (Step 1):** see `DATA_AUDIT.md`. The dumps are correct. RobotCar train queries are only 9-frame snippets.
