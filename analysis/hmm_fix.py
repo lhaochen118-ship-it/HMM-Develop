@@ -29,7 +29,7 @@ import vprlib as V, selfcal as SC
 from sc_eval import CFG
 from hmm_eval import sims
 from hmm_diag import DiagFilter, auroc, recall_at_fl
-from cert_seq import odometry_sim, odometry_real
+from cert_seq import odometry_sim, odometry_real, running, chunks
 
 A = 0.05
 
@@ -168,6 +168,55 @@ def main():
                     pr = (1 - p_out) * pr + p_in * (1 - pr)
                     lo = np.log(pr / (1 - pr)) + w_pr[t] * ll[t]; pr = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon[t] = pr
             res[name] = metrics(est, conf, 1 - pon)
+        # SECOND presence e-value from the place chain itself: its posterior concentration conf_t is calibrated against the
+        # same HMM run on the map's own held-out blocks (off-map by construction, odometry simulated from the map poses);
+        # p_conf = conformal p of conf_t; e_conf = a p^(a-1) (EM per traversal). Mixed with the top-1 e-value by averaging
+        # (e = (e1 + e2) / 2 is an e-value under ANY dependence between the two) and fed to the same presence chain.
+        bidk, _ = V.map_cells(mp, c["block"]); ubk = np.unique(bidk); nul_conf = []
+        msid = np.zeros(len(mp), int); mk = np.arange(len(mp))
+        for b in ubk[1::2][:20]:
+            hold = np.flatnonzero(bidk == b); rest = bidk != b
+            if len(hold) < 10 or rest.sum() < 50: continue
+            Sb = M[hold] @ M[rest].T
+            stb = SC.qm_stats(M[hold], M[rest], mp[rest], c["cell"], c["excl"], c["k"])
+            sdb = np.maximum(np.nan_to_num(stb["sd_far"], nan=np.nanmedian(sdf)), 1e-4)
+            relb = (Sb - Sb.max(1, keepdims=True)) / (tau * sdb[:, None])
+            ob = odometry_sim(mp[hold], np.zeros(len(hold), int), np.arange(len(hold)), rng); Ub = np.vstack([np.zeros((1, mp.shape[1])), np.diff(ob, axis=0)])
+            Fb = DiagFilter(mp[rest], 1.0 if nord else 2.0, 6.0 if nord else 15.0, tol, c["excl"])
+            _, cfb, _, _ = Fb.run(relb, Ub); nul_conf.append(cfb)
+        nul_conf = np.sort(np.concatenate(nul_conf)) if nul_conf else np.zeros(1)
+        est, conf, _ = place_cache[next(iter(place_cache))] if place_cache else run(rel, None)
+        pc = (1 + len(nul_conf) - np.searchsorted(nul_conf, conf, side="left")) / (1 + len(nul_conf))
+        e_top = np.exp(lam); e_conf = np.zeros(len(q))
+        for cn in conds:
+            m = cond == cn; a2, _ = beta_em(pc[m]); e_conf[m] = a2 * np.clip(pc[m], 1e-6, 1) ** (a2 - 1)
+        agree = np.linalg.norm(mp[top] - mp[est], axis=1) <= c["excl"]
+        e_top_g = np.where(agree, e_top, np.exp(loga))
+        # BELIEF-INDEPENDENT sequence evidence for presence: the odometry-anchored statistic R_t (ANCH, cert_seq) of the top-1
+        # stream, calibrated per frame against R on the map's own held-out traversal (map null items, odometry from map poses)
+        Hh = 10; rho_o = 1.0 if nord else 5.0
+        sub = np.arange(0, len(mp), 2)                                       # map_null(stride=2): rows of Nr/Nc = map items sub
+        ok_n = np.isfinite(Nr["maxsim"]) & np.isfinite(Nc["z_far"])
+        p_n = SC.SelfCalTest(SC.pack(Nr, Nc)).pvalue(**SC.pack(Nr, Nc))
+        o_m = odometry_sim(mp[sub], np.zeros(len(sub), int), np.arange(len(sub)), rng); Rn = np.full(len(sub), np.nan)
+        for ch in chunks(np.arange(len(sub)), ok_n, bidk[sub]): Rn[ch] = running(p_n, Nr["top"], np.array(ch), o_m, mp, "ANCH", c["excl"], rho_o, Hh)
+        rn = np.sort(Rn[np.isfinite(Rn)]); Rq = np.zeros(len(q))
+        for idx in seqs: Rq[idx] = running(p, Fr["top"], idx, o, mp, "ANCH", c["excl"], rho_o, Hh)
+        pR = (1 + len(rn) - np.searchsorted(rn, Rq, side="left")) / (1 + len(rn)); e_anch = np.zeros(len(q))
+        for cn in conds:
+            m = cond == cn; a3, _ = beta_em(pR[m]); e_anch[m] = a3 * np.clip(pR[m], 1e-6, 1) ** (a3 - 1)
+        # each frame enters H overlapping windows of R_t, so the ANCH e-value is tempered by 1/H (e^w is an e-value, Jensen)
+        for name, ee in (("fac_conf", e_conf), ("fac_mix", 0.5 * (e_top_g + e_conf)), ("fac_anch", e_anch),
+                         ("fac_anch_mix", 0.5 * (e_top_g + e_anch)), ("fac_anchT_mix", 0.5 * (e_top_g + e_anch ** (1.0 / Hh))),
+                         ("fac_anchS_mix", 0.5 * (e_top_g + e_anch ** (1.0 / np.sqrt(Hh))))):
+            ll = np.log(np.maximum(ee, 1e-300)); pon = np.zeros(len(q))
+            for idx in seqs:
+                pr = 0.5
+                for t in idx:
+                    pr = 0.99 * pr + 0.01 * (1 - pr)
+                    lo = np.log(pr / (1 - pr)) + ll[t]; pr = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon[t] = pr
+            res[name] = metrics(est, conf, 1 - pon)
+        res["fac_mix"]["n_null_conf"] = int(len(nul_conf))
         run_rec = {"seed": seed, "tau": tau, "a_fit": a_fit, "rho_mean": float(rho.mean()), "w_mean": float(w.mean()), "r_lambda": r_fit, "methods": res}
         out["runs"].append(run_rec)
         print(f"[{ds}/{desc} s{seed}] r_lam {np.mean(list(r_fit.values())):.2f} tau {tau:.2f} rho {rho.mean():.2f} w {w.mean():.2f} a {np.mean([v[0] for v in a_fit.values()]):.2f} ({time.time()-t0:.0f}s)", flush=True)

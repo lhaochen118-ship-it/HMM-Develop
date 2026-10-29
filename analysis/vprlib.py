@@ -136,14 +136,21 @@ def load_4seasons(dump, desc="salad", scene="office_loop", ref=None):
     return ep
 
 
-def load_boreas(dump, desc="salad", ref=None):
+BOREAS_Q = ["boreas-2020-12-01-13-26", "boreas-2021-01-15-12-17", "boreas-2021-01-26-11-22", "boreas-2021-02-02-14-07",
+            "boreas-2021-03-23-12-43", "boreas-2021-04-15-18-55", "boreas-2021-05-13-16-11", "boreas-2021-06-17-17-52",
+            "boreas-2021-07-27-14-43", "boreas-2021-09-07-09-35", "boreas-2021-09-14-20-00", "boreas-2021-10-22-11-36",
+            "boreas-2021-11-23-14-27"]     # 13 query traversals spread over the year (snow, rain, dusk, night, summer, fall)
+
+
+def load_boreas(dump, desc="salad", ref="boreas-2020-11-26-13-58", qseqs=BOREAS_Q):
     """Boreas (one ~8 km route driven over a year; all sequences share one ENU frame): map = reference sequence (default
     the earliest dumped one), queries = all other sequences (condition = sequence name). Positions are 2-D (easting,
     northing). ep.q_dmi / ep.q_gyro = raw wheel-encoder pulse count and integrated IMU yaw at every query frame (real
     odometry); ep.q_rec = sequence of every query row (rows in time order)."""
     seqs = sorted(f[7:-4] for f in os.listdir(os.path.join(dump, "meta")) if f.startswith("boreas_")
                   and os.path.isfile(os.path.join(dump, desc, f[:-4] + ".npy")))
-    ref = ref or seqs[0]; M = {r: np.load(os.path.join(dump, "meta", f"boreas_{r}.npz"), allow_pickle=True) for r in seqs}
+    ref = ref if ref in seqs else seqs[0]; seqs = [r for r in seqs if r == ref or qseqs is None or r in qseqs]
+    M = {r: np.load(os.path.join(dump, "meta", f"boreas_{r}.npz"), allow_pickle=True) for r in seqs}
     D = {r: np.load(os.path.join(dump, desc, f"boreas_{r}.npy")) for r in seqs}; qr = [r for r in seqs if r != ref]
     cat = lambda f: np.concatenate([f(r) for r in qr])
     ep = Episode("boreas", cat(lambda r: D[r]), D[ref], cat(lambda r: M[r]["C"][:, :2]), M[ref]["C"][:, :2], cat(lambda r: np.array([r] * len(D[r]))))

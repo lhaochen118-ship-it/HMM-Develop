@@ -7,6 +7,65 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 20 — Why the HMM loses to simple baselines, and the CPC-HMM fix (2026-10-29)
+
+**Where the HMM lost:**
+
+- (L1) Its posterior confidence separates on-map from off-map worse than the raw top-1 similarity (RobotCar, CMU,
+  4Seasons).
+- (L2) Catastrophic lock-ins in navigation: the Xu'21-style HMM with a label-tuned off-map state has mean error up to
+  10–40× that of the certified fixes.
+- (L3) The off-map state costs recall.
+- (L4) It gains nothing on short sequences (RobotCar).
+
+**Diagnostics** (`analysis/hmm_diag.py`, 6 datasets × 6 descriptors; `paper/BAO_CAO_CertSeq.md` §5.1):
+
+| ID | Finding |
+|---|---|
+| D5 | The posterior changes by ≤ 4e-6 when a random per-frame constant is added to all similarities: the softmax HMM is exactly invariant to the absolute level, i.e. blind to absence. |
+| D1 | R@FL5 of the posterior is 0.44 vs 0.55 for raw max-sim on average (CMU 0.43 vs 0.74). Nordland is the exception, because its absolute level is shifted by winter. |
+| D2 | Mean confidence 0.91 vs accuracy 0.77, ECE 0.14. |
+| D3 | Confident-but-wrong frames are about 16 % of frames and cause about 41 % of the total error. |
+| D4 | The evidence increments have lag-1 autocorrelation 0.8–0.99, i.e. variance inflation (1+r)/(1−r) of 8–136×: the independence assumption over-counts evidence. |
+
+**Theory:**
+
+- Relative vs absolute: LR(j:i) depends on differences; LR(j:∅) = f₁(s_j)/f₀(s_j) depends on the level.
+- Composite-likelihood over-counting (Var ∝ (1+r)/(1−r)).
+- The SelfCal p-value is a max-statistic p-value, so its evidence must enter a separate presence chain.
+- Evidence derived from the HMM's own belief (posterior concentration, a p-value at the MAP place) re-confirms a
+  lock-in.
+
+**Fix: CPC-HMM** (`analysis/hmm_fix.py`, method `fac_anchT_mix`).
+
+- *Place chain:* the HMM without an off-map state, with an affine-invariant emission (s − s_max)/(τ σ_far,t);
+  τ = Gumbel scale of the map null.
+- *Presence chain:* two states, symmetric p_in = p_out = 0.01. Its evidence is the mixed e-value
+  ½(e_top + (e_R)^(1/H)):
+  - e_top = a p^(a−1), the SelfCal-AA top-1 p-value, gated by agreement with the place MAP; a fitted by EM on the
+    traversal's own p-values;
+  - e_R = the e-value of the odometry-anchored statistic R_t, calibrated on the map's held-out traversal, tempered by
+    1/H because of the window overlap.
+- Report the place when P(on) > 0.5. Label-free and tuning-free.
+
+**Local results** (CosPlace, 1 seed), CPC-HMM vs Xu'21 tuned with labels:
+
+| Dataset | FL | Navigation error | R@FL5 |
+|---|---|---|---|
+| Nordland | 0.007 vs 0.033 | 23 vs 184 frames | 0.85 vs 0.82 |
+| CMU | 0.055 vs 0.965 | 9.4 vs 125 m | 0.83 vs 0.37 |
+| RobotCar | 0.068 vs 0.071 | 3.4 vs 2.4 m | 0.64 vs 0.52 |
+
+**Negative variants** (kept in the code as ablations):
+
+- The joint state space with the e-value per place: double multiplicity (too conservative) or prior–observation
+  dependence (FL ≈ 0.9).
+- Place-conditional evidence and posterior-concentration evidence: both feed the lock-in.
+- The un-tempered ANCH e-value: CMU FL 0.15.
+- ESS tempering of the place chain: it removes lock-ins but hurts ranking.
+
+Full grid: `fix4` (7 datasets × 6 descriptors × 2 seeds; Boreas 1 seed), running on 14 Kaggle CPU kernels.
+
 ## Entry 19 — Certified sequential localization: excursion-level guarantee from the map (2026-10-29)
 
 **Method** (`analysis/cert_seq.py`; draft `paper/certseq_draft.md`).

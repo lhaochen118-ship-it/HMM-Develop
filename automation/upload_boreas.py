@@ -7,6 +7,9 @@ Usage: upload_boreas.py <dump|images> <stage_dir> <kernel_out_dir> [...]"""
 import sys, os, glob, json, shutil, subprocess
 import numpy as np
 
+PART = None
+if "--part" in sys.argv:                       # images only: "--part i/n" publishes sequences i::n as boreas-vpr-images-<i+1>
+    i = sys.argv.index("--part"); PART = tuple(int(x) for x in sys.argv[i + 1].split("/")); del sys.argv[i:i + 2]
 what, stage, outs = sys.argv[1], sys.argv[2], sys.argv[3:]
 os.makedirs(stage, exist_ok=True)
 
@@ -38,14 +41,18 @@ if what == "dump":
     slug, title, sub = "boreas-vpr-dump", "Boreas VPR descriptor dump", "Global VPR descriptors, poses and wheel/gyro odometry of Boreas"
     print(f"{len(rows)} sequences, {sum(r[1] for r in rows)} frames")
 else:
+    allseq = sorted({os.path.basename(d) for o in outs for d in glob.glob(os.path.join(o, "img", "*"))})
+    want = set(allseq if PART is None else allseq[PART[0]::PART[1]])
     for o in outs:
-        for f in glob.glob(os.path.join(o, "img", "*", "*.jpg")): place(f, os.path.join(stage, "img", os.path.basename(os.path.dirname(f)), os.path.basename(f)))
+        for f in glob.glob(os.path.join(o, "img", "*", "*.jpg")):
+            if os.path.basename(os.path.dirname(f)) in want: place(f, os.path.join(stage, "img", os.path.basename(os.path.dirname(f)), os.path.basename(f)))
     seqs = sorted(os.listdir(os.path.join(stage, "img")))
     readme = ["# Boreas selected camera frames (640-px JPEG)", "",
               "Frames of the Boreas Glen Shields sequences sub-sampled to >= 1 m of travel (see `nhatlong1103/boreas-vpr-dump` for poses,",
               "odometry and descriptors). `img/<seq>/<timestamp_us>.jpg`, resized from the original 2448x2048 PNG. Source: Boreas, CC BY 4.0.", "",
               f"{len(seqs)} sequences: " + ", ".join(seqs)]
-    slug, title, sub = "boreas-vpr-images", "Boreas VPR frames 640px", "Boreas camera frames sub-sampled to 1 m, 640-px JPEG"
+    sfx = "" if PART is None else f"-{PART[0] + 1}"
+    slug, title, sub = "boreas-vpr-images" + sfx, "Boreas VPR frames 640px" + (f" part {PART[0] + 1}" if PART else ""), "Boreas camera frames sub-sampled to 1 m, 640-px JPEG"
 open(os.path.join(stage, "README.md"), "w").write("\n".join(readme) + "\n")
 json.dump({"title": title, "id": f"nhatlong1103/{slug}", "subtitle": sub, "isPrivate": False, "licenses": [{"name": "CC-BY-4.0"}]},
           open(os.path.join(stage, "dataset-metadata.json"), "w"))

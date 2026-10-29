@@ -228,7 +228,133 @@ def main():
                 cells.append(f"{np.mean([y['err_mean'] for y in v]):.1f} ({np.mean([y['err_p95'] for y in v]):.0f})" if v else "–")
             A(f"| {n} | " + " | ".join(cells) + " |")
         A("")
-    A("## 5. Kết luận")
+    # ------------------------------------------------------------------ HMM weakness analysis + fix
+    diag = [json.load(open(f)) for f in glob.glob(os.path.join(R, "hmmdiag_*.json"))]
+    fix = [json.load(open(f)) for f in glob.glob(os.path.join(R, "hmmfix_*.json"))]
+    if diag:
+        A("## 5. Vì sao HMM thua baseline, và cơ chế sửa")
+        A("")
+        A("### 5.1 Chẩn đoán (`analysis/hmm_diag.py`)")
+        A("")
+        A("Thiết lập: HMM chuẩn (lọc tiến trên các ảnh bản đồ, chuyển trạng thái theo odometry, emission exp(s/T), có hoặc "
+          "không có trạng thái off-map của Xu'21) trên bản đồ khuyết 30 % block. Mỗi ô là trung bình trên descriptor.")
+        A("")
+        A("Các cột:")
+        A("")
+        A("- **R@FL5:** tỷ lệ frame on-map đúng được nhận khi giới hạn định vị sai off-map ở 5 %.")
+        A("- **conf, acc:** độ tin cậy trung bình so với độ chính xác thật.")
+        A("- **khoá nhầm:** tỷ lệ frame sai mà vẫn tin > 0.9 / tỷ lệ tổng sai số do các frame đó gây ra.")
+        A("- **r, VIF:** tự tương quan trễ 1 của dòng bằng chứng, và hệ số phóng đại phương sai (1+r)/(1−r).")
+        A("- **D5:** thay đổi lớn nhất của posterior khi cộng một hằng số ngẫu nhiên vào mọi similarity của từng frame.")
+        A("")
+        A("| Dataset | R@FL5 max-sim thô | R@FL5 posterior HMM | R@FL5 HMM+off-map | conf / acc | ECE | khoá nhầm | r (VIF) | D5 |")
+        A("|---|---|---|---|---|---|---|---|---|")
+        for d, n in DS:
+            g = [x for x in diag if x["ds"] == d]
+            if not g: continue
+            h = lambda f: np.nanmean([f(x) for x in g])
+            ac = [x["D4"]["lag1_autocorr_median"] for x in g if np.isfinite(x["D4"]["lag1_autocorr_median"])]
+            racs = f"{np.median(ac):.2f} ({(1 + np.median(ac)) / (1 - np.median(ac)):.0f}×)" if ac else "– (chuỗi < 20 frame)"
+            A(f"| {n} | {h(lambda x: x['methods']['hmm']['D1']['raw_maxsim']['R_at_FL5']):.2f} | {h(lambda x: x['methods']['hmm']['D1']['conf']['R_at_FL5']):.2f} | "
+              f"{h(lambda x: x['methods']['hmm_off']['D1']['conf*(1-off)']['R_at_FL5']):.2f} | {h(lambda x: x['methods']['hmm']['D2']['mean_conf']):.2f} / "
+              f"{h(lambda x: x['methods']['hmm']['D2']['acc']):.2f} | {h(lambda x: x['methods']['hmm']['D2']['ECE']):.2f} | "
+              f"{h(lambda x: x['methods']['hmm']['D3']['frac_frames']):.2f} / {h(lambda x: x['methods']['hmm']['D3']['share_of_total_error']):.2f} | {racs} | "
+              f"{max(x['D5']['max_abs_conf_change'] for x in g):.0e} |")
+        A("")
+        A("**Nguyên nhân gốc (được số liệu xác nhận):**")
+        A("")
+        A("1. **Bất biến bằng chứng tương đối (D1, D5).**")
+        A("   - Emission softmax p(s_t | j) ∝ exp(s_tj / T) cho posterior bất biến khi s_t → s_t + c_t·1. Trạng thái off-map "
+          "của Xu'21, exp(s₍ₖ₎/T), cũng bất biến như vậy, nên chỉ đo được độ nhọn s_max − s₍ₖ₎.")
+        A("   - Nhưng câu hỏi \"robot có ở trong bản đồ không\" là câu hỏi về mức tuyệt đối: LR(j : ∅) = f₁(s_j) / f₀(s_j). "
+          "HMM về cấu trúc không thấy được sự vắng mặt.")
+        A("   - Max-sim thô thắng posterior trên RobotCar, CMU và 4Seasons. Nordland là ngoại lệ: ở đó mức similarity bị mùa "
+          "đông làm dịch, nên cần mức tuyệt đối đã được hiệu chuẩn bất biến affine, không phải mức thô.")
+        A("2. **Đếm lặp bằng chứng phụ thuộc (D2, D3, D4).**")
+        A("   - HMM giả định quan sát độc lập khi biết trạng thái, nhưng bằng chứng của các frame liên tiếp có r ≈ 0.8–0.99.")
+        A("   - Var(Σd_t) ≈ nσ²(1+r)/(1−r), trong khi HMM tính như nσ²: đếm thừa 4–200×.")
+        A("   - Hệ quả: posterior quá tự tin (conf > acc) và khoá nhầm chỗ. Các frame sai mà vẫn tin > 0.9 gây ra khoảng 40 % "
+          "tổng sai số.")
+        A("3. **Vòng phản hồi khoá nhầm.** Mọi bằng chứng tính từ chính niềm tin của HMM đều tự xác nhận khi đã khoá nhầm. "
+          "Thí nghiệm `fac_pc` và `fac_mix` đều thất bại vì lý do này (mục 5.3).")
+        A("")
+        A("### 5.2 Cơ chế đề xuất: CPC-HMM (HMM với chuỗi hiện diện đã hiệu chuẩn)")
+        A("")
+        A("Tách HMM thành 2 chuỗi:")
+        A("")
+        A("- **Chuỗi vị trí (\"ở đâu\")** là HMM chuẩn không có trạng thái off-map, với emission tương đối bất biến affine "
+          "và không cần tune:")
+        A("")
+        A("  > log e_t(j) = (s_tj − max_i s_ti) / (τ · σ_far,t)")
+        A("")
+        A("  Ở đây σ_far,t là độ trải của các cực đại vùng xa của chính frame t, và τ là thang Gumbel của null bản đồ "
+          "(z_far của các pseudo-query leave-block-out).")
+        A("- **Chuỗi hiện diện (\"có trong bản đồ không\")** gồm 2 trạng thái on/off:")
+        A("")
+        A("  > P(on_t | ·) ∝ [ (1−p_out)·P(on_{t−1}) + p_in·P(off_{t−1}) ] · LR_t,  với LR_t = a · p_t^(a−1)")
+        A("")
+        A("  - p_t là p-value SelfCal-AA của top-1, hiệu chuẩn bằng bản đồ (bất biến affine, có cổng max-sim). Dưới H0, "
+          "p_t ~ U(0,1) nên E[LR_t] = 1, tức LR_t là một e-value.")
+        A("  - Tham số a lấy từ EM không nhãn trên dòng p-value của chính chuyến đi: π₀·U + (1−π₀)·Beta(a,1).")
+        A("  - **Cổng độc lập niềm tin:** khi top-1 không khớp với nơi MAP của chuỗi vị trí (lệch > 25 m), frame đó được "
+          "tính là p = 1.")
+        A("  - Prior đối xứng p_in = p_out = 0.01.")
+        A("- **Nguồn bằng chứng thứ hai, độc lập với niềm tin:** thống kê neo odometry R_t (mục 2b) của dòng top-1 trong "
+          "cửa sổ H = 10 frame. Nó được hiệu chuẩn từng frame với null R trên traversal của chính bản đồ, cho p-value p^R_t "
+          "và e-value e^R_t = a′(p^R_t)^(a′−1).")
+        A("- **Gộp hai bằng chứng:** mỗi frame nằm trong H cửa sổ, nên e^R được luỹ thừa 1/H để không đếm lặp. Vẫn là e-value "
+          "nhờ bất đẳng thức Jensen: E[e^w] ≤ (E[e])^w ≤ 1. Hai e-value được gộp bằng trung bình, cách gộp hợp lệ với mọi "
+          "kiểu phụ thuộc giữa chúng:")
+        A("")
+        A("  > LR_t = ½ · ( e^top_t + (e^R_t)^(1/H) )")
+        A("")
+        A("- **Quyết định:** báo nơi MAP của chuỗi vị trí khi P(on) > 0.5. Độ tin cậy là P(on) × độ tập trung posterior.")
+        A("")
+        A("**Vì sao sửa được:**")
+        A("")
+        A("- **Mệnh đề 1:** bằng chứng hiện diện là mức tuyệt đối đã hiệu chuẩn, sửa nguyên nhân 1.")
+        A("- **Mệnh đề 3:** p-value của thống kê max đã trả giá cho N nơi, nên phải đi vào một chuỗi on/off riêng. Đưa vào "
+          "từng trạng thái thì hoặc đếm phạt hai lần (`abs_naive`: quá bảo thủ), hoặc vi phạm giả định độc lập giữa prior "
+          "và quan sát (`abs`: FL ≈ 0.9).")
+        A("- **Bài học từ 5.1:** bằng chứng hiện diện tính từ top-1, không từ niềm tin của HMM, nên không bị cuốn vào vòng "
+          "khoá nhầm.")
+        A("- **Không cần nhãn hay tune:** τ và a ước lượng từ bản đồ và từ chính dòng p-value.")
+        A("")
+    if fix:
+        MM = [("xu21_tuned", "HMM + off-map Xu'21 (T, k tune bằng nhãn)"), ("hmm_nooff_tuned", "HMM không off-map (T tune)"),
+              ("rel", "chỉ emission bất biến affine"), ("abs_naive", "e-value nhân vào từng nơi (đếm 1/N hai lần)"),
+              ("fac_now", "CPC, prior lệch (p_in = 0.05)"), ("fac_ess_pr", "CPC + giảm theo ESS"),
+              ("fac_anch_mix", "CPC + ANCH không luỹ thừa (đếm lặp)"), ("fac_now_sym", "CPC, chỉ e-value top-1"),
+              ("fac_anchT_mix", "**CPC-HMM đầy đủ (đề xuất, không nhãn)**")]
+        A("### 5.3 Kết quả: CPC-HMM so với HMM Xu'21 (`analysis/hmm_fix.py`)")
+        A("")
+        A("Bản đồ khuyết 30 %, 6 descriptor × 2 seed. Mỗi ô ghi: recall on-map / định vị sai off-map (FL) / recall ở 5 % FL "
+          "/ ECE / sai số điều hướng trung bình (p95). Nordland tính bằng frame, các dataset khác tính bằng mét.")
+        A("")
+        dsx = [(d, n) for d, n in DS if any(x["ds"] == d for x in fix)]
+        A("| Phương pháp | " + " | ".join(n for _, n in dsx) + " |"); A("|---|" + "---|" * len(dsx))
+        for m, mn in MM:
+            cells = []
+            for d, _ in dsx:
+                v = [run["methods"][m] for x in fix if x["ds"] == d for run in x["runs"] if m in run["methods"]]
+                if not v: cells.append("–"); continue
+                g = lambda k: np.nanmean([y[k] for y in v])
+                cells.append(f"{g('recall'):.2f} / {g('FL'):.3f} / {g('R_FL5'):.2f} / {g('ECE'):.2f} / {g('nav_mean'):.1f} ({g('nav_p95'):.0f})")
+            A(f"| {mn} | " + " | ".join(cells) + " |")
+        A("")
+        A("**Thử nghiệm âm tính (giữ lại để tránh lặp lại):**")
+        A("")
+        A("- Bằng chứng hiện diện tính tại nơi MAP của HMM (`fac_pc`), trên Nordland CosPlace: FL 0.08, sai số điều hướng "
+          "315 frame.")
+        A("- Thêm e-value từ độ tập trung posterior, hiệu chuẩn bằng null bản đồ (`fac_mix`): recall 0.85 nhưng FL 0.14, sai "
+          "số điều hướng 280 frame.")
+        A("- Cả hai cùng một nguyên nhân: thống kê lấy từ niềm tin của HMM bị nhiễm khoá nhầm.")
+        A("- Giảm theo độ dư thừa (ESS) giúp hạn chế khoá nhầm nhưng làm giảm khả năng xếp hạng. Nó là tuỳ chọn, không nằm "
+          "trong cấu hình chính.")
+        A("- Đưa e-value ANCH vào mà không luỹ thừa 1/H làm FL trên CMU tăng lên 0.15. Đây chính là lỗi đếm lặp bằng chứng "
+          "phụ thuộc (nguyên nhân 2) xuất hiện ở tầng hiện diện.")
+        A("")
+    A("## 6. Kết luận")
     A("")
     A("- **Hợp lệ.** Bảo đảm theo đoạn giữ ở mọi bộ dữ liệu và descriptor, không dùng nhãn (Bảng 1, 4, 5). Baseline hiệu "
       "chuẩn bằng nhãn kiểu SAFEVPR vượt α trên RobotCar và CMU.")
