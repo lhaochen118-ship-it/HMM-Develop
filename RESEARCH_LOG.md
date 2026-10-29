@@ -1,4 +1,8 @@
-# SelfCal — Research Log
+# Research Log
+
+*Branch `hmm-navigation` (2026-10-29): hướng mới là HMM sequence-based visual localization. Các entry dưới đây thuộc
+hướng cũ (CCBF/HMM filter → SelfCal), giữ lại làm lịch sử và bài học. Entry mới bắt đầu từ 18, đặt ở trên cùng. Kết quả
+và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / `claude/selfcal-seq`.*
 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).

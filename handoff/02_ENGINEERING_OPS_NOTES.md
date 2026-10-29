@@ -1,8 +1,9 @@
 # 02 — Engineering & Operations Lessons
 
-*Cập nhật 2026-10-28. Tài liệu này chỉ về **kỹ thuật và vận hành**: code, môi trường, Kaggle, cách chạy thí nghiệm,
-lỗi đã gặp và cách sửa, bài học. Bảng tài khoản, dataset và đường dẫn nằm trong `ENVIRONMENT_SUMMARY.pdf`; kết quả
-khoa học nằm trong `01_SCIENTIFIC_FINDINGS.pdf`.*
+*Cập nhật 2026-10-29 (branch `hmm-navigation`). Tài liệu này chỉ về **kỹ thuật và vận hành**: code, môi trường, Kaggle,
+cách chạy thí nghiệm, lỗi đã gặp và cách sửa, bài học. Viết trong giai đoạn SelfCal; hạ tầng Kaggle và các điểm dễ sai
+của loader vẫn đúng cho hướng HMM. Các script thí nghiệm SelfCal được nhắc tới (`eval_all.py`, `exp*`) nay chỉ còn ở
+branch `claude/selfcal-aa` / `claude/selfcal-seq`. Bảng tài khoản và dataset: `ENVIRONMENT_SUMMARY.md`.*
 
 ## 1. Chính sách tính toán (user chỉ định)
 

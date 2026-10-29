@@ -1,7 +1,7 @@
-# 04 — Research Workflow (cập nhật 2026-10-28)
+# 04 — Research Workflow (cập nhật 2026-10-29)
 
-*Quy trình chuẩn của dự án (giữ tinh thần bản gốc "Research Workflow") và trạng thái hiện tại của từng phase. Không
-lặp chi tiết khoa học (`01`), vận hành (`02`) hay việc tiếp theo cụ thể (`03`).*
+*Quy trình chuẩn của dự án (giữ tinh thần bản gốc `RESEARCH_WORKFLOW_original.pdf`) và trạng thái hiện tại của từng
+phase. Không lặp chi tiết vận hành (`02`) hay việc tiếp theo cụ thể (`00`).*
 
 ## Mục tiêu
 
@@ -24,16 +24,18 @@ thuyết phục, câu chuyện ở mức paper.
 6. **Viết paper và bàn giao.** Bảng sinh tự động từ `analysis/results/`. Tài liệu bàn giao 00–04 cùng
    environment summary.
 
-## Trạng thái theo phase
+## Trạng thái theo phase (hướng HMM-navigation, 2026-10-29)
 
 | Phase | Trạng thái |
 |---|---|
-| 1 | Xong cho SelfCal: Gate 2–4 kết luận chưa thấy paper nào làm trùng toàn bộ. **Cần Gate 5** cho SelfCal-AA/Gap phiên bản cuối (strata, gate, Gap). |
-| 2 | Đã pivot: CCBF → CRSG → SelfCal. Đã chốt SelfCal-AA và Gap. Seq bị loại khỏi claim. |
-| 3 | Xong: method, T1–T6, baseline, ablation. Còn thiếu kiểm định độc lập các siêu tham số chọn sau-khi-xem-dữ-liệu. |
-| 4 | Xong cho 4 dataset × 6 descriptor (dump public). BoQ chưa có trọng số. 4Seasons poses sẵn sàng nhưng chưa dump. |
-| 5 | Xong: mọi kết quả đã chạy trên Kaggle và tái lập được. Seq/demo nằm trên branch seq. |
-| 6 | Bản nháp paper hoàn chỉnh ở dạng markdown/PDF. Chưa có template LaTeX. Đã có tài liệu bàn giao. |
+| 1 | Chưa làm cho hướng mới. Cần Gate 6 (HMM / sequence visual localization) trong `LITERATURE_GATE.md`. |
+| 2 | Chưa có ý tưởng chốt. Gợi ý ban đầu ở `00_READ_ME_FIRST.md` §5. |
+| 3 | Chưa làm. |
+| 4 | Có sẵn dump global descriptor cho 4 dataset × 6 descriptor (cần audit lại, Bước 1). Thiếu odometry/chuỗi có VO, local features cho 6DOF, Aachen. |
+| 5 | Hạ tầng Kaggle sẵn sàng (`automation/`). Chưa có code HMM trên branch này. |
+| 6 | Chưa làm. |
+
+Lịch sử hướng trước (CCBF → CRSG → SelfCal): xem `RESEARCH_LOG.md` và branch `claude/selfcal-aa`.
 
 ## Nguyên tắc làm việc (rút ra từ dự án)
 

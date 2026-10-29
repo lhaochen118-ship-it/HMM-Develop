@@ -1,16 +1,18 @@
-# SelfCal: Datasets & Environment Summary
+# Datasets & Environment Summary
 
-*Cập nhật 2026-10-28. Thay cho `hmm_datasets_environment_summary.pdf` và `environment_summary_updated.pdf` cũ
-(thời CCBF/CRSG). Hướng nghiên cứu hiện tại là **SelfCal-AA**; trạng thái đọc ở `handoff/03_HANDOFF_NEW_CHAT.md`.*
+*Cập nhật 2026-10-29 (branch `hmm-navigation`). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
+đề bài và việc tiếp theo ở `handoff/00_READ_ME_FIRST.md`. Các dataset dưới đây **chưa được audit lại** cho hướng mới
+(đó là Bước 1).*
 
 ## 1. Dataset quan trọng nhất: descriptor dumps (PUBLIC)
 
 **`nhatlong1103/vpr-descriptor-dumps`**, link https://www.kaggle.com/datasets/nhatlong1103/vpr-descriptor-dumps
-(public, 4.4 GB, giấy phép CC BY-NC-SA 4.0).
+(public, 4.4 GB, giấy phép CC BY-NC-SA 4.0). Chỉ có **global descriptor** (không có local feature), nên đủ cho
+HMM mức place nhưng chưa đủ cho ước lượng 6DOF.
 
 Đây là vector đặc trưng (global descriptor, float16, đã chuẩn hoá L2) của **mọi ảnh map và query** trong 4 benchmark,
-tính bằng 6 mạng VPR, kèm pose, điều kiện và tên ảnh. **Mọi thí nghiệm SelfCal chỉ cần dataset này.** Không cần ảnh
-gốc, không cần chạy lại mạng nơ-ron.
+tính bằng 6 mạng VPR, kèm pose, điều kiện và tên ảnh. Mọi thí nghiệm SelfCal trước đây chỉ cần dataset này (không cần
+ảnh gốc). Tên ảnh chứa timestamp, nên `vprlib.frame_order` dựng lại được thứ tự chuỗi.
 
 **Khi thêm acc Kaggle mới: KHÔNG upload lại.** Chỉ cần thêm dataset này vào kernel:
 
@@ -67,7 +69,7 @@ descriptor hoặc dataset mới.
 | `nhatlong1103/extended-cmu-seasons` (+ `-2`) | Extended-CMU-Seasons, slice 2–25. Cấu trúc lồng `sliceN/sliceN/`; pose `camera-poses/*.txt`, xyz = 3 số cuối |
 | `nhatlong1103/nordland-full-47-6gb` | Nordland đủ 4 mùa (35,768 ảnh/mùa, căn khung 1:1) |
 | `ralphsitinh/msls-dataset` | Mapillary SLS (public, của người khác); dùng phần val CPH + SF |
-| `nhatlong1103/4seasons` + `nhatlong1103/4seasons-poses` | 4Seasons (ảnh + pose 30 recording). Chưa dùng; dự phòng cho demo SLAM/loop-closure |
+| `nhatlong1103/4seasons` + `nhatlong1103/4seasons-poses` | 4Seasons (ảnh + pose 30 recording). Chưa dump; ứng viên chính cho chuỗi có odometry thật |
 | `nhatlong1103/bundle` | Asset offline: `dino_salad.ckpt`, `dinov2_vitb14_pretrain.pth`, source salad/dinov2, wheels |
 | `nhatlong1103/vpr-descriptor-weights` | Trọng số MixVPR, CosPlace, NetVLAD, MegaLoc (`automation/vpr_extra.py`) |
 
@@ -75,7 +77,7 @@ BoQ vẫn chưa có trọng số (GitHub bị chặn, không có mirror).
 
 ## 3. Tài khoản Kaggle (8 acc × 2 T4 = 16 GPU chạy song song)
 
-Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600). `~/.kaggle/access_token` là của acc 1. Các script
+Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); danh sách token ở `KAGGLE_TOKENS.md` (nếu có). `~/.kaggle/access_token` là của acc 1. Các script
 `automation/make_eval_kernel.py`, `run_kernel.py` và `fanout.py` tự đọc đúng token theo tên acc, nên không cần
 `export`. Không ghi token vào `~/.bashrc`.
 
@@ -90,7 +92,7 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600). `~/.kagg
 | 7 | `huyenco` | |
 | 8 | `nguynduylm` | |
 
-Cả 8 acc đã được thử chạy GPU T4 thành công (2026-10-28).
+Cả 8 acc đã được thử chạy GPU T4 thành công (2026-10-28); cả 8 token xác thực được với API (2026-10-29).
 
 **Quy tắc:**
 

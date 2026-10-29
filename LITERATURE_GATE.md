@@ -1,5 +1,8 @@
 # Literature Gate — novelty checks (paper text only, no code)
 
+*Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
+relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
+
 ## Gate 1 (2026-10-28, condensed): CRSG — pre-empted, dropped
 
 CRSG (a label-calibrated logistic gate on margin / max-sim / entropy, plus conformal risk control) overlaps existing
