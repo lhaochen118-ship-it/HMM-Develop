@@ -62,7 +62,7 @@ def _query_stats(S, m_pos, cent, order, starts, excl, k, sue_k, sue_lam):
     dk = np.sqrt(np.maximum(2 - 2 * np.take_along_axis(S, idx, 1), 0)); w = np.exp(-sue_lam * (dk - dk.min(1, keepdims=True)))
     w /= w.sum(1, keepdims=True); P = m_pos[idx]; mp = (w[..., None] * P).sum(1, keepdims=True)
     raw = {"maxsim": s1, "margin": s1 - s2, "PA": -d1 / np.maximum(d2, 1e-9), "neg_entropy": (pr * np.log(pr + 1e-12)).sum(1),
-           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2)), "mu_far": mu_f, "sd_far": sd_f}
+           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2)), "mu_far": mu_f, "sd_far": sd_f, "top": top.astype(float)}
     out = {"T_spacing": (s1 - top_k[:, 0]) / beta,                 # EVS spacing statistic (F(2,2k) under ideal null)
            "T_level": (s1 - top_k[:, :k].mean(1)) / beta,         # level above the top-k far maxima, in tail units
            "z_far": (s1 - mu_f) / sd_f,                            # standardised vs far region maxima
@@ -113,7 +113,7 @@ def _query_stats_torch(S, POS, CENT, CID, nc, excl, k, sue_k, sue_lam):
     w = w / w.sum(1, keepdim=True); P = POS[idx]; mp = (w[..., None] * P).sum(1, keepdim=True)
     s1d, tk0 = s1.double(), top_k[:, 0].double()
     raw = {"maxsim": s1, "margin": s1 - s2, "PA": -d1 / torch.clamp(d2, min=1e-9), "neg_entropy": (pr * torch.log(pr + 1e-12)).sum(1),
-           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2)), "mu_far": mu_f, "sd_far": sd_f}
+           "SUE": -(w[..., None] * (P - mp) ** 2).sum((1, 2)), "mu_far": mu_f, "sd_far": sd_f, "top": top}
     out = {"T_spacing": (s1 - top_k[:, 0]) / beta, "T_level": (s1 - top_k[:, :k].mean(1)) / beta,
            "z_far": (s1d - mu_f) / sd_f, "z_all": (s1 - mu) / sd, "z_gap": (s1d - tk0) / sd_f,
            "d_far": s1d - mu_f, "d_gap": s1 - top_k[:, 0]}
@@ -139,6 +139,7 @@ def lobo_stats(m_desc, m_pos, block, off_d, q_desc, q_pos, cell, excl, k, chunk=
         far = qs[d > off_d]
         if not len(far): continue
         st = qm_stats(q_desc[far], m_desc[keep], m_pos[keep], cell, excl, k)
+        st["top"] = np.flatnonzero(keep)[np.asarray(st["top"]).astype(int)].astype(float)   # top-1 index in the FULL map
         if out is None: out = {kk: np.full(len(q_pos), np.nan) for kk in st}
         for kk, v in st.items(): out[kk][far] = v
     return out

@@ -7,6 +7,62 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 18 — HMM direction, first round: data audit, sequence validity root cause, EVT-HMM (2026-10-29)
+
+**Data (Step 1):** see `DATA_AUDIT.md`. The dumps are correct. RobotCar train queries are only 9-frame snippets.
+CMU (median 186 frames) and Nordland have long sequences. No dataset has odometry except 4Seasons (real VIO). On
+RobotCar/CMU, MegaLoc/SALAD place recall is at 92–98 % @10 m.
+
+**HMM headroom check (CMU, CosPlace, local):**
+
+| method | R@5 m |
+|---|---|
+| single frame | 90.7 |
+| HMM random walk | 91.0 |
+| HMM + simulated odometry | 92.5 |
+
+The worst condition stays at 84.5 → 84.8. Average place recall is not where an HMM paper can win on these
+benchmarks.
+
+**H1: odometry-consistent sequence evidence (`analysis/seq_odo.py`, 18 settings, 6 T4 accounts).**
+- exp11's run statistic counts a *stationary* alias as consistent. Requiring the matches to move with the odometry,
+  anchored at the last frame with a tight tolerance (`RUNO`, 1 frame on Nordland), removes the Nordland MegaLoc
+  violations at every L (0/18 conditions, worst 0.050). It also lifts power: DINOv2 0.44 → 0.63, NetVLAD
+  0.57 → 0.70, CosPlace 0.67 → 0.81, MixVPR 0.73 → 0.88. The alias acceptance drops below the RUN statistic's.
+- On CMU, long windows (L = 20) still "violate" (DINOv2 3/11, worst 0.14).
+- **Root cause:** windows inside one 300 m block are strongly dependent. The map null of CMU has only ~500
+  pseudo-windows ≈ 10–20 independent blocks, so the realised FAR of all 11 conditions (same calibration set) moves
+  together. The per-window binomial violation test is itself anti-conservative for clustered windows.
+- A deployment-condition null (calibrating on the same condition's own LOBO query windows, cross-fit by block parity)
+  is *worse* (`proto/dcn.py`): violations already at L = 1–5. Spatial heterogeneity between blocks dominates.
+- An excursion-level guarantee (null unit = whole held-out segment, scan max) would be exact under within-segment
+  dependence. But CMU gives only 61 ten-frame null segments, too few.
+- **Verdict:** the sequence guarantee is limited by the effective sample size of the spatial null. Not pursued as the
+  main claim. The odometry-consistency fix is kept.
+
+**EVT-HMM (new idea, `analysis/hmm_eval.py`).** Turn the map's leave-block-out null into the *HMM itself*. With
+per-query affine-invariant z-scores of the cell maxima:
+
+- the best non-matching z follows a Gumbel law (μ, β), estimated from map pseudo-queries;
+- emission of place j = exp((z_j − μ)/β), the Gumbel-tail likelihood ratio;
+- the off-map state is a "phantom place" at μ.
+
+No temperature or threshold is tuned, and the HMM prior gives the multiplicity correction (z_1 > μ + β ln n is
+needed to leave the off-map state when not localised).
+
+Navigation protocol: 30 % of the map blocks removed, simulated odometry. First local run, CMU CosPlace, seed 0:
+
+| method | recall | wrong | off-map false loc. | tuned |
+|---|---|---|---|---|
+| single | 0.878 | 0.122 | 1.000 | – |
+| HMM exp(s/T) | 0.918 | 0.082 | 1.000 | T on 1 condition |
+| HMM + k-th-best off-map (Xu'21) | 0.867 | 0.060 | 0.108 | T, k |
+| **EVT-HMM** | 0.868 | 0.060 | **0.048** | none |
+| EVT emission, no off-map | **0.927** | 0.073 | 1.000 | none |
+
+Full run (6 descriptors × 3 datasets × 3 seeds) on Kaggle CPU: pending. The 4Seasons dump (21 of 30 recordings have
+images on Kaggle, about 65 k frames, 6 descriptors, 7 T4) is running.
+
 ## History before SelfCal (Entries 0–10, condensed; full text in git history before branch `claude/selfcal-aa`)
 
 - **CCBF / HMM sequence filter (Entries 0–3, 5–8).** A Bayes filter over (place, condition) with per-condition

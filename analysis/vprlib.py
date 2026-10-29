@@ -113,6 +113,29 @@ def load_msls(dump, desc="salad", cities=("cph", "sf")):
     return Episode("msls", np.concatenate(Q), np.concatenate(M), np.concatenate(qp), np.concatenate(mp), np.concatenate(qc))
 
 
+def q2R(q):
+    """(n,4) quaternions x,y,z,w -> (n,3,3) rotation matrices"""
+    x, y, z, w = np.asarray(q, float).T
+    return np.stack([np.stack([1-2*(y*y+z*z), 2*(x*y-z*w), 2*(x*z+y*w)], -1), np.stack([2*(x*y+z*w), 1-2*(x*x+z*z), 2*(y*z-x*w)], -1),
+                     np.stack([2*(x*z-y*w), 2*(y*z+x*w), 1-2*(x*x+y*y)], -1)], 1)
+
+
+def load_4seasons(dump, desc="salad", scene="office_loop", ref=None):
+    """4Seasons scene: map = reference recording (default: the earliest one with descriptors), queries = all other
+    recordings of the scene (condition = recording date). Positions: GNSS-fused camera centres in a per-scene ENU frame
+    (cross-recording alignment ~0.3-1 m); R = camera->ENU. ep.q_vio / ep.q_vioR = recording-local metric VIO poses
+    (real odometry), ep.q_rec = recording of every query row (rows are in time order within a recording)."""
+    recs = sorted(f[3 + len(scene) + 1:-4] for f in os.listdir(os.path.join(dump, "meta")) if f.startswith(f"4s_{scene}_")
+                  and os.path.isfile(os.path.join(dump, desc, f[:-4] + ".npy")))
+    ref = ref or recs[0]; M = {r: np.load(os.path.join(dump, "meta", f"4s_{scene}_{r}.npz"), allow_pickle=True) for r in recs}
+    D = {r: np.load(os.path.join(dump, desc, f"4s_{scene}_{r}.npy")) for r in recs}; qr = [r for r in recs if r != ref]
+    cat = lambda f: np.concatenate([f(r) for r in qr])
+    ep = Episode(f"4s_{scene}", cat(lambda r: D[r]), D[ref], cat(lambda r: M[r]["C"]), M[ref]["C"], cat(lambda r: np.array([r] * len(D[r]))),
+                 cat(lambda r: M[r]["R"]), M[ref]["R"])
+    ep.q_vio, ep.q_vioR, ep.q_rec, ep.ref = cat(lambda r: M[r]["vio_C"]), q2R(cat(lambda r: M[r]["vio_q"])), cat(lambda r: np.array([r] * len(D[r]))), ref
+    return ep
+
+
 # --------------------------------------------------------------------------- frame order (sequences)
 def _ts(names):
     return np.array([int(os.path.basename(str(n)).split(".")[0].split("_")[-1].rstrip("us")) for n in names], float)
@@ -146,6 +169,10 @@ def frame_order(dump, ds, ep, desc="salad"):
         n = len(ep.m); qg = np.asarray(ep.q_cond).astype(str)
         return sequences(np.tile(np.arange(n, dtype=float), len(ep.q) // n), qg, 1.5) + \
             sequences(np.arange(n, dtype=float), np.zeros(n, int), 1.5)
+    if ds.startswith("4s"):
+        _, qs = np.unique(ep.q_rec, return_inverse=True); qk = np.empty(len(qs), int)
+        for s_ in np.unique(qs): qk[qs == s_] = np.arange((qs == s_).sum())
+        return qs, qk, np.zeros(len(ep.m), int), np.arange(len(ep.m))
     raise ValueError("no frame order for " + ds)
 
 
@@ -185,12 +212,16 @@ def sue_score(ep, K=10, lam=350.0):
 
 
 # --------------------------------------------------------------------------- EVS: extreme-value spacing test
+GRID_OFFSET = None   # optional (2,) fraction of a cell added before hashing: randomises block/cell grids per seed
+
+
 def map_cells(m_pos, cell):
     """Hash map positions into spatial cells of size `cell`. Returns (cell_id per map item, cell centres)."""
     P = np.asarray(m_pos, float)
     if P.shape[1] >= 3:   # project onto the 2 dominant (ground-plane) axes
         c = P - P.mean(0); _, _, Vt = np.linalg.svd(c, full_matrices=False); P = c @ Vt[:2].T
-    key = np.floor(P / cell).astype(np.int64)
+    off = 0.0 if GRID_OFFSET is None else np.asarray(GRID_OFFSET, float)[:P.shape[1]]
+    key = np.floor(P / cell + off).astype(np.int64)
     _, cid = np.unique(key, axis=0, return_inverse=True); cid = cid.ravel()
     cent = np.stack([np.asarray(m_pos, float)[cid == c].mean(0) for c in range(cid.max() + 1)])
     return cid, cent
