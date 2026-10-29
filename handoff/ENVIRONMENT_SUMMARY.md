@@ -98,21 +98,36 @@ README.md                               bảng recording / số frame / chiều 
 - Map = recording sớm nhất của scene; query = các recording còn lại.
 - Runner (`make_eval_kernel.py`) mount sẵn dataset này cùng dump chính (`DUMP_DS`) và tự gộp các thư mục `meta/`.
 
-## 1c. Boreas (đang tạo, 2026-10-29)
+## 1c. Boreas descriptor dump + odometry bánh xe/gyro (PUBLIC, mới 2026-10-29)
 
-**Nguồn:** Boreas (Burnett et al., IJRR 2023) nằm trên S3 public `https://boreas.s3.amazonaws.com/`; tải không cần
-đăng nhập. Kernel Kaggle có internet tải với tốc độ khoảng 40 MB/s.
+**Nguồn.** Boreas (Burnett et al., IJRR 2023) trên S3 public `https://boreas.s3.amazonaws.com/`, tải không cần đăng
+nhập. Đây là tuyến Glen Shields (Toronto) dài khoảng 8 km, chạy nhiều lần từ 11/2020 đến 11/2021 (nắng, mưa, tuyết,
+chiều tối, đêm). Pose GT `applanix/camera_poses.csv` của mọi sequence nằm trong **một hệ ENU cố định chung**.
 
-- **Phạm vi:** một tuyến Glen Shields (Toronto) dài khoảng 8 km, chạy khoảng 40 lần từ 11/2020 đến 11/2021 (nắng,
-  mưa, tuyết, đêm). 28 sequence có GT (`applanix/camera_poses.csv`, cùng một hệ ENU cố định cho mọi sequence).
-- **Odometry thật:** bánh xe (`dmi.csv`) + IMU (`imu.csv`).
-- **Kernel:** `automation/make_dump_boreas.py` (GPU + internet), xử lý từng sequence:
-  - chọn frame cách nhau ≥ 1 m;
-  - lưu JPEG 640 px (`img/<seq>/<ts>.jpg`);
-  - tính 6 descriptor (`dump/<desc>/boreas_<seq>.npy`);
-  - ghi meta `dump/meta/boreas_<seq>.npz`: names (µs), C (E, N, alt), rpy, vel, dmi (pulse), gyro_yaw.
-- **Dataset đích:** `nhatlong1103/boreas-vpr` (public), cập nhật mục này khi upload xong.
-- **Loader:** `V.load_boreas` (`ds = "boreas"`).
+**Dataset đã tạo** (`automation/make_dump_boreas.py`: kernel GPU + internet, mỗi sequence khoảng 30 phút;
+`automation/upload_boreas.py`):
+
+| Slug | Nội dung |
+|---|---|
+| `nhatlong1103/boreas-vpr-dump` | 31 sequence, 182,816 frame (≥ 1 m), 6 descriptor + meta |
+| `nhatlong1103/boreas-vpr-images-1` … `-4` | JPEG 640 px của các frame đã chọn, chia 4 phần (tổng khoảng 13 GB) |
+
+```
+dump/<desc>/boreas_<seq>.npy        desc ∈ megaloc, salad, mixvpr, cosplace, netvlad, dinov2 (float16, L2-norm)
+dump/meta/boreas_<seq>.npz          names (timestamp µs = tên ảnh), C (easting, northing, altitude; ENU chung),
+                                    rpy, vel, dmi (pulse encoder bánh xe), gyro_yaw (tích phân IMU yaw rate)
+img/<seq>/<timestamp_us>.jpg        (các dataset boreas-vpr-images-k)
+```
+
+**Loader:** `V.load_boreas(dump, desc)`, gọi bằng `ds = "boreas"`.
+
+- Map: `boreas-2020-11-26-13-58`.
+- Query: 13 sequence đại diện (`V.BOREAS_Q`: tuyết 01/2021, chiều tối 04/2021, đêm 09/2021, hè, thu).
+- Odometry thật (`cert_seq.odometry_wheel`): quãng đường = pulse × hệ số, hướng = gyro. Hệ số, dấu và hướng ban đầu
+  được hiệu chỉnh trên 50 frame đầu của mỗi sequence.
+
+**Runner:** `make_eval_kernel.py` mount sẵn `vpr-descriptor-dumps`, `vpr-dumps-4seasons` và `boreas-vpr-dump`
+(`DUMP_DS`).
 
 ## 2. Datasets ảnh gốc và trọng số (chỉ cần khi tạo dump mới)
 
