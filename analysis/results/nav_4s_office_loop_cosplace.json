@@ -82,16 +82,16 @@
      "err_p95": 26.776464391307876,
      "frac_gt_rho": 0.058246700582467004
     },
-    "CPC-HMM +PG+DR": {
-     "wrong_fixes": 70,
-     "correct_fixes": 9310,
-     "FAR_offmap": 0.016901408450704224,
-     "err_mean": 12.501212705479576,
-     "err_median": 5.582606082547423,
-     "err_p95": 27.968533237465824,
-     "frac_gt_rho": 0.06296542062965421
-    },
     "CPC-HMM +GG": {
+     "wrong_fixes": 22,
+     "correct_fixes": 9268,
+     "FAR_offmap": 0.0,
+     "err_mean": 8.226515098610681,
+     "err_median": 5.515257949163648,
+     "err_p95": 25.680227236261317,
+     "frac_gt_rho": 0.05279068052790681
+    },
+    "CPC-HMM +GG(rho=.01)": {
      "wrong_fixes": 21,
      "correct_fixes": 8254,
      "FAR_offmap": 0.0,
@@ -99,15 +99,6 @@
      "err_median": 6.478558646818966,
      "err_p95": 26.716932878024252,
      "frac_gt_rho": 0.0617857406178574
-    },
-    "CPC-HMM +GG+DR": {
-     "wrong_fixes": 22,
-     "correct_fixes": 8270,
-     "FAR_offmap": 0.0,
-     "err_mean": 8.93978646713664,
-     "err_median": 6.488201902213637,
-     "err_p95": 26.460848502428775,
-     "frac_gt_rho": 0.06090098060900981
     },
     "certified (ours)": {
      "wrong_fixes": 0,
@@ -239,32 +230,23 @@
      "err_p95": 49.54309278820739,
      "frac_gt_rho": 0.0938582909385829
     },
-    "CPC-HMM +PG+DR": {
-     "wrong_fixes": 879,
-     "correct_fixes": 8198,
-     "FAR_offmap": 0.17168500289519398,
-     "err_mean": 15.57038063385555,
-     "err_median": 7.157654853959812,
-     "err_p95": 71.8864977108968,
-     "frac_gt_rho": 0.14642778146427782
-    },
     "CPC-HMM +GG": {
-     "wrong_fixes": 448,
-     "correct_fixes": 8063,
-     "FAR_offmap": 0.056745801968731906,
-     "err_mean": 9.142287062831143,
-     "err_median": 6.539948103471904,
-     "err_p95": 31.528353182401435,
-     "frac_gt_rho": 0.08161911081619111
+     "wrong_fixes": 459,
+     "correct_fixes": 8166,
+     "FAR_offmap": 0.05732484076433121,
+     "err_mean": 8.875852358852063,
+     "err_median": 6.446579722985054,
+     "err_p95": 30.676958987334796,
+     "frac_gt_rho": 0.07409865074098651
     },
-    "CPC-HMM +GG+DR": {
-     "wrong_fixes": 448,
-     "correct_fixes": 8086,
+    "CPC-HMM +GG(rho=.01)": {
+     "wrong_fixes": 450,
+     "correct_fixes": 8091,
      "FAR_offmap": 0.056745801968731906,
-     "err_mean": 9.130078804768386,
-     "err_median": 6.537312082997246,
-     "err_p95": 31.486903510117013,
-     "frac_gt_rho": 0.0809555408095554
+     "err_mean": 9.059898436300898,
+     "err_median": 6.524784283827267,
+     "err_p95": 31.234395267927034,
+     "frac_gt_rho": 0.07948094079480941
     },
     "certified (ours)": {
      "wrong_fixes": 320,
@@ -396,32 +378,23 @@
      "err_p95": 22.48690436733265,
      "frac_gt_rho": 0.028680970286809705
     },
-    "CPC-HMM +PG+DR": {
-     "wrong_fixes": 302,
-     "correct_fixes": 9318,
-     "FAR_offmap": 0.0773286467486819,
-     "err_mean": 8.874781994905245,
-     "err_median": 5.857145308958709,
-     "err_p95": 37.46366608526671,
-     "frac_gt_rho": 0.0773427707734277
-    },
     "CPC-HMM +GG": {
-     "wrong_fixes": 280,
-     "correct_fixes": 8647,
+     "wrong_fixes": 281,
+     "correct_fixes": 9222,
      "FAR_offmap": 0.07601054481546574,
-     "err_mean": 10.926932860246193,
-     "err_median": 6.271314096914074,
-     "err_p95": 46.20329315138007,
-     "frac_gt_rho": 0.12593084125930842
+     "err_mean": 8.929401018777124,
+     "err_median": 5.829180189215949,
+     "err_p95": 36.71378558038495,
+     "frac_gt_rho": 0.08058689080586891
     },
-    "CPC-HMM +GG+DR": {
-     "wrong_fixes": 292,
-     "correct_fixes": 8682,
+    "CPC-HMM +GG(rho=.01)": {
+     "wrong_fixes": 281,
+     "correct_fixes": 8756,
      "FAR_offmap": 0.07601054481546574,
-     "err_mean": 11.029552332299518,
-     "err_median": 6.308354435520083,
-     "err_p95": 47.08442868981966,
-     "frac_gt_rho": 0.1263732212637322
+     "err_mean": 10.593712178989696,
+     "err_median": 6.214553450736638,
+     "err_p95": 45.69194892396852,
+     "frac_gt_rho": 0.11796800117968001
     },
     "certified (ours)": {
      "wrong_fixes": 30,
