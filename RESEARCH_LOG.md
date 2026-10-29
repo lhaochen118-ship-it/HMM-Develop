@@ -7,6 +7,45 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 22 — Full Boreas results, the real cause of far wrong fixes, dead-reckoning ghost gate (2026-10-29, night)
+
+**Pulled** (new chat, branch `hmm-navigation-2`): fix7 (14 kernels), navF, navFc, navG, bfix. Every Boreas result now
+uses the fixed odometry, 6 descriptors, 3 seeds.
+
+**Boreas with all 6 descriptors** (`nav_demo`, mean navigation error, m):
+
+| | MegaLoc | SALAD | MixVPR | CosPlace | NetVLAD | DINOv2 | mean |
+|---|---|---|---|---|---|---|---|
+| Xu'21 (labels) | **7.0** | **5.0** | 5.5 | **7.4** | 38.8 | 71.6 | 22.6 |
+| CPC-HMM | 34.1 | 12.7 | 9.7 | 27.6 | 11.6 | 10.2 | 17.7 |
+| CPC-HMM p_out = 0.2 | 14.9 | 6.9 | 6.8 | 12.1 | 8.1 | 11.3 | 10.0 |
+| certified | 39.1 | 9.6 | **5.1** | 23.6 | **8.1** | **8.4** | 15.7 |
+
+- Averaged over descriptors, CPC-HMM no longer loses to Xu'21 on Boreas: Xu'21 breaks on NetVLAD/DINOv2. On the 4 strong
+  descriptors Xu'21 still wins.
+- `hmm_fix` (fix7, its own Kalman metric): Boreas Xu'21 40.3 vs CPC 28.2; RobotCar `cpc_pred` 0.73 vs Xu'21 1.28.
+- A constant p_out does not transfer: p_out = 0.05 helps Nordland (19.7 → 14.5) but hurts 4S countryside (52.2 → 61.4).
+  The p_out derived from KL₀ alone (lag ≤ L frames) kills countryside recall (0.51 → 0.02). Rejected.
+
+**Root cause of the Boreas loss (offline, `navframes_*.npz`).**
+
+- The false locations are NOT mainly exit lag: 47–72 % of FL frames are > 100 frames after the last on-map frame, deep in
+  holes. An oracle p_out = 0.6 placed exactly at the map edge leaves FL unchanged.
+- CPC-HMM's wrong fixes are FAR: median 111–182 m, p90 up to 954 m. Xu'21's are 37–56 m (gray zone at the edges).
+- Mechanism: in a hole the place chain (no off-map state) drifts to an aliased stretch Y; the MAP-agreement gate then
+  always passes, and weak but dependent evidence (p ≈ 0.15 for many frames) accumulates into a false onset.
+
+**Tried and rejected: predictive gate (+PG) and dead-reckoned re-entry state (+DR)** (`cpc_joint`, navH/navHc).
+Neutral everywhere (Boreas CosPlace 27.6 → 24.3, countryside 52.2 → 51.9). Reason: inside a hole P(on) hovers at a few %
+≫ p_in, so the on-conditioned place chain keeps its memory and drifts to Y by itself; re-entry mass never matters.
+
+**New: dead-reckoning ghost gate (+GG).** While no place is reported, the top-1 e-value counts with weight
+g = exp(−d²/2s²), d = |m_top − ghost|, ghost = last reported fix + odometry, s = excl + 0.05·path. Still an e-value
+(Lemma 4: a ≤ ẽ ≤ e), so ARL₀ is unchanged. Offline upper-bound test (GT lower bound on d): Boreas sum of wrong-fix error
+CosPlace 308k → 9k m, MegaLoc 286k → 19k, SALAD 159k → 38k, recall unchanged; countryside slightly better. Implemented
+without GT in `nav_demo` (+GG, +GG+DR). Fair baselines: the same gate post hoc on Xu'21 / SelfCal / certified
+(`+DRgate`). Running: navI (Boreas 6 desc + 4S ×3 + Nordland + CMU).
+
 ## Entry 21 — Boreas failure analysis, CPC-HMM theory, asymmetric presence switching (2026-10-29, evening)
 
 **Theory** (`paper/cpc_theory.md`):
