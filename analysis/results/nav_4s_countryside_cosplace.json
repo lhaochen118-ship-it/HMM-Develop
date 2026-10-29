@@ -47,13 +47,13 @@
      "frac_gt_rho": 0.806671290749732
     },
     "CPC-HMM (ours)": {
-     "wrong_fixes": 925,
-     "correct_fixes": 5214,
-     "FAR_offmap": 0.13615888615888616,
-     "err_mean": 37.280728732684814,
-     "err_median": 23.66277260099951,
-     "err_p95": 105.2564777225,
-     "frac_gt_rho": 0.47922315404502175
+     "wrong_fixes": 920,
+     "correct_fixes": 5208,
+     "FAR_offmap": 0.13513513513513514,
+     "err_mean": 36.028549626276494,
+     "err_median": 22.467956677396316,
+     "err_p95": 104.61024257366226,
+     "frac_gt_rho": 0.4587300586417807
     },
     "certified (ours)": {
      "wrong_fixes": 382,
