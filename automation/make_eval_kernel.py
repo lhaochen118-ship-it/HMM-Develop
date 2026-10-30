@@ -67,7 +67,7 @@ TH = str(max(1, (os.cpu_count() or 4) // NW))                       # BLAS threa
 def run(ij):
     i, j = ij; script, args = j[0], j[1:]
     env = dict(os.environ, OMP_NUM_THREADS=TH, MKL_NUM_THREADS=TH, OPENBLAS_NUM_THREADS=TH)
-    if NGPU: env["CUDA_VISIBLE_DEVICES"] = str(i % NGPU)              # spread jobs round-robin over all GPUs of the session
+    if NGPU: env["CUDA_VISIBLE_DEVICES"] = str(i %% NGPU)              # spread jobs round-robin over all GPUs of the session
     if "DUMP" in args: cmd = [sys.executable, script] + [D if a == "DUMP" else a for a in args]
     else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
     t = time.time(); log = os.path.join(C, "logs", "_".join(j).replace(".py", "") + ".log")
