@@ -100,6 +100,24 @@
      "err_p95": 15.716257262808334,
      "frac_gt_rho": 0.019116616031783128
     },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 654,
+     "correct_fixes": 7626,
+     "FAR_offmap": 0.06262663473936268,
+     "err_mean": 5.127544393836585,
+     "err_median": 2.6196445044115393,
+     "err_p95": 15.716257262808334,
+     "frac_gt_rho": 0.019116616031783128
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 664,
+     "correct_fixes": 7664,
+     "FAR_offmap": 0.06354761466200037,
+     "err_mean": 5.089925585798465,
+     "err_median": 2.61190131195719,
+     "err_p95": 15.728175004413297,
+     "frac_gt_rho": 0.01860247721430241
+    },
     "certified (ours)": {
      "wrong_fixes": 418,
      "correct_fixes": 6418,
@@ -248,6 +266,24 @@
      "err_p95": 13.179354639029539,
      "frac_gt_rho": 0.0062631455947651325
     },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 35,
+     "correct_fixes": 9173,
+     "FAR_offmap": 0.0,
+     "err_mean": 4.032898241057452,
+     "err_median": 2.5368100000317946,
+     "err_p95": 13.179354639029539,
+     "frac_gt_rho": 0.0062631455947651325
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 41,
+     "correct_fixes": 9361,
+     "FAR_offmap": 0.0,
+     "err_mean": 3.975748091985429,
+     "err_median": 2.541332344971081,
+     "err_p95": 13.132388049336578,
+     "frac_gt_rho": 0.0045805094648282306
+    },
     "certified (ours)": {
      "wrong_fixes": 30,
      "correct_fixes": 7976,
@@ -393,6 +429,24 @@
      "FAR_offmap": 0.00032175032175032174,
      "err_mean": 3.7225744961993916,
      "err_median": 2.4236413944616153,
+     "err_p95": 11.621243688730594,
+     "frac_gt_rho": 0.0021032951624211263
+    },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 33,
+     "correct_fixes": 8836,
+     "FAR_offmap": 0.00032175032175032174,
+     "err_mean": 3.7225744961993916,
+     "err_median": 2.4236413944616153,
+     "err_p95": 11.621243688730594,
+     "frac_gt_rho": 0.0021032951624211263
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 34,
+     "correct_fixes": 8866,
+     "FAR_offmap": 0.00032175032175032174,
+     "err_mean": 3.72139501957844,
+     "err_median": 2.4246795794561464,
      "err_p95": 11.621243688730594,
      "frac_gt_rho": 0.0021032951624211263
     },
