@@ -1,0 +1,5 @@
+# accounts the user keeps for their own work (2026-10-30) or that must not be used: fanout.py skips them
+yuan1103
+yeshenhi
+mxuanquy
+nguynduylm

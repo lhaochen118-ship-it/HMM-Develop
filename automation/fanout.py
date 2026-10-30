@@ -10,6 +10,9 @@ import sys, os, glob, subprocess, shutil, time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ACCOUNTS = sorted(os.path.basename(f)[4:] for f in glob.glob(os.path.expanduser("~/.kaggle/tok_*")))
 ACCOUNTS = ["nhatlong1103"] + [a for a in ACCOUNTS if a != "nhatlong1103"]
+_res = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reserved_accounts.txt")   # kept for the user: never used
+RESERVED = {l.strip() for l in open(_res) if l.strip() and not l.startswith("#")} if os.path.isfile(_res) else set()
+ACCOUNTS = [a for a in ACCOUNTS if a not in RESERVED]
 DSARG = ["--ds", sys.argv[sys.argv.index("--ds") + 1]] if "--ds" in sys.argv else []   # extra dataset sources for every kernel
 L4 = "--l4" in sys.argv                                                   # 4x L4 sessions (competition grant)
 args = [a for a in sys.argv[1:] if not a.startswith("--") and a not in DSARG]

@@ -186,6 +186,9 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo pub
 | 10 | `thnliu` | L4×4 OK (thêm 2026-10-30) |
 | 11 | `mxuanquy` | **chỉ T4**; **dành cho user từ 2026-10-30** (không chạy job mới) |
 | 12 | `linhmai24` | L4×4 OK + T4 (thêm 2026-10-30) |
+| 13 | `phatle1578` | L4×4 OK (thêm 2026-10-30; smoke test: 4× L4 23 GB, 48 CPU) |
+
+Tài khoản dành cho user nằm ở `automation/reserved_accounts.txt`; `fanout.py` tự bỏ qua chúng.
 
 **GPU L4 (2026-10-30):** kernel có `"machine_shape": "NvidiaL4"`, `"competition_sources": ["gemma-4-developer-agent"]`
 (id 149921), `"enable_internet": false` được cấp 4× L4 (23 GB mỗi GPU), 48 CPU, 197 GB RAM. Đã thử: `yuan1103`,
