@@ -404,8 +404,9 @@ def main():
         A("")
         cols = [("HMM off-map (labels)", "Xu'21 (nhãn)"), ("HMM off-map (labels) +DRgate", "Xu'21 + DR gate"), ("certified (ours)", "certified"),
                 ("certified (ours) +DRgate", "certified + DR gate"), ("CPC-HMM (ours)", "CPC-HMM"), ("CPC-HMM +GG(rho=.01)", "CPC +GG (ρ = 0.01)"),
-                ("CPC-HMM +GG", "**CPC-HMM +GG (ρ = 0.1)**")]
-        A("Sai số điều hướng trung bình (p95) trên descriptor và 3 seed, bản đồ khuyết 30 % (Nordland: frame; còn lại: m).")
+                ("CPC-HMM +GG(rho=0.03)", "CPC +GG (ρ = 0.03)"), ("CPC-HMM +GG", "**CPC-HMM +GG (ρ = 0.1)**"), ("CPC-HMM +GG(rho=0.3)", "CPC +GG (ρ = 0.3)")]
+        A("Sai số điều hướng trung bình (p95) trên descriptor và 3 seed, bản đồ khuyết 30 % (Nordland: frame; còn lại: m). "
+          "Cột ρ = 0.03 và 0.3 là phân tích độ nhạy (chạy riêng, cùng seed; ô \"–\" là chưa chạy).")
         A("")
         A("| Dataset | #desc | " + " | ".join(n for _, n in cols) + " |"); A("|---|---|" + "---|" * len(cols))
         for d, n in DS:
@@ -429,6 +430,19 @@ def main():
                     cells.append(f"{np.mean([y['err_mean'] for y in v]):.1f} / {np.mean([y['wrong_fixes'] for y in v]):.0f}" if v else "–")
                 A(f"| {x['desc']} | " + " | ".join(cells) + " |")
             A("")
+    if gg:
+        A("**Độ nhạy theo ρ và giới hạn.**")
+        A("")
+        A("- ρ nhỏ (0.01, 0.03) làm cổng khoá chết sau một lần báo sai: 4S old town 46.3 → 102.0 / 62.0 m, Nordland 19.7 → 63.4 "
+          "frame (ρ = 0.01).")
+        A("- Trên Boreas, ρ = 0.03–0.1 cho mức giảm lớn nhất; ρ = 0.3 yếu hơn và thua Xu'21 trên MegaLoc, CosPlace (cổng mở quá sớm "
+          "cho bằng chứng aliasing).")
+        A("- Trên 5 dataset còn lại, ρ = 0.3 tốt nhất hoặc ngang (4S old town 38.4 so với 43.3 ở ρ = 0.1).")
+        A("- Tức là có đánh đổi: không có một ρ tốt nhất ở mọi nơi. ρ = 0.1 (chọn trước khi chạy lưới này) là điểm cân bằng: thắng "
+          "Xu'21 trên 6/6 descriptor Boreas và không làm tệ đi trung bình của dataset nào.")
+        A("- **Theo từng descriptor, cổng có làm tệ đi:** 4S old town DINOv2 48.9 → 73.8 m, NetVLAD 35.4 → 45.6 m ở ρ = 0.1 "
+          "(được bù bởi CosPlace 116.9 → 65.9 m). Nhận định \"không làm tệ đi\" chỉ đúng với trung bình theo dataset.")
+        A("")
     A("## 6. Kết luận")
     A("")
     A("- **Hợp lệ.** Bảo đảm theo đoạn giữ ở mọi bộ dữ liệu và descriptor, không dùng nhãn (Bảng 1, 4, 5). Baseline hiệu "
@@ -439,7 +453,8 @@ def main():
       "bằng nhãn (Xu'21) có nhiều fix đúng nhưng thỉnh thoảng khoá nhầm chỗ, làm đuôi sai số rất lớn (Bảng 6).")
     A("- **CPC-HMM +GG (mục 5.4).** Với một cấu hình không nhãn chung, CPC-HMM thắng Xu'21 (tune bằng nhãn) trên cả 6 "
       "descriptor của Boreas (trung bình 7.1 so với 22.6 m) và trên trung bình của cả 6 dataset. Cổng dead-reckoning không "
-      "làm CPC-HMM tệ đi ở dataset nào (tệ nhất +0.1 m). Cùng cổng đó áp hậu kiểm dạng cứng thì tốt nhất trên Boreas nhưng "
+      "làm tệ đi trung bình của dataset nào (tệ nhất +0.1 m), nhưng có làm tệ đi vài descriptor yếu (4S old town DINOv2, NetVLAD), "
+      "và ρ có đánh đổi giữa Boreas và các dataset khác (mục 5.4). Cùng cổng đó áp hậu kiểm dạng cứng thì tốt nhất trên Boreas nhưng "
       "phá các dataset khác (Nordland, 4S old town). Certified (không cổng) vẫn nhỉnh hơn CPC-HMM +GG trên 5/6 dataset.")
     A("- **Giới hạn:**")
     A("  - ρ = 0.1 của cổng được chọn sau khi xem Boreas và Nordland (offline), rồi cố định;")

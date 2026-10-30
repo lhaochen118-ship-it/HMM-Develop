@@ -75,6 +75,22 @@ NetVLAD 11.7 vs 38.8, DINOv2 11.5 vs 71.6. CPC +GG keeps 28–40 % more correct 
   (offline), then fixed. RobotCar is not in the navigation grid (9-frame snippets). `hmm_fix` (ARL₀, recall) has not been
   re-run with +GG; ARL₀ is covered by Lemma 4.
 
+**ρ sensitivity (navK/navKc, ρ ∈ {0.01, 0.03, 0.1, 0.3}, mean navigation error):**
+
+| Dataset | CPC | ρ=0.01 | ρ=0.03 | ρ=0.1 | ρ=0.3 | Xu'21 |
+|---|---|---|---|---|---|---|
+| 4S countryside | 52.2 | 53.8 | 52.7 | 52.3 | 51.8 | 76.0 |
+| 4S office | 12.8 | 12.3 | 12.0 | 11.6 | 12.0 | 22.7 |
+| 4S old town | 46.3 | 102.0 | 62.0 | 43.3 | 38.4 | 76.9 |
+| Nordland | 19.7 | 63.4 | 20.8 | 19.1 | 19.4 | 68.0 |
+| CMU | 5.7 | 6.2 | 6.2 | 5.5 | 5.5 | 13.0 |
+| Boreas MegaLoc / SALAD / CosPlace | 34.1 / 12.7 / 27.6 | 7.0 / 3.4 / 9.1 | 5.4 / 3.4 / 5.4 | 5.3 / 3.4 / 5.5 | 8.3 / 5.1 / 9.4 | 7.0 / 5.0 / 7.4 |
+
+- Trade-off: small ρ locks out (old town, Nordland); ρ = 0.3 is best off Boreas but on Boreas loses to Xu'21 on MegaLoc
+  and CosPlace. No single ρ is best everywhere; ρ = 0.1 (fixed before this grid) is the balance point.
+- **Correction:** "the gate never hurts" holds for per-dataset means only. Per descriptor, 4S old town DINOv2 48.9 → 73.8 m
+  and NetVLAD 35.4 → 45.6 m at ρ = 0.1 (CosPlace 116.9 → 65.9 m compensates).
+
 ## Entry 21 — Boreas failure analysis, CPC-HMM theory, asymmetric presence switching (2026-10-29, evening)
 
 **Theory** (`paper/cpc_theory.md`):

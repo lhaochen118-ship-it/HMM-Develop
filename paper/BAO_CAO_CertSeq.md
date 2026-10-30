@@ -285,34 +285,42 @@ Bản đồ khuyết 30 %, 6 descriptor × 2 seed. Mỗi ô ghi: recall on-map /
 - a ≤ ẽ ≤ e^top từng điểm, nên ẽ vẫn là e-value và cận ARL₀ ≥ (1−p_in)/p_in − R₀ giữ nguyên (`paper/cpc_theory.md` §3b).
 - Baseline công bằng: cùng cổng dead-reckoning (dạng cứng, 2s) áp hậu kiểm lên fix của Xu'21 và certified (`+DRgate`).
 
-Sai số điều hướng trung bình (p95) trên descriptor và 3 seed, bản đồ khuyết 30 % (Nordland: frame; còn lại: m).
+Sai số điều hướng trung bình (p95) trên descriptor và 3 seed, bản đồ khuyết 30 % (Nordland: frame; còn lại: m). Cột ρ = 0.03 và 0.3 là phân tích độ nhạy (chạy riêng, cùng seed; ô "–" là chưa chạy).
 
-| Dataset | #desc | Xu'21 (nhãn) | Xu'21 + DR gate | certified | certified + DR gate | CPC-HMM | CPC +GG (ρ = 0.01) | **CPC-HMM +GG (ρ = 0.1)** |
-|---|---|---|---|---|---|---|---|---|
-| CMU-S. | 6 | 13.0 (64) | 10.1 (41) | 3.8 (13) | 4.1 (15) | 5.7 (21) | 6.2 (30) | 5.5 (20) |
-| Nordland | 6 | 68.0 (342) | 281.2 (617) | 17.2 (75) | 39.0 (90) | 19.7 (91) | 63.4 (216) | 19.1 (82) |
-| 4S office | 6 | 22.7 (86) | 32.0 (120) | 11.3 (33) | 11.2 (33) | 12.8 (44) | 12.3 (41) | 11.6 (39) |
-| 4S old town | 6 | 76.9 (336) | 140.4 (529) | 37.0 (134) | 87.3 (386) | 46.3 (189) | 102.0 (413) | 43.3 (155) |
-| 4S countryside | 6 | 76.0 (310) | 73.1 (331) | 51.5 (171) | 69.7 (327) | 52.2 (170) | 53.8 (185) | 52.3 (173) |
-| Boreas | 6 | 22.6 (101) | 12.5 (51) | 15.7 (92) | 4.8 (22) | 17.7 (115) | 8.0 (37) | 7.1 (35) |
+| Dataset | #desc | Xu'21 (nhãn) | Xu'21 + DR gate | certified | certified + DR gate | CPC-HMM | CPC +GG (ρ = 0.01) | CPC +GG (ρ = 0.03) | **CPC-HMM +GG (ρ = 0.1)** | CPC +GG (ρ = 0.3) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| CMU-S. | 6 | 13.0 (64) | 10.1 (41) | 3.8 (13) | 4.1 (15) | 5.7 (21) | 6.2 (30) | 6.2 (30) | 5.5 (20) | 5.5 (19) |
+| Nordland | 6 | 68.0 (342) | 281.2 (617) | 17.2 (75) | 39.0 (90) | 19.7 (91) | 63.4 (216) | 20.8 (90) | 19.1 (82) | 19.4 (89) |
+| 4S office | 6 | 22.7 (86) | 32.0 (120) | 11.3 (33) | 11.2 (33) | 12.8 (44) | 12.3 (41) | 12.0 (40) | 11.6 (39) | 12.0 (39) |
+| 4S old town | 6 | 76.9 (336) | 140.4 (529) | 37.0 (134) | 87.3 (386) | 46.3 (189) | 102.0 (413) | 62.0 (243) | 43.3 (155) | 38.4 (133) |
+| 4S countryside | 6 | 76.0 (310) | 73.1 (331) | 51.5 (171) | 69.7 (327) | 52.2 (170) | 53.8 (185) | 52.7 (174) | 52.3 (173) | 51.8 (171) |
+| Boreas | 6 | 22.6 (101) | 12.5 (51) | 15.7 (92) | 4.8 (22) | 17.7 (115) | 8.0 (37) | 7.5 (36) | 7.1 (35) | 9.1 (45) |
 
 **Boreas theo descriptor** (sai số trung bình, m / số fix sai trung bình mỗi seed):
 
-| Descriptor | Xu'21 (nhãn) | Xu'21 + DR gate | certified | certified + DR gate | CPC-HMM | CPC +GG (ρ = 0.01) | **CPC-HMM +GG (ρ = 0.1)** |
-|---|---|---|---|---|---|---|---|
-| cosplace | 7.4 / 248 | 5.3 / 193 | 23.6 / 762 | 5.4 / 149 | 27.6 / 1776 | 9.1 / 285 | 5.5 / 365 |
-| dinov2 | 71.6 / 953 | 24.0 / 647 | 8.4 / 16 | 8.3 / 11 | 10.2 / 574 | 11.6 / 554 | 11.5 / 555 |
-| megaloc | 7.0 / 662 | 4.9 / 585 | 39.1 / 771 | 3.1 / 228 | 34.1 / 2233 | 7.0 / 956 | 5.3 / 1231 |
-| mixvpr | 5.5 / 417 | 6.8 / 413 | 5.1 / 162 | 3.8 / 42 | 9.7 / 946 | 5.0 / 313 | 5.0 / 378 |
-| netvlad | 38.8 / 827 | 27.7 / 392 | 8.1 / 50 | 5.9 / 26 | 11.6 / 147 | 11.8 / 109 | 11.7 / 111 |
-| salad | 5.0 / 940 | 6.6 / 914 | 9.6 / 569 | 2.5 / 171 | 12.7 / 1981 | 3.4 / 903 | 3.4 / 931 |
+| Descriptor | Xu'21 (nhãn) | Xu'21 + DR gate | certified | certified + DR gate | CPC-HMM | CPC +GG (ρ = 0.01) | CPC +GG (ρ = 0.03) | **CPC-HMM +GG (ρ = 0.1)** | CPC +GG (ρ = 0.3) |
+|---|---|---|---|---|---|---|---|---|---|
+| cosplace | 7.4 / 248 | 5.3 / 193 | 23.6 / 762 | 5.4 / 149 | 27.6 / 1776 | 9.1 / 285 | 5.4 / 313 | 5.5 / 365 | 9.4 / 766 |
+| dinov2 | 71.6 / 953 | 24.0 / 647 | 8.4 / 16 | 8.3 / 11 | 10.2 / 574 | 11.6 / 554 | 11.6 / 554 | 11.5 / 555 | 11.0 / 560 |
+| megaloc | 7.0 / 662 | 4.9 / 585 | 39.1 / 771 | 3.1 / 228 | 34.1 / 2233 | 7.0 / 956 | 5.4 / 1065 | 5.3 / 1231 | 8.3 / 1548 |
+| mixvpr | 5.5 / 417 | 6.8 / 413 | 5.1 / 162 | 3.8 / 42 | 9.7 / 946 | 5.0 / 313 | – | 5.0 / 378 | – |
+| netvlad | 38.8 / 827 | 27.7 / 392 | 8.1 / 50 | 5.9 / 26 | 11.6 / 147 | 11.8 / 109 | 11.8 / 111 | 11.7 / 111 | 11.7 / 111 |
+| salad | 5.0 / 940 | 6.6 / 914 | 9.6 / 569 | 2.5 / 171 | 12.7 / 1981 | 3.4 / 903 | 3.4 / 912 | 3.4 / 931 | 5.1 / 1284 |
+
+**Độ nhạy theo ρ và giới hạn.**
+
+- ρ nhỏ (0.01, 0.03) làm cổng khoá chết sau một lần báo sai: 4S old town 46.3 → 102.0 / 62.0 m, Nordland 19.7 → 63.4 frame (ρ = 0.01).
+- Trên Boreas, ρ = 0.03–0.1 cho mức giảm lớn nhất; ρ = 0.3 yếu hơn và thua Xu'21 trên MegaLoc, CosPlace (cổng mở quá sớm cho bằng chứng aliasing).
+- Trên 5 dataset còn lại, ρ = 0.3 tốt nhất hoặc ngang (4S old town 38.4 so với 43.3 ở ρ = 0.1).
+- Tức là có đánh đổi: không có một ρ tốt nhất ở mọi nơi. ρ = 0.1 (chọn trước khi chạy lưới này) là điểm cân bằng: thắng Xu'21 trên 6/6 descriptor Boreas và không làm tệ đi trung bình của dataset nào.
+- **Theo từng descriptor, cổng có làm tệ đi:** 4S old town DINOv2 48.9 → 73.8 m, NetVLAD 35.4 → 45.6 m ở ρ = 0.1 (được bù bởi CosPlace 116.9 → 65.9 m). Nhận định "không làm tệ đi" chỉ đúng với trung bình theo dataset.
 
 ## 6. Kết luận
 
 - **Hợp lệ.** Bảo đảm theo đoạn giữ ở mọi bộ dữ liệu và descriptor, không dùng nhãn (Bảng 1, 4, 5). Baseline hiệu chuẩn bằng nhãn kiểu SAFEVPR vượt α trên RobotCar và CMU.
 - **Power.** Số frame đúng được chứng nhận tăng 2–7× so với kiểm định từng frame, và fix đầu tiên đến sớm hơn nhiều (Bảng 2, 3).
 - **Điều hướng.** Trong vòng điều hướng, fix có chứng nhận cho sai số thấp nhất hoặc ngang oracle. HMM off-map tune bằng nhãn (Xu'21) có nhiều fix đúng nhưng thỉnh thoảng khoá nhầm chỗ, làm đuôi sai số rất lớn (Bảng 6).
-- **CPC-HMM +GG (mục 5.4).** Với một cấu hình không nhãn chung, CPC-HMM thắng Xu'21 (tune bằng nhãn) trên cả 6 descriptor của Boreas (trung bình 7.1 so với 22.6 m) và trên trung bình của cả 6 dataset. Cổng dead-reckoning không làm CPC-HMM tệ đi ở dataset nào (tệ nhất +0.1 m). Cùng cổng đó áp hậu kiểm dạng cứng thì tốt nhất trên Boreas nhưng phá các dataset khác (Nordland, 4S old town). Certified (không cổng) vẫn nhỉnh hơn CPC-HMM +GG trên 5/6 dataset.
+- **CPC-HMM +GG (mục 5.4).** Với một cấu hình không nhãn chung, CPC-HMM thắng Xu'21 (tune bằng nhãn) trên cả 6 descriptor của Boreas (trung bình 7.1 so với 22.6 m) và trên trung bình của cả 6 dataset. Cổng dead-reckoning không làm tệ đi trung bình của dataset nào (tệ nhất +0.1 m), nhưng có làm tệ đi vài descriptor yếu (4S old town DINOv2, NetVLAD), và ρ có đánh đổi giữa Boreas và các dataset khác (mục 5.4). Cùng cổng đó áp hậu kiểm dạng cứng thì tốt nhất trên Boreas nhưng phá các dataset khác (Nordland, 4S old town). Certified (không cổng) vẫn nhỉnh hơn CPC-HMM +GG trên 5/6 dataset.
 - **Giới hạn:**
   - ρ = 0.1 của cổng được chọn sau khi xem Boreas và Nordland (offline), rồi cố định;
   - chuỗi quá ngắn (RobotCar, 9 frame) gần như không tăng power;
