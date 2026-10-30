@@ -26,7 +26,8 @@ DUMPS = []
 DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps", "nhatlong1103/vpr-dumps-4seasons", "nhatlong1103/boreas-vpr-dump"]
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 L4 = "--l4" in sys.argv; GPU = "--gpu" in sys.argv or L4
-argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--acc2", "--acc3", "--owner") and sys.argv[i - 1] != "--owner"]
+EXTRA_DS = sys.argv[sys.argv.index("--ds") + 1].split(",") if "--ds" in sys.argv else []   # extra dataset sources (images, weights)
+argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--acc2", "--acc3", "--owner", "--ds") and sys.argv[i - 1] not in ("--owner", "--ds")]
 kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]
 dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
 
@@ -67,7 +68,7 @@ TH = str(max(1, (os.cpu_count() or 4) // NW))                       # BLAS threa
 def run(ij):
     i, j = ij; script, args = j[0], j[1:]
     env = dict(os.environ, OMP_NUM_THREADS=TH, MKL_NUM_THREADS=TH, OPENBLAS_NUM_THREADS=TH)
-    if NGPU: env["CUDA_VISIBLE_DEVICES"] = str(i %% NGPU)              # spread jobs round-robin over all GPUs of the session
+    if NGPU and len(JOBS) > 1: env["CUDA_VISIBLE_DEVICES"] = str(i %% NGPU)   # a single job keeps every GPU (multi-GPU scripts)              # spread jobs round-robin over all GPUs of the session
     if "DUMP" in args: cmd = [sys.executable, script] + [D if a == "DUMP" else a for a in args]
     else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
     t = time.time(); log = os.path.join(C, "logs", "_".join(j).replace(".py", "") + ".log")
@@ -84,7 +85,7 @@ print("EVAL_DONE", rcs, f"{time.time()-t0:.0f}s", flush=True)
 os.makedirs(kdir, exist_ok=True); open(os.path.join(kdir, "run.py"), "w").write(runner)
 meta = {"id": f"{OWNER}/{slug}", "title": slug, "code_file": "run.py", "language": "python", "kernel_type": "script",
         "is_private": True, "enable_gpu": GPU, "enable_tpu": False, "enable_internet": False,
-        "dataset_sources": [CODE_DS] + DUMP_DS, "competition_sources": [], "kernel_sources": dumps, "model_sources": []}
+        "dataset_sources": [CODE_DS] + DUMP_DS + EXTRA_DS, "competition_sources": [], "kernel_sources": dumps, "model_sources": []}
 if L4:                                   # 4x NVIDIA L4 via the gemma-4-developer-agent grant (rules accepted on the web; internet off)
     meta.update(machine_shape="NvidiaL4", competition_sources=["gemma-4-developer-agent"], enable_internet=False)
 json.dump(meta, open(os.path.join(kdir, "kernel-metadata.json"), "w"), indent=2)

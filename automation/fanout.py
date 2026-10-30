@@ -10,8 +10,9 @@ import sys, os, glob, subprocess, shutil, time
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ACCOUNTS = sorted(os.path.basename(f)[4:] for f in glob.glob(os.path.expanduser("~/.kaggle/tok_*")))
 ACCOUNTS = ["nhatlong1103"] + [a for a in ACCOUNTS if a != "nhatlong1103"]
+DSARG = ["--ds", sys.argv[sys.argv.index("--ds") + 1]] if "--ds" in sys.argv else []   # extra dataset sources for every kernel
 L4 = "--l4" in sys.argv                                                   # 4x L4 sessions (competition grant)
-args = [a for a in sys.argv[1:] if not a.startswith("--")]
+args = [a for a in sys.argv[1:] if not a.startswith("--") and a not in DSARG]
 if "--accounts" in sys.argv: ACCOUNTS = sys.argv[sys.argv.index("--accounts") + 1].split(","); args = [a for a in args if a != ",".join(ACCOUNTS)]
 work, prefix, jobs = args[0], args[1], args[2]
 jobs = [j.strip() for j in (open(jobs).read().replace("\n", ";") if os.path.isfile(jobs) else jobs).split(";") if j.strip()]
@@ -21,7 +22,7 @@ os.makedirs(work, exist_ok=True); procs = []
 for k in range(nk):
     part = jobs[k::nk]; acc, _ = slots[k % len(slots)]; gpu = k < len(slots) and "--cpu" not in sys.argv
     slug = f"{prefix}-{k + 1}"; kd = os.path.join(work, slug)
-    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + ((["--l4"] if L4 else ["--gpu"]) if gpu else [])
+    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + ((["--l4"] if L4 else ["--gpu"]) if gpu else []) + DSARG
     r = subprocess.run(cmd, capture_output=True, text=True)
     print(f"{slug}: {acc} {'GPU' if gpu else 'CPU'} {len(part)} jobs | {(r.stdout + r.stderr).strip().splitlines()[-1][:60]}", flush=True)
 time.sleep(30)                                                             # let the code datasets finish versioning
@@ -31,7 +32,7 @@ for acc in sorted({slots[k % len(slots)][0] for k in range(nk)}):
         if subprocess.run(["kaggle", "datasets", "status", f"{acc}/dive-vpr-analysis"], capture_output=True, text=True, env=env).stdout.strip().endswith("ready"): break
         time.sleep(10)
 def make(kd, slug, part, acc, gpu):
-    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + ((["--l4"] if L4 else ["--gpu"]) if gpu else [])
+    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + ((["--l4"] if L4 else ["--gpu"]) if gpu else []) + DSARG
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
