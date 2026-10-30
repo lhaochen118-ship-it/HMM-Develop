@@ -228,6 +228,61 @@ IPDA/tracking. Điểm mới ở đây: (i) gate tác động lên một e-value
 tính e-value, nên giữ bảo đảm ARL₀; (ii) trạng thái off-map của HMM-VPR mang vị trí dead-reckoning thay vì không có vị
 trí (Xu'21, Hansen–Browning'14).
 
+## 3c. E-value hiệu chuẩn theo chuyển tiếp (TCE) và cận FAR theo đoạn cho chính HMM
+
+*Code: `analysis/nav_demo.py`, hàm `tce`; luật `CPC-HMM +TCE`, `+TCEmin`, `+TCEmin+GG`.*
+
+**Vấn đề.** Định lý 1 cần e-value **hợp lệ có điều kiện**: E_{H0}[e_t | F_{t−1}] ≤ 1. Với p-value phụ thuộc mạnh theo thời
+gian (tự tương quan 0.8–0.99, Mệnh đề 2), điều này sai. Một đoạn aliasing có p ≈ 0.15 liên tiếp cho e ≈ 1.1 ở mọi frame,
+nên E[e_t | p_{t−1} ≈ 0.15] > 1 và chuỗi hiện diện báo on sai (nguồn FL trên Boreas, mục 3b).
+
+**Cấu trúc TCE (Mondrian theo trạng thái trước).**
+
+- **Null replay:** traversal của chính bản đồ, ở các block giữ lại (off-map theo cấu trúc), cho dãy (p_s, p^R_s) theo thời
+  gian.
+- **Ô trạng thái:** Z_s = (bin(log p_{s−1}), bin(log p^R_{s−1})), là F_{s−1}-đo được. Frame đầu của mỗi đoạn có ô "start".
+- **p-value có điều kiện của query:**
+
+  > u_t = (1 + #{s : Z_s = Z_t, p_s ≤ p_t}) / (1 + n_{Z_t}),  tương tự cho p^R.
+
+  Ô thưa (dưới 30 cặp) lùi về ô chỉ theo p, rồi về pool biên.
+- **e-value:** e_t = a·u_t^(a−1), với a fit bằng EM theo traversal.
+
+**Giả định T (chuyển tiếp exchangeable).** Với frame off-map t và mọi ô z, có điều kiện Z_t = z, p_t exchangeable với
+các p_s của null có Z_s = z; và Z_t là thống kê đủ của F_{t−1} cho p_t (Markov bậc nhất trên trạng thái bằng chứng).
+
+**Bổ đề 5.** Dưới T, P(u_t ≤ x | F_{t−1}) ≤ x với mọi x, nên e_t = a·u_t^(a−1) là e-value có điều kiện.
+*Chứng minh.* Exchangeability trong ô cho siêu đều của p-value conformal Mondrian có điều kiện Z_t (Vovk, Mondrian
+conformal); Markov-đủ nâng lên điều kiện F_{t−1}. Phần còn lại như Bổ đề 1. ∎
+
+**Thực nghiệm: T có thể sai theo hướng dễ dãi.** Replay của bản đồ (cùng điều kiện ảnh) có quỹ đạo p mượt hơn query
+khác điều kiện. Vì vậy một cú giảm p ở query trông "bất ngờ" so với null. Ví dụ CMU CosPlace: TCE cho segFAR 0.156,
+ARL₀ 101 (CPC: 0.069, 418).
+
+**Bổ đề 6 (min-combination, hợp lệ dưới hợp các giả định).** Nếu e¹_t là e-value có điều kiện dưới giả định D (CPC, biên)
+và e²_t dưới T (TCE), thì e_t = min(e¹_t, e²_t) là e-value có điều kiện dưới **D hoặc T**.
+*Chứng minh.* min(e¹, e²) ≤ eⁱ từng điểm với i = 1, 2; nếu giả định i đúng thì E[min | F] ≤ E[eⁱ | F] ≤ 1. ∎
+Áp từng thành phần (e^top, a, e^R) rồi gộp như cũ (Bổ đề 2). Biến thể `+TCEmin` dùng cấu trúc này: nó chặn được tích luỹ
+aliasing (TCE nhỏ) và không dễ dãi khi T sai (biên chặn trên).
+
+**Định lý 3 (cận FAR theo đoạn cho quyết định của HMM).** Dưới giả định của Định lý 1 (LR_t là e-value có điều kiện;
+p_out ≥ p_in), xét một đoạn off-map dài L bắt đầu với R₀ = O₀/c, c = p_in/(1−p_in). Khi đó:
+
+> P(HMM báo nơi ít nhất một lần trong đoạn) ≤ c·(R₀ + L) = p_in/(1−p_in) · (R₀ + L)
+
+*Chứng minh.* Theo bước 1–3 của Định lý 1, R_t ≤ S_t với S_t = (S_{t−1} + 1)·LR_t, S_0 = R₀. Đặt M_t = S_t + (L − t) với
+t ≤ L. Ta có E[M_t | F_{t−1}] ≤ (S_{t−1} + 1) + L − t = M_{t−1}, nên M là siêu martingale không âm. Theo bất đẳng thức
+Ville: P(max_{t≤L} M_t ≥ 1/c) ≤ c·M_0 = c·(R₀ + L). Vì S_t ≤ M_t và "báo nơi" ⇔ R_t > 1/c ⇒ S_t > 1/c, ta có điều phải
+chứng minh. ∎
+
+*Hệ quả.* Chọn p_in = α/(R₀ + L + α) cho FAR ≤ α trên mọi đoạn off-map dài L: chính HMM có **bảo đảm mức đoạn kiểu
+certified**, cùng lúc với ARL₀ (Định lý 1). Với p_in = 0.01, L = H = 10, R₀ ≈ 1 thì cận là 0.11. Đây là cận bảo thủ;
+segFAR thực nghiệm của TCEmin là 0.000–0.015 (Nordland, CMU).
+
+**Ý nghĩa.** Ba mảnh (null replay của bản đồ, e-value hiệu chuẩn theo chuyển tiếp, min-combination) biến HMM thành một
+e-detector có bảo đảm dưới phụ thuộc thời gian, ở cả mức ARL₀ và mức đoạn, không cần nhãn. Tài liệu gần nhất là
+conformal e-testing (Vovk 2020) và conformal e-process cho change detection (2026); cả hai giả định quan sát độc lập.
+
 ## 4. Định vị so với công trình gần nhất
 
 | | Bằng chứng on/off | Cần mô hình hoặc nhãn | Bảo đảm |
