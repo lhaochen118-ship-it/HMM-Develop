@@ -164,12 +164,15 @@ def rule_metrics(acc, ok_on, inm, offm, seqs, H, pon=None):
 
 def ltt_threshold(score, bad, alpha=0.05, delta=0.1):
     """Learn-Then-Test (fixed sequence, binomial p-values): the most permissive threshold lam (from strict to loose) whose
-    accepted set {score >= lam} has FDR <= alpha with confidence 1 - delta on the (labelled) calibration frames"""
+    accepted set {score >= lam} has FDR <= alpha with confidence 1 - delta on the (labelled) calibration frames.
+    The sequence starts at the first threshold whose accepted set can be rejected at all (n >= log delta / log(1-alpha),
+    i.e. zero errors would pass): the order depends on the scores only, not on the labels, so validity is kept; starting
+    at n = 1 stops the sequence immediately (0.95 > delta) and accepts nothing"""
     from scipy.stats import binom
-    lam = np.inf
+    lam = np.inf; n_min = int(np.ceil(np.log(delta) / np.log(1 - alpha)))
     for l in np.unique(score)[::-1]:
         a = score >= l; n = int(a.sum()); f = int((a & bad).sum())
-        if n == 0: continue
+        if n < n_min: continue
         if binom.cdf(f, n, alpha) > delta: break
         lam = l
     return lam

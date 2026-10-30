@@ -264,6 +264,36 @@
      "ARL0": 22301.0,
      "reentry_delay": 0.38461538461538464
     },
+    "Claxton24 MLP (labels)": {
+     "wrong_fixes": 290,
+     "correct_fixes": 46672,
+     "FAR_offmap": 0.006188063315546388,
+     "err_mean": 36.88940241753363,
+     "err_median": 1.3894182323861604,
+     "err_p95": 236.82424145394532,
+     "frac_gt_rho": 0.20132138418263884,
+     "recall": 0.8959361142571939,
+     "FL": 0.006188063315546388,
+     "seg_FAR": 0.028933092224231464,
+     "n_seg": 2212,
+     "ARL0": 289.6233766233766,
+     "reentry_delay": 20.05128205128205
+    },
+    "SafeVPR (labels)": {
+     "wrong_fixes": 395,
+     "correct_fixes": 43730,
+     "FAR_offmap": 0.014035245056275503,
+     "err_mean": 59.45248237235084,
+     "err_median": 1.3688979329809832,
+     "err_p95": 462.6108852614457,
+     "frac_gt_rho": 0.2052593707071368,
+     "recall": 0.8394601961875876,
+     "FL": 0.014035245056275503,
+     "seg_FAR": 0.04701627486437613,
+     "n_seg": 2212,
+     "ARL0": 206.49074074074073,
+     "reentry_delay": 86.58974358974359
+    },
     "HMM off-map (labels) +DRgate": {
      "wrong_fixes": 531,
      "correct_fixes": 37984,
@@ -308,6 +338,36 @@
      "n_seg": 2212,
      "ARL0": 3716.8333333333335,
      "reentry_delay": 87.61538461538461
+    },
+    "Claxton24 MLP (labels) +DRgate": {
+     "wrong_fixes": 94,
+     "correct_fixes": 45157,
+     "FAR_offmap": 0.0004484103851845209,
+     "err_mean": 4.016857162384341,
+     "err_median": 1.2024220230559879,
+     "err_p95": 21.403072191700105,
+     "frac_gt_rho": 0.04083207954471119,
+     "recall": 0.866853511988175,
+     "FL": 0.0004484103851845209,
+     "seg_FAR": 0.0027124773960217,
+     "n_seg": 2212,
+     "ARL0": 4460.2,
+     "reentry_delay": 60.84615384615385
+    },
+    "SafeVPR (labels) +DRgate": {
+     "wrong_fixes": 117,
+     "correct_fixes": 43478,
+     "FAR_offmap": 0.0017039594637011793,
+     "err_mean": 4.927191022327078,
+     "err_median": 1.2005215658601749,
+     "err_p95": 26.752433320844865,
+     "frac_gt_rho": 0.05112840975992673,
+     "recall": 0.8346226940279884,
+     "FL": 0.0017039594637011793,
+     "seg_FAR": 0.0045207956600361665,
+     "n_seg": 2212,
+     "ARL0": 3716.8333333333335,
+     "reentry_delay": 93.05128205128206
     }
    },
    "hmm_T_k": [
@@ -576,6 +636,36 @@
      "ARL0": 17908.0,
      "reentry_delay": 1.3017241379310345
     },
+    "Claxton24 MLP (labels)": {
+     "wrong_fixes": 720,
+     "correct_fixes": 45751,
+     "FAR_offmap": 0.03205271387089569,
+     "err_mean": 6.465455896929642,
+     "err_median": 1.4312843240612325,
+     "err_p95": 34.02626957594386,
+     "frac_gt_rho": 0.08730293713612873,
+     "recall": 0.8850350137346694,
+     "FL": 0.03205271387089569,
+     "seg_FAR": 0.08429561200923788,
+     "n_seg": 1732,
+     "ARL0": 142.12698412698413,
+     "reentry_delay": 24.060344827586206
+    },
+    "SafeVPR (labels)": {
+     "wrong_fixes": 684,
+     "correct_fixes": 42815,
+     "FAR_offmap": 0.03272280545007818,
+     "err_mean": 8.681333813086841,
+     "err_median": 1.4543070175278674,
+     "err_p95": 53.56529881206549,
+     "frac_gt_rho": 0.10688820566494407,
+     "recall": 0.8282392540720394,
+     "FL": 0.03272280545007818,
+     "seg_FAR": 0.07967667436489607,
+     "n_seg": 1732,
+     "ARL0": 139.90625,
+     "reentry_delay": 37.69827586206897
+    },
     "HMM off-map (labels) +DRgate": {
      "wrong_fixes": 609,
      "correct_fixes": 36443,
@@ -620,6 +710,36 @@
      "n_seg": 1732,
      "ARL0": 2238.5,
      "reentry_delay": 36.94827586206897
+    },
+    "Claxton24 MLP (labels) +DRgate": {
+     "wrong_fixes": 378,
+     "correct_fixes": 43237,
+     "FAR_offmap": 0.0171990171990172,
+     "err_mean": 6.335735557992654,
+     "err_median": 1.281651366483366,
+     "err_p95": 45.99954604545005,
+     "frac_gt_rho": 0.09625171714528684,
+     "recall": 0.8364026772933029,
+     "FL": 0.0171990171990172,
+     "seg_FAR": 0.029445727482678985,
+     "n_seg": 1732,
+     "ARL0": 471.2631578947368,
+     "reentry_delay": 47.1551724137931
+    },
+    "SafeVPR (labels) +DRgate": {
+     "wrong_fixes": 198,
+     "correct_fixes": 41186,
+     "FAR_offmap": 0.006533392897029261,
+     "err_mean": 5.822322108048827,
+     "err_median": 1.282220059916745,
+     "err_p95": 43.54616142154353,
+     "frac_gt_rho": 0.07777850461176163,
+     "recall": 0.7967268928695787,
+     "FL": 0.006533392897029261,
+     "seg_FAR": 0.012702078521939953,
+     "n_seg": 1732,
+     "ARL0": 1279.142857142857,
+     "reentry_delay": 52.224137931034484
     }
    },
    "hmm_T_k": [
@@ -888,6 +1008,36 @@
      "ARL0": 20512.0,
      "reentry_delay": 1.205128205128205
     },
+    "Claxton24 MLP (labels)": {
+     "wrong_fixes": 779,
+     "correct_fixes": 45841,
+     "FAR_offmap": 0.021012090483619343,
+     "err_mean": 12.472953817846518,
+     "err_median": 1.6102403917126127,
+     "err_p95": 66.63352434615814,
+     "frac_gt_rho": 0.13705763066657944,
+     "recall": 0.897242175725666,
+     "FL": 0.021012090483619343,
+     "seg_FAR": 0.07646474677259185,
+     "n_seg": 2014,
+     "ARL0": 125.84049079754601,
+     "reentry_delay": 28.076923076923077
+    },
+    "SafeVPR (labels)": {
+     "wrong_fixes": 0,
+     "correct_fixes": 19060,
+     "FAR_offmap": 0.0,
+     "err_mean": 5.623762150430858,
+     "err_median": 2.1313984367847,
+     "err_p95": 26.752433320844865,
+     "frac_gt_rho": 0.05112840975992673,
+     "recall": 0.37305983441310603,
+     "FL": 0.0,
+     "seg_FAR": 0.0,
+     "n_seg": 2014,
+     "ARL0": 20512.0,
+     "reentry_delay": 138.53846153846155
+    },
     "HMM off-map (labels) +DRgate": {
      "wrong_fixes": 99,
      "correct_fixes": 37467,
@@ -932,6 +1082,36 @@
      "n_seg": 2014,
      "ARL0": 10256.0,
      "reentry_delay": 36.05128205128205
+    },
+    "Claxton24 MLP (labels) +DRgate": {
+     "wrong_fixes": 286,
+     "correct_fixes": 42485,
+     "FAR_offmap": 0.005021450858034322,
+     "err_mean": 5.604429102810953,
+     "err_median": 1.4789071286132833,
+     "err_p95": 31.3488916590153,
+     "frac_gt_rho": 0.08149407993720155,
+     "recall": 0.8315554598657298,
+     "FL": 0.005021450858034322,
+     "seg_FAR": 0.012909632571996028,
+     "n_seg": 2014,
+     "ARL0": 621.5757575757576,
+     "reentry_delay": 73.58974358974359
+    },
+    "SafeVPR (labels) +DRgate": {
+     "wrong_fixes": 0,
+     "correct_fixes": 19060,
+     "FAR_offmap": 0.0,
+     "err_mean": 5.623762150430858,
+     "err_median": 2.1313984367847,
+     "err_p95": 26.752433320844865,
+     "frac_gt_rho": 0.05112840975992673,
+     "recall": 0.37305983441310603,
+     "FL": 0.0,
+     "seg_FAR": 0.0,
+     "n_seg": 2014,
+     "ARL0": 20512.0,
+     "reentry_delay": 138.53846153846155
     }
    },
    "hmm_T_k": [
@@ -939,5 +1119,6 @@
     5
    ]
   }
- ]
+ ],
+ "note": "SafeVPR rules re-evaluated from caches (nav_rules.py) after the LTT n_min fix"
 }

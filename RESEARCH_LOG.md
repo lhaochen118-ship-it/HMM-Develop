@@ -7,6 +7,79 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 23 — TCE/TCEmin across 6 datasets, Boreas on 10 seeds, label-calibrated baselines SafeVPR / Claxton'24 (2026-10-30)
+
+**Hypothesis.** The map-calibrated e-values of CPC-HMM assume that consecutive query frames are independent given the
+state, which is false: evidence is autocorrelated. TCE (Mondrian conformal p-values conditioned on the previous evidence
+state, from map self-replay null pairs; `paper/cpc_theory.md` §3c, Lemma 5) removes the first-order dependence. TCEmin
+(componentwise min of marginal and TCE e-values, Lemma 6) is valid if EITHER independence OR transition exchangeability
+holds. Theorem 3 bounds P(any false report during an off-map excursion of length L) by p_in/(1-p_in)·(R0 + L).
+
+**navT2** (6 datasets × 6 descriptors × 3 seeds; mean err m / recall / segFAR):
+
+| dataset | Xu'21 (labels) | certified | CPC-HMM | +GG | +TCEmin | oracle |
+|---|---|---|---|---|---|---|
+| Boreas | 22.6/0.62/0.028 | 15.7/0.66/0.039 | 17.7/0.73/0.066 | 7.1/0.72/0.023 | 8.9/0.66/0.013 | 2.3 |
+| 4S countryside | 76.0/0.31/0.095 | 51.5/0.22/0.018 | 52.2/0.36/0.069 | 52.3/0.35/0.052 | 59.8/0.23/0.012 | 17.8 |
+| 4S office | 22.7/0.76/0.284 | 11.3/0.66/0.018 | 12.8/0.81/0.069 | 11.6/0.80/0.047 | 12.5/0.71/0.017 | 8.4 |
+| 4S old town | 76.9/0.60/0.030 | 37.0/0.53/0.016 | 46.3/0.70/0.038 | 43.3/0.67/0.016 | 36.3/0.58/0.007 | 21.1 |
+| Nordland | 68.0/0.73/0.040 | 17.2/0.57/0.039 | 19.7/0.69/0.009 | 19.1/0.68/0.007 | 16.2/0.56/0.002 | 5.4 |
+| CMU | 13.0/0.65/0.127 | 3.8/0.65/0.012 | 5.7/0.80/0.040 | 5.5/0.79/0.029 | 3.5/0.68/0.009 | 2.9 |
+
+TCEmin has the lowest segFAR on all 6 datasets and the best error on 3/6; its recall is about that of `certified` (the
+price of the min). It is weaker on countryside and office. TCE alone is liberal on CMU (segFAR 0.156), hence the min.
+
+**Boreas, 10 seeds** (navC seeds 0-2 + navS seeds 3-9, 6 descriptors; err / p95 / recall / segFAR; sd over seeds of the
+descriptor-mean error):
+
+| rule | err | p95 | recall | segFAR | sd(seed) |
+|---|---|---|---|---|---|
+| Xu'21 HMM off-map (labels) | 25.3 | 165.6 | 0.684 | 0.043 | 7.10 |
+| Xu'21 +DRgate | 15.8 | 117.8 | 0.669 | 0.022 | 6.96 |
+| certified | 8.5 | 45.7 | 0.651 | 0.022 | 8.58 |
+| certified +DRgate | 4.8 | 22.1 | 0.645 | 0.004 | 0.54 |
+| CPC-HMM | 11.3 | 66.6 | 0.725 | 0.042 | 6.52 |
+| CPC-HMM +GG | 6.6 | 33.8 | 0.723 | 0.016 | 1.33 |
+| CPC-HMM +TCEmin | 6.4 | 34.3 | 0.658 | 0.008 | 3.07 |
+| **CPC-HMM +TCEmin+GG** | **5.1** | **21.1** | 0.657 | **0.002** | **0.34** |
+| oracle | 2.1 | 6.5 | 0.879 | 0 | 0.22 |
+
+On seeds 0-2 the means are higher (17.7 for CPC-HMM): seed 0-2 contain the hard Boreas seeds, so 3-seed tables overstate
+the error. TCEmin+GG is the most stable rule (sd 0.34 m across seeds) and the only one with segFAR <= 0.002.
+
+**Label-calibrated baselines on Boreas** (seeds 0-2, 6 descriptors, calibrated WITH labels on the same `bsel` frames):
+
+| rule | err | p95 | recall | segFAR | FL |
+|---|---|---|---|---|---|
+| SafeVPR (MNN patch + Mondrian LTT) | 20.8 | 143.4 | 0.604 | 0.046 | 0.018 |
+| SafeVPR +DRgate | 13.5 | 69.6 | 0.556 | 0.003 | 0.001 |
+| Claxton'24 MLP | 43.6 | 207.9 | 0.738 | 0.111 | 0.033 |
+| Claxton'24 +DRgate | 24.2 | 128.7 | 0.647 | 0.011 | 0.005 |
+| CPC-HMM +TCEmin+GG (label-free) | 5.2 | 20.9 | 0.661 | 0.002 | 0.002 |
+
+Claxton'24 is excellent with strong descriptors (MegaLoc 2.8 m, SALAD 3.5 m, recall 0.85-0.92) but collapses with
+NetVLAD/DINOv2 (102-220 m): an MLP trained on in-tolerance labels does not transfer to the off-map frames, which the
+calibration traversal under-represents. SafeVPR only scores candidates in its own global top-20 (the HMM's top is
+there for 71% of frames), so its accepted set is small and conservative.
+
+**Two bugs fixed before these numbers.** (1) `ltt_threshold` ran the fixed-sequence test over every unique score from the
+strictest; at n = 1 even zero errors give binom.cdf = 0.95 > delta/3, so the sequence stopped at once and SafeVPR
+accepted nothing (recall 0 in the raw navC output). The sequence now starts at the first threshold with
+n >= log(delta)/log(1-alpha). The order depends only on the scores, so validity is kept. (2) `nav_rules.py` lost
+`--safevpr` because `nav_demo` strips it from sys.argv on import; it now reads `N.SAFEVPR`. The SafeVPR rules in
+`results/nav_boreas_<desc>.json` were re-evaluated from the caches (all other rules reproduce exactly).
+
+**Public reusable datasets.** `nhatlong1103/hmm-navcache` (18 Boreas caches, every rule re-evaluates from them in about
+1 min with `nav_rules.py`), `vpr-safevpr-scores`, `boreas-vpr-images-5`.
+
+**NCLT (natural off-map).** Stage 1 is streaming the 114 GB image tarballs (Cam5, 640 px, frames >= 1 m apart). 2012-11-16
+died on a dropped S3 connection under the old curl pipe and was relaunched with the resumable Range reader;
+2012-01-08 and 2013-04-05 are done (outputs being re-pulled after a container restart).
+
+**Verdict.** TCEmin+GG is the strongest and most stable rule on Boreas, ahead of every label-calibrated baseline,
+including the two 2024-2026 integrity monitors. Open: TCEmin recall (≈ certified, about 0.07 below CPC-HMM) and the
+countryside dataset.
+
 ## Entry 22 — Full Boreas results, the real cause of far wrong fixes, dead-reckoning ghost gate (2026-10-29, night)
 
 **Pulled** (new chat, branch `hmm-navigation-2`): fix7 (14 kernels), navF, navFc, navG, bfix. Every Boreas result now

@@ -73,7 +73,7 @@ EXTRA = {}                                       # experimental rules: name -> f
 
 def main():
     cdir, ds, desc = sys.argv[1], sys.argv[2], sys.argv[3]
-    sv = sys.argv[sys.argv.index("--safevpr") + 1] if "--safevpr" in sys.argv else None; only = "--only" in sys.argv
+    sv = N.SAFEVPR; only = "--only" in sys.argv                 # nav_demo strips --safevpr from sys.argv on import
     files = sorted(glob.glob(os.path.join(cdir, f"navcache_{ds.replace(':', '_')}_{desc}_s*.npz")), key=lambda f: int(f.rsplit("_s", 1)[1][:-4]))
     out = {"ds": ds, "desc": desc, "runs": [], "source": "nav_rules (cache)"}
     for f in files:
