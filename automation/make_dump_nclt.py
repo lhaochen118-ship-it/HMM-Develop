@@ -57,7 +57,7 @@ if True:                                             # parent: one worker proces
     # worker, vs ~30 s of extraction): read every weight file ONCE here with 16 threads into the page cache (197 GB RAM)
     import concurrent.futures as cf
     wf = [os.path.join(d, f) for d, _, fs in os.walk("/kaggle/input") for f in fs
-          if ("/bundle" in d or "descriptor-weights" in d) and f.endswith((".pth", ".pt", ".ckpt", ".bin", ".safetensors", ".pth.tar"))]
+          if ("/bundle" in d or "descriptor-weights" in d) and f.endswith((".pth", ".pt", ".ckpt", ".bin", ".safetensors", ".pth.tar", ".mat", ".npy", ".npz"))]
     def _rd(f):
         with open(f, "rb") as h:
             while h.read(64 << 20): pass
