@@ -174,6 +174,7 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo pub
 | 9 | `phuongnehe` | L4×4 OK (thêm 2026-10-30) |
 | 10 | `thnliu` | L4×4 OK (thêm 2026-10-30) |
 | 11 | `mxuanquy` | **chỉ T4** (thêm 2026-10-30) |
+| 12 | `linhmai24` | L4×4 OK + T4 (thêm 2026-10-30) |
 
 **GPU L4 (2026-10-30):** kernel có `"machine_shape": "NvidiaL4"`, `"competition_sources": ["gemma-4-developer-agent"]`
 (id 149921), `"enable_internet": false` được cấp 4× L4 (23 GB mỗi GPU), 48 CPU, 197 GB RAM. Đã thử: `yuan1103`,

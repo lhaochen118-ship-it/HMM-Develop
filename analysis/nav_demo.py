@@ -28,6 +28,9 @@ if DUMP: sys.argv.remove("--dump")
 RHOS = []                                      # --rhos 0.03,0.3: extra ghost-gate floors (sensitivity of rho)
 if "--rhos" in sys.argv:
     i = sys.argv.index("--rhos"); RHOS = [float(x) for x in sys.argv[i + 1].split(",")]; del sys.argv[i:i + 2]
+SAFEVPR = None                                 # --safevpr <dir>: safevpr_<ds>_p*.npz (MNN patch scores, safevpr_mnn.py) -> SafeVPR baseline
+if "--safevpr" in sys.argv:
+    i = sys.argv.index("--safevpr"); SAFEVPR = sys.argv[i + 1]; del sys.argv[i:i + 2]
 SEED0 = 0                                      # --seed0 k: run seeds k .. k+seeds-1 (results file gets the suffix _s<k>)
 if "--seed0" in sys.argv:
     i = sys.argv.index("--seed0"); SEED0 = int(sys.argv[i + 1]); del sys.argv[i:i + 2]
@@ -135,6 +138,42 @@ def rule_metrics(acc, ok_on, inm, offm, seqs, H, pon=None):
              ARL0=float(offm.sum() / max(onsets, 1)), reentry_delay=float(np.mean(delays)) if delays else float("nan"))
     if pon is not None: r["ECE"] = float(V.ece(pon[inm], ok_on[inm], 10)); r["overconf"] = float(pon[inm].mean() - ok_on[inm].mean())
     return r
+
+
+def ltt_threshold(score, bad, alpha=0.05, delta=0.1):
+    """Learn-Then-Test (fixed sequence, binomial p-values): the most permissive threshold lam (from strict to loose) whose
+    accepted set {score >= lam} has FDR <= alpha with confidence 1 - delta on the (labelled) calibration frames"""
+    from scipy.stats import binom
+    lam = np.inf
+    for l in np.unique(score)[::-1]:
+        a = score >= l; n = int(a.sum()); f = int((a & bad).sum())
+        if n == 0: continue
+        if binom.cdf(f, n, alpha) > delta: break
+        lam = l
+    return lam
+
+
+def safevpr_rule(mnn_top, cos_top, calib, bad, nbins=3, alpha=0.05, delta=0.1):
+    """SafeVPR (Sier et al. 2026): Mondrian conformal LTT on the MNN patch score, one threshold per bin of the global
+    cosine score (Bonferroni delta / nbins), calibrated WITH LABELS on `calib` frames"""
+    edges = np.quantile(cos_top[calib], np.linspace(0, 1, nbins + 1)[1:-1]); b = np.searchsorted(edges, cos_top)
+    acc = np.zeros(len(mnn_top), bool)
+    for k in range(nbins):
+        m = calib & (b == k)
+        lam = ltt_threshold(mnn_top[m], bad[m], alpha, delta / nbins) if m.any() else np.inf
+        acc |= (b == k) & (mnn_top >= lam)
+    return acc
+
+
+def claxton_rule(S, srt, calib, good, bad, seed):
+    """Claxton et al. RA-L'24 style integrity monitor: MLP on similarity-profile features, trained WITH LABELS on the
+    `calib` frames (in tolerance vs not), accept when P(in tolerance) > 0.5"""
+    from sklearn.neural_network import MLPClassifier
+    s1 = srt[:, 0]
+    X = np.stack([s1, s1 - srt[:, 1], s1 - srt[:, 4], s1 - srt[:, 9], s1 - S.mean(1), S.std(1)], 1)
+    X = (X - X[calib].mean(0)) / (X[calib].std(0) + 1e-9); tr = calib & (good | bad)
+    clf = MLPClassifier((32, 16), max_iter=500, random_state=seed).fit(X[tr], good[tr])
+    return clf.predict_proba(X)[:, 1] > 0.5
 
 
 def dr_gate(acc, xf, seqs, U, s0):
@@ -293,7 +332,18 @@ def main():
                  "HMM off-map (labels)": acc_h, "CPC-HMM (ours)": acc_c,
                  **{f"CPC-HMM p_out={po}": a for po, a in acc_po.items()}, **{k: v[0] for k, v in joint.items()},
                  "certified (ours)": Rq > thr, "oracle": good}
-        for bn, xb in (("HMM off-map (labels)", x_hmm), ("SelfCal frame", x_fix), ("certified (ours)", x_fix)):
+        bad_top = offm | (err_top > c["excl"])
+        rules["Claxton24 MLP (labels)"] = claxton_rule(S, srt, bsel, good, bad_top, seed)
+        if SAFEVPR:
+            import glob as _g
+            parts = [np.load(f) for f in sorted(_g.glob(os.path.join(SAFEVPR, f"safevpr_{ds.replace(':', '_')}_p*.npz")))]
+            mtop = np.zeros(len(q)); ftop = kidx[top]
+            for z in parts:
+                r_, cd, mn = z["q_rows"], z[f"cand_{desc}"], z[f"mnn_{desc}"]
+                hit = cd == ftop[r_][:, None]; mtop[r_] = np.where(hit.any(1), (mn * hit).sum(1), 0.0)
+            rules["SafeVPR (labels)"] = safevpr_rule(mtop, Fr["maxsim"], bsel, bad_top)
+        for bn, xb in (("HMM off-map (labels)", x_hmm), ("SelfCal frame", x_fix), ("certified (ours)", x_fix),
+                       ("Claxton24 MLP (labels)", x_fix), *((("SafeVPR (labels)", x_fix),) if SAFEVPR else ())):
             rules[bn + " +DRgate"] = dr_gate(rules[bn], xb, q_seqs, U, c["excl"])
         hz = [0] if ep.q_pos.shape[1] == 1 else ([0, 1] if ep.q_pos.shape[1] == 2 else list(np.argsort(ep.q_pos.var(0))[1:]))
 
