@@ -36,6 +36,27 @@ because the Segway heading drifts 10-25 deg per session and a position-only filt
 The DRgate versions of the baselines lock out on NCLT (Xu +DRgate 199 m): a hard dead-reckoning gate is fragile with
 drifting heading.
 
+**Check 1b: NCLT, all 8 query sessions** (2012-02 to 2013-04 against the 2012-01-08 map; 38,919 query frames, 3-14%
+off-map per session, 306 off-map segments; 6 descriptors x 3 seeds, but without synthetic holes the seeds only change
+the Claxton'24 MLP, so this is 6 independent runs; frozen method, nothing tuned on NCLT):
+
+| rule | err | median | p95 | recall | segFAR |
+|---|---|---|---|---|---|
+| accept all | 70.9 | 28.5 | 294.5 | 0.72 | 1.000 |
+| Xu'21 (labels) | 13.7 | 2.5 | 69.8 | 0.53 | 0.021 |
+| Claxton'24 (labels) | 33.3 | 9.9 | 154.1 | 0.66 | 0.214 |
+| SelfCal frame | 9.2 | 2.3 | 46.6 | 0.31 | 0.005 |
+| certified | 3.6 | 1.6 | 11.7 | 0.48 | 0.001 |
+| CPC-HMM | 7.9 | 2.1 | 31.5 | 0.64 | 0.005 |
+| CPC-HMM +GG | 6.2 | 2.2 | 23.3 | 0.61 | 0.005 |
+| **CPC-HMM +TCEmin** | **3.7** | 2.0 | 13.2 | 0.49 | **0** |
+| CPC-HMM +TCEmin+GG | 4.4 | 2.0 | 16.8 | 0.46 | 0 |
+| oracle | 2.2 | 1.4 | 7.1 | 0.72 | 0 |
+
+TCEmin is within 0.1-1.4 m of the oracle error with every descriptor except DINOv2 (7.3 vs 2.4 m) and has no false
+report in any of the 306 off-map segments; Xu'21 is 3.7x worse in error, Claxton'24 9x (with NetVLAD / DINOv2 /
+CosPlace / MixVPR it accepts off-map frames, segFAR 0.21). The 1-session table above was an early subset.
+
 **Check 2: all 7 datasets, every seed** (10 seeds except NCLT; err / recall / segFAR):
 
 | dataset | Xu'21 | Claxton'24 | cert | CPC+GG | TCEmin | TCEmin+GG | oracle |
