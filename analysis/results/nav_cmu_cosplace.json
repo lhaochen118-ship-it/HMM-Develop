@@ -100,6 +100,24 @@
      "err_p95": 16.31437542624337,
      "frac_gt_rho": 0.031970086468801125
     },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 399,
+     "correct_fixes": 12506,
+     "FAR_offmap": 0.03997052864247559,
+     "err_mean": 8.437685933379946,
+     "err_median": 2.112353038627769,
+     "err_p95": 16.31437542624337,
+     "frac_gt_rho": 0.031970086468801125
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 411,
+     "correct_fixes": 12509,
+     "FAR_offmap": 0.03997052864247559,
+     "err_mean": 8.455201955374317,
+     "err_median": 2.112353038627769,
+     "err_p95": 16.915782939898936,
+     "frac_gt_rho": 0.031970086468801125
+    },
     "certified (ours)": {
      "wrong_fixes": 38,
      "correct_fixes": 10671,
@@ -248,6 +266,24 @@
      "err_p95": 9.234968855302975,
      "frac_gt_rho": 0.004159850432344006
     },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 24,
+     "correct_fixes": 14986,
+     "FAR_offmap": 0.0031307070180015655,
+     "err_mean": 3.3029154683524107,
+     "err_median": 2.098628832767599,
+     "err_p95": 9.234968855302975,
+     "frac_gt_rho": 0.004159850432344006
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 38,
+     "correct_fixes": 14986,
+     "FAR_offmap": 0.006261414036003131,
+     "err_mean": 4.079334536876416,
+     "err_median": 2.098628832767599,
+     "err_p95": 9.562349851190984,
+     "frac_gt_rho": 0.009955597102126665
+    },
     "certified (ours)": {
      "wrong_fixes": 8,
      "correct_fixes": 13206,
@@ -394,6 +430,24 @@
      "err_mean": 6.2801586523857384,
      "err_median": 1.9238277631855203,
      "err_p95": 10.648888074928896,
+     "frac_gt_rho": 0.020191633559242812
+    },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 65,
+     "correct_fixes": 14346,
+     "FAR_offmap": 0.01705276705276705,
+     "err_mean": 6.280099161062861,
+     "err_median": 1.9238277631855203,
+     "err_p95": 10.648888074928896,
+     "frac_gt_rho": 0.020191633559242812
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 65,
+     "correct_fixes": 14387,
+     "FAR_offmap": 0.01705276705276705,
+     "err_mean": 6.274963919473286,
+     "err_median": 1.9238277631855203,
+     "err_p95": 10.648036363617548,
      "frac_gt_rho": 0.020191633559242812
     },
     "certified (ours)": {
