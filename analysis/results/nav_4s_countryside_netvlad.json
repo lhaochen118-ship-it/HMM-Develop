@@ -100,6 +100,24 @@
      "err_p95": 278.7762698877701,
      "frac_gt_rho": 0.7170691720789457
     },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 188,
+     "correct_fixes": 1210,
+     "FAR_offmap": 0.012899262899262898,
+     "err_mean": 77.35048752113966,
+     "err_median": 41.637196571743544,
+     "err_p95": 278.7762698877701,
+     "frac_gt_rho": 0.7156819471593417
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 214,
+     "correct_fixes": 1245,
+     "FAR_offmap": 0.013104013104013105,
+     "err_mean": 76.01388742101406,
+     "err_median": 37.54234622339722,
+     "err_p95": 278.7762698877701,
+     "frac_gt_rho": 0.6919730121697459
+    },
     "certified (ours)": {
      "wrong_fixes": 12,
      "correct_fixes": 417,
@@ -244,6 +262,24 @@
      "correct_fixes": 2260,
      "FAR_offmap": 0.008047585724282715,
      "err_mean": 80.7790149877078,
+     "err_median": 53.04153156885832,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.6622107320764234
+    },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 191,
+     "correct_fixes": 2260,
+     "FAR_offmap": 0.008047585724282715,
+     "err_mean": 80.7790149877078,
+     "err_median": 53.04153156885832,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.6622107320764234
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 191,
+     "correct_fixes": 2262,
+     "FAR_offmap": 0.008047585724282715,
+     "err_mean": 80.77356945561347,
      "err_median": 53.04153156885832,
      "err_p95": 278.8728756514076,
      "frac_gt_rho": 0.6622107320764234
@@ -393,6 +429,24 @@
      "FAR_offmap": 0.00989010989010989,
      "err_mean": 77.68065989425571,
      "err_median": 43.61446596453818,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.6102528532694369
+    },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 187,
+     "correct_fixes": 2203,
+     "FAR_offmap": 0.00989010989010989,
+     "err_mean": 77.68065989425571,
+     "err_median": 43.61446596453818,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.6102528532694369
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 187,
+     "correct_fixes": 2206,
+     "FAR_offmap": 0.00989010989010989,
+     "err_mean": 77.67711759945941,
+     "err_median": 43.6150433256651,
      "err_p95": 278.8728756514076,
      "frac_gt_rho": 0.6102528532694369
     },
