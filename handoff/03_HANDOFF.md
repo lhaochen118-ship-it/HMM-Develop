@@ -52,6 +52,7 @@ tiết ở `01_SCIENTIFIC_FINDINGS`; kinh nghiệm vận hành ở `02_ENGINEERI
 2. **Không làm phương pháp nào phụ thuộc nhãn** của điều kiện deploy. Baseline dùng nhãn chỉ để so sánh.
 3. **Không bỏ phương pháp chỉ vì yếu trên chuỗi ngắn** (RobotCar). Bổ sung benchmark chuỗi dài thay vì bỏ.
 4. **Tài nguyên:**
+   - **Kiểm tra tình trạng mọi acc 40 phút/lần** bằng một lượt hẹn giờ (`send_later`), không dùng monitor liên tục (tốn token; user chốt 2026-10-30).
    - **Luôn tối thiểu thời gian chạy mà không làm giảm độ chính xác** (user chốt 2026-10-30): chạy song song mọi thứ độc
      lập (không đợi bước kiểm tra nếu sửa được sau), dùng hết CPU/GPU của phiên (job song song, ghim GPU, threads/job),
      đóng gói output nhiều file nhỏ thành 1 tar (kéo output Kaggle theo từng file rất chậm), tránh tải lại dữ liệu đã có.
