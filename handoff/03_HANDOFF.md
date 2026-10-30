@@ -53,7 +53,7 @@ tiết ở `01_SCIENTIFIC_FINDINGS`; kinh nghiệm vận hành ở `02_ENGINEERI
 3. **Không bỏ phương pháp chỉ vì yếu trên chuỗi ngắn** (RobotCar). Bổ sung benchmark chuỗi dài thay vì bỏ.
 4. **Tài nguyên:**
    - Dùng **hết GPU** (8 acc × 2 T4; GPU của `mucnokieu` hay bị người khác chiếm). RTX PRO 6000 chỉ cho việc rất lớn.
-   - Hết GPU thì dùng CPU (5 phiên mỗi acc).
+   - Hết GPU: job **rất nhẹ** (dưới khoảng 30 phút trên CPU, ví dụ nav_demo CMU/4S/Nordland, phân tích offline) thì chạy CPU (5 phiên mỗi acc); job **nặng** (Boreas nav_demo/hmm_fix, dump descriptor) thì **đợi GPU trống**, không đẩy sang CPU (user chốt 2026-10-30).
    - Kernel kẹt hàng đợi quá 10 phút thì huỷ và chạy lại, tối đa 4 lần, rồi mới tìm lỗi.
 5. **Dữ liệu mới:**
    - Upload lên acc `nhatlong1103`, để **public**.

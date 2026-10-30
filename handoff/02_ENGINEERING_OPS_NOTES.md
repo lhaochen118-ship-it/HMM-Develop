@@ -10,7 +10,7 @@ SelfCal và vẫn đúng. **§8 là các bài học mới của vòng HMM-naviga
 
 1. **Mọi tính toán nặng chạy trên Kaggle**, kể cả phân tích chỉ cần CPU. Container local (không GPU, 4 nhân) chỉ
    dùng cho kiểm tra nhanh, dưới khoảng 2 phút.
-2. **Dùng hết GPU T4 của mọi acc trước** (8 acc × 2 = 16 slot). Chỉ dùng kernel CPU khi hết GPU **và** job đủ nhẹ.
+2. **Dùng hết GPU T4 của mọi acc trước** (8 acc × 2 = 16 slot). Hết GPU: job **rất nhẹ** (dưới khoảng 30 phút trên CPU, ví dụ nav_demo CMU/4S/Nordland, phân tích offline) thì chạy CPU (5 phiên mỗi acc); job **nặng** (Boreas nav_demo/hmm_fix, dump descriptor) thì **đợi GPU trống**, không đẩy sang CPU (user chốt 2026-10-30).
 3. Không ghi token vào `~/.bashrc` (bị từ chối). Token để ở `~/.kaggle/tok_<username>`; script tự đọc.
 4. Không chạy code bên thứ ba tải về ngay trong container (sandbox chặn). Chạy nó trong kernel Kaggle.
 

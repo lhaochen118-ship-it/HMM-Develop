@@ -180,7 +180,7 @@ cho CPU.
 **Quy tắc:**
 
 - Chia job cho cả 16 slot GPU trước.
-- Chỉ dùng kernel CPU khi hết GPU và job đủ nhẹ.
+- Hết GPU: job **rất nhẹ** (dưới khoảng 30 phút trên CPU, ví dụ nav_demo CMU/4S/Nordland, phân tích offline) thì chạy CPU (5 phiên mỗi acc); job **nặng** (Boreas nav_demo/hmm_fix, dump descriptor) thì **đợi GPU trống**, không đẩy sang CPU (user chốt 2026-10-30).
 - Thêm acc mới: lưu token vào `~/.kaggle/tok_<username>`. `fanout.py` tự nhận acc đó.
 
 **GPU lớn hơn T4 qua competition grant (không qua CLI được):** `automation/make_meta.py <dir> <id> <code> <ds> l4`
