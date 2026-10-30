@@ -37,3 +37,28 @@ Toffoli-eq at 62–70 qubits, i.e. not better than 1,628 @ 62. Big gains on this
 idea that removes most of the floating-point overhead (input normalization ~230 Toffolis, shift
 routing, 14 rarely-firing high-weight rotations ~100 Toffoli-eq), which none of the variants
 studied here achieves.
+
+### Toffoli budget of the public best (executed mean per shot, by instruction window)
+
+| instructions | Toffolis | what |
+|---|---:|---|
+| 0–1k | 92 | normalization forward (prefix-zero AND chain, binary s by XOR, CSWAP shifts) |
+| 1k–15k | ~160 | seed/coefficient lookup as a shared-monomial ANF (≈38 monomial wires live → the Q=62 peak) |
+| 15k–16k | 72 | phase stream A (seed taps, 15 rotations, 2 routing CSWAPs per bit) |
+| 16k–21k | ~51 | |
+| 21k–26k | ~436 | main arithmetic and phase stream B (26 rotations) |
+| 28k–37k | ~446 | uncomputation of the arithmetic |
+| 44k–48k | ~74 | normalization reverse |
+
+Uncompute ≈ compute for the in-place adders; a measurement-only erasure would need the XAG wires
+kept alive (hundreds of qubits), so at Q·C the low-Q recompute point is the right one.
+
+### Most promising lever found (not yet exploited)
+
+Occupancy over the arithmetic and uncompute region (19k–31k instructions) averages ~56 of 62
+qubits; the 62 peaks there are short spikes (transient adder ANDs), except 33k–34k and 17k–18k.
+An arithmetic block rebuilt to (a) flatten those spikes and (b) keep adder carries in the 4–8 spare
+qubits would let the in-place adders be undone by measurement + Clifford repair instead of
+subtraction, attacking the ~446-Toffoli uncompute (27% of C) without raising Q. This needs a
+re-implementation of the arithmetic (seed → cubic correction → stream B) with our own generator;
+the recovered gate list cannot be patched that deeply.
