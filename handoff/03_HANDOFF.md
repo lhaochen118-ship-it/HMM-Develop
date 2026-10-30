@@ -31,6 +31,20 @@ tiết ở `01_SCIENTIFIC_FINDINGS`; kinh nghiệm vận hành ở `02_ENGINEERI
   - bfix: Boreas `hmm_fix` + `cert_seq` với odometry đã sửa.
   - fix6: `hmm_fix` với null cũ, bị fix7 thay thế.
 
+### Cập nhật 2026-10-30 (khung chat `hmm-navigation-2`)
+
+- **Bước 1 đã xong:** CPC-HMM + cổng dead-reckoning (`+GG`, ρ = 0.1) thắng Xu'21 trên 6/6 descriptor Boreas (trung bình
+  7.1 so với 22.6 m) và trên trung bình cả 6 dataset; không làm CPC-HMM tệ đi ở dataset nào. Chi tiết: `RESEARCH_LOG.md`
+  Entry 22, `paper/cpc_theory.md` §3b, báo cáo `paper/BAO_CAO_CertSeq.pdf` §5.4, Gate 8.
+- **Đã thử và loại:** p_out cố định hoặc theo KL₀; rò rỉ ở mép bản đồ; cổng dự đoán (PG); vào lại theo dead-reckoning (DR).
+- **Việc tiếp theo gợi ý:**
+  1. chạy lại `hmm_fix.py` với +GG để có ARL₀, recall, ECE (chưa có);
+  2. RobotCar trong lưới điều hướng (snippet 9 frame);
+  3. độ bền theo tỷ lệ lỗ 10 % / 50 % cho +GG (`nav_demo` chưa có `--drop`);
+  4. benchmark chuỗi dài mới (NCLT, Oxford RobotCar gốc) nếu muốn chứng minh tổng quát hơn;
+  5. kiểm thêm các giá trị ρ (0.03, 0.3) để báo độ nhạy.
+- **Kaggle:** `nhatlong1103` và `huyenco` hết quota GPU tuần (30 h) lúc 2026-10-29 tối; dùng CPU cho 2 acc này.
+
 ## 3. Quyết định đã chốt (không bàn lại trừ khi user yêu cầu)
 
 1. **Không viết paper.** Chỉ báo cáo PDF ngắn **tiếng Việt**: method + công thức, bảng kết quả, so sánh baseline mới

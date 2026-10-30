@@ -3,6 +3,24 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 8 (2026-10-30): dead-reckoning ghost gate for the CPC-HMM presence chain (web search)
+
+- **Searched:** HMM-VPR with an off-map state that keeps a dead-reckoned position; predictive gating of e-values in
+  sequential change detection; IPDA track gating/coasting.
+- **Closest work:** Hansen & Browning ICRA'14 (HMM sequence VPR, no off-map position); Multi-Process Fusion (re-localisation
+  delay after unfamiliar stretches, no position memory); Xu et al. RA-L'21 (position-less off-map state, uniform
+  re-entry); IPDA/tracking "gate" and "coasting" (model-based likelihoods, no validity guarantee); e-detectors
+  (Shin–Ramdas–Rinaldo) and predictable e-values (prediction-powered e-values) without spatial gating.
+- **Overlap:** gating a measurement by the predicted track position and coasting a track through missed detections are
+  standard tracking ideas. Post hoc innovation gating of VPR fixes in an EKF is also standard (and is our `+DRgate`
+  baseline, which fails off Boreas).
+- **New:** (i) the gate multiplies a map-calibrated e-value and provably keeps it an e-value (a ≤ ẽ ≤ e), so the ARL₀ bound
+  of the presence chain is preserved; (ii) the floor ρ (prior that the ghost is wrong) gives a lock-out escape that the
+  hard innovation gate lacks; (iii) the diagnosis that HMM-VPR far wrong fixes come from the place chain drifting to
+  aliased stretches inside map holes, not from exit lag.
+- **Verdict:** incremental-but-sound module on top of CPC-HMM; publishable only together with the certified direction
+  (RA-L/ICRA level), not alone.
+
 ## Gate 6 (2026-10-29): HMM sequence localization — EVT-HMM and certified sequential localization (web search + abstracts)
 
 Searches: HMM/sequence VPR 2025–26; Bayes-filter overconfidence with correlated observations; anytime-valid /
