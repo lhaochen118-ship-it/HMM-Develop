@@ -43,6 +43,16 @@ if True:                                             # parent: one worker proces
             if f.startswith("img_") and f.endswith(".tar"):
                 with tarfile.open(os.path.join(d, f)) as tf: tf.extractall(TMP)
     print("sessions", sorted(SESS), "gpus", NG, f"untar {time.time()-T0:.0f}s", flush=True)
+    for d, subs, fs in os.walk("/kaggle/input"):                # mount layout (debug: a dataset still processing is missing)
+        if d.count(os.sep) <= 5: print("  in:", d, len(fs), "files", sorted(subs)[:4], flush=True)
+        if d.count(os.sep) >= 5: subs[:] = []
+    # torch.hub copies a file:// checkpoint into its cache at ~1 MB/s from /kaggle/input, once per worker (15 min for
+    # DINOv2): link every bundle checkpoint into the cache first, so the workers find it there
+    hub = os.path.expanduser("~/.cache/torch/hub/checkpoints"); os.makedirs(hub, exist_ok=True)
+    for d, subs, fs in os.walk("/kaggle/input"):
+        if os.path.basename(d) == "checkpoints":
+            for f in fs:
+                if not os.path.exists(os.path.join(hub, f)): os.symlink(os.path.join(d, f), os.path.join(hub, f))
     os.makedirs(os.path.join(W, "dump", "meta"), exist_ok=True)
     for s, f in SESS.items(): shutil.copy(f, os.path.join(W, "dump", "meta", f"nclt_{s}.npz"))
     env = dict(os.environ, NCLT_TMP=TMP, NG=str(NG), OMP_NUM_THREADS=str(max(1, (os.cpu_count() or 4) // NG)))

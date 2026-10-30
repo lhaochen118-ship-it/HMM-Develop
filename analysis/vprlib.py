@@ -158,6 +158,42 @@ def load_boreas(dump, desc="salad", ref="boreas-2020-11-26-13-58", qseqs=BOREAS_
     return ep
 
 
+def load_nclt(dump, desc="salad", ref="2012-01-08"):
+    """NCLT (U. Michigan North Campus, Segway, 2012-2013; all sessions share one GT frame): map = reference session,
+    queries = every other dumped session (condition = session). Routes differ between sessions (indoor / outdoor,
+    different paths), so queries leave the map NATURALLY (no synthetic holes). Positions are 2-D (x, y of the LiDAR-SLAM
+    GT); ep.q_vio = wheel odometry (x, y) of the session's own odometry frame (real odometry, aligned per session as VIO)."""
+    seqs = sorted(f[5:-4] for f in os.listdir(os.path.join(dump, "meta")) if f.startswith("nclt_")
+                  and os.path.isfile(os.path.join(dump, desc, f[:-4] + ".npy")))
+    assert ref in seqs, (ref, seqs)
+    M = {r: np.load(os.path.join(dump, "meta", f"nclt_{r}.npz")) for r in seqs}
+    D = {r: np.load(os.path.join(dump, desc, f"nclt_{r}.npy")) for r in seqs}; qr = [r for r in seqs if r != ref]
+    cat = lambda f: np.concatenate([f(r) for r in qr])
+    ep = Episode("nclt", cat(lambda r: D[r]), D[ref], cat(lambda r: M[r]["C"][:, :2]), M[ref]["C"][:, :2], cat(lambda r: np.array([r] * len(D[r]))))
+    ep.q_vio, ep.q_rec, ep.ref = cat(lambda r: _nclt_odo(dump, r, M[r])), cat(lambda r: np.array([r] * len(D[r]))), ref
+    return ep
+
+
+NCLT_ODO = os.environ.get("NCLT_ODO", "fog")         # "fog": wheel distance + KVH fibre-optic-gyro heading; "wheel": odometry_mu
+
+
+def _nclt_odo(dump, r, meta):
+    """dead-reckoned (x, y) at the image times of session r. "fog": distance of every 20-Hz odometry_mu increment along
+    the KVH FOG heading (drift ~1 deg/h; the wheel-only heading of odometry_mu drifts ~25 deg over 4 km), needs
+    dump/sensors/nclt_<r>.npz (make_nclt_sensors.py); falls back to the wheel odometry otherwise"""
+    f = os.path.join(dump, "sensors", f"nclt_{r}.npz")
+    if NCLT_ODO != "fog" or not os.path.isfile(f): return meta["odo"][:, :2]
+    z = np.load(f); o, k = z["odo"], z["kvh"]
+    d = np.diff(o[:, 1:3], axis=0); ds_ = np.r_[0, d[:, 0] * np.cos(o[:-1, 3]) + d[:, 1] * np.sin(o[:-1, 3])]   # signed (reversing)
+    h = np.interp(o[:, 0], k[:, 0], np.unwrap(k[:, 1])) * NCLT_FOG_SIGN
+    xy = np.cumsum(np.c_[ds_ * np.cos(h), ds_ * np.sin(h)], axis=0)
+    u = meta["names"].astype(float)
+    return np.c_[np.interp(u, o[:, 0], xy[:, 0]), np.interp(u, o[:, 0], xy[:, 1])]
+
+
+NCLT_FOG_SIGN = -1.0                                 # KVH heading sign relative to the GT yaw: -1 (checked on 2012-01-08 / 2013-04-05)
+
+
 # --------------------------------------------------------------------------- frame order (sequences)
 def _ts(names):
     return np.array([int(os.path.basename(str(n)).split(".")[0].split("_")[-1].rstrip("us")) for n in names], float)
@@ -191,14 +227,14 @@ def frame_order(dump, ds, ep, desc="salad"):
         n = len(ep.m); qg = np.asarray(ep.q_cond).astype(str)
         return sequences(np.tile(np.arange(n, dtype=float), len(ep.q) // n), qg, 1.5) + \
             sequences(np.arange(n, dtype=float), np.zeros(n, int), 1.5)
-    if ds.startswith("4s") or ds == "boreas":
+    if ds.startswith("4s") or ds in ("boreas", "nclt"):
         _, qs = np.unique(ep.q_rec, return_inverse=True); qk = np.empty(len(qs), int)
         for s_ in np.unique(qs): qk[qs == s_] = np.arange((qs == s_).sum())
         return qs, qk, np.zeros(len(ep.m), int), np.arange(len(ep.m))
     raise ValueError("no frame order for " + ds)
 
 
-LOADERS = {"rc": load_robotcar, "cmu": load_cmu_merged, "nord": load_nordland, "msls": load_msls,
+LOADERS = {"rc": load_robotcar, "cmu": load_cmu_merged, "nord": load_nordland, "msls": load_msls, "nclt": load_nclt,
            "nordw": lambda d, x="salad": load_nordland(d, x, ref="winter")}
 
 

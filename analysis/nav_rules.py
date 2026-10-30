@@ -80,7 +80,7 @@ def main():
         z = np.load(f, allow_pickle=True); b = base_parts(z)
         R, X, P = ({}, {}, {}) if only else base_rules(z, b, sv, ds, desc)
         for n, fn in EXTRA.items(): R[n], X[n], P[n] = fn(z, b)
-        cx = dict(q_pos=z["q_pos"], o_q=z["o_q"], real=bool(z["real"]), q_seqs=b["seqs"], hz=list(z["hz"]), seed=int(z["seed"]), excl=b["excl"],
+        cx = dict(q_pos=z["q_pos"], o_q=z["o_q"], real=bool(z["real"]), q_seqs=b["seqs"], hz=list(z["hz"]), seed=int(z["seed"]), excl=b["excl"], head=ds == "nclt",
                   inm=z["inm"], offm=z["offm"], H=b["H"])
         run = {"seed": int(z["seed"]), "n_map": int(z["n_map"]), "n_null_seg": int(z["n_null_seg"]), "thr": float(z["thr"]),
                "off_frac": float(z["offm"].mean()), "hmm_T_k": [float(x) for x in z["hmm_T_k"]]}

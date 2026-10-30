@@ -63,7 +63,7 @@ def odometry_vio(ep, sid, k):
     for s in np.unique(sid):
         idx = np.where(sid == s)[0]; idx = idx[np.argsort(k[idx])]; v = ep.q_vio[idx] - ep.q_vio[idx[0]]
         g = ep.q_pos[idx] - ep.q_pos[idx[0]]; n = min(20, len(idx))
-        U, _, Vt = np.linalg.svd(g[:n].T @ v[:n]); X = U @ np.diag([1, 1, np.linalg.det(U @ Vt)]) @ Vt
+        U, _, Vt = np.linalg.svd(g[:n].T @ v[:n]); X = U @ np.diag([1] * (g.shape[1] - 1) + [np.linalg.det(U @ Vt)]) @ Vt   # 2-D or 3-D
         o[idx] = v @ X.T
     return o
 

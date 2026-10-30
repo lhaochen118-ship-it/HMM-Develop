@@ -201,9 +201,27 @@ def claxton_rule(srt10, Smean, Sstd, calib, good, bad, seed):
     return clf.predict_proba(X)[:, 1] > 0.5
 
 
-def track(acc, xf, q_pos, o_q, real, q_seqs, hz, seed):
+def track_head(acc, xf, q_pos, o_q, q_seqs, sig_th=0.004):
+    """EKF with a heading-offset state (x, y, theta): odometry increments are rotated by theta, theta is estimated from
+    the accepted fixes (sigma SIG_FIX). For robots whose odometry heading drifts (NCLT Segway: 10-25 deg per session),
+    which a position-only filter turns into a steady lag behind the fixes. sig_th: heading random walk, rad / sqrt(m)."""
+    est = np.full_like(q_pos, np.nan); I3 = np.eye(3); Hm = np.eye(2, 3); Rf = SIG_FIX ** 2 * np.eye(2)
+    for idx in q_seqs:
+        m = np.r_[q_pos[idx[0]], 0.0]; P = np.diag([1.0, 1.0, np.deg2rad(5) ** 2]); est[idx[0]] = m[:2]
+        for a, b in zip(idx[:-1], idx[1:]):
+            u = o_q[b] - o_q[a]; c, s_ = np.cos(m[2]), np.sin(m[2]); Ru = np.array([c * u[0] - s_ * u[1], s_ * u[0] + c * u[1]])
+            m[:2] += Ru; F = I3.copy(); F[0, 2], F[1, 2] = -Ru[1], Ru[0]; L = np.linalg.norm(u)
+            P = F @ P @ F.T + np.diag([(0.05 * L) ** 2 + 1e-4, (0.05 * L) ** 2 + 1e-4, sig_th ** 2 * L + 1e-8])
+            if acc[b]:
+                K = P @ Hm.T @ np.linalg.inv(Hm @ P @ Hm.T + Rf); m = m + K @ (xf[b] - m[:2]); P = (I3 - K @ Hm) @ P
+            est[b] = m[:2]
+    return np.linalg.norm(est - q_pos, axis=1)
+
+
+def track(acc, xf, q_pos, o_q, real, q_seqs, hz, seed, head=False):
     """position Kalman filter: odometry (real increments, or simulated: scale error, heading random walk, noise) + accepted
-    fixes (sigma SIG_FIX); returns the per-frame position error"""
+    fixes (sigma SIG_FIX); returns the per-frame position error. head=True: EKF with a heading-offset state (track_head)"""
+    if head and real and q_pos.shape[1] == 2: return track_head(acc, xf, q_pos, o_q, q_seqs)
     r = np.random.default_rng(seed + 7); est = np.full_like(q_pos, np.nan)
     for idx in q_seqs:
         x = q_pos[idx[0]].copy(); P = 1.0; est[idx[0]] = x; thh = 0.0; sc = 1 + r.normal(0, 0.03)
@@ -226,7 +244,7 @@ def evaluate(rules, xfs, pons, cx, tag):
     pons: name -> P(on) (ECE) or None; cx: context dict (q_pos, o_q, real, q_seqs, hz, seed, excl, inm, offm, H)"""
     res = {}
     for name, acc in rules.items():
-        xf = xfs[name]; e = track(acc, xf, cx["q_pos"], cx["o_q"], cx["real"], cx["q_seqs"], cx["hz"], cx["seed"])
+        xf = xfs[name]; e = track(acc, xf, cx["q_pos"], cx["o_q"], cx["real"], cx["q_seqs"], cx["hz"], cx["seed"], cx.get("head", False))
         err_f = np.linalg.norm(xf - cx["q_pos"], axis=1); inm, offm = cx["inm"], cx["offm"]
         gd, bd = inm & (err_f <= cx["excl"]), offm | (err_f > cx["excl"])
         rr = dict(wrong_fixes=int((acc & bd).sum()), correct_fixes=int((acc & gd).sum()), FAR_offmap=float(acc[offm].mean()),
@@ -267,7 +285,7 @@ def main():
     out = {"ds": ds, "desc": desc, "H": H, "runs": []}
     for seed in range(SEED0, SEED0 + seeds):
         rng = np.random.default_rng(seed); bid0, _ = V.map_cells(ep.m_pos, c["block"]); ub = np.unique(bid0)
-        keep = ~np.isin(bid0, rng.choice(ub, int(round(DROP * len(ub))), replace=False))
+        keep = ~np.isin(bid0, rng.choice(ub, int(round((0.0 if ds == "nclt" else DROP) * len(ub))), replace=False))   # NCLT: natural off-map, no holes
         M, MP = ep.m[keep].astype(np.float32), ep.m_pos[keep]
         d_map, _ = cKDTree(MP).query(ep.q_pos); inm, offm = d_map <= c["in_d"], d_map > c["off_d"]
         nrm = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True); mu = M.mean(0, keepdims=True); Mc = nrm(M - mu); qc = nrm(q - mu)
@@ -418,7 +436,8 @@ def main():
         run["hmm_T_k"] = [best[1], best[2]]
         xfs = {n: (x_hmm if n.startswith("HMM") else joint[n][1] if n in joint else (x_cpc if n.startswith("CPC") else x_fix)) for n in rules}
         pons = {"CPC-HMM (ours)": pon, **{k: v[2] for k, v in joint.items()}}
-        cx = dict(q_pos=ep.q_pos, o_q=o_q, real=real, q_seqs=q_seqs, hz=hz, seed=seed, excl=c["excl"], inm=inm, offm=offm, H=H)
+        cx = dict(q_pos=ep.q_pos, o_q=o_q, real=real, q_seqs=q_seqs, hz=hz, seed=seed, excl=c["excl"], inm=inm, offm=offm, H=H,
+                  head=ds == "nclt")                                 # NCLT: heading-offset EKF (Segway heading drifts)
         if CACHE:                                                  # everything a new presence rule needs (nav_rules.py), no recompute
             os.makedirs("results", exist_ok=True)
             fl = np.concatenate(nchunks) if nchunks else np.zeros(0, int)
