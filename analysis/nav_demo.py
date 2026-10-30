@@ -25,6 +25,9 @@ from hmm_fix import beta_em
 A, SIG_FIX, DROP = 0.05, 5.0, 0.3
 DUMP = "--dump" in sys.argv                    # also save per-frame arrays (results/navframes_<ds>_<desc>_s<seed>.npz)
 if DUMP: sys.argv.remove("--dump")
+RHOS = []                                      # --rhos 0.03,0.3: extra ghost-gate floors (sensitivity of rho)
+if "--rhos" in sys.argv:
+    i = sys.argv.index("--rhos"); RHOS = [float(x) for x in sys.argv[i + 1].split(",")]; del sys.argv[i:i + 2]
 KAPPA = 0.05                                   # ghost position uncertainty growth per metre of odometry (as the nav filter)
 
 
@@ -191,7 +194,8 @@ def main():
         # joint CPC-HMM variants (cpc_joint): predictive gate (PG) and/or dead-reckoned off-map state (DR)
         e_top1, e_a1, e_r1 = np.exp(lam), np.exp(loga), e_R ** (1.0 / H)
         nbr_x = cKDTree(MP).query_ball_point(MP, c["excl"]); joint = {}
-        for jn, gt, gh, cp, rh in (("CPC-HMM +GG", "ghost", False, False, 0.1), ("CPC-HMM +GG(rho=.01)", "ghost", False, False, 0.01)):
+        for jn, gt, gh, cp, rh in (("CPC-HMM +GG", "ghost", False, False, 0.1), ("CPC-HMM +GG(rho=.01)", "ghost", False, False, 0.01),
+                                   *((f"CPC-HMM +GG(rho={r:g})", "ghost", False, False, r) for r in RHOS)):
             ej, pj = np.zeros(len(q), int), np.zeros(len(q))
             for idx in q_seqs:
                 ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], e_top1[idx], e_a1[idx], e_r1[idx], top[idx], nbr_x, gate=gt, ghost=gh, s0=c["excl"], couple=cp, rho=rh)
