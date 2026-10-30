@@ -100,6 +100,24 @@
      "err_p95": 278.8728756514076,
      "frac_gt_rho": 0.8131029699224415
     },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 157,
+     "correct_fixes": 454,
+     "FAR_offmap": 0.016994266994266993,
+     "err_mean": 91.03995613094558,
+     "err_median": 66.42704654627563,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.8131029699224415
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 157,
+     "correct_fixes": 457,
+     "FAR_offmap": 0.016994266994266993,
+     "err_mean": 91.03886133957268,
+     "err_median": 66.44068836514383,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.81291380288795
+    },
     "certified (ours)": {
      "wrong_fixes": 42,
      "correct_fixes": 310,
@@ -240,6 +258,24 @@
      "frac_gt_rho": 0.8948231288227505
     },
     "CPC-HMM +GG(rho=.01)": {
+     "wrong_fixes": 0,
+     "correct_fixes": 5,
+     "FAR_offmap": 0.0,
+     "err_mean": 112.37788960798665,
+     "err_median": 88.96296134617535,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.8948231288227505
+    },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 0,
+     "correct_fixes": 5,
+     "FAR_offmap": 0.0,
+     "err_mean": 112.37788960798665,
+     "err_median": 88.96296134617535,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.8948231288227505
+    },
+    "CPC-HMM +GG(rho=0.3)": {
      "wrong_fixes": 0,
      "correct_fixes": 5,
      "FAR_offmap": 0.0,
@@ -393,6 +429,24 @@
      "FAR_offmap": 0.0,
      "err_mean": 116.1735192522376,
      "err_median": 92.33353151582936,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.8979128570527776
+    },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 0,
+     "correct_fixes": 93,
+     "FAR_offmap": 0.0,
+     "err_mean": 116.1735192522376,
+     "err_median": 92.33353151582936,
+     "err_p95": 278.8728756514076,
+     "frac_gt_rho": 0.8979128570527776
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 0,
+     "correct_fixes": 97,
+     "FAR_offmap": 0.0,
+     "err_mean": 116.1879210714685,
+     "err_median": 92.33858660648139,
      "err_p95": 278.8728756514076,
      "frac_gt_rho": 0.8979128570527776
     },
