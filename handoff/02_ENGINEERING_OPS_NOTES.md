@@ -50,6 +50,15 @@ python3 automation/fanout.py <work_dir> <prefix> "eval_all.py rc salad;eval_all.
   Runner vì thế tắt chế độ silent-restart.
 - **T4 và RTX PRO 6000:** T4 cấp ngay và chạy song song được. RTX có lần xếp hàng 21 phút với 0 output. Chỉ dùng
   RTX khi khối lượng extraction rất lớn.
+- **GPU gán qua competition grant (RTX PRO 6000, L4x4):** `machine_shape` + `competition_sources` trong
+  kernel-metadata chỉ có tác dụng nếu acc đó **đã accept rules** của competition trên web
+  (`https://www.kaggle.com/competitions/<slug>/rules`, nút "I Understand and Accept") — **không có API/CLI để
+  làm bước này**, phải bấm tay từng acc một lần. Nếu chưa accept, push vẫn thành công nhưng kernel lặng lẽ chạy
+  GPU mặc định (T4) thay vì shape yêu cầu, không có lỗi báo. `automation/make_meta.py l4` dùng
+  `machine_shape=NvidiaL4x4` qua grant của competition `gemma-4-developer-agent` (deadline 2026-11-25); `rtx` dùng
+  `arc-prize-2026-arc-agi-3`. Sau khi accept rules trên 1–2 acc, kiểm tra bằng một kernel nhỏ in
+  `torch.cuda.get_device_properties(i).name` cho mọi `i < torch.cuda.device_count()` để xác nhận thấy 4× L4 thật,
+  không phải T4 fallback.
 - **Dataset code versioning:** sau `make_eval_kernel` phải chờ `kaggle datasets status` báo `ready` rồi mới push
   kernel (`fanout.py` làm sẵn). Không chờ thì kernel có thể mount version code cũ.
 - **Giới hạn metadata:** title dataset dài 6–50 ký tự, subtitle 20–80. Title dài quá thì upload hỏng sau khi đã đẩy
