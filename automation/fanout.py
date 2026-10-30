@@ -15,7 +15,7 @@ args = [a for a in sys.argv[1:] if not a.startswith("--")]
 if "--accounts" in sys.argv: ACCOUNTS = sys.argv[sys.argv.index("--accounts") + 1].split(","); args = [a for a in args if a != ",".join(ACCOUNTS)]
 work, prefix, jobs = args[0], args[1], args[2]
 jobs = [j.strip() for j in (open(jobs).read().replace("\n", ";") if os.path.isfile(jobs) else jobs).split(";") if j.strip()]
-slots = [(a, s) for s in (0, 1) for a in ACCOUNTS]                       # spread over accounts first
+slots = [(a, s) for a in ACCOUNTS for s in (0, 1)]                       # fill BOTH GPU sessions of an account before the next (user rule: do not spend quota of extra accounts)
 nk = min(int(args[3]) if len(args) > 3 else len(slots), len(jobs))
 os.makedirs(work, exist_ok=True); procs = []
 for k in range(nk):
