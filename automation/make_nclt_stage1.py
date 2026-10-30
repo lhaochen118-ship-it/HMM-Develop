@@ -39,10 +39,33 @@ with tarfile.open("/tmp/sen.tar.gz") as tf:
 odo = odo[np.all(np.isfinite(odo[:, :7]), 1)]; odo = odo[np.argsort(odo[:, 0])]
 print("gt", gt.shape, "odo", odo.shape, f"{time.time()-t0:.0f}s", flush=True)
 # stream the 114 GB image tarball: keep every Cam<CAM> frame as a 640-px JPEG
-cmd = f"curl -sS --retry 5 --retry-delay 10 {S3}images/{SESS}_lb3.tar.gz | gzip -dc"
-p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, bufsize=1 << 24)
+class Resumable(io.RawIOBase):
+    """HTTP body as a stream that survives dropped connections: on any error it reopens the URL with
+    'Range: bytes=<pos>-' and continues exactly where it stopped (S3 closes long transfers; curl --retry cannot
+    resume a piped stream, which killed a 114 GB session at 36 GB)"""
+    def __init__(self, url): self.url, self.pos, self.r, self.fails = url, 0, None, 0
+    def readable(self): return True
+    def _open(self):
+        req = urllib.request.Request(self.url, headers={"Range": f"bytes={self.pos}-"} if self.pos else {})
+        self.r = urllib.request.urlopen(req, timeout=120)
+    def readinto(self, b):
+        while True:
+            try:
+                if self.r is None: self._open()
+                n = self.r.readinto(b)
+                if n == 0 and self.pos < TOTAL: raise IOError("early EOF")
+                self.pos += n; return n
+            except Exception as e:
+                self.fails += 1; self.r = None; print("  reconnect at", self.pos, repr(e)[:80], flush=True)
+                if self.fails > 200: raise
+                time.sleep(min(60, 5 * self.fails))
+url = f"{S3}images/{SESS}_lb3.tar.gz"
+TOTAL = int(urllib.request.urlopen(urllib.request.Request(url, method="HEAD"), timeout=60).headers["Content-Length"])
+stream = io.BufferedReader(Resumable(url), buffer_size=1 << 24)
 n_all = n_cam = 0
-with tarfile.open(fileobj=p.stdout, mode="r|") as tf:
+class P: returncode = 0
+p = P()
+with tarfile.open(fileobj=stream, mode="r|gz") as tf:
     for mem in tf:
         n_all += 1
         if not mem.isfile() or f"/Cam{CAM}/" not in mem.name or not mem.name.endswith(".tiff"): continue
@@ -51,7 +74,7 @@ with tarfile.open(fileobj=p.stdout, mode="r|") as tf:
         im = Image.open(io.BytesIO(tf.extractfile(mem).read())).convert("RGB").transpose(Image.Transpose.ROTATE_270)
         im.thumbnail((640, 640)); im.save(os.path.join(T, f"{ut}.jpg"), quality=90); n_cam += 1
         if n_cam %% 2000 == 0: print(f"  {n_cam} frames ({n_all} members) {time.time()-t0:.0f}s", flush=True)
-p.wait(); print("stream done", n_cam, "frames", f"{time.time()-t0:.0f}s rc", p.returncode, flush=True)
+print("stream done", n_cam, "frames", f"{time.time()-t0:.0f}s reconnects", stream.raw.fails, flush=True)
 # select frames >= SPACING m apart along the GT path (time order)
 uts = np.array(sorted(int(f[:-4]) for f in os.listdir(T)))
 xyz = np.stack([np.interp(uts, gt[:, 0], gt[:, k]) for k in (1, 2, 3)], 1)
