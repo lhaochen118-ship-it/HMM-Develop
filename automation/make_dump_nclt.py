@@ -8,7 +8,8 @@ Every GPU of the session is used: the script re-launches itself once per GPU (CU
 i embeds rows i::n_gpu of every session, the parent re-assembles them in meta row order.
 Output (/kaggle/working): dump/<desc>/nclt_<session>.npy (float16, L2-normalised), dump/meta/nclt_<session>.npz (copy of
 the stage-1 meta), packed into one dump_nclt.tar (fast output pull).
-Usage: make_dump_nclt.py <kernel_dir> <slug> <stage1_slug,...> [--owner nhatlong1103] [--l4]
+Usage: make_dump_nclt.py <kernel_dir> <slug> <stage1_slug,...> [--owner nhatlong1103] [--l4] [--ds owner/dataset,...]
+(stage1_slug may be empty when the images come from the public datasets given with --ds)
 The extraction cells are those of nb15_src (10_p0 config/paths, 20_extract registry, 25_extra extra networks)."""
 import sys, os, json
 
@@ -16,6 +17,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 kdir, slug, srcs = sys.argv[1], sys.argv[2], sys.argv[3].split(",")
 OWNER = sys.argv[sys.argv.index("--owner") + 1] if "--owner" in sys.argv else "nhatlong1103"
 L4 = "--l4" in sys.argv
+DS = sys.argv[sys.argv.index("--ds") + 1].split(",") if "--ds" in sys.argv else []   # public nclt-cam5-<date> datasets
 
 
 def code_cells(f):
@@ -118,8 +120,8 @@ src = f"WORKER_SRC = {wsrc!r}\n" + launcher
 os.makedirs(kdir, exist_ok=True); open(os.path.join(kdir, "run.py"), "w").write(src)
 meta = {"id": f"{OWNER}/{slug}", "title": slug, "code_file": "run.py", "language": "python", "kernel_type": "script",
         "is_private": True, "enable_gpu": True, "enable_tpu": False, "enable_internet": False,
-        "dataset_sources": ["nhatlong1103/bundle", "nhatlong1103/vpr-descriptor-weights"],
-        "competition_sources": [], "kernel_sources": [f"{OWNER}/{s}" for s in srcs], "model_sources": []}
+        "dataset_sources": ["nhatlong1103/bundle", "nhatlong1103/vpr-descriptor-weights"] + DS,
+        "competition_sources": [], "kernel_sources": [f"{OWNER}/{s}" for s in srcs if s], "model_sources": []}
 if L4: meta.update(machine_shape="NvidiaL4", competition_sources=["gemma-4-developer-agent"])
 json.dump(meta, open(os.path.join(kdir, "kernel-metadata.json"), "w"), indent=2)
 compile(src, "run.py", "exec"); print("kernel written:", kdir, len(src), "chars | sources", meta["kernel_sources"])
