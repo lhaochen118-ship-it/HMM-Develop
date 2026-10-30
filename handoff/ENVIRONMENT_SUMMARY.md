@@ -134,6 +134,17 @@ img/<seq>/<timestamp_us>.jpg        (các dataset boreas-vpr-images-k)
 **Runner:** `make_eval_kernel.py` mount sẵn `vpr-descriptor-dumps`, `vpr-dumps-4seasons` và `boreas-vpr-dump`
 (`DUMP_DS`).
 
+## 1d. Dataset tái sử dụng (PUBLIC, 2026-10-30)
+
+| Slug | Nội dung | Tạo bởi |
+|---|---|---|
+| `nhatlong1103/boreas-vpr-images-5` | 30 231 frame Boreas (640-px JPEG) thiếu ở images-1..4; 5 phần phủ đủ dump | `automation/make_boreas_missing.py` |
+| `nhatlong1103/vpr-safevpr-scores` | Điểm MNN patch DINOv2 (SafeVPR) Boreas, top-20 ứng viên × 6 descriptor | `analysis/safevpr_mnn.py` (L4) |
+| `nhatlong1103/hmm-navcache` (sắp có) | Cache đầu vào mọi luật của `nav_demo` theo (ds, desc, seed); dùng với `analysis/nav_rules.py` | `nav_demo.py --cache` |
+
+Publish bằng `automation/publish_dataset.py <dir> <slug> "<title>" "<subtitle>"`. Trong kernel: `nav_demo.py ... --safevpr auto`
+(thêm `--ds nhatlong1103/vpr-safevpr-scores` cho `fanout.py`).
+
 ## 2. Datasets ảnh gốc và trọng số (chỉ cần khi tạo dump mới)
 
 | Slug | Nội dung |

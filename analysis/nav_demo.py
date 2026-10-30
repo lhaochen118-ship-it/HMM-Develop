@@ -397,7 +397,10 @@ def main():
         rules["Claxton24 MLP (labels)"] = claxton_rule(srt[:, :10], S.mean(1), S.std(1), bsel, good, bad_top, seed)
         if SAFEVPR:
             import glob as _g
-            parts = [np.load(f) for f in sorted(_g.glob(os.path.join(SAFEVPR, f"safevpr_{ds.replace(':', '_')}_p*.npz")))]
+            sv = SAFEVPR
+            if sv == "auto":                                        # mounted dataset nhatlong1103/vpr-safevpr-scores
+                sv = next((d for d, _, fs in os.walk("/kaggle/input") if f"safevpr_{ds.replace(':', '_')}_p0.npz" in fs), "")
+            parts = [np.load(f) for f in sorted(_g.glob(os.path.join(sv, f"safevpr_{ds.replace(':', '_')}_p*.npz")))]
             mtop = np.zeros(len(q)); ftop = kidx[top]
             for z in parts:
                 r_, cd, mn = z["q_rows"], z[f"cand_{desc}"], z[f"mnn_{desc}"]
