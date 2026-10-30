@@ -53,9 +53,9 @@ the Claxton'24 MLP, so this is 6 independent runs; frozen method, nothing tuned 
 | CPC-HMM +TCEmin+GG | 4.4 | 2.0 | 16.8 | 0.46 | 0 |
 | oracle | 2.2 | 1.4 | 7.1 | 0.72 | 0 |
 
-TCEmin is within 0.1-1.4 m of the oracle error with every descriptor except DINOv2 (7.3 vs 2.4 m) and has no false
-report in any of the 306 off-map segments; Xu'21 is 3.7x worse in error, Claxton'24 9x (with NetVLAD / DINOv2 /
-CosPlace / MixVPR it accepts off-map frames, segFAR 0.21). The 1-session table above was an early subset.
+TCEmin is within 0.3-1.8 m of the oracle error with every descriptor except DINOv2 (7.3 vs 2.4 m) and has no false
+report in any of the 306 off-map segments; Xu'21 is 3.7x worse in error, Claxton'24 9x (mean segFAR 0.21: its MLP,
+trained on two benign sessions, accepts many off-map frames). The 1-session table above was an early subset.
 
 **Check 2: all 7 datasets, every seed** (10 seeds except NCLT; err / recall / segFAR):
 
