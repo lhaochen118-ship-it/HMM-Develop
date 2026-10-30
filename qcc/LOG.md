@@ -24,6 +24,9 @@
    100,940.5617, 800 s for 200M shots.
 9. Baseline submission (best public circuits for all three tasks) from nhatlong1103:
    **public LB 23.13505** (= GM of 20.57, 60.6, 9.93; the pipeline reproduces the official score).
+10b. CCZ whose full product a·b·c never fires (the first peephole only tested a·b): 48 stable over
+    4 HMR seeds, all inside rarely executed measurement branches → −0.63 Toffoli/shot (−0.04%).
+    Not worth a submission.
 10. Idle x-register bits (q0–q13 idle across most of the peak) and q23 at the ends of their idle
     intervals: none is a quadratic function of the live wires → cannot be parked/recomputed cheaply.
 
