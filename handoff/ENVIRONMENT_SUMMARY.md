@@ -175,7 +175,7 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo pub
 | # | Username | Ghi chú |
 |---|---|---|
 | 1 | `nhatlong1103` | Chủ dump public và dataset ảnh gốc |
-| 2 | `yuan1103` | |
+| 2 | `yuan1103` | **dành cho user từ 2026-10-30** (không chạy job mới) |
 | 3 | `synchan5704` | |
 | 4 | `loinguyentran` | |
 | 5 | `yeshenhi` | **chỉ T4** (2× T4 OK; xin L4 thì rơi về CPU) |
@@ -184,7 +184,7 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo pub
 | 8 | `nguynduylm` | L4: đã accept rules (user, 2026-10-30) nhưng lần thử đầu vẫn không có GPU; thử lại |
 | 9 | `phuongnehe` | L4×4 OK (thêm 2026-10-30) |
 | 10 | `thnliu` | L4×4 OK (thêm 2026-10-30) |
-| 11 | `mxuanquy` | **chỉ T4** (thêm 2026-10-30) |
+| 11 | `mxuanquy` | **chỉ T4**; **dành cho user từ 2026-10-30** (không chạy job mới) |
 | 12 | `linhmai24` | L4×4 OK + T4 (thêm 2026-10-30) |
 
 **GPU L4 (2026-10-30):** kernel có `"machine_shape": "NvidiaL4"`, `"competition_sources": ["gemma-4-developer-agent"]`
