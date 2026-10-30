@@ -38,7 +38,7 @@ def make(kd, slug, part, acc, gpu):
 def launch(k):
     slug = f"{prefix}-{k + 1}"
     return subprocess.Popen([sys.executable, os.path.join(ROOT, "automation", "run_kernel.py"), os.path.join(work, slug),
-                             os.path.join(work, slug + "_out"), "600", "4", "14400"], stdout=open(os.path.join(work, slug + ".log"), "w"), stderr=subprocess.STDOUT)
+                             os.path.join(work, slug + "_out"), "300", "4", "43200"], stdout=open(os.path.join(work, slug + ".log"), "w"), stderr=subprocess.STDOUT)
 
 
 procs = {}
