@@ -71,7 +71,7 @@ def run(ij):
     if NGPU and len(JOBS) > 1: env["CUDA_VISIBLE_DEVICES"] = str(i %% NGPU)   # a single job keeps every GPU (multi-GPU scripts)              # spread jobs round-robin over all GPUs of the session
     if "DUMP" in args: cmd = [sys.executable, script] + [D if a == "DUMP" else a for a in args]
     else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
-    t = time.time(); log = os.path.join(C, "logs", "_".join(j).replace(".py", "") + ".log")
+    t = time.time(); log = os.path.join(C, "logs", "_".join(j).replace(".py", "").replace("/", "-") + ".log")
     r = subprocess.run(cmd, cwd=C, stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
     print(f"done {' '.join(j)} rc={r.returncode} {time.time()-t:.0f}s", flush=True); return r.returncode
 print("gpus", NGPU, "| parallel jobs", NW, "| threads/job", TH, flush=True)
