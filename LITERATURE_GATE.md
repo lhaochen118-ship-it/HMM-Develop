@@ -3,6 +3,37 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 9 (2026-10-30): A/A* readiness of the whole contribution (paper search only; sources in `literature/VISUAL_LOCALIZATION_REVIEW.md` §6b, §8)
+
+**Closest prior work found this round:** Claxton et al. RA-L'24 (VPR integrity monitor + odometry projection from the
+last verified match), SAFEVPR'26 (conformal LTT FDR for sequence VPR, labelled), e-process tracking-failure detection
+(arXiv 2602.12983, 2026), Murphy'18 (HMM map matching with a positioned off-road state), PCM/Olson consistency,
+multi-trajectory conformal (Stankeviciute'21, Lindemann, Zhou'24), block conformal (Chernozhukov'18), e-detectors.
+
+**Verdict per contribution:**
+
+- A (certified, map-calibrated, excursion-level FAR): new problem setting + protocol; tools known. Strongest piece.
+- C (CPC-HMM): moderate; the theorem is a short domination argument on top of Shin–Ramdas–Rinaldo.
+- +GG: incremental; the gating idea is in Claxton'24 / PCM; only the "keeps the e-value" argument is ours.
+
+**Readiness:**
+
+- **RA-L / ICRA / IROS (robotics A-level):** realistic now as ONE paper "label-free certified sequential localization",
+  with CPC-HMM(+GG) as the HMM-integrated variant and the HMM diagnosis (D1–D5) as analysis.
+- **A* (RSS, T-RO, CVPR/ICCV, NeurIPS): not yet.** Missing, in order of importance:
+  1. A guarantee for the **HMM decision itself under temporal dependence** (today: ARL₀ needs conditionally valid
+     e-values, which Boreas/4S violate; certified relies on exchangeability of off-map segments with held-out map
+     segments, checked only empirically). A conditional-validity construction (e.g. Markov-conditional conformal
+     e-values from map-null sequences, or a TV-gap bound à la Barber'23) would be the A*-level theory.
+  2. **Natural off-map benchmarks** instead of synthetic block removal (reviewers will question the map-hole protocol):
+     NCLT / Oxford RobotCar full routes, detours, construction, new roads.
+  3. **Head-to-head with the newest baselines**: SAFEVPR'26, Claxton'24 integrity monitor, TRAIL'26, TAO'26, VLM
+     auditing'26, PCM-style back-end on the same fixes.
+  4. **A real closed-loop robot run**, and 6-DoF refinement gated by certified fixes (Sattler'18 thresholds).
+  5. Remove post-hoc choices (ρ = 0.1 picked after seeing Boreas/Nordland) or justify them a priori.
+- Honest weakness to address: ungated certified is still slightly better than CPC-HMM+GG on 5/6 datasets, so the HMM
+  variant must be justified by something else (Boreas, anytime decisions, posterior over places).
+
 ## Gate 8 (2026-10-30): dead-reckoning ghost gate for the CPC-HMM presence chain (web search)
 
 - **Searched:** HMM-VPR with an off-map state that keeps a dead-reckoned position; predictive gating of e-values in

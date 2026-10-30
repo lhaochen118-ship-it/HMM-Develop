@@ -1,6 +1,6 @@
 # Tổng quan Visual Localization (VPR, 6-DoF localization, reliability, HMM/sequence)
 
-*Phiên bản 2026-10-28. Chỉ đọc paper, không đọc repo code. Mục đích: (1) nắm phương pháp, benchmark và đóng góp ±
+*Phiên bản 2026-10-28, bổ sung 2026-10-30 (§6b, §8). Chỉ đọc paper, không đọc repo code. Mục đích: (1) nắm phương pháp, benchmark và đóng góp ±
 của các paper chính; (2) tránh trùng ý tưởng khi Claude đề xuất hướng mới. Phần HMM/sequence là **§6**.*
 
 **Ký hiệu nguồn:**
@@ -233,6 +233,69 @@ appearance shift** với đảm bảo thống kê. Đây là vị trí của Sel
 
 ---
 
+## 6b. Bổ sung 2026-10-30: integrity, kiểm tra nhất quán odometry, thống kê tuần tự hợp lệ
+
+*Tìm qua web search (abstract/tóm tắt, chưa đọc full text) để đối chiếu novelty của 3 đóng góp của dự án (§8).*
+
+### 6b.1 Integrity / verification cho VPR và định vị bằng camera
+
+| Paper | Method | Benchmark | (+) | (−) |
+|---|---|---|---|---|
+| **Claxton, Malone, Carson, Ford, Bolton, Shames, Milford** (RA-L'24) [R] | Integrity monitor MLP (thay SVM của các bản trước) dự đoán match VPR có tin được không. Hai cách dùng: loại match đơn lẻ; **"history of queries": chiếu tiến từ match đã xác minh gần nhất bằng odometry**. | Robot thật: lỗi along-track tới goal 9.8 → 3.1 m; lỗi định vị 2.0 → 0.5 m, precision 97 → 99 %. | Đóng vòng điều hướng thật. Không cần train lại theo môi trường. | Monitor học được, không có đảm bảo FAR. **Trùng ý tưởng với cổng dead-reckoning (GG) của dự án.** |
+| **SAFEVPR** (Sier et al., arXiv 2605.28048, 2026) [R] | Score patch MNN trên DINOv2 + Mondrian conformal Learn-Then-Test để chọn ngưỡng accept theo FDR. | 23 setup cross-condition (Oxford RobotCar, NCLT, St Lucia), 3 backbone: hợp lệ cả 23 ở α = 0.10, FDR chấp nhận TB 0.014, TPR 0.75. | Có đảm bảo conformal (FDR), dùng cho sequence VPR. | Cần nhãn calibration; đảm bảo dựa trên exchangeability, nên khi đổi điều kiện chỉ còn hợp lệ thực nghiệm. Kiểm soát FDR của match được nhận, không phải FAR theo đoạn off-map. |
+| **Gupta & Gao** (NAVIGATION'21, "Data-driven protection levels for camera and 3D map-based safe urban localization") [R] | DNN chấm điểm các state ứng viên bằng cách so ảnh với map LiDAR 3D; mô hình lỗi Gaussian mixture → protection level. | Đô thị, GNSS-denied. | Khái niệm protection level từ hàng không, áp cho camera + map. | Map LiDAR; protection level dựa mô hình lỗi học được. |
+| **Mohanty, Gupta, Gao** (2021, Particle RAIM cho GNSS-camera) [R] | Particle filter + RAIM; phân phối vị trí từ camera qua map-matching để mô hình lỗi thị giác. | Mô phỏng + dữ liệu thật. | Xác suất false alarm / missed detection nhỏ hơn baseline. | Kết quả thực nghiệm, không phải đảm bảo. |
+| **Zhu et al.** (2020, review integrity monitoring cho định vị thị giác) [R] | Tổng quan. | – | Nêu thiếu khung integrity trưởng thành là rào cản lớn nhất cho lái xe tự động. | – |
+| **Miller et al.** (arXiv 2510.13464, 2025, "Through the Lens of Doubt") [R] | 3 metric uncertainty không huấn luyện từ similarity của VPR bất kỳ (= RS/SD/SU ở §5). | – | Rẻ, dùng cho loop closure. | Không đảm bảo. |
+| **Sferrazza et al.** (2025, "To Match or Not to Match") [R] | Số inlier khớp hình học làm proxy uncertainty để quyết định có re-rank không. | – | | Không đảm bảo. |
+
+### 6b.2 Kiểm tra nhất quán với odometry / robust back-end (gần với cổng GG)
+
+| Paper | Ý chính | Liên hệ với dự án |
+|---|---|---|
+| **Olson** (2006 CSW, RSS'08) [R] | Ma trận nhất quán cặp đôi giữa các ứng viên loop closure, chọn tập con nhất quán lớn nhất. | Kiểm nhất quán với odometry để loại match aliasing. |
+| **PCM** (Mangelson et al., ICRA'18), **group-k** (Forsgren et al., 2022) [R] | Pairwise Consistency Maximization → bài toán max-clique, giải realtime; group-k cho trường hợp cặp đôi chưa đủ. | Cùng mục tiêu loại loop closure sai bằng nhất quán hình học. |
+| **Switchable constraints, DCS** [C] | Tắt / giảm trọng số ràng buộc có residual lớn. | Cổng mềm theo residual, tương tự g_t = exp(−d²/2s²). |
+| **Tanaka** (2016, multi-model hypothesize-and-verify) [R] | Kiểm giả thuyết loop closure với VO / stereo SLAM. | |
+| **Innovation gating (χ²) trong EKF** [C] | Bỏ đo có Mahalanobis lớn. | Chính là baseline `+DRgate`; khoá chết khi neo sai (Nordland). |
+| **Murphy et al.** (arXiv 1809.09755, 2018, "Map matching when the map is wrong") [R] | Hợp nhất HMM map matching với free-space tracking: xe có thể ở trên **hoặc ngoài** mạng đường, vẫn có vị trí. | **Trạng thái off-map có vị trí** (ý DR của dự án) đã có trong map matching GPS. |
+| **Newson & Krumm** (SIGSPATIAL'09) [R] | HMM map matching chuẩn. | Nền của các HMM VPR. |
+| **Sensor resetting** (Lenser & Veloso, ICRA'00), **multi-observation SRL** (Coltin & Veloso, 2013), augmented MCL [R] | Bơm giả thuyết từ cảm biến khi robot bị lạc (kidnapped). | Tương đương sàn ρ của cổng GG (lối thoát khi neo sai). |
+
+### 6b.3 Thống kê tuần tự hợp lệ, conformal dưới phụ thuộc và shift
+
+| Paper | Ý chính | Liên hệ |
+|---|---|---|
+| **E-detectors** (Shin, Ramdas, Rinaldo, NEJSDS 2024) [R] | Tổng các e-process khởi động ở mọi thời điểm (kiểu Shiryaev–Roberts / CUSUM); cận ARL không tiệm cận, delay gần tối ưu. | Định lý ARL₀ của CPC-HMM dựa trực tiếp vào đây. |
+| **Conformal test martingales** (Vovk et al., 2021; Fedorova et al. ICML'12) [R] | Đặt cược trên conformal p-value để kiểm exchangeability online / phát hiện change-point. | Họ hàng của chuỗi hiện diện dùng e-value từ p-value conformal. |
+| **Detecting object tracking failure via sequential hypothesis testing** (Monroy Muñoz, Verma, Timans, arXiv 2602.12983, 2026) [R] | E-process trên chỉ số chất lượng của tracker để báo tracker hỏng, kiểm soát tỷ lệ báo sai. | **Rất gần** ý "e-process phát hiện mất định vị" của CPC-HMM, nhưng cho tracking đối tượng. |
+| **Testing for outliers with conformal p-values** (Bates, Candès, Lei, Romano, Sesia, AoS) [R] | p-value conformal cho phát hiện ngoại lai; bản calibration-conditional. | Cơ sở của p-value SelfCal hiệu chuẩn bằng bản đồ. |
+| **Conformal prediction beyond exchangeability** (Barber, Candès, Ramdas, Tibshirani, AoS 2023) [R] | Weighted quantile; cận mất coverage theo TV khi vi phạm exchangeability. | Có thể dùng để định lượng mất mát khi đoạn off-map không exchangeable với đoạn bản đồ. |
+| **Exact and robust conformal inference with dependent data** (Chernozhukov, Wüthrich, Zhu, COLT'18) [R] | Hoán vị theo block giữ cấu trúc phụ thuộc; hợp lệ xấp xỉ cho quá trình mixing. | **Gần** cách hiệu chuẩn theo đoạn của certified. |
+| **Conformal cho nhiều quỹ đạo exchangeable** (Stankeviciute et al. NeurIPS'21; Lindemann et al.; Zhou, Lindemann, Sesia arXiv 2402.09623) [R] | Coi mỗi quỹ đạo là một đơn vị exchangeable; Bonferroni theo bước (bảo thủ). | **Gần** ý "mỗi đoạn H frame là một đơn vị exchangeable, hiệu chuẩn max theo đoạn". |
+| **Scan statistic** (Walther & Perry, JRSS-B 2022) [R] | Hiệu chuẩn max qua cửa sổ trượt, critical value phụ thuộc kích thước, Bonferroni scan. | Thống kê max R theo đoạn của certified là một scan statistic. |
+| **Conformal không nhãn dưới shift**: Yilmaz & Heckel (2022), Kasa et al. (ECP/EACP, 2024), Correia & Louizos (NeurIPS'25, OT) [R] | Hiệu chỉnh ngưỡng conformal từ dữ liệu test không nhãn. | Chỉ đảm bảo dưới mô hình shift hạn chế; **không có đảm bảo tổng quát** khi không có nhãn. Dự án tránh vấn đề này bằng cách hiệu chuẩn trên chính bản đồ. |
+| **Provably guaranteed polytopic UQ for SLAM** (arXiv 2605.28172, 2026) [R] | Conformal hiệu chuẩn bất định đo cho SLAM; tập rỗng → loại loop closure sai. | Conformal trong SLAM, khác mục tiêu (bất định pose, không phải FAR off-map). |
+| **Tempering the Bayes filter** (arXiv 2512.02823, 2025) [R] | Tempering likelihood / posterior của Bayes filter; tempered Kalman. | Liên quan Mệnh đề 2 (đếm thừa bằng chứng phụ thuộc); không có quy tắc chọn lũy thừa theo tương quan. |
+
+### 6b.4 Existence / track presence
+
+| Paper | Ý chính | Liên hệ |
+|---|---|---|
+| **IPDA, Bernoulli filter** (Musicki et al.; Ristic et al.) [R] | Ước lượng đồng thời trạng thái và xác suất tồn tại của mục tiêu. | Chuỗi hiện diện của CPC-HMM là chuỗi tồn tại kiểu IPDA. |
+| **Gies et al.** (arXiv 2003.10316, 2020) [R] | LMB filter + bản đồ số → "extended existence probability" để xác minh đối tượng. | Gần nhất với "existence + map", nhưng cho phát hiện đối tượng. |
+
+### 6b.5 Bổ sung checklist chống trùng (nối §6.5)
+11. Monitor integrity cho VPR + **chiếu tiến bằng odometry từ match đã xác minh** (Claxton RA-L'24).
+12. Kiểm nhất quán loop closure với odometry (Olson'06/'08, PCM'18, group-k); innovation gating χ².
+13. Trạng thái "ngoài mạng" **có vị trí** trong HMM map matching (Murphy'18).
+14. E-process phát hiện tracker hỏng với đảm bảo tỷ lệ báo sai (arXiv 2602.12983, 2026).
+15. Conformal LTT/FDR cho sequence VPR (SAFEVPR'26, có nhãn).
+16. Coi quỹ đạo/đoạn là đơn vị exchangeable cho conformal (Stankeviciute'21, Lindemann, Zhou'24); block conformal
+    (Chernozhukov'18); scan statistic (Walther & Perry'22).
+
+---
+
 ## 7. Datasets tham chiếu nhanh
 
 | Dataset | Loại | Quy mô | Thách thức | Dùng bởi |
@@ -248,3 +311,18 @@ appearance shift** với đảm bảo thống kê. Đây là vị trí của Sel
 | Cambridge Landmarks, 7/12-Scenes | outdoor/indoor nhỏ | 5 / 7 scene | pose cm | APR, SCR, Reloc3r |
 | LaMAR | AR indoor/outdoor | 3 địa điểm | phone/HoloLens | MegaLoc, hloc |
 | 4Seasons | lái xe Munich, 30 recording | 7 scene | mùa, xám | TRAIL, Carson'23; **poses đã upload Kaggle** |
+
+---
+
+## 8. Định vị 3 đóng góp của dự án so với tài liệu (2026-10-30)
+
+| Đóng góp | Phần đã có trong tài liệu | Phần mới (theo những gì đã tìm) | Mức novelty |
+|---|---|---|---|
+| **A. Certified sequential localization** (FAR theo đoạn off-map ≤ α, không nhãn, hiệu chuẩn bằng traversal bị giữ lại của chính bản đồ) | Conformal với đơn vị exchangeable là quỹ đạo (Stankeviciute, Lindemann); block conformal (Chernozhukov); scan statistic; conformal outlier p-value (Bates); conformal FDR cho sequence VPR **có nhãn** (SAFEVPR). | Dùng **bản đồ làm nguồn null** (không nhãn của điều kiện deploy), đảm bảo **mức đoạn** cho định vị chuỗi, thống kê neo odometry. Chưa thấy paper VPR/localization nào làm. | Trung bình–khá. Công cụ thống kê đã biết; cách đặt bài toán và giao thức là mới. |
+| **C. CPC-HMM** (chuỗi hiện diện kiểu IPDA nuôi bằng e-value hiệu chuẩn bằng bản đồ; ARL₀ ≥ (1−p)/p − R₀) | E-detectors (Shin et al.); conformal test martingales; IPDA/Bernoulli; off-map state (Xu'21), dustbin (TRAIL'26); e-process cho tracking failure (2026). | Áp e-detector cho chuỗi on/off **lặp lại** của HMM VPR (domination bởi SR), e-value không nhãn từ bản đồ, cổng khớp MAP giữ tính e-value. | Trung bình. Định lý ngắn, ghép từ khối có sẵn. |
+| **C+. Cổng dead-reckoning (+GG)** | Claxton RA-L'24 (chiếu tiến bằng odometry); PCM/Olson; χ² gating; Murphy'18 (off-road có vị trí); sensor resetting (sàn ρ). | Cổng nhân lên một e-value nên **giữ ARL₀**; sàn ρ làm lối thoát; chẩn đoán "fix sai ở xa do chuỗi vị trí trôi trong lỗ bản đồ". | Thấp–trung bình (gia tăng). |
+
+**Kết luận novelty:** không có đóng góp nào bị chiếm hoàn toàn, nhưng cả ba đều là **ghép công cụ đã biết** vào một bài
+toán mới. Điểm mạnh nhất là A (đảm bảo không nhãn ở mức đoạn, thắng các baseline dùng nhãn về tính hợp lệ). Đánh giá chi
+tiết khả năng vào venue A/A* ở `LITERATURE_GATE.md` Gate 9.
+
