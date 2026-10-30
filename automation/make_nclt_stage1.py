@@ -66,7 +66,8 @@ rpy = np.stack([np.interp(u, gt[:, 0], un(gt[:, k])) for k in (4, 5, 6)], 1)
 od = np.stack([np.interp(u, odo[:, 0], odo[:, 1]), np.interp(u, odo[:, 0], odo[:, 2]), np.interp(u, odo[:, 0], un(odo[:, 6]))], 1)
 np.savez(os.path.join(W, "meta", f"nclt_{SESS}.npz"), names=u, C=xyz[keep], rpy=rpy, odo=od)
 L = float(np.linalg.norm(np.diff(xyz[keep][:, :2], axis=0), axis=1).sum())
-print("DONE", SESS, "kept", len(keep), "of", len(uts), f"path {L/1000:.2f} km", f"{time.time()-t0:.0f}s", flush=True)
+subprocess.run(["tar", "-cf", os.path.join(W, f"img_{SESS}.tar"), "-C", W, f"img/{SESS}"]); subprocess.run(["rm", "-rf", os.path.join(W, "img")])
+print("DONE", SESS, "kept", len(keep), "of", len(uts), f"path {L/1000:.2f} km", f"{time.time()-t0:.0f}s", flush=True)   # one tar: fast output pull
 ''' % (sess, SP, CAM)
 os.makedirs(kdir, exist_ok=True); open(os.path.join(kdir, "run.py"), "w").write(run)
 json.dump({"id": f"{OWNER}/{slug}", "title": slug, "code_file": "run.py", "language": "python", "kernel_type": "script",

@@ -52,6 +52,9 @@ tiết ở `01_SCIENTIFIC_FINDINGS`; kinh nghiệm vận hành ở `02_ENGINEERI
 2. **Không làm phương pháp nào phụ thuộc nhãn** của điều kiện deploy. Baseline dùng nhãn chỉ để so sánh.
 3. **Không bỏ phương pháp chỉ vì yếu trên chuỗi ngắn** (RobotCar). Bổ sung benchmark chuỗi dài thay vì bỏ.
 4. **Tài nguyên:**
+   - **Luôn tối thiểu thời gian chạy mà không làm giảm độ chính xác** (user chốt 2026-10-30): chạy song song mọi thứ độc
+     lập (không đợi bước kiểm tra nếu sửa được sau), dùng hết CPU/GPU của phiên (job song song, ghim GPU, threads/job),
+     đóng gói output nhiều file nhỏ thành 1 tar (kéo output Kaggle theo từng file rất chậm), tránh tải lại dữ liệu đã có.
 
    - **Mỗi acc dùng đủ 2 phiên GPU trước khi sang acc khác** (không rải 1 phiên mỗi acc, tốn quota GPU của nhiều acc; user chốt 2026-10-30). `fanout.py` cấp slot theo thứ tự (acc1, 0), (acc1, 1), (acc2, 0)…
    - Dùng **hết GPU** (8 acc × 2 T4; GPU của `mucnokieu` hay bị người khác chiếm). RTX PRO 6000 chỉ cho việc rất lớn.
