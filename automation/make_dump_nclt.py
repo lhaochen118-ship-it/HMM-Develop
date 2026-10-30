@@ -53,6 +53,17 @@ if True:                                             # parent: one worker proces
         if os.path.basename(d) == "checkpoints":
             for f in fs:
                 if not os.path.exists(os.path.join(hub, f)): os.symlink(os.path.join(d, f), os.path.join(hub, f))
+    # the NG workers build the same 6 networks at once and all read the weights from the slow network mount (~490 s per
+    # worker, vs ~30 s of extraction): read every weight file ONCE here with 16 threads into the page cache (197 GB RAM)
+    import concurrent.futures as cf
+    wf = [os.path.join(d, f) for d, _, fs in os.walk("/kaggle/input") for f in fs
+          if ("/bundle" in d or "descriptor-weights" in d) and f.endswith((".pth", ".pt", ".ckpt", ".bin", ".safetensors", ".pth.tar"))]
+    def _rd(f):
+        with open(f, "rb") as h:
+            while h.read(64 << 20): pass
+        return os.path.getsize(f)
+    t1 = time.time(); nb = sum(cf.ThreadPoolExecutor(16).map(_rd, wf))
+    print(f"weights pre-read: {len(wf)} files, {nb/1e9:.2f} GB in {time.time()-t1:.0f}s", flush=True)
     os.makedirs(os.path.join(W, "dump", "meta"), exist_ok=True)
     for s, f in SESS.items(): shutil.copy(f, os.path.join(W, "dump", "meta", f"nclt_{s}.npz"))
     env = dict(os.environ, NCLT_TMP=TMP, NG=str(NG), OMP_NUM_THREADS=str(max(1, (os.cpu_count() or 4) // NG)))
@@ -94,7 +105,7 @@ print("worker", WK, "of", NG, [(t, len(p)) for t, p in PARTS], flush=True)
 FWDS, DIMS = {}, {}
 for dname in DESCRIPTORS:
     try:
-        FWDS[dname] = build_extractor(dname); DIMS[dname] = EXTRACTOR_INFO["dim"]
+        _t = time.time(); FWDS[dname] = build_extractor(dname); DIMS[dname] = EXTRACTOR_INFO["dim"]; print(f"  built {dname} in {time.time()-_t:.0f}s", flush=True)
     except Exception as e:
         import traceback; traceback.print_exc(); log(f"R.1.{dname}", "fail", repr(e)[:200])
 

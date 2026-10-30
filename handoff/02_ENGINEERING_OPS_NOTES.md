@@ -44,6 +44,19 @@ python3 automation/fanout.py <work_dir> <prefix> "eval_all.py rc salad;eval_all.
 
 ## 3. Kaggle: bài học vận hành
 
+- **Tải file lớn từ S3 (NCLT, 2026-10-30):** một kết nối HTTP từ Kaggle chỉ đạt khoảng 15 MB/s; 8 kết nối Range song
+  song đạt 96 MB/s, 16 kết nối 138 MB/s, 32 kết nối tụt về 60 MB/s; gunzip một luồng khoảng 150 MB/s. Vì vậy
+  `make_nclt_stage1.py --conn 16` tải song song theo đoạn 32 MB rồi giải nén tuần tự, và giải mã ảnh trên thread pool:
+  một phiên 114 GB giảm từ khoảng 2.5 giờ xuống khoảng 20–25 phút. Pipe `curl | tar` cũ có thể treo vô hạn khi kết
+  nối đứng mà không đóng.
+- **Kernel GPU nhiều worker đọc trọng số:** `/kaggle/input` là ổ mạng chậm; 4 worker cùng dựng 6 model mất khoảng
+  490 s mỗi worker, trong khi trích descriptor chỉ khoảng 30 s. Tiến trình cha đọc trước mọi file trọng số một lần
+  (16 luồng) vào page cache, và symlink checkpoint vào `~/.cache/torch/hub/checkpoints` (torch.hub tự copy file:// ở
+  khoảng 1 MB/s).
+- **Push version mới KHÔNG ngắt version đang chạy** (kể cả CPU): bản cũ bị treo vẫn giữ chỗ cho tới khi xong hoặc
+  `kaggle kernels delete -y`, và có thể làm push mới hỏng với *Maximum batch CPU session count of 5*. Muốn thay một
+  kernel treo thì xoá nó trước, hoặc chạy bản mới dưới slug và tài khoản khác.
+
 - **Ngắt một session:** chỉ `kaggle kernels delete -y <owner>/<slug>` có tác dụng. Push version mới hay push bản CPU
   "no-op" không ngắt session cũ. Cửa sổ interactive trên web phải tắt trên giao diện.
 - **Trần concurrency:** 2 session GPU mỗi acc. Push lại mà không `delete` sẽ ăn vào trần và gây lỗi *Maximum batch
