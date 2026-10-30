@@ -100,6 +100,24 @@
      "err_p95": 143.4992434937855,
      "frac_gt_rho": 0.6218518518518519
     },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 167,
+     "correct_fixes": 6356,
+     "FAR_offmap": 0.006870229007633588,
+     "err_mean": 22.389974155097697,
+     "err_median": 1.1937755792141616,
+     "err_p95": 143.4992434937855,
+     "frac_gt_rho": 0.3503703703703704
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 178,
+     "correct_fixes": 6848,
+     "FAR_offmap": 0.006870229007633588,
+     "err_mean": 19.67326739347227,
+     "err_median": 0.9654673464696089,
+     "err_p95": 143.4992434937855,
+     "frac_gt_rho": 0.3002962962962963
+    },
     "certified (ours)": {
      "wrong_fixes": 115,
      "correct_fixes": 5291,
@@ -248,6 +266,24 @@
      "err_p95": 200.14341856761638,
      "frac_gt_rho": 0.9215555555555556
     },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 181,
+     "correct_fixes": 7181,
+     "FAR_offmap": 0.0055979643765903305,
+     "err_mean": 27.561316885567827,
+     "err_median": 8.182021172013492,
+     "err_p95": 121.02998723934968,
+     "frac_gt_rho": 0.9167407407407407
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 181,
+     "correct_fixes": 7225,
+     "FAR_offmap": 0.0055979643765903305,
+     "err_mean": 27.471109170984622,
+     "err_median": 8.069524984639202,
+     "err_p95": 119.30590079960714,
+     "frac_gt_rho": 0.9165185185185185
+    },
     "certified (ours)": {
      "wrong_fixes": 89,
      "correct_fixes": 5680,
@@ -395,6 +431,24 @@
      "err_median": 5.517255412379285,
      "err_p95": 266.09006933631105,
      "frac_gt_rho": 0.5246666666666666
+    },
+    "CPC-HMM +GG(rho=0.03)": {
+     "wrong_fixes": 263,
+     "correct_fixes": 7093,
+     "FAR_offmap": 0.024739583333333332,
+     "err_mean": 35.688712961083134,
+     "err_median": 3.5845941530843106,
+     "err_p95": 266.09006933631105,
+     "frac_gt_rho": 0.3314814814814815
+    },
+    "CPC-HMM +GG(rho=0.3)": {
+     "wrong_fixes": 290,
+     "correct_fixes": 7153,
+     "FAR_offmap": 0.030989583333333334,
+     "err_mean": 42.77720434923201,
+     "err_median": 3.669746806513558,
+     "err_p95": 394.6782740772552,
+     "frac_gt_rho": 0.3565185185185185
     },
     "certified (ours)": {
      "wrong_fixes": 119,
