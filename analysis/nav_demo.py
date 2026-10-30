@@ -31,6 +31,8 @@ if "--rhos" in sys.argv:
 SAFEVPR = None                                 # --safevpr <dir>: safevpr_<ds>_p*.npz (MNN patch scores, safevpr_mnn.py) -> SafeVPR baseline
 if "--safevpr" in sys.argv:
     i = sys.argv.index("--safevpr"); SAFEVPR = sys.argv[i + 1]; del sys.argv[i:i + 2]
+CACHE = "--cache" in sys.argv                  # --cache: save results/navcache_<ds>_<desc>_s<seed>.npz (reusable inputs of every rule)
+if CACHE: sys.argv.remove("--cache")
 SEED0 = 0                                      # --seed0 k: run seeds k .. k+seeds-1 (results file gets the suffix _s<k>)
 if "--seed0" in sys.argv:
     i = sys.argv.index("--seed0"); SEED0 = int(sys.argv[i + 1]); del sys.argv[i:i + 2]
@@ -185,15 +187,53 @@ def safevpr_rule(mnn_top, cos_top, calib, bad, nbins=3, alpha=0.05, delta=0.1):
     return acc
 
 
-def claxton_rule(S, srt, calib, good, bad, seed):
+def claxton_rule(srt10, Smean, Sstd, calib, good, bad, seed):
     """Claxton et al. RA-L'24 style integrity monitor: MLP on similarity-profile features, trained WITH LABELS on the
     `calib` frames (in tolerance vs not), accept when P(in tolerance) > 0.5"""
     from sklearn.neural_network import MLPClassifier
-    s1 = srt[:, 0]
-    X = np.stack([s1, s1 - srt[:, 1], s1 - srt[:, 4], s1 - srt[:, 9], s1 - S.mean(1), S.std(1)], 1)
+    s1 = srt10[:, 0]
+    X = np.stack([s1, s1 - srt10[:, 1], s1 - srt10[:, 4], s1 - srt10[:, 9], s1 - Smean, Sstd], 1)
     X = (X - X[calib].mean(0)) / (X[calib].std(0) + 1e-9); tr = calib & (good | bad)
     clf = MLPClassifier((32, 16), max_iter=500, random_state=seed).fit(X[tr], good[tr])
     return clf.predict_proba(X)[:, 1] > 0.5
+
+
+def track(acc, xf, q_pos, o_q, real, q_seqs, hz, seed):
+    """position Kalman filter: odometry (real increments, or simulated: scale error, heading random walk, noise) + accepted
+    fixes (sigma SIG_FIX); returns the per-frame position error"""
+    r = np.random.default_rng(seed + 7); est = np.full_like(q_pos, np.nan)
+    for idx in q_seqs:
+        x = q_pos[idx[0]].copy(); P = 1.0; est[idx[0]] = x; thh = 0.0; sc = 1 + r.normal(0, 0.03)
+        for a, b in zip(idx[:-1], idx[1:]):
+            if real: u = o_q[b] - o_q[a]                                          # real VIO / wheel+gyro increment
+            else:
+                d = q_pos[b] - q_pos[a]; u = d * sc; thh += r.normal(0, np.deg2rad(0.3))
+                if len(hz) == 2:
+                    R2 = np.array([[np.cos(thh), -np.sin(thh)], [np.sin(thh), np.cos(thh)]]); u[hz] = R2 @ u[hz]
+                u = u + r.normal(0, 0.02 * np.linalg.norm(d) / np.sqrt(len(d)) + 1e-3, len(d))
+            x = x + u; P = P + (0.05 * np.linalg.norm(u)) ** 2 + 1e-4
+            if acc[b]:
+                K = P / (P + SIG_FIX ** 2); x = x + K * (xf[b] - x); P = (1 - K) * P
+            est[b] = x
+    return np.linalg.norm(est - q_pos, axis=1)
+
+
+def evaluate(rules, xfs, pons, cx, tag):
+    """navigation + hmm_fix-style metrics of every rule. rules: name -> accept mask; xfs: name -> fix positions;
+    pons: name -> P(on) (ECE) or None; cx: context dict (q_pos, o_q, real, q_seqs, hz, seed, excl, inm, offm, H)"""
+    res = {}
+    for name, acc in rules.items():
+        xf = xfs[name]; e = track(acc, xf, cx["q_pos"], cx["o_q"], cx["real"], cx["q_seqs"], cx["hz"], cx["seed"])
+        err_f = np.linalg.norm(xf - cx["q_pos"], axis=1); inm, offm = cx["inm"], cx["offm"]
+        gd, bd = inm & (err_f <= cx["excl"]), offm | (err_f > cx["excl"])
+        rr = dict(wrong_fixes=int((acc & bd).sum()), correct_fixes=int((acc & gd).sum()), FAR_offmap=float(acc[offm].mean()),
+                  err_mean=float(np.nanmean(e)), err_median=float(np.nanmedian(e)), err_p95=float(np.nanpercentile(e, 95)),
+                  frac_gt_rho=float(np.nanmean(e > cx["excl"])))
+        rr.update(rule_metrics(acc, gd, inm, offm, cx["q_seqs"], cx["H"], pons.get(name))); res[name] = rr
+        print(f"{tag} {name:17s} wrong {rr['wrong_fixes']:6d} correct {rr['correct_fixes']:6d} offFAR {rr['FAR_offmap']:.3f} "
+              f"| err mean {rr['err_mean']:8.1f} med {rr['err_median']:6.1f} p95 {rr['err_p95']:8.1f} >rho {rr['frac_gt_rho']:.3f} "
+              f"| recall {rr['recall']:.3f} segFAR {rr['seg_FAR']:.3f} ARL0 {rr['ARL0']:.0f} ECE {rr.get('ECE', float('nan')):.3f}", flush=True)
+    return res
 
 
 def dr_gate(acc, xf, seqs, U, s0):
@@ -354,7 +394,7 @@ def main():
                  **{f"CPC-HMM p_out={po}": a for po, a in acc_po.items()}, **{k: v[0] for k, v in joint.items()},
                  "certified (ours)": Rq > thr, "oracle": good}
         bad_top = offm | (err_top > c["excl"])
-        rules["Claxton24 MLP (labels)"] = claxton_rule(S, srt, bsel, good, bad_top, seed)
+        rules["Claxton24 MLP (labels)"] = claxton_rule(srt[:, :10], S.mean(1), S.std(1), bsel, good, bad_top, seed)
         if SAFEVPR:
             import glob as _g
             parts = [np.load(f) for f in sorted(_g.glob(os.path.join(SAFEVPR, f"safevpr_{ds.replace(':', '_')}_p*.npz")))]
@@ -368,39 +408,21 @@ def main():
             rules[bn + " +DRgate"] = dr_gate(rules[bn], xb, q_seqs, U, c["excl"])
         hz = [0] if ep.q_pos.shape[1] == 1 else ([0, 1] if ep.q_pos.shape[1] == 2 else list(np.argsort(ep.q_pos.var(0))[1:]))
 
-        def track(acc, xf=None):
-            xf = x_fix if xf is None else xf
-            r = np.random.default_rng(seed + 7); est = np.full_like(ep.q_pos, np.nan)
-            for idx in q_seqs:
-                x = ep.q_pos[idx[0]].copy(); P = 1.0; est[idx[0]] = x; thh = 0.0; sc = 1 + r.normal(0, 0.03)
-                for a, b in zip(idx[:-1], idx[1:]):
-                    if real: u = o_q[b] - o_q[a]                                          # real VIO / wheel+gyro increment
-                    else:
-                        d = ep.q_pos[b] - ep.q_pos[a]; u = d * sc; thh += r.normal(0, np.deg2rad(0.3))
-                        if len(hz) == 2:
-                            R2 = np.array([[np.cos(thh), -np.sin(thh)], [np.sin(thh), np.cos(thh)]]); u[hz] = R2 @ u[hz]
-                        u = u + r.normal(0, 0.02 * np.linalg.norm(d) / np.sqrt(len(d)) + 1e-3, len(d))
-                    x = x + u; P = P + (0.05 * np.linalg.norm(u)) ** 2 + 1e-4
-                    if acc[b]:
-                        K = P / (P + SIG_FIX ** 2); x = x + K * (xf[b] - x); P = (1 - K) * P
-                    est[b] = x
-            return np.linalg.norm(est - ep.q_pos, axis=1)
-
         run = {"seed": seed, "n_map": int(keep.sum()), "n_null_seg": len(ns), "thr": float(thr), "off_frac": float(offm.mean()), "rules": {}}
         run["hmm_T_k"] = [best[1], best[2]]
-        for name, acc in rules.items():
-            xf = x_hmm if name.startswith("HMM") else joint[name][1] if name in joint else (x_cpc if name.startswith("CPC") else x_fix)
-            e = track(acc, xf); err_f = np.linalg.norm(xf - ep.q_pos, axis=1)
-            gd, bd = inm & (err_f <= c["excl"]), offm | (err_f > c["excl"])
-            run["rules"][name] = dict(wrong_fixes=int((acc & bd).sum()), correct_fixes=int((acc & gd).sum()), FAR_offmap=float(acc[offm].mean()),
-                                      err_mean=float(np.nanmean(e)), err_median=float(np.nanmedian(e)), err_p95=float(np.nanpercentile(e, 95)),
-                                      frac_gt_rho=float(np.nanmean(e > c["excl"])))
-            pon_r = pon if name == "CPC-HMM (ours)" else (joint[name][2] if name in joint else None)
-            run["rules"][name].update(rule_metrics(acc, gd, inm, offm, q_seqs, H, pon_r))
-            rr = run["rules"][name]
-            print(f"{ds}/{desc} s{seed} {name:17s} wrong {rr['wrong_fixes']:6d} correct {rr['correct_fixes']:6d} offFAR {rr['FAR_offmap']:.3f} "
-                  f"| err mean {rr['err_mean']:8.1f} med {rr['err_median']:6.1f} p95 {rr['err_p95']:8.1f} >rho {rr['frac_gt_rho']:.3f} "
-                  f"| recall {rr['recall']:.3f} segFAR {rr['seg_FAR']:.3f} ARL0 {rr['ARL0']:.0f} ECE {rr.get('ECE', float('nan')):.3f}", flush=True)
+        xfs = {n: (x_hmm if n.startswith("HMM") else joint[n][1] if n in joint else (x_cpc if n.startswith("CPC") else x_fix)) for n in rules}
+        pons = {"CPC-HMM (ours)": pon, **{k: v[2] for k, v in joint.items()}}
+        cx = dict(q_pos=ep.q_pos, o_q=o_q, real=real, q_seqs=q_seqs, hz=hz, seed=seed, excl=c["excl"], inm=inm, offm=offm, H=H)
+        if CACHE:                                                  # everything a new presence rule needs (nav_rules.py), no recompute
+            os.makedirs("results", exist_ok=True)
+            fl = np.concatenate(nchunks) if nchunks else np.zeros(0, int)
+            np.savez_compressed(f"results/navcache_{ds.replace(':', '_')}_{desc}_s{seed}.npz", MP=MP, kidx=kidx, est_c=est_c, top=top, x_hmm=x_hmm,
+                                acc_h=acc_h, good=good, inm=inm, offm=offm, err_top=err_top, q_pos=ep.q_pos, o_q=o_q, U=U, q_sid=q_sid, q_k=q_k,
+                                cond=cond, real=real, excl=c["excl"], tol=c["tol"][0], H=H, hz=np.array(hz), lam=lam, loga=loga, e_R=e_R,
+                                p_frame=p_frame, p_q=p_q, pR=pR, p_n=p_n, pRn=pRn, nchunk_flat=fl, nchunk_len=np.array([len(x) for x in nchunks]),
+                                Rq=Rq, thr=thr, maxsim=Fr["maxsim"], thr_ms=thr_ms, srt10=srt[:, :10], Smean=S.mean(1), Sstd=S.std(1), bsel=bsel,
+                                seed=seed, n_map=int(keep.sum()), n_null_seg=len(ns), hmm_T_k=np.array([best[1], best[2]]))
+        run["rules"] = evaluate(rules, xfs, pons, cx, f"{ds}/{desc} s{seed}")
         out["runs"].append(run)
     os.makedirs("results", exist_ok=True)
     json.dump(out, open(f"results/nav_{ds.replace(':', '_')}_{desc}{f'_s{SEED0}' if SEED0 else ''}.json", "w"), indent=1, default=float)
