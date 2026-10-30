@@ -22,7 +22,8 @@
    function of <= 3 live wires at the recompute points → no cheap erase/recompute. Dead end.
 8. Kaggle verification kernel (yuan1103, kickmix from PyPI) reproduces the official cost exactly:
    100,940.5617, 800 s for 200M shots.
-9. Baseline submission (best public circuits for all three tasks) sent from nhatlong1103.
+9. Baseline submission (best public circuits for all three tasks) from nhatlong1103:
+   **public LB 23.13505** (= GM of 20.57, 60.6, 9.93; the pipeline reproduces the official score).
 10. Idle x-register bits (q0–q13 idle across most of the peak) and q23 at the ends of their idle
     intervals: none is a quadratic function of the live wires → cannot be parked/recomputed cheaply.
 

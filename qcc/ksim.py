@@ -155,7 +155,8 @@ def simulate(circ: Kmx, xs: np.ndarray, x_qubits: list[int], *, seed: int = 0,
 
     `hmr_override` maps an instruction index of an HMR to a bool[shots] outcome vector.
     `probe(idx, op, q, mask)` is called before every Toffoli-like gate.
-    `snap_at`: dict whose keys are instruction indices; the qubit state just before each is copied in.
+    `snap_at`: dict whose keys are instruction indices; just before each, (qubits, half-turn
+    parity, eighth-turn counts, number of rotations so far) is copied in.
     """
     shots = len(xs)
     W = (shots + 63) // 64
@@ -182,7 +183,7 @@ def simulate(circ: Kmx, xs: np.ndarray, x_qubits: list[int], *, seed: int = 0,
 
     for idx, op in enumerate(circ.ops):
         if snap_at is not None and idx in snap_at:
-            snap_at[idx] = q.copy()
+            snap_at[idx] = (q.copy(), half.copy(), eighth.copy(), len(rot_ops))
         name = op.name
         if name == 'PUSH_CONDITION':
             stack.append(stack[-1] & b[op.cond])
