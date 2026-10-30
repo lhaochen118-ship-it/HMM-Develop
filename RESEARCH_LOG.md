@@ -46,6 +46,35 @@ CosPlace 308k → 9k m, MegaLoc 286k → 19k, SALAD 159k → 38k, recall unchang
 without GT in `nav_demo` (+GG, +GG+DR). Fair baselines: the same gate post hoc on Xu'21 / SelfCal / certified
 (`+DRgate`). Running: navI (Boreas 6 desc + 4S ×3 + Nordland + CMU).
 
+**Final run (navJ/navJc, ghost gate with floor ρ = 0.1, 6 datasets × 6 descriptors × 3 seeds; `nav_demo`, mean navigation
+error, m; Nordland frames):**
+
+| Dataset | Xu'21 (labels) | Xu'21 + DR gate | certified | certified + DR gate | CPC-HMM | CPC +GG ρ=.01 | **CPC +GG ρ=.1** |
+|---|---|---|---|---|---|---|---|
+| Boreas | 22.6 | 12.5 | 15.7 | **4.8** | 17.7 | 8.0 | 7.1 |
+| 4S countryside | 76.0 | 73.1 | **51.5** | 69.7 | 52.2 | 53.8 | 52.3 |
+| 4S office | 22.7 | 32.0 | **11.3** | 11.2 | 12.8 | 12.3 | 11.6 |
+| 4S old town | 76.9 | 140.4 | **37.0** | 87.3 | 46.3 | 102.0 | 43.3 |
+| CMU | 13.0 | 10.1 | **3.8** | 4.1 | 5.7 | 6.2 | 5.5 |
+| Nordland | 68.0 | 281.2 | **17.2** | 39.0 | 19.7 | 63.4 | 19.1 |
+
+Boreas per descriptor (CPC +GG vs Xu'21, m): MegaLoc 5.3 vs 7.0, SALAD 3.4 vs 5.0, MixVPR 5.0 vs 5.5, CosPlace 5.5 vs 7.4,
+NetVLAD 11.7 vs 38.8, DINOv2 11.5 vs 71.6. CPC +GG keeps 28–40 % more correct fixes than Xu'21 on the strong descriptors.
+
+**Verdict.**
+
+- **The Boreas loss is fixed:** CPC-HMM +GG beats Xu'21 on 6/6 Boreas descriptors (mean 7.1 vs 22.6 m) and on the mean of
+  every dataset, with one label-free configuration. The handoff's stopping criterion for Step 1 is met.
+- **The gate never hurts CPC-HMM:** −10.6 m on Boreas, −3.0 old town, −1.2 office, −0.6 Nordland, −0.2 CMU, +0.1 countryside.
+- **The floor matters:** ρ = 0.01 locks out after a wrong report (old town 102.0, Nordland 63.4).
+- **The same gate used post hoc (hard, no escape) is unsafe:** it is the best rule on Boreas (certified + DR gate 4.8 m;
+  near-GT odometry) but breaks every other dataset (old town 37.0 → 87.3, Nordland 17.2 → 39.0, Xu'21 Nordland 68 → 281).
+  CPC +GG is the only rule that gains on Boreas without losing elsewhere.
+- **Honest limits:** certified (ungated) is still slightly better than CPC +GG on 5/6 datasets; CPC +GG wins only on
+  Boreas among the label-free rules that are safe everywhere. ρ = 0.1 was chosen after looking at Boreas/Nordland
+  (offline), then fixed. RobotCar is not in the navigation grid (9-frame snippets). `hmm_fix` (ARL₀, recall) has not been
+  re-run with +GG; ARL₀ is covered by Lemma 4.
+
 ## Entry 21 — Boreas failure analysis, CPC-HMM theory, asymmetric presence switching (2026-10-29, evening)
 
 **Theory** (`paper/cpc_theory.md`):

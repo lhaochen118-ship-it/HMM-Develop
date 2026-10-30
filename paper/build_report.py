@@ -35,7 +35,7 @@ def main():
     A("# Báo cáo: Định vị theo chuỗi có chứng nhận (Certified Sequential Localization)")
     A("")
     A("*Hướng HMM / sequence-based visual localization cho robot dùng camera đơn. Branch `hmm-navigation`, 2026-10-29. "
-      "Số liệu sinh tự động từ `analysis/results/` (`paper/build_report.py`); chi tiết thí nghiệm ở `RESEARCH_LOG.md` Entry 18–19.*")
+      "Số liệu sinh tự động từ `analysis/results/` (`paper/build_report.py`); chi tiết thí nghiệm ở `RESEARCH_LOG.md` Entry 18–22.*")
     A("")
     A("## 1. Bài toán và khoảng trống")
     A("")
@@ -437,7 +437,12 @@ def main():
       "(Bảng 2, 3).")
     A("- **Điều hướng.** Trong vòng điều hướng, fix có chứng nhận cho sai số thấp nhất hoặc ngang oracle. HMM off-map tune "
       "bằng nhãn (Xu'21) có nhiều fix đúng nhưng thỉnh thoảng khoá nhầm chỗ, làm đuôi sai số rất lớn (Bảng 6).")
+    A("- **CPC-HMM +GG (mục 5.4).** Với một cấu hình không nhãn chung, CPC-HMM thắng Xu'21 (tune bằng nhãn) trên cả 6 "
+      "descriptor của Boreas (trung bình 7.1 so với 22.6 m) và trên trung bình của cả 6 dataset. Cổng dead-reckoning không "
+      "làm CPC-HMM tệ đi ở dataset nào (tệ nhất +0.1 m). Cùng cổng đó áp hậu kiểm dạng cứng thì tốt nhất trên Boreas nhưng "
+      "phá các dataset khác (Nordland, 4S old town). Certified (không cổng) vẫn nhỉnh hơn CPC-HMM +GG trên 5/6 dataset.")
     A("- **Giới hạn:**")
+    A("  - ρ = 0.1 của cổng được chọn sau khi xem Boreas và Nordland (offline), rồi cố định;")
     A("  - chuỗi quá ngắn (RobotCar, 9 frame) gần như không tăng power;")
     A("  - bản đồ nhỏ (CMU, khoảng 70 đoạn null) cho FAR của từng bản đồ dao động quanh cùng một trung bình;")
     A("  - giả định các đoạn off-map giống đoạn bản đồ bị giữ lại (exchangeable), được kiểm tra bằng off-map tự nhiên;")
