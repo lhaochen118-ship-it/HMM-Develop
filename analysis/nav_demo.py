@@ -80,6 +80,26 @@ def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01,
     return est, out
 
 
+def cpc_presence(est, pos, top, e_top, e_a, e_r, seqs, excl, gate="post", rho=0.1, s0=25.0, U=None, p_in=0.01, p_out=0.01):
+    """FAST path of cpc_joint for couple=False: the place chain does not depend on the presence chain then, so its MAP
+    (est, computed once) is reused and only the scalar presence recursion runs per variant (identical output)."""
+    pon_all = np.zeros(len(e_top))
+    for idx in seqs:
+        pon, have, mu, s = 0.5, False, None, s0
+        for i, t in enumerate(idx):
+            if i > 0:
+                if have: mu = mu + U[t]; s = s + KAPPA * np.linalg.norm(U[t])
+                pr = pon * (1 - p_out) + (1 - pon) * p_in
+            else: pr = 0.5
+            j = est[t]; g = float(np.linalg.norm(pos[top[t]] - pos[j]) <= excl)
+            if gate == "ghost" and have and pon <= 0.5:
+                g *= (1 - rho) * float(np.exp(-0.5 * ((pos[top[t]] - mu) ** 2).sum() / s ** 2)) + rho
+            ee = 0.5 * (e_a[t] + min(g, 1.0) * (e_top[t] - e_a[t]) + e_r[t])
+            lo = np.log(pr / (1 - pr)) + np.log(max(ee, 1e-300)); pon = 1 / (1 + np.exp(-np.clip(lo, -50, 50))); pon_all[t] = pon
+            if pon > 0.5: mu, s, have = pos[j].astype(float), s0, True
+    return pon_all
+
+
 def tce(null_chunks, p_null, r_null, q_seqs, p_q, r_q, nb_p=6, nb_r=4, min_n=30):
     """TRANSITION-CALIBRATED conformal p-values (Mondrian over the previous evidence state), from map self-replay.
     Null pool: consecutive held-out map frames (s-1, s) of the map traversal (off-map by construction). The cell of a
@@ -298,9 +318,12 @@ def main():
         nbr_x = cKDTree(MP).query_ball_point(MP, c["excl"]); joint = {}
         for jn, gt, gh, cp, rh in (("CPC-HMM +GG", "ghost", False, False, 0.1), ("CPC-HMM +GG(rho=.01)", "ghost", False, False, 0.01),
                                    *((f"CPC-HMM +GG(rho={r:g})", "ghost", False, False, r) for r in RHOS)):
-            ej, pj = np.zeros(len(q), int), np.zeros(len(q))
-            for idx in q_seqs:
-                ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], e_top1[idx], e_a1[idx], e_r1[idx], top[idx], nbr_x, gate=gt, ghost=gh, s0=c["excl"], couple=cp, rho=rh)
+            if not cp and not gh:                                       # fast path: place chain = est_c (identical)
+                pj = cpc_presence(est_c, MP, top, e_top1, e_a1, e_r1, q_seqs, c["excl"], gate=gt, rho=rh, s0=c["excl"], U=U); ej = est_c
+            else:
+                ej, pj = np.zeros(len(q), int), np.zeros(len(q))
+                for idx in q_seqs:
+                    ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], e_top1[idx], e_a1[idx], e_r1[idx], top[idx], nbr_x, gate=gt, ghost=gh, s0=c["excl"], couple=cp, rho=rh)
             joint[jn] = (pj > 0.5, MP[ej], pj)
         # TCE (transition-calibrated e-values from map self-replay) fed to the same CPC-HMM (post gate) and to +GG
         nchunks = [np.array(ch) for order in m_seqs for ch in chunks(order, null_ok, bidM) if len(ch) >= 2]
@@ -316,10 +339,8 @@ def main():
         em_t, em_a, em_r = np.minimum(e_top1, et_t), np.minimum(e_a1, ea_t), np.minimum(e_r1, er_t)
         for jn, gt, (xt, xa, xr) in (("CPC-HMM +TCE", "post", (et_t, ea_t, er_t)), ("CPC-HMM +TCE+GG", "ghost", (et_t, ea_t, er_t)),
                                      ("CPC-HMM +TCEmin", "post", (em_t, em_a, em_r)), ("CPC-HMM +TCEmin+GG", "ghost", (em_t, em_a, em_r))):
-            ej, pj = np.zeros(len(q), int), np.zeros(len(q))
-            for idx in q_seqs:
-                ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], xt[idx], xa[idx], xr[idx], top[idx], nbr_x, gate=gt, ghost=False, s0=c["excl"], couple=False, rho=0.1)
-            joint[jn] = (pj > 0.5, MP[ej], pj)
+            pj = cpc_presence(est_c, MP, top, xt, xa, xr, q_seqs, c["excl"], gate=gt, rho=0.1, s0=c["excl"], U=U)
+            joint[jn] = (pj > 0.5, MP[est_c], pj)
         if DUMP:
             os.makedirs("results", exist_ok=True)
             np.savez_compressed(f"results/navframes_{ds.replace(':', '_')}_{desc}_s{seed}.npz", pon=pon, est_c=est_c, top=top, e_h=e_h,
