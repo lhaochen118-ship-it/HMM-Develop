@@ -4,8 +4,8 @@ frame and its top-K map candidates of every global descriptor, on frozen DINOv2 
 Boreas: map = reference sequence, queries = V.BOREAS_Q (as V.load_boreas). Images come from the public datasets
 nhatlong1103/boreas-vpr-images-{1..4} (img/<seq>/<timestamp_us>.jpg), DINOv2 weights from nhatlong1103/bundle.
 All GPUs of the session are used: map patch tokens are replicated on every GPU, query batches are spread round-robin.
-Output results/safevpr_<ds>_p<i>.npz: for each descriptor d, cand_<d> (n_q, K) full-map indices of the top-K by global
-cosine similarity, mnn_<d> (n_q, K) number of mutual-NN patch pairs (the SafeVPR score); q_rows = query rows covered.
+Output results/safevpr_<ds>_p<i>.npz: for each descriptor d, cand_<d> (n_rows, K) full-map indices of the top-K by global
+cosine similarity, mnn_<d> (n_q, K) number of mutual-NN patch pairs (the SafeVPR score); q_rows = query rows covered (frames whose image is missing are skipped).
 Stage B (calibration with labels, Mondrian Learn-Then-Test, navigation) is in nav_demo.py (--safevpr).
 Usage: safevpr_mnn.py <dump> boreas [K=20] [--part i/n]"""
 import sys, os, time, threading, queue
@@ -46,7 +46,9 @@ def main():
     key = lambda seq, n: (seq, str(int(n)) if np.issubdtype(type(n), np.number) else os.path.basename(str(n)).split(".")[0])
     mpaths = [index.get(key(ref, n)) for n in mnames]; qpaths = [index.get(key(r, n)) for r, n in zip(ep.q_rec, qnames)]
     print("missing map", sum(p is None for p in mpaths), "missing query", sum(p is None for p in qpaths), flush=True)
-    rows = np.arange(len(qpaths)); rows = rows[PART[0]::PART[1]]
+    for r in qrecs:
+        m = ep.q_rec == r; print(f"   {r}: {m.sum()} frames, missing {sum(qpaths[i] is None for i in np.flatnonzero(m))}", flush=True)
+    have = np.array([p is not None for p in qpaths]); rows = np.flatnonzero(have); rows = rows[PART[0]::PART[1]]
     # ---- candidates: top-K over the FULL map per descriptor (global cosine; descriptors are L2-normalised)
     cand = {}
     for d in DESCS:
@@ -73,16 +75,21 @@ def main():
         m = vit_base(patch_size=14, img_size=518, init_values=1.0, block_chunks=0); m.load_state_dict(sd.get("state_dict", sd), strict=False)
         models.append(m.eval().half().cuda(g))
 
+    from concurrent.futures import ThreadPoolExecutor
+    pool = ThreadPoolExecutor(16)                                     # JPEG decode + resize in parallel (CPU bound)
+
     @torch.no_grad()
     def feats(g, paths):
-        x = torch.stack([load(p) for p in paths]); x = ((x - mean) / std).half().cuda(g)
+        x = torch.stack(list(pool.map(load, paths))); x = ((x - mean) / std).half().cuda(g)
         f = models[g].forward_features(x)["x_norm_patchtokens"]; return torch.nn.functional.normalize(f, dim=-1)
 
     # map patch tokens, replicated on every GPU
-    mf = []
-    for s in range(0, len(mpaths), 128):
-        mf.append(feats(0, [p for p in mpaths[s:s + 128]]).cpu())
-    mf = torch.cat(mf); mfg = [mf.cuda(g) for g in range(ngpu)]
+    chunks_ = list(range(0, len(mpaths), 128)); mfp = [None] * len(chunks_)
+
+    def mworker(g):
+        for ci in range(g, len(chunks_), ngpu): mfp[ci] = feats(g, mpaths[chunks_[ci]:chunks_[ci] + 128]).cpu()
+    ths = [threading.Thread(target=mworker, args=(g,)) for g in range(ngpu)]; [t.start() for t in ths]; [t.join() for t in ths]
+    mf = torch.cat(mfp); mfg = [mf.cuda(g) for g in range(ngpu)]
     print("map tokens", tuple(mf.shape), f"{time.time()-t0:.0f}s", flush=True)
     allc = np.stack([cand[d] for d in DESCS], 1)                          # (n, n_desc, K)
     mnn = np.zeros(allc.shape, np.float32); B = 64; jobs = queue.Queue()
