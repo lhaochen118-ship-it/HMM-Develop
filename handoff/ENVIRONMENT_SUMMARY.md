@@ -167,10 +167,19 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo pub
 | 2 | `yuan1103` | |
 | 3 | `synchan5704` | |
 | 4 | `loinguyentran` | |
-| 5 | `yeshenhi` | |
+| 5 | `yeshenhi` | **chỉ T4** (2× T4 OK; xin L4 thì rơi về CPU) |
 | 6 | `mucnokieu` | |
 | 7 | `huyenco` | |
-| 8 | `nguynduylm` | |
+| 8 | `nguynduylm` | L4: đã accept rules (user, 2026-10-30) nhưng lần thử đầu vẫn không có GPU; thử lại |
+| 9 | `phuongnehe` | L4×4 OK (thêm 2026-10-30) |
+| 10 | `thnliu` | L4×4 OK (thêm 2026-10-30) |
+| 11 | `mxuanquy` | **chỉ T4** (thêm 2026-10-30) |
+
+**GPU L4 (2026-10-30):** kernel có `"machine_shape": "NvidiaL4"`, `"competition_sources": ["gemma-4-developer-agent"]`
+(id 149921), `"enable_internet": false` được cấp 4× L4 (23 GB mỗi GPU), 48 CPU, 197 GB RAM. Đã thử: `yuan1103`,
+`synchan5704`, `mucnokieu`, `phuongnehe`, `thnliu` OK; `yeshenhi` chỉ T4 (xin L4 thì rơi về CPU, không báo lỗi);
+`nguynduylm` thử lại sau khi accept rules; `nhatlong1103`, `loinguyentran`, `huyenco` hết quota GPU tuần lúc thử. Tối đa 2 phiên
+GPU mỗi acc. Runner `make_eval_kernel.py --l4` chạy nhiều job song song, chia GPU theo vòng (`CUDA_VISIBLE_DEVICES`).
 
 Cả 8 acc đã được thử chạy GPU T4 thành công (2026-10-28); cả 8 token xác thực được với API (2026-10-29).
 

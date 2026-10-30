@@ -74,6 +74,66 @@ def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01,
     return est, out
 
 
+def tce(null_chunks, p_null, r_null, q_seqs, p_q, r_q, nb_p=6, nb_r=4, min_n=30):
+    """TRANSITION-CALIBRATED conformal p-values (Mondrian over the previous evidence state), from map self-replay.
+    Null pool: consecutive held-out map frames (s-1, s) of the map traversal (off-map by construction). The cell of a
+    frame is Z = (bin of log p_{s-1}, bin of log pR_{s-1}) (F_{s-1}-measurable; 'start' for the first frame of a run).
+    Query frame t in cell Z_t: u_t = (1 + #{null p_s <= p_t : Z_s = Z_t}) / (1 + n_Z), same for pR. Under transition
+    exchangeability (query off-map transitions exchangeable with null transitions within a cell) and first-order Markov
+    sufficiency of Z, u_t is super-uniform CONDITIONALLY on the past -> a p^(a-1) of it is a conditional e-value, so the
+    Shiryaev-Roberts bound of the presence chain holds under temporal dependence (coherent aliasing no longer
+    accumulates: given a mid p-value last frame, another mid p-value is typical under the null).
+    Sparse cells (< min_n pairs) fall back to the p-only cell, then to the marginal pool."""
+    lp = lambda x: np.log(np.clip(x, 1e-9, 1))
+    allp = np.concatenate([p_null[ch] for ch in null_chunks if len(ch)]); allr = np.concatenate([r_null[ch] for ch in null_chunks if len(ch)])
+    ep_ = np.quantile(lp(allp), np.linspace(0, 1, nb_p + 1)[1:-1]); er_ = np.quantile(lp(allr), np.linspace(0, 1, nb_r + 1)[1:-1])
+    cell = lambda pp, rr: (int(np.searchsorted(ep_, lp(pp))), int(np.searchsorted(er_, lp(rr))))
+    pool = {}
+    for ch in null_chunks:
+        for i in range(len(ch)):
+            z = (-1, -1) if i == 0 else cell(p_null[ch[i - 1]], r_null[ch[i - 1]])
+            for key in (z, (z[0], -2), (-2, -2)):
+                pool.setdefault(key, ([], []))[0].append(p_null[ch[i]]); pool[key][1].append(r_null[ch[i]])
+    pool = {k: (np.sort(v[0]), np.sort(v[1])) for k, v in pool.items()}
+    u1, u2, nz = np.ones(len(p_q)), np.ones(len(p_q)), np.zeros(len(p_q), int)
+    for idx in q_seqs:
+        for i, t in enumerate(idx):
+            z = (-1, -1) if i == 0 else cell(p_q[idx[i - 1]], r_q[idx[i - 1]])
+            for key in (z, (z[0], -2), (-2, -2)):
+                if key in pool and len(pool[key][0]) >= min_n: break
+            a1, a2 = pool[key]; n = len(a1)
+            u1[t] = (1 + np.searchsorted(a1, p_q[t], side="right")) / (1 + n); u2[t] = (1 + np.searchsorted(a2, r_q[t], side="right")) / (1 + n); nz[t] = n
+    return u1, u2, nz
+
+
+def rule_metrics(acc, ok_on, inm, offm, seqs, H, pon=None):
+    """hmm_fix-style metrics for any acceptance rule: recall (correct reports / on-map frames), FL (reports / off-map
+    frames), segment FAR (share of disjoint H-frame off-map segments with >= 1 report), ARL0 (off-map frames per false
+    onset), re-entry delay (frames from re-entering the map to the first correct report), ECE of P(on) when available"""
+    onsets, segs, seg_bad, delays = 0, 0, 0, []
+    for idx in seqs:
+        rp, of, on, gk = acc[idx], offm[idx], inm[idx], (acc & ok_on)[idx]
+        onsets += int((of & rp & ~np.r_[False, rp[:-1]]).sum())
+        i = 0
+        while i < len(idx):
+            if of[i]:
+                j = i
+                while j < len(idx) and of[j]: j += 1
+                for k in range(i, j - H + 1, H): segs += 1; seg_bad += int(rp[k:k + H].any())
+                k = j
+                while k < len(idx) and not on[k] and not of[k]: k += 1
+                if k < len(idx) and on[k]:
+                    e = k
+                    while e < len(idx) and not of[e]: e += 1
+                    g = np.flatnonzero(gk[k:e]); delays.append(int(g[0]) if len(g) else e - k)
+                i = j
+            else: i += 1
+    r = dict(recall=float((acc & ok_on)[inm].mean()), FL=float(acc[offm].mean()), seg_FAR=float(seg_bad / max(segs, 1)), n_seg=segs,
+             ARL0=float(offm.sum() / max(onsets, 1)), reentry_delay=float(np.mean(delays)) if delays else float("nan"))
+    if pon is not None: r["ECE"] = float(V.ece(pon[inm], ok_on[inm], 10)); r["overconf"] = float(pon[inm].mean() - ok_on[inm].mean())
+    return r
+
+
 def dr_gate(acc, xf, seqs, U, s0):
     """fairness baseline: the same dead-reckoning gate applied post hoc to any rule's fixes. A fix that STARTS a reporting
     streak (previous frame not reported) is kept only if it lies within 2 s of the ghost (last kept fix + odometry,
@@ -200,6 +260,24 @@ def main():
             for idx in q_seqs:
                 ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], e_top1[idx], e_a1[idx], e_r1[idx], top[idx], nbr_x, gate=gt, ghost=gh, s0=c["excl"], couple=cp, rho=rh)
             joint[jn] = (pj > 0.5, MP[ej], pj)
+        # TCE (transition-calibrated e-values from map self-replay) fed to the same CPC-HMM (post gate) and to +GG
+        nchunks = [np.array(ch) for order in m_seqs for ch in chunks(order, null_ok, bidM) if len(ch) >= 2]
+        pRn = (1 + len(rn) - np.searchsorted(rn, Rn0, side="left")) / (1 + len(rn))
+        u1, u2, _ = tce(nchunks, np.nan_to_num(p_n, nan=1.0), np.nan_to_num(pRn, nan=1.0), q_seqs, p_q, pR)
+        et_t, ea_t, er_t = np.ones(len(q)), np.ones(len(q)), np.ones(len(q))
+        for cn in conds:
+            m = cond == cn; b1, _ = beta_em(u1[m]); b2, _ = beta_em(u2[m])
+            et_t[m] = b1 * np.clip(u1[m], 1e-6, 1) ** (b1 - 1); ea_t[m] = b1; er_t[m] = b2 * np.clip(u2[m], 1e-6, 1) ** (b2 - 1)
+        # TCEmin: componentwise min of the marginal (CPC) and the transition-calibrated e-values. min(e1, e2) <= e_i, so it is an
+        # e-value as soon as EITHER validity assumption holds (marginal map-null dominance OR transition exchangeability):
+        # robust when the map replay is smoother than cross-condition queries (CMU), still blocks coherent aliasing (Boreas)
+        em_t, em_a, em_r = np.minimum(e_top1, et_t), np.minimum(e_a1, ea_t), np.minimum(e_r1, er_t)
+        for jn, gt, (xt, xa, xr) in (("CPC-HMM +TCE", "post", (et_t, ea_t, er_t)), ("CPC-HMM +TCE+GG", "ghost", (et_t, ea_t, er_t)),
+                                     ("CPC-HMM +TCEmin", "post", (em_t, em_a, em_r)), ("CPC-HMM +TCEmin+GG", "ghost", (em_t, em_a, em_r))):
+            ej, pj = np.zeros(len(q), int), np.zeros(len(q))
+            for idx in q_seqs:
+                ej[idx], pj[idx] = cpc_joint(Fp, rel[idx], U[idx], xt[idx], xa[idx], xr[idx], top[idx], nbr_x, gate=gt, ghost=False, s0=c["excl"], couple=False, rho=0.1)
+            joint[jn] = (pj > 0.5, MP[ej], pj)
         if DUMP:
             os.makedirs("results", exist_ok=True)
             np.savez_compressed(f"results/navframes_{ds.replace(':', '_')}_{desc}_s{seed}.npz", pon=pon, est_c=est_c, top=top, e_h=e_h,
@@ -243,9 +321,12 @@ def main():
             run["rules"][name] = dict(wrong_fixes=int((acc & bd).sum()), correct_fixes=int((acc & gd).sum()), FAR_offmap=float(acc[offm].mean()),
                                       err_mean=float(np.nanmean(e)), err_median=float(np.nanmedian(e)), err_p95=float(np.nanpercentile(e, 95)),
                                       frac_gt_rho=float(np.nanmean(e > c["excl"])))
+            pon_r = pon if name == "CPC-HMM (ours)" else (joint[name][2] if name in joint else None)
+            run["rules"][name].update(rule_metrics(acc, gd, inm, offm, q_seqs, H, pon_r))
             rr = run["rules"][name]
             print(f"{ds}/{desc} s{seed} {name:17s} wrong {rr['wrong_fixes']:6d} correct {rr['correct_fixes']:6d} offFAR {rr['FAR_offmap']:.3f} "
-                  f"| err mean {rr['err_mean']:8.1f} med {rr['err_median']:6.1f} p95 {rr['err_p95']:8.1f} >rho {rr['frac_gt_rho']:.3f}", flush=True)
+                  f"| err mean {rr['err_mean']:8.1f} med {rr['err_median']:6.1f} p95 {rr['err_p95']:8.1f} >rho {rr['frac_gt_rho']:.3f} "
+                  f"| recall {rr['recall']:.3f} segFAR {rr['seg_FAR']:.3f} ARL0 {rr['ARL0']:.0f} ECE {rr.get('ECE', float('nan')):.3f}", flush=True)
         out["runs"].append(run)
     os.makedirs("results", exist_ok=True)
     json.dump(out, open(f"results/nav_{ds.replace(':', '_')}_{desc}.json", "w"), indent=1, default=float)

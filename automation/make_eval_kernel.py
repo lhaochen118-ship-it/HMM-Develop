@@ -25,7 +25,8 @@ if os.path.isfile(_tok): os.environ["KAGGLE_API_TOKEN"] = open(_tok).read().stri
 DUMPS = []
 DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps", "nhatlong1103/vpr-dumps-4seasons", "nhatlong1103/boreas-vpr-dump"]
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-GPU = "--gpu" in sys.argv; argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--acc2", "--acc3", "--owner") and sys.argv[i - 1] != "--owner"]
+L4 = "--l4" in sys.argv; GPU = "--gpu" in sys.argv or L4
+argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--acc2", "--acc3", "--owner") and sys.argv[i - 1] != "--owner"]
 kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]
 dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
 
@@ -60,14 +61,20 @@ for meta in [d for d, _, _ in os.walk("/kaggle/input") if os.path.basename(d) ==
             if not os.path.exists(dst): os.symlink(os.path.join(p, f), dst)
 import torch
 print("dump dirs:", {s: len(os.listdir(os.path.join(D, s))) for s in sorted(os.listdir(D))}, "| cpus", os.cpu_count(), "| device", os.environ["SELFCAL_DEVICE"], "| cuda", torch.cuda.is_available(), flush=True)
-def run(j):
-    script, args = j[0], j[1:]
+NGPU = torch.cuda.device_count()
+NW = max(1, min(len(JOBS), (os.cpu_count() or 4) - 1 if NGPU <= 2 else max(NGPU, (os.cpu_count() or 4) // 4)))
+TH = str(max(1, (os.cpu_count() or 4) // NW))                       # BLAS threads per job (no oversubscription)
+def run(ij):
+    i, j = ij; script, args = j[0], j[1:]
+    env = dict(os.environ, OMP_NUM_THREADS=TH, MKL_NUM_THREADS=TH, OPENBLAS_NUM_THREADS=TH)
+    if NGPU: env["CUDA_VISIBLE_DEVICES"] = str(i % NGPU)              # spread jobs round-robin over all GPUs of the session
     if "DUMP" in args: cmd = [sys.executable, script] + [D if a == "DUMP" else a for a in args]
     else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
     t = time.time(); log = os.path.join(C, "logs", "_".join(j).replace(".py", "") + ".log")
-    r = subprocess.run(cmd, cwd=C, stdout=open(log, "w"), stderr=subprocess.STDOUT)
+    r = subprocess.run(cmd, cwd=C, stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
     print(f"done {' '.join(j)} rc={r.returncode} {time.time()-t:.0f}s", flush=True); return r.returncode
-with ThreadPoolExecutor(max(1, (os.cpu_count() or 4) - 1)) as ex: rcs = list(ex.map(run, JOBS))
+print("gpus", NGPU, "| parallel jobs", NW, "| threads/job", TH, flush=True)
+with ThreadPoolExecutor(NW) as ex: rcs = list(ex.map(run, enumerate(JOBS)))
 shutil.copytree(os.path.join(C, "results"), os.path.join(W, "results"), dirs_exist_ok=True)
 shutil.copytree(os.path.join(C, "logs"), os.path.join(W, "logs"), dirs_exist_ok=True)
 if os.path.isdir(os.path.join(C, "figs")): shutil.copytree(os.path.join(C, "figs"), os.path.join(W, "figs"), dirs_exist_ok=True)
@@ -78,6 +85,8 @@ os.makedirs(kdir, exist_ok=True); open(os.path.join(kdir, "run.py"), "w").write(
 meta = {"id": f"{OWNER}/{slug}", "title": slug, "code_file": "run.py", "language": "python", "kernel_type": "script",
         "is_private": True, "enable_gpu": GPU, "enable_tpu": False, "enable_internet": False,
         "dataset_sources": [CODE_DS] + DUMP_DS, "competition_sources": [], "kernel_sources": dumps, "model_sources": []}
+if L4:                                   # 4x NVIDIA L4 via the gemma-4-developer-agent grant (rules accepted on the web; internet off)
+    meta.update(machine_shape="NvidiaL4", competition_sources=["gemma-4-developer-agent"], enable_internet=False)
 json.dump(meta, open(os.path.join(kdir, "kernel-metadata.json"), "w"), indent=2)
 shutil.rmtree(stage, ignore_errors=True)
 print("kernel dir:", kdir, "| jobs:", len(jobs), "| sources:", dumps)
