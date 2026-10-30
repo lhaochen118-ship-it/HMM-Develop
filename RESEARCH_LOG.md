@@ -7,6 +7,72 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 24 — Self-audit: is the method general, or tuned to these datasets? NCLT as a hold-out (2026-10-30)
+
+**Question (user).** Is the proposed method sound and general, or do the scores come from choices fitted to these
+datasets?
+
+**Known risks before the check.** (1) The ghost-gate floor rho = 0.1 was picked after the Nordland lock-out. (2) There are
+many variants (CPC, +GG, +TCEmin, +TCEmin+GG, certified, +DRgate); picking the best per dataset is selection bias.
+(3) Constants (KAPPA, p_in/p_out, s0, TCE bins) had little sensitivity analysis.
+
+**Check 1: NCLT as a true hold-out** (designed and frozen before NCLT was loaded; map 2012-01-08, query 2013-04-05,
+natural off-map 14% of frames, no synthetic holes, 6 descriptors, 1 seed, 53 off-map segments). NCLT-specific
+code is limited to the evaluation (config by robot scale: excl 10 m; heading-offset EKF tracker and FOG heading for every rule,
+because the Segway heading drifts 10-25 deg per session and a position-only filter lags 20-40 m even with perfect fixes).
+
+| rule | err | p95 | recall | segFAR |
+|---|---|---|---|---|
+| Xu'21 (labels) | 37.5 | 173.0 | 0.55 | 0.057 |
+| Claxton'24 (labels) | 21.6 | 87.2 | 0.56 | 0.079 |
+| SelfCal frame | 9.1 | 42.2 | 0.28 | 0.006 |
+| certified | 6.8 | 22.1 | 0.42 | 0.003 |
+| CPC-HMM | 13.2 | 53.1 | 0.56 | 0.013 |
+| CPC-HMM +GG | 11.4 | 51.3 | 0.53 | 0.009 |
+| CPC-HMM +TCEmin | 7.2 | 25.4 | 0.43 | 0 |
+| CPC-HMM +TCEmin+GG | 7.5 | 26.2 | 0.39 | 0 |
+| oracle | 4.9 | 13.1 | 0.62 | 0 |
+
+The DRgate versions of the baselines lock out on NCLT (Xu +DRgate 199 m): a hard dead-reckoning gate is fragile with
+drifting heading.
+
+**Check 2: all 7 datasets, every seed** (10 seeds except NCLT; err / recall / segFAR):
+
+| dataset | Xu'21 | Claxton'24 | cert | CPC+GG | TCEmin | TCEmin+GG | oracle |
+|---|---|---|---|---|---|---|---|
+| Boreas | 25.3/0.68/0.043 | 43.6/0.74/0.111 | 8.5/0.65/0.022 | 6.6/0.72/0.016 | 6.4/0.66/0.008 | **5.1**/0.66/0.002 | 2.1 |
+| 4S countryside | 81.0/0.25/0.088 | 90.7/0.25/0.232 | **52.5**/0.20/0.013 | 53.7/0.35/0.042 | 59.1/0.21/0.010 | 69.2/0.19/0.008 | 16.5 |
+| 4S office | 21.2/0.72/0.215 | 39.4/0.60/0.424 | **11.2**/0.66/0.016 | 11.8/0.81/0.046 | 12.5/0.70/0.013 | 12.9/0.69/0.007 | 8.3 |
+| 4S old town | 70.9/0.62/0.101 | 234.8/0.55/0.373 | **33.1**/0.54/0.015 | 41.2/0.68/0.021 | 33.7/0.59/0.008 | 63.4/0.49/0.003 | 19.4 |
+| Nordland | 59.3/0.74/0.038 | 159.1/0.26/0.285 | 12.7/0.58/0.025 | 14.5/0.68/0.006 | 13.0/0.57/0.002 | **12.5**/0.56/0.001 | 4.8 |
+| CMU | 18.1/0.69/0.227 | 33.3/0.66/0.386 | 4.2/0.69/0.025 | 6.5/0.84/0.047 | 3.9/0.75/0.018 | **3.8**/0.74/0.015 | 3.0 |
+| NCLT | 37.5/0.55/0.057 | 21.6/0.56/0.079 | **6.8**/0.42/0.003 | 11.4/0.53/0.009 | 7.2/0.43/0 | 7.5/0.39/0 | 4.9 |
+
+**Check 3: leave-one-dataset-out variant choice** (pick the variant on the other 6 datasets: mean error / oracle error,
+segFAR <= 0.05; regret = held-out error minus the best variant on the held-out dataset): the pick is TCEmin for 6 of the
+7 held-out datasets (regret 0.1-6.6 m); with old town held out it is TCEmin+GG (regret 30 m).
+
+**Check 4: one-at-a-time sensitivity** of TCEmin+GG (`nav_sensitivity.py`, Boreas 18 runs and NCLT 6 runs; each constant
+x1/3 and x3 around the default): rho 0.03-0.3, p_in = p_out 0.003-0.03, s0 0.5-2 excl, KAPPA 0.02-0.1, TCE bins
+4x3-8x6 change the mean error by <= 0.7 m and segFAR by <= 0.002. Only the P(on) threshold matters (0.3 -> Boreas 34.5 m,
+segFAR 0.14); 0.5 is the MAP decision of the presence chain, not a tuned value.
+
+**Verdict.**
+- General and well founded: the validity part. With alpha fixed at 0.05 and no tuning, certified and TCEmin keep segFAR
+  <= 0.025 on 7/7 datasets, including the hold-out. Plain CPC-HMM violates it on 3/7 (0.055-0.067), which is exactly
+  the case the TCE theory predicts (dependent evidence). All label-free rules beat the label-calibrated baselines on 7/7
+  datasets in error and segFAR.
+- Not general: the ghost gate. It was designed after the Boreas diagnosis, helps on Boreas, and locks out on 4Seasons
+  old town / countryside (+30 / +10 m) and on NCLT. It must be an optional module, not part of the main method.
+- Modest: TCEmin vs certified. TCEmin has higher recall (+0.01 to +0.05) and lower segFAR on every dataset, but the error is
+  about the same (better on Boreas / CMU, worse by 0.3-6.6 m on the others). The gain of the HMM machinery is recall and
+  validity, not error.
+- Constants are not fragile (Check 4); per-dataset choices are the physical tolerance excl (vehicle 25 m, train 5 m,
+  robot 10 m) and the evaluation tracker.
+- Main method from now on: CPC-HMM +TCEmin (the leave-one-out choice). Open: GG lock-out (needs a valid re-acquisition
+  step), recall gap to the oracle (0.21 vs 0.73 on countryside), stronger baseline protocols (our Claxton'24 / SafeVPR
+  re-implementations are calibrated on two benign conditions only), NCLT with all 8 query sessions.
+
 ## Entry 23 — TCE/TCEmin across 6 datasets, Boreas on 10 seeds, label-calibrated baselines SafeVPR / Claxton'24 (2026-10-30)
 
 **Hypothesis.** The map-calibrated e-values of CPC-HMM assume that consecutive query frames are independent given the
