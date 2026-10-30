@@ -32,3 +32,6 @@ handoff/fonts/
 
 # Kaggle tokens (local only, never commit: repo is public)
 KAGGLE_TOKENS.md
+qcc/runs/
+qcc/__pycache__/
+*.kmb
