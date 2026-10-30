@@ -28,6 +28,9 @@ if DUMP: sys.argv.remove("--dump")
 RHOS = []                                      # --rhos 0.03,0.3: extra ghost-gate floors (sensitivity of rho)
 if "--rhos" in sys.argv:
     i = sys.argv.index("--rhos"); RHOS = [float(x) for x in sys.argv[i + 1].split(",")]; del sys.argv[i:i + 2]
+SEED0 = 0                                      # --seed0 k: run seeds k .. k+seeds-1 (results file gets the suffix _s<k>)
+if "--seed0" in sys.argv:
+    i = sys.argv.index("--seed0"); SEED0 = int(sys.argv[i + 1]); del sys.argv[i:i + 2]
 KAPPA = 0.05                                   # ghost position uncertainty growth per metre of odometry (as the nav filter)
 
 
@@ -160,7 +163,7 @@ def main():
     q_seqs = [np.where(q_sid == s)[0][np.argsort(q_k[q_sid == s])] for s in np.unique(q_sid)]
     cond = np.asarray(ep.q_cond).astype(str); conds = sorted(set(cond)); q = ep.q.astype(np.float32)
     out = {"ds": ds, "desc": desc, "H": H, "runs": []}
-    for seed in range(seeds):
+    for seed in range(SEED0, SEED0 + seeds):
         rng = np.random.default_rng(seed); bid0, _ = V.map_cells(ep.m_pos, c["block"]); ub = np.unique(bid0)
         keep = ~np.isin(bid0, rng.choice(ub, int(round(DROP * len(ub))), replace=False))
         M, MP = ep.m[keep].astype(np.float32), ep.m_pos[keep]
@@ -329,7 +332,7 @@ def main():
                   f"| recall {rr['recall']:.3f} segFAR {rr['seg_FAR']:.3f} ARL0 {rr['ARL0']:.0f} ECE {rr.get('ECE', float('nan')):.3f}", flush=True)
         out["runs"].append(run)
     os.makedirs("results", exist_ok=True)
-    json.dump(out, open(f"results/nav_{ds.replace(':', '_')}_{desc}.json", "w"), indent=1, default=float)
+    json.dump(out, open(f"results/nav_{ds.replace(':', '_')}_{desc}{f'_s{SEED0}' if SEED0 else ''}.json", "w"), indent=1, default=float)
 
 
 if __name__ == "__main__":
