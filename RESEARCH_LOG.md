@@ -37,6 +37,37 @@ memory; reset-on-stop; the rule covered by the onset + geometric-persistence the
 Order of criteria as Entry 25: mean segFAR <= 0.05 per dataset, then error and recall at the default point, then recall at
 matched FL / segFAR (operating curves); final choice by leave-one-dataset-out over all label-free variants.
 
+**Results so far (CPU kernels on 19 accounts; default points 10 seeds = 366 runs, curves seeds 0-2 = 114 runs;
+`analysis/results/e26/`).** The pipeline reproduces Entry 25 exactly (CPC-SC+CS recall at FL <= 0.01: 0.766 / 0.586 /
+0.705 / 0.780 / 0.771 / 0.664 / 0.545). Recall at FL <= 0.01 / pAUC:
+
+| rule | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| CPC-SC+CS (Entry 25) | 0.766 / 0.777 | 0.586 / 0.588 | 0.705 / 0.724 | 0.780 / 0.787 | 0.771 / 0.771 | 0.664 / 0.657 | 0.545 / 0.543 |
+| CPC-SC+SH (M5) | 0.755 / 0.771 | 0.600 / 0.623 | 0.708 / 0.728 | 0.775 / 0.797 | 0.812 / 0.808 | 0.667 / 0.688 | 0.515 / 0.563 |
+| CPC-W+CS+SH (M9) | 0.745 / 0.766 | 0.586 / 0.583 | 0.701 / 0.722 | 0.750 / 0.777 | 0.768 / 0.768 | 0.659 / 0.651 | 0.544 / 0.533 |
+
+Default points (recall / mean segFAR / worst-run false onsets per off-map segment): CPC-SC+SH raises recall on 7/7 by
+0.004-0.035 at slightly higher segFAR (CMU 0.009, worst run 0.054); M9 is within -0.03..+0.02 of CPC-SC+CS. The false-onset
+rate per segment (the quantity of Theorem 5, cpc_theory 3e) is 0.001-0.006 on average for every CPC rule on 7/7 datasets
+(alpha = 0.05); worst run <= 0.013 for CPC-SC+CS but 0.071-0.114 for the CPC-W rules on CMU (small map: ~70 null segments,
+the conformal quantile varies by run; the guarantee is marginal over calibration). Verdict: SH is a small, mixed gain
+(pAUC up on 6/7, recall at FL 0.01 up on 4/7); the finite-memory onset buys the dependence theorem at almost no cost on
+the mean and a worse worst case on small maps.
+
+**Negative: joint onset calibration (`cpc_geo.scj_kappa`, presence AND geometric stop on the null place chain, seeds 3-9
+only because `est_n` is cached only there).** Recall +0.003..+0.011 (CMU, countryside), also without the kappa >= 0
+floor: the joint null quantile is itself well above 0. The default point is conservative because the map self-replay
+null is SAME-condition (stronger evidence than cross-condition off-map queries), not because of the geometric stop or the
+floor. A condition-matched null (e.g. cross-traversal pseudo-queries of a multi-session map) is the open fix.
+
+**Baselines (paper-only reimplementations, `literature/BASELINES_2026.md`).** TAO'26 (`analysis/tao.py`), TRAIL'26
+(`analysis/trail.py`, d_g transition, leave-one-dataset-out training), VPR auditing'26 (`analysis/vlm_audit.py`,
+Qwen2.5-VL-7B offline). Inputs: `analysis/topk_dump.py` (top-100 per seed; GPU; top-1 agrees with the caches 1.000).
+First looks: TAO on CMU CosPlace seed 0 ranks well (recall 0.725 at FL 0.000 at the median cost, label-calibrated default
+recall 0.947 / FL 0.083); Qwen2.5-VL-7B on 77 Boreas MegaLoc pairs: precision 0.70, FAR 0.52 (CPC-SC+CS on the same frames
+0.98 / 0.037).
+
 ## Entry 25 — "Only more conservative?": recall diagnosis, operating curves, odometry-consistency stop (2026-10-31)
 
 **Question (reviewer).** CPC-HMM +TCEmin has low error but also low recall. Is it better, or only more conservative?

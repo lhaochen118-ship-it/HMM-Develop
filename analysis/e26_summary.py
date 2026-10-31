@@ -17,7 +17,10 @@ DS_NAME = {"boreas": "Boreas", "nclt": "NCLT", "cmu": "CMU", "nord": "Nordland",
 def load(d):
     R = {}
     for f in sorted(glob.glob(os.path.join(d, "**", "oc_*.json"), recursive=True)):
-        j = json.load(open(f)); R.setdefault(j["ds"], {}).setdefault(j["desc"], {}).update(j["runs"])
+        j = json.load(open(f)); runs = R.setdefault(j["ds"], {}).setdefault(j["desc"], {})
+        for rk, run in j["runs"].items():                      # merge families of the same run from several files
+            if rk in runs: runs[rk]["families"].update(run["families"]); runs[rk].setdefault("oracle", run.get("oracle"))
+            else: runs[rk] = run
     return R
 
 

@@ -38,6 +38,8 @@ CS_SENS = "--cs-sens" in sys.argv                 # one-at-a-time sensitivity of
 JOBS = int(sys.argv[sys.argv.index("--jobs") + 1]) if "--jobs" in sys.argv else 4
 OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}   # map coverage radius (sc_eval CFG off_d)
 TOPK = sys.argv[sys.argv.index("--topk") + 1] if "--topk" in sys.argv else None   # dir of topk_<ds>_<desc>_s<seed>.npz (topk_dump.py) -> TAO26 family
+TRAILD = sys.argv[sys.argv.index("--trail") + 1] if "--trail" in sys.argv else None   # dir of trail_<ds>_megaloc_s<seed>.npz (trail.py) -> TRAIL26 family
+FAMS = set(sys.argv[sys.argv.index("--fams") + 1].split(",")) if "--fams" in sys.argv else None   # evaluate only these families
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
 N_PTS = 48                                       # thresholds per curve (quantiles of the score + the default threshold)
 
@@ -127,9 +129,17 @@ def families(z, b):
         err_t = np.linalg.norm(xt_ - z["q_pos"], axis=1); good_t = z["inm"] & (err_t <= b["excl"]) & (r["j"] >= 0)
         tau = TAO.tao_threshold(r["cost"], good_t, z["bsel"]); sc_t = np.where(r["j"] >= 0, -r["cost"], -np.inf)
         F["TAO26"] = (sc_t, xt_, -tau, sc_t >= -tau)
+    trf = os.path.join(TRAILD, f"trail_{b['ds_tag']}_s{int(z['seed'])}.npz") if TRAILD else None
+    if trf and os.path.exists(trf):                              # TRAIL'26 (labels: threshold = conformal quantile on easy-condition off-map frames)
+        r = np.load(trf); xt_ = MP[r["place"]]; cf = r["conf"].astype(float)
+        cal = np.sort(cf[z["offm"] & z["bsel"]]); kq = int(np.ceil((len(cal) + 1) * (1 - N.A)))
+        thr_t = cal[min(len(cal) - 1, kq - 1)] if len(cal) else np.inf
+        F["TRAIL26"] = (cf, xt_, float(thr_t), cf > thr_t); F["TRAIL26-all"] = (None, xt_, None, np.ones(len(cf), bool))
     if GEO or ONLY_GEO:
         G, xg = CG.rules(z, b)
         for name, (scg, accg) in G.items(): F[name] = (scg, xg, 0.0, accg)
+        G2, xg2 = CG.rules_scj({k: z[k] for k in z.files}, b)
+        for name, (scg, accg) in G2.items(): F[name] = (scg, xg2, 0.0, accg)
     if "pcr_q" in z.files:                                       # predictive cell-rank evidence (nav_demo --pred)
         agree = np.linalg.norm(MP[top] - x_c, axis=1) <= b["excl"]
         pm, ptc, pmin = PCR.pcr_evalues(z, b["seqs"]); sig = lambda lo: 1 / (1 + np.exp(-lo))
@@ -171,6 +181,7 @@ def one(args):
     out = {"seed": int(z["seed"]), "families": {}}
     with contextlib.redirect_stdout(io.StringIO()):
         F = families(z, b)
+    if FAMS is not None: F = {k: v for k, v in F.items() if k in FAMS}
     for name, (sc, xf, thr0, acc0) in F.items():
         if sc is None or DEFAULTS_ONLY:                           # rule without a scalar score: default point only
             if acc0 is not None: out["families"][name] = {"curve": [], "default": point(acc0, xf, z, b, cx, True)}
