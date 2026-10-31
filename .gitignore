@@ -35,3 +35,4 @@ KAGGLE_TOKENS.md
 qcc/runs/
 qcc/__pycache__/
 *.kmb
+qcc/handoff/fonts/

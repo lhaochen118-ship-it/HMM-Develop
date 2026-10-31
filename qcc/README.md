@@ -1,5 +1,8 @@
 # QCC — Google "Verifiable quantum circuit compilation", Benchmark I (invsqrt)
 
+**New chat: start with `qcc/handoff/03_HANDOFF.md`** (goal, decisions, locations, next steps), then
+`01_SCIENTIFIC_FINDINGS.md` and `02_ENGINEERING_OPS_NOTES.md` (each has a PDF alongside).
+
 Work log, tools and findings for problem 1 of
 https://www.kaggle.com/competitions/google-verifiable-quantum-circuit-compilation (deadline 2027-01-20).
 Competition data (kickmix.so, verifiers, paper) is **not** committed (rules); download it with
@@ -45,6 +48,7 @@ finds only 0.125 Toffoli/shot.
 | `refit_angles.py` | LP refit of rotation angles maximizing the margin (cutting planes, HiGHS); `--drop` tries removing rotations |
 | `peephole.py` | finds Toffolis replaceable by CNOTs / deletable |
 | `make_submission.py` | builds submission.zip |
+| `probes/` | one-off analyses: block phase cleanliness, CCZ replaceability, small-support and x-bit parking tests |
 | `kaggle_verify.py` | self-contained Kaggle CPU kernel running the official verifier (kickmix from PyPI, circuits embedded), launched through `automation/run_kernel.py` (restarts queue-stuck sessions) |
 
 Local official verification: `PYTHONPATH=<kickmix dir> python3 verify_submission_invsqrt.py c.kmb`
