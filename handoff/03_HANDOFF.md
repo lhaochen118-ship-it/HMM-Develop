@@ -173,8 +173,9 @@ thêm luật p_out mới nếu được chọn), rồi commit và push.
 - Dữ liệu tái sử dụng: `nhatlong1103/hmm-navcache-v2` (cache 7 dataset có Xu'21 posterior, `est_n`...). Kết quả nén:
   `analysis/results/oc_curves_entry25.tgz`, `oc_matched_entry25.tgz`.
 
-**Đang chạy lúc viết (xem `RUNNING_KERNELS` trong log của phiên):** độ bền theo tỷ lệ lỗ bản đồ 10 % / 50 % (`nav_demo
---drop`, cache `navcache_d10_*`, `navcache_d50_*`). Lần chạy đầu bị lỗi vì `hmm_fix` xoá cờ `--drop` khi import (đã sửa).
+**Đã xong thêm:** 10 seed cho điểm mặc định (366 run; cache `hmm-navcache-v2` bản mới), độ bền theo tỷ lệ lỗ 10 % / 50 %
+(cache công khai `nhatlong1103/hmm-navcache-holes`, thư mục `d10/`, `d50/`). Lần chạy đầu bị lỗi vì `hmm_fix` xoá cờ
+`--drop` khi import (đã sửa). Không còn kernel nào chạy lúc bàn giao.
 
 **Việc tiếp theo gợi ý:**
 1. Ngưỡng mặc định của CPC-SC+CS còn dè dặt so với chính đường cong của nó (countryside: 0.30 ở FL 0.000, 0.55 ở FL 0.01).
