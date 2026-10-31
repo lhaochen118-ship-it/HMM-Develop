@@ -13,11 +13,12 @@ ACCOUNTS = sorted(os.path.basename(f)[4:] for f in glob.glob(os.path.expanduser(
 ACCOUNTS = ["nhatlong1103"] + [a for a in ACCOUNTS if a != "nhatlong1103"]
 _res = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reserved_accounts.txt")   # kept for the user: never used
 RESERVED = {l.strip() for l in open(_res) if l.strip() and not l.startswith("#")} if os.path.isfile(_res) else set()
-ACCOUNTS = [a for a in ACCOUNTS if a not in RESERVED]
+ACCOUNTS = [a for a in ACCOUNTS if a not in RESERVED] + [a for a in ACCOUNTS if a in RESERVED]   # user 2026-10-31: use ALL accounts, reserved ones last
 DSARG = ["--ds", sys.argv[sys.argv.index("--ds") + 1]] if "--ds" in sys.argv else []   # extra dataset sources for every kernel
 DSARG += ["--par", sys.argv[sys.argv.index("--par") + 1]] if "--par" in sys.argv else []   # parallel jobs per session
+DSARG += ["--models", sys.argv[sys.argv.index("--models") + 1]] if "--models" in sys.argv else []   # Kaggle model sources
 L4 = "--l4" in sys.argv                                                   # 4x L4 sessions (competition grant)
-_val = {i + 1 for i, a in enumerate(sys.argv) if a in ("--ds", "--par", "--accounts")}  # positions of option values
+_val = {i + 1 for i, a in enumerate(sys.argv) if a in ("--ds", "--par", "--accounts", "--machine", "--models")}  # positions of option values
 args = [a for i, a in enumerate(sys.argv) if i > 0 and i not in _val and not a.startswith("--")]
 if "--accounts" in sys.argv: ACCOUNTS = sys.argv[sys.argv.index("--accounts") + 1].split(",")
 work, prefix, jobs = args[0], args[1], args[2]
@@ -27,7 +28,7 @@ if GROUPS:
     jobs = [j for g in groups for j in g]
 else:
     jobs = [j.strip() for j in (open(jobs).read().replace("\n", ";") if os.path.isfile(jobs) else jobs).split(";") if j.strip()]
-slots = [(a, s) for a in ACCOUNTS for s in (0, 1)]                       # fill BOTH GPU sessions of an account before the next (user rule: do not spend quota of extra accounts)
+slots = [(a, s) for a in ACCOUNTS for s in ((0, 1, 2, 3, 4) if "--cpu" in sys.argv else (0, 1))]   # GPU: fill BOTH sessions of an account before the next (user rule); CPU: 5 sessions per account
 nk = len(groups) if GROUPS else min(int(args[3]) if len(args) > 3 else len(slots), len(jobs))
 part_of = (lambda k: groups[k]) if GROUPS else (lambda k: jobs[k::nk])
 os.makedirs(work, exist_ok=True); procs = []

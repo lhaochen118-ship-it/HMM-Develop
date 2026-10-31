@@ -27,6 +27,7 @@ from hmm_fix import beta_em
 import pcr as PCR
 from cpc_sc import logodds, hyst, sc_evidence, consistency_ok, cs_cal
 import cpc_geo as CG
+import tao as TAO
 
 NAV_PTS = int(sys.argv[sys.argv.index("--nav-pts") + 1]) if "--nav-pts" in sys.argv else 14
 VARIANTS = "--variants" in sys.argv               # also the candidate fixes (TCE on R only, hysteresis, CPC-SC)
@@ -36,6 +37,8 @@ ONLY_GEO = "--only-geo" in sys.argv               # only the Entry 26 families +
 CS_SENS = "--cs-sens" in sys.argv                 # one-at-a-time sensitivity of the CS constants (span, threshold) for CPC-HMM+CS
 JOBS = int(sys.argv[sys.argv.index("--jobs") + 1]) if "--jobs" in sys.argv else 4
 OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}   # map coverage radius (sc_eval CFG off_d)
+TOPK = sys.argv[sys.argv.index("--topk") + 1] if "--topk" in sys.argv else None   # dir of topk_<ds>_<desc>_s<seed>.npz (topk_dump.py) -> TAO26 family
+SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
 N_PTS = 48                                       # thresholds per curve (quantiles of the score + the default threshold)
 
 
@@ -118,6 +121,12 @@ def families(z, b):
             cs3 = consistency_ok(x_c, z["o_q"], b["seqs"], b["excl"], 3.0)
             for al in (0.01, 0.1):
                 la, ka = sc_evidence(z, b, al); F[f"CPC-SC+CS(alpha={al:g})"] = (None, x_c, None, hyst(la, b["seqs"], ka, 0.0) & cs3)
+    tkf = os.path.join(TOPK, f"topk_{b['ds_tag']}_s{int(z['seed'])}.npz") if TOPK else None
+    if tkf and os.path.exists(tkf):                              # TAO'26 (labels: tau_OOD = 3-sigma bound on easy conditions)
+        r = TAO.tao(z, np.load(tkf)); jj = np.maximum(r["j"], 0); xt_ = MP[jj]
+        err_t = np.linalg.norm(xt_ - z["q_pos"], axis=1); good_t = z["inm"] & (err_t <= b["excl"]) & (r["j"] >= 0)
+        tau = TAO.tao_threshold(r["cost"], good_t, z["bsel"]); sc_t = np.where(r["j"] >= 0, -r["cost"], -np.inf)
+        F["TAO26"] = (sc_t, xt_, -tau, sc_t >= -tau)
     if GEO or ONLY_GEO:
         G, xg = CG.rules(z, b)
         for name, (scg, accg) in G.items(): F[name] = (scg, xg, 0.0, accg)
@@ -156,6 +165,7 @@ def point(acc, xf, z, b, cx, nav):
 def one(args):
     f, ds = args
     z = np.load(f, allow_pickle=True); b = NR.base_parts(z); b["ds"] = ds.split(":")[0]
+    b["ds_tag"] = os.path.basename(f)[len("navcache_"):].rsplit("_s", 1)[0]
     cx = dict(q_pos=z["q_pos"], o_q=z["o_q"], real=bool(z["real"]), q_seqs=b["seqs"], hz=list(z["hz"]), seed=int(z["seed"]),
               head=ds == "nclt")
     out = {"seed": int(z["seed"]), "families": {}}
@@ -183,6 +193,7 @@ def main():
     cdir, ds, descs = sys.argv[1], sys.argv[2], sys.argv[3].split(",")
     for desc in descs:
         files = sorted(glob.glob(os.path.join(cdir, f"navcache_{ds.replace(':', '_')}_{desc}_s*.npz")))
+        if SEEDS is not None: files = [f for f in files if int(f.rsplit("_s", 1)[1][:-4]) in SEEDS]
         if not files: continue
         with Pool(min(JOBS, len(files))) as p: res = dict(p.map(one, [(f, ds) for f in files]))
         os.makedirs("results", exist_ok=True)

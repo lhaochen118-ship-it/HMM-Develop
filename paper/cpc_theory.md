@@ -331,6 +331,66 @@ dài** (carried), đúng phần CS xử lý.
 vận tốc của SeqSLAM, Milford & Wyeth 2012), nên CS **không mới** tự thân. Phần đóng góp là vai trò của nó trong khung có bảo
 đảm (Bổ đề 7, Mệnh đề 4) và chẩn đoán cho thấy nó nhắm đúng nguồn vi phạm còn lại.
 
+
+## 3e. Bảo đảm khi các frame phụ thuộc nhau (Entry 26, branch `hmm-navigation-4`)
+
+*Code: `analysis/dep_diag.py` (chẩn đoán), `analysis/gpc.py` (chứng chỉ không phụ thuộc giả định phụ thuộc),
+`analysis/cpc_geo.py` (khởi phát cửa sổ hữu hạn, dừng hình dạng, reset), `analysis/geo_cons.py`.*
+
+**Chẩn đoán (nhãn chỉ dùng ở đây).** (i) p-value SelfCal top-1 của frame off-map **siêu đều biên ở phần trong** của
+đoạn off-map (P(p ≤ 0.05) = 0.000–0.006 khi cách cả hai mép ≥ 50 frame), nhưng **dưới đều trong ~50 frame quanh mép bản
+đồ** (CMU MegaLoc 0.12–0.16): vùng nhìn chồng lấn, top-1 là ảnh ở mép cách 40–100 m. (ii) p-value của R neo odometry dưới
+đều ở **đoạn off-map dài** (Boreas CosPlace 0.19–0.23 ở độ sâu 0–100) — nơi null của bản đồ **không có mẫu**: null chỉ có
+8–10 chunk, dài trung bình 84–135 frame. Vậy số đơn vị hoán đổi được hiệu dụng của null ≈ 10, và giả định "đoạn off-map
+hoán đổi được với đoạn null" hỏng ở cả mép lẫn đoạn dài; phụ thuộc *bên trong* đoạn không phải vấn đề chính.
+
+**Mệnh đề 5 (không tích luỹ được khi không giả định gì về phụ thuộc).** Gọi e_1..e_n là bằng chứng của n frame, mỗi
+e_i hợp lệ *biên* dưới H0 (E e_i ≤ 1, hay p_i siêu đều), còn phân phối chung tuỳ ý. Mọi phép thử φ(e_1..e_n) có
+P_{H0}(φ = 1) ≤ α với **mọi** phân phối chung như vậy thì, tại phân phối "n bản sao" e_1 = … = e_n = e, có
+P(e ∈ A) ≤ α với A = {x : φ(x, …, x) = 1}: φ chỉ còn là phép thử một frame mức α. *Chứng minh:* phân phối bản sao là
+một phân phối chung hợp lệ với cùng biên. ∎ Vì frame liền nhau gần như trùng nhau (tự tương quan trễ 1 là 0.8–0.99),
+trường hợp này không phải giả tưởng: **mọi bảo đảm có tích luỹ bằng chứng theo thời gian đều cần một giả định về phụ
+thuộc** (hoán đổi đơn vị, mixing, Markov). Đây là "cái giá của phụ thuộc"; cùng tinh thần với kết quả của Vovk–Wang (2021):
+dưới phụ thuộc tuỳ ý, trung bình cộng là cách gộp e-value chấp nhận được duy nhất (không vượt được e-value lớn nhất).
+
+**Định lý 4 (chứng chỉ đặt-quỹ-đạo hình học GPC: đúng với mọi phụ thuộc).** Cửa sổ odometry D = 6 excl gần nhất được đặt
+lên mọi đoạn traversal của bản đồ bằng Procrustes 2-D (sai số ≤ excl/4); tập cách đặt 𝒫_t chỉ phụ thuộc odometry và hình
+học bản đồ. Báo t nếu ∃P ∈ 𝒫_t: ≥ φK frame của cửa sổ có top-1 trùng điểm đặt (bán kính excl) **và** p ≤ u\*,
+u\* = αφ / min(1, Q_t), Q_t = trung bình theo vị trí trong cửa sổ của phần bản đồ mà hợp các bóng excl quanh các điểm đặt phủ.
+*Phát biểu:* dưới (D) p siêu đều từng frame và (GAI) P(top-1 ∈ B(p) | ảnh) ≤ q(p) (cách đặt không mang thông tin về ảnh),
+P(báo sai tại t) ≤ α **với mọi phân phối chung theo thời gian**; do đó E[FL] ≤ α (tuyến tính của kỳ vọng). Không có GAI,
+cận suy giảm thành α / min(1, Q_t). *Chứng minh:* mỗi frame cộng tối đa 1 vào số đếm của một cách đặt bất kỳ, nên
+max_P N_P ≤ Σ_k 1[top-1 ∈ U_k] 1[p_k ≤ u\*]; lấy kỳ vọng (GAI rồi D) và Markov. ∎ *Thực nghiệm (CMU, seed 0):* FL = 0 ở mọi α,
+nhưng recall chỉ 0.04–0.20 ở α = 0.05 (CPC-SC+CS 0.72–0.84): đúng Mệnh đề 5 — bảo đảm không cần giả định phụ thuộc thì
+phải trả bằng power. Q_t trung vị 0.64 (CMU): phần lớn cửa sổ 150 m là gần thẳng, hình học chỉ giảm bội số ở chỗ rẽ.
+
+**Định lý 5 (khởi phát cửa sổ hữu hạn + bền vững hình học: tỷ lệ khởi phát sai ≤ α, mọi phụ thuộc giữa các đoạn).** Luật
+CPC-W: khởi phát tại t nếu log-odds cửa sổ w_t (chuỗi hiện diện khởi động lại ở odds 1 tại t − W + 1, W = H) > κ_W và ok_t
+và không đang báo; duy trì khi log-odds đầy đủ ℓ_t > 0 và ok_t; ok = CS ∧ SH (SH: phần dư Procrustes của chuỗi MAP với
+odometry trên 3 excl ≤ excl/2); ok sai thì **reset** (cần khởi phát mới). κ_W = phân vị conformal (1 − α) của max w trên
+các đoạn H frame của null bản đồ. Giả định: (WX) với mỗi đoạn off-map G gồm H frame nằm sâu ≥ W − 1 frame trong đoạn
+off-map, vector (w_t)_{t∈G} hoán đổi được với các vector của đoạn null — **chỉ trong từng đoạn**, không giả định gì giữa các
+đoạn; (NC) bản đồ không chứa đường nào bắt đầu trong bán kính excl quanh vị trí on-map cuối của robot và khớp hình dạng
+odometry cho tới khi robot cách bản đồ off_d; (TR) chuỗi vị trí đúng (trong excl + δ) ở frame on-map cuối.
+*Phát biểu:* (a) mọi báo cáo ở frame off-map thuộc một chuỗi báo có khởi phát nằm trong đoạn off-map ở độ sâu ≥ W − 1;
+(b) P(có khởi phát trong G) ≤ α cho từng G; (c) E[#đoạn có khởi phát sai] ≤ α · E[#đoạn], tức tỷ lệ khởi phát sai mỗi
+đoạn ≤ α (ARL₀ ≥ H/α theo kỳ vọng) **với mọi phụ thuộc giữa các đoạn và bên trong mỗi đoạn**.
+*Chứng minh:* (a) chuỗi báo mang từ bản đồ vào phải qua ok ở frame off-map đầu tiên, khi robot đã đi ≥ off_d − in_d từ vị
+trí on-map cuối; nếu MAP đứng yên hay nhảy, CS/SH sai (Mệnh đề 4); nếu MAP trượt nhất quán thì đó là một đường liên tục
+khớp hình dạng, trái với NC. Khởi phát ở độ sâu < W − 1 cũng phải qua ok tại các frame đó: cùng lập luận. (b) khởi phát
+trong G kéo theo max_{t∈G} w_t > κ_W; w_t chỉ phụ thuộc W frame cuối, nằm hoàn toàn trong đoạn off-map; xác suất ≤ α theo
+WX và tính chất phân vị conformal. (c) tuyến tính của kỳ vọng. ∎
+*Khác với Định lý 1 và 3:* không cần e-value hợp lệ có điều kiện (bị vi phạm trên Boreas/4S) và không cần đoạn off-map dài
+hoán đổi được với đoạn null ngắn; chỉ cần hoán đổi ở mức cửa sổ H frame. Bảo đảm là về **tỷ lệ khởi phát** (không phải
+P(≥ 1 báo cáo trong đoạn), vốn phụ thuộc độ dài chuỗi báo sau khởi phát).
+*Thực nghiệm (366 run, 10 seed):* tỷ lệ khởi phát sai trung bình mỗi đoạn 0.001–0.006 trên 7/7 dataset cho mọi luật CPC (α
+= 0.05); tệ nhất từng run ≤ 0.013 với CPC-SC+CS, nhưng CPC-W tới 0.071–0.114 trên CMU (bản đồ nhỏ, ~70 đoạn null: phân vị
+conformal dao động theo run — bảo đảm là biên theo hiệu chuẩn, không theo từng run).
+
+**Hệ quả (giới hạn của hiệu chuẩn bằng bản đồ).** Với n đơn vị hoán đổi được, bảo đảm có điều kiện theo hiệu chuẩn
+P(rủi ro > α + ε | hiệu chuẩn) ≤ δ cần n ≳ log(1/δ)/α đơn vị độc lập; bản đồ cho ~10 chunk null độc lập, nên chỉ bảo đảm
+biên là khả thi — đúng với dao động theo run quan sát được (worst-run > α trên CMU dù trung bình ≪ α).
+
 ## 4. Định vị so với công trình gần nhất
 
 | | Bằng chứng on/off | Cần mô hình hoặc nhãn | Bảo đảm |

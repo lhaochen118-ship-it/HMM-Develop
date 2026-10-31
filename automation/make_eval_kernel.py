@@ -26,10 +26,12 @@ if os.path.isfile(_tok): os.environ["KAGGLE_API_TOKEN"] = open(_tok).read().stri
 DUMPS = []
 DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps", "nhatlong1103/vpr-dumps-4seasons", "nhatlong1103/boreas-vpr-dump"]
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-L4 = "--l4" in sys.argv; GPU = "--gpu" in sys.argv or L4
+L4 = "--l4" in sys.argv; GPU = "--gpu" in sys.argv or L4 or "--t4" in sys.argv
 EXTRA_DS = sys.argv[sys.argv.index("--ds") + 1].split(",") if "--ds" in sys.argv else []   # extra dataset sources (images, weights)
 PAR = int(sys.argv[sys.argv.index("--par") + 1]) if "--par" in sys.argv else 0   # parallel jobs per session (0: auto from CPUs / GPUs)
-argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--acc2", "--acc3", "--owner", "--ds", "--par") and sys.argv[i - 1] not in ("--owner", "--ds", "--par")]
+MODELS = sys.argv[sys.argv.index("--models") + 1].split(",") if "--models" in sys.argv else []   # Kaggle model sources (e.g. qwen-lm/qwen2.5-vl/transformers/7b-instruct/2)
+T4X2 = "--t4" in sys.argv   # explicit 2x T4 (internet allowed) instead of the default GPU
+argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--t4", "--acc2", "--acc3", "--owner", "--ds", "--par", "--models") and sys.argv[i - 1] not in ("--owner", "--ds", "--par", "--models")]
 kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]
 dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
 
@@ -73,6 +75,7 @@ import torch
 print("dump dirs:", {s: len(os.listdir(os.path.join(D, s))) for s in sorted(os.listdir(D))}, "| cpus", os.cpu_count(), "| device", os.environ["SELFCAL_DEVICE"], "| cuda", torch.cuda.is_available(), flush=True)
 NGPU = torch.cuda.device_count()
 CD = next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith("navcache_") for f in fs)), "")   # token CACHE: mounted rule caches
+TK = next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith("topk_") for f in fs)), "")       # token TOPK: mounted top-K candidates
 NW = max(1, min(len(JOBS), (os.cpu_count() or 4) - 1 if NGPU <= 2 else max(NGPU, (os.cpu_count() or 4) // 4)))
 if %d: NW = min(len(JOBS), %d)                                     # --par: explicit parallel width (memory-bound jobs)
 TH = str(max(1, (os.cpu_count() or 4) // NW))                       # BLAS threads per job (no oversubscription)
@@ -80,7 +83,7 @@ def run(ij):
     i, j = ij; script, args = j[0], j[1:]
     env = dict(os.environ, OMP_NUM_THREADS=TH, MKL_NUM_THREADS=TH, OPENBLAS_NUM_THREADS=TH)
     if NGPU and len(JOBS) > 1: env["CUDA_VISIBLE_DEVICES"] = str(i %% NGPU)   # a single job keeps every GPU (multi-GPU scripts)              # spread jobs round-robin over all GPUs of the session
-    if "DUMP" in args or "CACHE" in args: cmd = [sys.executable, script] + [D if a == "DUMP" else CD if a == "CACHE" else a for a in args]
+    if "DUMP" in args or "CACHE" in args or "TOPK" in args: cmd = [sys.executable, script] + [D if a == "DUMP" else CD if a == "CACHE" else TK if a == "TOPK" else a for a in args]
     else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
     t = time.time(); log = os.path.join(C, "logs", "_".join(j).replace(".py", "").replace("/", "-") + ".log")
     r = subprocess.run(cmd, cwd=C, stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
@@ -99,7 +102,7 @@ print("EVAL_DONE", rcs, f"{time.time()-t0:.0f}s", flush=True)
 os.makedirs(kdir, exist_ok=True); open(os.path.join(kdir, "run.py"), "w").write(runner)
 meta = {"id": f"{OWNER}/{slug}", "title": slug, "code_file": "run.py", "language": "python", "kernel_type": "script",
         "is_private": True, "enable_gpu": GPU, "enable_tpu": False, "enable_internet": False,
-        "dataset_sources": [CODE_DS] + DUMP_DS + EXTRA_DS, "competition_sources": [], "kernel_sources": dumps, "model_sources": []}
+        "dataset_sources": [CODE_DS] + DUMP_DS + EXTRA_DS, "competition_sources": [], "kernel_sources": dumps, "model_sources": MODELS}
 if L4:                                   # 4x NVIDIA L4 via the gemma-4-developer-agent grant (rules accepted on the web; internet off)
     meta.update(machine_shape="NvidiaL4", competition_sources=["gemma-4-developer-agent"], enable_internet=False)
 json.dump(meta, open(os.path.join(kdir, "kernel-metadata.json"), "w"), indent=2)
