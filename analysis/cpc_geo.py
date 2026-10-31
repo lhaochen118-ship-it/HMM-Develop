@@ -170,3 +170,46 @@ def sc_evidence_x(z, b, pq3, pn3, alpha=0.05, w3=None, p_in=0.01, p_out=0.01):
         mx = np.sort(mx); k = int(np.ceil((1 - alpha) * (len(mx) + 1)))
         kap[m] = max(mx[k - 1] if k <= len(mx) else np.inf, 0.0)
     return logodds(llq, b["seqs"], p_in, p_out), kap
+
+
+def kappa_null(ll_null, lens, H, alpha=0.05, p_in=0.01, p_out=0.01, floor=0.0):
+    """conformal (1 - alpha) quantile of the max fresh-start presence log-odds over disjoint H-frame segments of null chunks
+    (ll_null: per-frame log LR of the null frames in chunk order; lens: chunk lengths)"""
+    mx, a = [], 0
+    for L in lens:
+        for i in range(0, L - H + 1, H):
+            pon, best = 0.5, -np.inf
+            for j in range(H):
+                pr_ = pon * (1 - p_out) + (1 - pon) * p_in if j > 0 else 0.5
+                l = float(np.clip(np.log(pr_ / (1 - pr_)) + ll_null[a + i + j], -50, 50)); pon = 1 / (1 + np.exp(-l)); best = max(best, l)
+            mx.append(best)
+        a += L
+    mx = np.sort(mx); k = int(np.ceil((1 - alpha) * (len(mx) + 1)))
+    return max(mx[k - 1] if 0 < k <= len(mx) else np.inf, floor), len(mx)
+
+
+def xnull_rules(z, b, xn, alpha=0.05, q3=None, x3=None, w3=None):
+    """Entry 27: onset threshold calibrated on the CROSS-TRAVERSAL null (xnull.py) instead of the map self-replay null.
+    Same query statistics and per-condition calibrators as CPC-SC (sc_evidence); kappa_X per query condition from the
+    pseudo off-map chunks of the calibration traversals. With q3 / x3 (route p-values of queries / pseudo-queries) the
+    three-component chain of CPC-SC-T is used. Returns name -> (score, default accept), x_c."""
+    H, excl, seqs, MP, est = b["H"], b["excl"], b["seqs"], b["MP"], b["est_c"]; x_c = MP[est]; hz = list(z["hz"])
+    cl = lambda x: np.clip(np.nan_to_num(x, nan=1.0), 1e-6, 1)
+    pq, pr, px, prx = cl(z["p_q"]), cl(z["pR"]), cl(xn["p_x"]), cl(xn["pR_x"]); lens = xn["lens"]
+    agree = np.linalg.norm(MP[b["top"]] - x_c, axis=1) <= excl; w3 = 1.0 / H if w3 is None else w3
+    cs = consistency_ok(x_c, z["o_q"], seqs, excl, 3.0); sh = shape_ok(x_c, z["o_q"], seqs, excl, 3.0, 0.5, hz=hz)
+    out = {}
+    for tag3, use3 in (("", False), ("-T", q3 is not None)):
+        if tag3 and not use3: continue
+        llq, kap = np.zeros(len(pq)), np.zeros(len(pq))
+        for cn in sorted(set(z["cond"])):
+            m = z["cond"] == cn; a1, _ = beta_em(pq[m]); a2, _ = beta_em(pr[m])
+            eq = [np.where(agree[m], a1 * pq[m] ** (a1 - 1), a1), (a2 * pr[m] ** (a2 - 1)) ** (1.0 / H)]
+            ex = [np.maximum(a1 * px ** (a1 - 1), a1), (a2 * prx ** (a2 - 1)) ** (1.0 / H)]
+            if use3:
+                a3, _ = beta_em(cl(q3[m])); eq.append((a3 * cl(q3[m]) ** (a3 - 1)) ** w3); ex.append((a3 * cl(x3) ** (a3 - 1)) ** w3)
+            llq[m] = np.log(np.mean(eq, 0)); kap[m], _ = kappa_null(np.log(np.mean(ex, 0)), lens, H, alpha)
+        lo = logodds(llq, seqs)
+        for tg, ok in (("CS", cs), ("SH", sh)):
+            out[f"CPC-SC{tag3}(X)+{tg}"] = (np.where(ok, lo - kap, -np.inf), hyst_ok(lo > kap, lo > 0, np.ones(len(ok), bool), seqs) & ok)
+    return out, x_c

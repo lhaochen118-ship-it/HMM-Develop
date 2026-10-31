@@ -7,6 +7,24 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 27 (in progress, branch `hmm-navigation-4`) — condition-matched null, route-evidence power, SafeVPR / VLM beyond Boreas (2026-10-31)
+
+**Pre-registration (written before any result of these variants).**
+1. *Cross-traversal null (Boreas only; `analysis/xnull.py`).* The 17 Boreas traversals that are neither the map nor a
+   query (map-side data, other dates / weather / light) become leave-block-out pseudo-queries (own block masked, kept only
+   > off_d from the reduced map), with their real wheel + gyro odometry; same SelfCal half-map test, same R null, top-100
+   with the own block masked (route cost). Candidates: CPC-SC(X)+CS, CPC-SC(X)+SH, CPC-SC-T(X)+CS, CPC-SC-T(X)+SH: the
+   onset threshold kappa is calibrated on these chunks instead of the map self-replay null; everything else unchanged.
+   Hypothesis: less conservative default point (recall up) with segFAR still <= alpha, and a more stable kappa (~340 chunks
+   instead of ~10).
+2. *Power of the route component (all datasets).* CPC-SC-T used e_T^(1/H); candidates e_T^(1/2) and e_T^1 (fixed a
+   priori; validity is unchanged since the whole chain is segment-calibrated on the null). Hypothesis: better ranking with
+   strong descriptors (CMU) where the route cost ranks best.
+3. *SafeVPR'26 and VPR auditing'26 on NCLT and 4Seasons* (images `nclt-cam5-*`, `4seasons`; shared resolver
+   `analysis/vpr_images.py`), same protocol as Boreas.
+Criteria as Entries 25-26 (mean segFAR <= 0.05 per dataset, then error and recall at the default point, then curves);
+final choice by leave-one-dataset-out over all label-free variants. Seeds 3-9 not looked at for any of these variants.
+
 ## Entry 26 (in progress, branch `hmm-navigation-4`) — dependence diagnosis, shape-consistency stop, finite-memory onset, dependence-free certificate (2026-10-31)
 
 **Diagnosis before any new rule (labels used only here; `analysis/dep_diag.py`, seed 0).** (1) The top-1 SelfCal p-value of

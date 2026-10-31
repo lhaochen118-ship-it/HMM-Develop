@@ -17,7 +17,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import vprlib as V
 
 arg = lambda k, d: type(d)(sys.argv[sys.argv.index(k) + 1]) if k in sys.argv else d
-SEED, EVERY, BS, SIDE = arg("--seed", 0), arg("--every", 5), arg("--bs", 8), arg("--side", 448)
+SEED, EVERY, BS, SIDE = arg("--seed", 0), arg("--every", 5), arg("--bs", 16), arg("--side", 448)
 PART = tuple(int(x) for x in arg("--part", "0/1").split("/"))
 PROMPT = ("The first image is a query photo taken by a robot. The second image is the database photo that a place "
           "recognition system retrieved as its best match. Decide whether both images depict the same physical place. "
@@ -29,23 +29,12 @@ PROMPT = ("The first image is a query photo taken by a robot. The second image i
           '{"is_same_place": true or false, "reasoning": "Both images show ..."}')
 
 
-def image_index():
-    idx = {}
-    for d, _, fs in os.walk("/kaggle/input"):
-        if "/img/" in d + "/":
-            seq = os.path.basename(d)
-            for f in fs:
-                if f.endswith((".jpg", ".png")): idx[(seq, os.path.splitext(f)[0])] = os.path.join(d, f)
-    return idx
-
-
-def pairs_boreas(dump, desc, z, every):
-    ep = V.load_boreas(dump, desc); ref = ep.ref
-    nm = lambda r: np.load(os.path.join(dump, "meta", f"boreas_{r}.npz"), allow_pickle=True)["names"]
-    key = lambda n: str(int(n)) if np.issubdtype(type(n), np.number) else os.path.basename(str(n)).split(".")[0]
-    mnames = nm(ref); qrecs = list(dict.fromkeys(ep.q_rec)); qnames = np.concatenate([nm(r) for r in qrecs])
-    rows = np.arange(0, len(qnames), every); mrow = z["kidx"][z["top"][rows]]
-    return rows, [(ep.q_rec[r], key(qnames[r])) for r in rows], [(ref, key(mnames[j])) for j in mrow]
+def pairs(dump, ds, desc, z, every):
+    """(query rows, query paths, top-1 map paths) for every `every`-th query frame; the top-1 is the cache's (reduced map)"""
+    import topk_dump as TKD, vpr_images as VI
+    ep = TKD.load(dump, ds, desc); qp, mp = VI.image_paths(ds, dump, ep)
+    rows = np.arange(0, len(qp), every); mrow = z["kidx"][z["top"][rows]]
+    return rows, [qp[r] for r in rows], [mp[j] for j in mrow]
 
 
 def find_model():
@@ -65,10 +54,8 @@ def main():
     except ImportError:
         from transformers import AutoModelForImageTextToText as QVL
     t0 = time.time(); z = np.load(os.path.join(cdir, f"navcache_{ds.replace(':', '_')}_{desc}_s{SEED}.npz"), allow_pickle=True)
-    assert ds == "boreas", "image pairs implemented for boreas"
-    rows, qk, mk = pairs_boreas(dump, desc, z, EVERY)
-    sel = np.arange(PART[0], len(rows), PART[1]); rows = rows[sel]; qk = [qk[i] for i in sel]; mk = [mk[i] for i in sel]
-    idx = image_index(); qp = [idx.get(k) for k in qk]; mp = [idx.get(k) for k in mk]
+    rows, qp, mp = pairs(dump, ds, desc, z, EVERY)
+    sel = np.arange(PART[0], len(rows), PART[1]); rows = rows[sel]; qp = [qp[i] for i in sel]; mp = [mp[i] for i in sel]
     ok = np.array([a is not None and b is not None for a, b in zip(qp, mp)])
     print(f"{ds}/{desc} s{SEED}: {len(rows)} pairs, images found {ok.mean():.3f}, {time.time() - t0:.0f}s", flush=True)
     mdir = find_model(); dev = "cuda:0"; print("model dir", mdir, sorted(os.listdir(mdir)), flush=True)
@@ -110,7 +97,7 @@ def main():
         return im.resize((max(28, int(w * s)), max(28, int(h * s))), Image.BICUBIC) if s < 1 else im
 
     from concurrent.futures import ThreadPoolExecutor
-    pool = ThreadPoolExecutor(8); todo = np.flatnonzero(ok); t1 = time.time()
+    pool = ThreadPoolExecutor(12); todo = np.flatnonzero(ok); t1 = time.time()
     batches = [todo[i:i + BS] for i in range(0, len(todo), BS)]
     nxt = pool.submit(lambda b: [img(x) for i in b for x in (qp[i], mp[i])], batches[0]) if batches else None
     for bi, b in enumerate(batches):

@@ -7,7 +7,7 @@ All GPUs of the session are used: map patch tokens are replicated on every GPU, 
 Output results/safevpr_<ds>_p<i>.npz: for each descriptor d, cand_<d> (n_rows, K) full-map indices of the top-K by global
 cosine similarity, mnn_<d> (n_q, K) number of mutual-NN patch pairs (the SafeVPR score); q_rows = query rows covered (frames whose image is missing are skipped).
 Stage B (calibration with labels, Mondrian Learn-Then-Test, navigation) is in nav_demo.py (--safevpr).
-Usage: safevpr_mnn.py <dump> boreas [K=20] [--part i/n]"""
+Usage: safevpr_mnn.py <dump> <ds: boreas|nclt|4s:<scene>> [K=20] [--part i/n]   (images: vpr_images.py)"""
 import sys, os, time, threading, queue
 import numpy as np, torch
 from PIL import Image
@@ -29,25 +29,12 @@ def find(root, name):
 
 def main():
     dump, ds = sys.argv[1], sys.argv[2]; K = int(sys.argv[3]) if len(sys.argv) > 3 else 20
-    assert ds == "boreas", "only boreas images are published"
     t0 = time.time(); ngpu = max(1, torch.cuda.device_count())
-    # ---- image index: <seq>/<ts> -> path, over every attached boreas-vpr-images-k dataset
-    index = {}
-    for d, _, fs in os.walk("/kaggle/input"):
-        if os.path.basename(os.path.dirname(d)) == "img" or "/img/" in d + "/":
-            seq = os.path.basename(d)
-            for f in fs:
-                if f.endswith(".jpg"): index[(seq, f[:-4])] = os.path.join(d, f)
-    print("images indexed", len(index), f"{time.time()-t0:.0f}s", flush=True)
-    # ---- names of map / query rows (same order as V.load_boreas)
-    eps = {d: V.load_boreas(dump, d) for d in DESCS}; ep = eps["megaloc"]; ref = ep.ref
-    mnames = np.load(os.path.join(dump, "meta", f"boreas_{ref}.npz"), allow_pickle=True)["names"]
-    qrecs = list(dict.fromkeys(ep.q_rec)); qnames = np.concatenate([np.load(os.path.join(dump, "meta", f"boreas_{r}.npz"), allow_pickle=True)["names"] for r in qrecs])
-    key = lambda seq, n: (seq, str(int(n)) if np.issubdtype(type(n), np.number) else os.path.basename(str(n)).split(".")[0])
-    mpaths = [index.get(key(ref, n)) for n in mnames]; qpaths = [index.get(key(r, n)) for r, n in zip(ep.q_rec, qnames)]
-    print("missing map", sum(p is None for p in mpaths), "missing query", sum(p is None for p in qpaths), flush=True)
-    for r in qrecs:
-        m = ep.q_rec == r; print(f"   {r}: {m.sum()} frames, missing {sum(qpaths[i] is None for i in np.flatnonzero(m))}", flush=True)
+    import topk_dump as TKD, vpr_images as VI
+    eps = {d: TKD.load(dump, ds, d) for d in DESCS}; ep = eps["megaloc"]
+    qpaths, mpaths = VI.image_paths(ds, dump, ep)
+    print("images: missing map", sum(p is None for p in mpaths), "missing query", sum(p is None for p in qpaths), f"{time.time()-t0:.0f}s", flush=True)
+    mpaths = [p if p is not None else next(x for x in mpaths if x is not None) for p in mpaths]   # missing map image: any placeholder (never a candidate in practice)
     have = np.array([p is not None for p in qpaths]); rows = np.flatnonzero(have); rows = rows[PART[0]::PART[1]]
     # ---- candidates: top-K over the FULL map per descriptor (global cosine; descriptors are L2-normalised)
     cand = {}
@@ -76,7 +63,7 @@ def main():
         models.append(m.eval().half().cuda(g))
 
     from concurrent.futures import ThreadPoolExecutor
-    pool = ThreadPoolExecutor(16)                                     # JPEG decode + resize in parallel (CPU bound)
+    pool = ThreadPoolExecutor(min(48, (os.cpu_count() or 8)))                                     # JPEG decode + resize in parallel (CPU bound)
 
     @torch.no_grad()
     def feats(g, paths):
@@ -111,7 +98,7 @@ def main():
     th = [threading.Thread(target=worker, args=(g,)) for g in range(ngpu)]
     [t.start() for t in th]; [t.join() for t in th]
     os.makedirs("results", exist_ok=True)
-    np.savez_compressed(f"results/safevpr_{ds}_p{PART[0]}.npz", q_rows=rows, **{f"cand_{d}": cand[d] for d in DESCS},
+    np.savez_compressed(f"results/safevpr_{ds.replace(':', '_')}_p{PART[0]}.npz", q_rows=rows, **{f"cand_{d}": cand[d] for d in DESCS},
                         **{f"mnn_{d}": mnn[:, i] for i, d in enumerate(DESCS)})
     print("DONE", len(rows), "queries", f"{time.time()-t0:.0f}s", flush=True)
 

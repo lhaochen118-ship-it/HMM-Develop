@@ -41,6 +41,8 @@ TOPK = sys.argv[sys.argv.index("--topk") + 1] if "--topk" in sys.argv else None 
 TRAILD = sys.argv[sys.argv.index("--trail") + 1] if "--trail" in sys.argv else None   # dir of trail_<ds>_megaloc_s<seed>.npz (trail.py) -> TRAIL26 family
 DUMPD = sys.argv[sys.argv.index("--mapdump") + 1] if "--mapdump" in sys.argv else None   # descriptor dumps -> map-null top-K for the label-free TAO-SC family
 _MFULL = {}
+XNULL = sys.argv[sys.argv.index("--xnull") + 1] if "--xnull" in sys.argv else None   # dir of xnull_boreas_<desc>_s<seed>.npz -> cross-traversal-null families
+TW = [float(x) for x in sys.argv[sys.argv.index("--tw") + 1].split(",")] if "--tw" in sys.argv else []   # extra route-component powers w3 for CPC-SC-T
 FAMS = set(sys.argv[sys.argv.index("--fams") + 1].split(",")) if "--fams" in sys.argv else None   # evaluate only these families
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
 N_PTS = 48                                       # thresholds per curve (quantiles of the score + the default threshold)
@@ -148,6 +150,19 @@ def families(z, b):
             xc3 = MP[est]; cs3 = consistency_ok(xc3, z["o_q"], b["seqs"], b["excl"], 3.0)
             F["CPC-SC-T+CS"] = (np.where(cs3, lo3 - k3, -np.inf), xc3, 0.0, CG.hyst_ok(lo3 > k3, lo3 > 0, np.ones(len(cs3), bool), b["seqs"]) & cs3)
             F["CPC-SC-T"] = (lo3 - k3, xc3, 0.0, CG.hyst_ok(lo3 > k3, lo3 > 0, np.ones(len(cs3), bool), b["seqs"]))
+            for w3 in TW:                                   # power of the route e-value (1/H by default): ranking with strong descriptors
+                lw, kw = CG.sc_evidence_x({k: z[k] for k in z.files}, b, np.minimum(pq3, 1.0), np.clip(pn3, 1e-6, 1.0), w3=w3)
+                shw = CG.shape_ok(xc3, z["o_q"], b["seqs"], b["excl"], 3.0, 0.5, hz=list(z["hz"]))
+                F[f"CPC-SC-T{w3:g}+SH"] = (np.where(shw, lw - kw, -np.inf), xc3, 0.0, CG.hyst_ok(lw > kw, lw > 0, np.ones(len(shw), bool), b["seqs"]) & shw)
+                F[f"CPC-SC-T{w3:g}+CS"] = (np.where(cs3, lw - kw, -np.inf), xc3, 0.0, CG.hyst_ok(lw > kw, lw > 0, np.ones(len(cs3), bool), b["seqs"]) & cs3)
+            xf = os.path.join(XNULL, f"xnull_{b['ds_tag']}_s{int(z['seed'])}.npz") if XNULL else None
+            if xf and os.path.exists(xf):                   # cross-traversal null (Boreas): onset threshold from other traversals
+                xn = dict(np.load(xf)); lens = xn["lens"]; chx = np.repeat(np.arange(len(lens)), lens); px_ = np.concatenate([np.arange(l) for l in lens])
+                zx = dict(MP=MP, o_q=xn["o_x"].astype(float), hz=z["hz"], q_sid=chx, q_k=px_)
+                rx = TAO.tao(zx, dict(idx=xn["tk_idx"].astype(np.int64), sim=xn["tk_sim"]))
+                cx_ = np.where(rx["j"] >= 0, rx["cost"], np.inf); x3 = (1 + np.searchsorted(cnf, cx_, side="right")) / (1 + len(cnf))
+                GX, xgx = CG.xnull_rules({k: z[k] for k in z.files}, b, xn, q3=np.minimum(pq3, 1.0), x3=np.minimum(x3, 1.0))
+                for name, (scg, accg) in GX.items(): F[name] = (scg, xgx, 0.0, accg)
             sh3 = CG.shape_ok(xc3, z["o_q"], b["seqs"], b["excl"], 3.0, 0.5, hz=list(z["hz"]))
             F["CPC-SC-T+SH"] = (np.where(sh3, lo3 - k3, -np.inf), xc3, 0.0, CG.hyst_ok(lo3 > k3, lo3 > 0, np.ones(len(sh3), bool), b["seqs"]) & sh3)
             ok_t = r["j"] >= 0
