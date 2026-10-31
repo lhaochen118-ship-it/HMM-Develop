@@ -5,6 +5,43 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 00. Vòng 2026-10-31 (`hmm-navigation-4`): bài học mới (đọc trước §0)
+
+### 00.1 Script mới
+
+| Script | Việc |
+|---|---|
+| `automation/anon_download.py` | Tải dataset **public** Kaggle không cần token, từng file, song song (`--match` regex). Tên file có thư mục con phải gửi `/` dạng `%2F` |
+| `analysis/topk_dump.py` | Top-K (K = 100) ứng viên mỗi frame cho mọi seed (một matmul với bản đồ đầy đủ, mask theo `kidx`); GPU nếu có. Kết quả public: `nhatlong1103/hmm-topk` |
+| `analysis/tao.py`, `trail.py`, `vlm_audit.py`, `vlm_eval.py` | Baseline TAO'26, TRAIL'26, VPR-auditing'26 (đặc tả: `literature/BASELINES_2026.md`) và đánh giá VLM trên cùng frame |
+| `analysis/cpc_geo.py`, `geo_cons.py`, `geo_place.py`, `gpc.py`, `dep_diag.py`, `e26_summary.py` | Luật Entry 26 (SH, CPC-W, SCJ, CPC-SC-T), chứng chỉ GPC, chẩn đoán phụ thuộc, tổng hợp |
+| `oc_curves.py` | Cờ mới: `--geo/--only-geo`, `--topk DIR` (TAO26, TAO-SC, CPC-SC-T…), `--mapdump DIR` (null top-K cho TAO-SC/CPC-SC-T), `--trail DIR`, `--fams a,b` (chỉ đánh giá các họ này), `--seeds` |
+| `make_eval_kernel.py` | `--models` (Kaggle model sources), `--t4`, token `TOPK`; `CACHE`/`TOPK` chỉ khớp file `.npz` |
+| `fanout.py` | Dùng **mọi** acc (acc dự trữ xếp cuối); `--cpu` dùng 5 phiên CPU/acc; `--models` |
+
+### 00.2 Lỗi đã gặp và sửa
+
+| Lỗi | Hậu quả | Sửa / bài học |
+|---|---|---|
+| Token `TOPK` khớp thư mục code (file `topk_dump.py` bắt đầu bằng `topk_`) | Lô TRAIL/TAO đầu tiên đọc nhầm thư mục, lỗi FileNotFound | Token chỉ khớp `topk_*.npz` (tương tự `navcache_*.npz`) |
+| Cờ `--dump` của `oc_curves` bị `nav_demo` (import trước) hiểu là cờ của nó | `DUMPD = None`, họ TAO-SC biến mất không báo | Đổi tên `--mapdump`; mỗi cờ mới phải smoke-test đầu-cuối |
+| 4 job VLM song song trong một phiên cùng tạo symlink vào `/tmp/qwen_vl_patched` | 3/4 job chết (FileExistsError) | `tempfile.mkdtemp()` riêng mỗi tiến trình |
+| Model Kaggle `qwen-lm/qwen2.5-vl/transformers/7b-instruct/2` ghi `image_processor_type: Qwen2_5_VLImageProcessor` (transformers mới không còn lớp này) | AutoProcessor lỗi | Thư mục symlink + vá `preprocessor_config.json` thành `Qwen2VLImageProcessor` |
+| Slug `tk-1` | "Title must be at least five characters" ở mọi acc (failover lặp vô ích) | Slug ≥ 5 ký tự |
+| Ba tiến trình `publish_dataset.py` song song cùng thư mục stage | Upload chồng nhau | Một chuỗi tự động duy nhất; giết hết rồi publish lại một lần |
+| `pkill -f <pattern>` (lại lần nữa) | Giết shell của chính mình (exit 144) | Chỉ `ps -eo pid,args | grep … | grep -v grep` + `kill <pid>` |
+| `cd X && cmd &` | `cd` chỉ có hiệu lực trong subshell nền | Dùng đường dẫn tuyệt đối cho lệnh nền |
+
+### 00.3 Kaggle vòng này
+
+- 19 acc (thêm `quynhtran35`). Hàng đợi **L4 và cả T4** tắc nhiều lần (QUEUED > 5 phút → `run_kernel` huỷ/đẩy lại tối đa 4
+  lần; sau STALL_GIVEUP kernel đẩy lần cuối có thể vẫn nằm hàng đợi → `reattach.py` hoặc xoá). Job nhẹ chuyển T4/CPU.
+- Phiên L4 thứ hai của một acc nhiều lần nằm QUEUED trong khi phiên thứ nhất chạy: khi cần nhiều L4, rải 1 phiên/acc
+  trước.
+- 84 kernel CPU (5/acc) chạy song song không xếp hàng: đánh giá từ cache nên đưa lên CPU; chuẩn bị 84 kernel mất ~15 phút
+  (mỗi `make_eval_kernel` ≈ 10 s).
+- Qwen2.5-VL-7B bf16 trên L4: ≈ 3 cặp ảnh/giây/GPU (prefill-only), nạp model ~2 phút từ `/kaggle/input`.
+
 ## 0. Vòng 2026-10-31 (`hmm-navigation-3`): bài học mới
 
 ### 0.1 Script và công cụ mới

@@ -149,6 +149,11 @@ img/<seq>/<timestamp_us>.jpg        (datasets boreas-vpr-images-k)
 Publish bằng `automation/publish_dataset.py <dir> <slug> "<title>" "<subtitle>"`. Trong kernel: `nav_demo.py ... --safevpr auto`
 (thêm `--ds nhatlong1103/vpr-safevpr-scores` cho `fanout.py`).
 
+| `nhatlong1103/hmm-topk` (2026-10-31, public) | Top-100 ứng viên (`idx` = hàng bản đồ rút gọn, `sim` fp16, `mean`, `std`) của mọi frame query cho **7 dataset × 6 descriptor × 10 seed** (366 file, 2.4 GB), cùng thứ tự với `hmm-navcache-v2`; đầu vào của TAO'26 / TRAIL'26 / TAO-SC / CPC-SC-T | `analysis/topk_dump.py` (GPU) |
+| Kaggle model `qwen-lm/qwen2.5-vl/transformers/7b-instruct/2` | Qwen2.5-VL-7B-Instruct (dùng cho VPR-auditing'26, offline trên L4; vá `preprocessor_config.json`, xem `02` §00.2) | (model công khai của Qwen) |
+
+Tải dataset public **không cần token**: `python3 automation/anon_download.py <owner/slug> <dir> --jobs 12 [--match regex]`.
+
 ## 2. Datasets ảnh gốc và trọng số (chỉ cần khi tạo dump mới)
 
 | Slug | Nội dung |
@@ -196,6 +201,7 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo pub
 | 16 | `lelynhan` | thêm 2026-10-31; thường có kernel của người khác (zc-*) |
 | 17 | `caotienminh1` | thêm 2026-10-31 (user: L4×4; L4 thường xếp hàng lâu) |
 | 18 | `quynhle07` | thêm 2026-10-31 (user: L4×4) |
+| 19 | `quynhtran35` | thêm 2026-10-31 (branch `hmm-navigation-4`); T4 OK |
 
 **2026-10-31 (branch `hmm-navigation-3`):** user cho dùng **tất cả** acc (kể cả 4 acc trong `reserved_accounts.txt`, ưu tiên
 sau cùng). Một số acc có kernel của phiên khác (`zc-*`, `vicoqa-*` trên `thnliu`, `linhmai24`, `lelynhan`, `huyenco`,

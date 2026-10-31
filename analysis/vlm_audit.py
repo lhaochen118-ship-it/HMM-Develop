@@ -75,7 +75,7 @@ def main():
     # the Kaggle model's preprocessor_config.json names an image-processor class that newer transformers dropped: build a
     # symlinked copy with the class name patched (Qwen2VLImageProcessor is the image processor of Qwen2.5-VL)
     import json, tempfile
-    wdir = os.path.join(tempfile.gettempdir(), "qwen_vl_patched"); os.makedirs(wdir, exist_ok=True)
+    wdir = tempfile.mkdtemp(prefix="qwen_vl_patched_")             # one per process (parallel jobs in a session)
     for f in os.listdir(mdir):
         dst = os.path.join(wdir, f)
         if f == "preprocessor_config.json":
