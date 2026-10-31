@@ -37,7 +37,7 @@ kinh nghiệm vận hành ở `02`.*
 
 | Thứ | Ở đâu |
 |---|---|
-| Mã | `qcc/*.py`, `qcc/probes/`, `qcc/wait_scores.sh`; README công cụ `qcc/README.md`; nhật ký `qcc/LOG.md` |
+| Mã | `qcc/*.py`, `qcc/probes/`, `qcc/wait_scores.sh`; bảng công cụ `qcc/README.md`. Nhật ký thí nghiệm mới ghi vào `01` (kết quả) hoặc tạo `qcc/LOG.md` |
 | Circuit public | Dataset `manwithacat/vqcc-apache-public-circuits`: `manifest.csv`, `circuits/invsqrt/<sha12>.kmb`, `circuits/dqi/2ed7ccf189f1.kmb`, `circuits/chemistry/0d46767d0211/` |
 | Write-up lineage invsqrt | Dataset `mrmeows/qcc-1375-open-circuits` (`README.md`, `sources/invsqrt_*/`) |
 | Dữ liệu cuộc thi | `kaggle competitions download google-verifiable-quantum-circuit-compilation -f <file>`: `verifiable_circuit_compilation.pdf`, `verifiers/invsqrt/*.py`, `kickmix/kickmix.so`, `sample_submission/*` |

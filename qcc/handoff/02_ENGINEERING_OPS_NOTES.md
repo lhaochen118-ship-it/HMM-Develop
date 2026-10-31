@@ -52,7 +52,7 @@ học ở `01`, trạng thái/việc tiếp theo ở `03`.*
 | `ksim.py` | Mỗi shot là một làn bit. Một qubit / bit cổ điển là `uint64[W]` (W = ⌈shots/64⌉), một cổng là một phép numpy. Pha tách thành parity nửa vòng (bitplane), bộ đếm 1/8 vòng (int64/shot), và các vector bit của từng rotation | Toàn miền 3.1M x trong ~15 s. Hook `probe(idx, op, q, mask)` trước mỗi Toffoli; `snap_at` chụp (qubit, half, eighth, #rot); `track_life` cho vòng đời qubit |
 | `refit_angles.py` | LP: max t với \|e0 + B·d\| ≤ tol − t. Cutting plane trên các x tệ nhất | **Đơn vị 2^−40 vòng**: sai số ~1e−11 nhỏ hơn dung sai khả thi tuyệt đối của HiGHS (1e−7), dùng đơn vị vòng thì LP "thành công" nhưng sai. Target/tol được cache (isqrt 3.1M số mất vài giây) |
 | `peephole.py`, `redundancy.py` | Giải GF(2) trên mẫu shot, xác nhận trên toàn miền | Khử Gauss numpy ổn với ~60 cột. Với 1 900 cột (bậc 2, 61 dây) mỗi lần giải tốn hàng chục giây, nên 134 CCZ không xong trong 50 phút. Thay bằng lọc băm (so cặp AND trên 96 word mẫu) |
-| `probes/` | `block.py` (khối có phải oracle pha sạch không), `ccz_fast.py`, `support_run.py`, `xbits_run.py` | Tham số là thư mục chứa `best_pub.kmx` (bản kmx của circuit tốt nhất) |
+| `probes/` | `block.py` (khối có phải oracle pha sạch không), `ccz_fast.py`, `xbits_run.py` | Tham số là thư mục chứa `best_pub.kmx` (bản kmx của circuit tốt nhất) |
 
 **Nguyên tắc kiểm chứng.**
 
