@@ -23,6 +23,8 @@ from hmm_diag import DiagFilter
 from hmm_fix import beta_em
 
 A, SIG_FIX, DROP = 0.05, 5.0, 0.3
+if "--drop" in sys.argv:                       # --drop f: share of map blocks removed (default 0.3); results file gets _d<100 f>
+    i = sys.argv.index("--drop"); DROP = float(sys.argv[i + 1]); del sys.argv[i:i + 2]
 DUMP = "--dump" in sys.argv                    # also save per-frame arrays (results/navframes_<ds>_<desc>_s<seed>.npz)
 if DUMP: sys.argv.remove("--dump")
 RHOS = []                                      # --rhos 0.03,0.3: extra ghost-gate floors (sensitivity of rho)
@@ -492,7 +494,8 @@ def main():
         run["rules"] = evaluate(rules, xfs, pons, cx, f"{ds}/{desc} s{seed}")
         out["runs"].append(run)
     os.makedirs("results", exist_ok=True)
-    json.dump(out, open(f"results/nav_{ds.replace(':', '_')}_{desc}{f'_s{SEED0}' if SEED0 else ''}.json", "w"), indent=1, default=float)
+    dtag = f"_d{int(round(DROP * 100))}" if abs(DROP - 0.3) > 1e-9 else ""
+    json.dump(out, open(f"results/nav_{ds.replace(':', '_')}_{desc}{dtag}{f'_s{SEED0}' if SEED0 else ''}.json", "w"), indent=1, default=float)
 
 
 if __name__ == "__main__":

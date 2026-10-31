@@ -7,7 +7,7 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
-## Entry 25 — "Only more conservative?": recall diagnosis, operating curves, odometry-consistency stop (2026-10-31, in progress)
+## Entry 25 — "Only more conservative?": recall diagnosis, operating curves, odometry-consistency stop (2026-10-31)
 
 **Question (reviewer).** CPC-HMM +TCEmin has low error but also low recall. Is it better, or only more conservative?
 
@@ -36,6 +36,43 @@ not yet reported in this on-map run (re-entry) / dropped after reporting (dropou
 <= 3 excl, | ||m_t - m_{t-k}|| - ||o_t - o_{t-k}|| | > excl (m = reported place). Leaving the map makes the place chain
 (no off-map state) stick at the edge or jump; magnitudes only, so heading drift (NCLT) does not trigger it. It only
 removes reports, so it cannot reduce validity.
+
+**Held-out result (pre-registered protocol; default points, 6 descriptors x 3 seeds = 18 runs per dataset; recall /
+segFAR / error m).**
+
+| rule | Boreas* | NCLT* | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| Xu'21 (labels) | 0.62/0.028/22.6 | 0.53/0.021/13.7 | 0.65/0.127/13.0 | 0.73/0.040/68.0 | 0.76/0.284/22.7 | 0.60/0.030/76.9 | 0.31/0.095/76.0 |
+| Claxton'24 (labels) | 0.74/0.111/43.6 | 0.66/0.213/33.2 | 0.85/0.111/14.5 | 0.51/0.288/90.0 | 0.80/0.160/18.0 | 0.71/0.142/100.7 | 0.59/0.201/41.7 |
+| certified | 0.66/0.039/15.7 | 0.48/0.001/3.7 | 0.65/0.012/3.8 | 0.57/0.039/17.2 | 0.66/0.018/11.3 | 0.53/0.016/37.0 | 0.22/0.018/51.5 |
+| TCEmin (Entry 24 method) | 0.66/0.013/8.9 | 0.49/0.000/3.7 | 0.68/0.009/3.5 | 0.56/0.002/16.2 | 0.71/0.017/12.5 | 0.58/0.007/36.3 | 0.23/0.012/59.8 |
+| CPC-HMM (no TCE) | 0.73/0.066/17.7 | 0.64/0.005/7.9 | 0.80/0.040/5.7 | 0.69/0.009/19.7 | 0.81/0.069/12.8 | 0.70/0.038/46.3 | 0.36/0.069/52.2 |
+| CPC-HMM+CS | 0.67/0.004/5.2 | 0.55/0.000/4.6 | 0.70/0.006/4.6 | 0.63/0.000/11.7 | 0.72/0.000/11.5 | 0.59/0.000/31.6 | 0.31/0.000/54.6 |
+| **CPC-SC+CS** | 0.66/0.003/5.3 | 0.54/0.000/4.6 | 0.66/0.001/3.7 | 0.64/0.000/11.6 | 0.71/0.000/12.1 | 0.58/0.000/32.8 | 0.30/0.000/54.3 |
+| oracle | 0.89/-/2.3 | 0.72/-/2.2 | 0.91/-/2.9 | 0.66/-/5.4 | 0.91/-/8.4 | 0.84/-/21.1 | 0.73/-/17.8 |
+
+\*development sets. Replacing the TCE min by the CS stop (CPC-HMM+CS vs TCEmin) raises recall on 7/7 datasets
+(Nordland +0.07, countryside +0.09, NCLT +0.06, others +0.01), lowers mean segFAR on 6/7 (NCLT both 0; worst run 0.021
+vs 0.138) and lowers the error on 5/7 (CMU +1.1 m, NCLT +0.9 m). CPC-SC+CS (onset threshold calibrated on the map null)
+is slightly more conservative than CPC-HMM+CS (recall -0.00 to -0.03 except Nordland +0.01; CMU error 3.7 vs 4.6 m);
+against TCEmin its recall is higher on NCLT / Nordland / countryside (+0.05 / +0.08 / +0.07) and within -0.02 elsewhere.
+Against Xu'21 (labels), both CS rules have 1.4-5.9x lower error and segFAR ~0 on 7/7 (Xu'21: 0.021-0.284). Recall:
+CPC-HMM+CS is higher on Boreas / NCLT / CMU, within 0.005 on old town / countryside, lower on Nordland (-0.10) and 4S office
+(-0.05); CPC-SC+CS is higher on Boreas / NCLT / CMU, -0.02 on old town / countryside, -0.09 / -0.06 on Nordland / office.
+
+**Leave-one-dataset-out choice** (`analysis/lodo_select.py`, 15 label-free variants: segFAR <= 0.05 on every other
+dataset, then lowest mean error / oracle error): CPC-SC+CS is chosen for 6/7 held-out datasets, CPC-HMM+CS for CMU; regret
+0-3.5 m (Entry 24: TCEmin, regret up to 30 m). Adopted rule: **CPC-SC+CS** (`analysis/cpc_sc.py`, also in `nav_rules.py`).
+
+**Negative results kept.** W-CPC (finite-memory chain + segment calibration, W = 10 / 20): Boreas segFAR 0.030 (worst
+0.099), same failure as `certified` there: the map self-replay null under-represents the dependence of long off-map
+excursions. PCR: FL 0.35-0.63; besides the weak likelihood ratio, a scale bug (masked own-block cells make null rank-1
+values larger than query rank-1 values); not pursued. Place-chain confidence as a second gate: no change (overconfident).
+
+**Operating curves (in progress).** First complete runs: CMU MixVPR is a counter-example where the label-trained
+Claxton'24 (pAUC 0.952) and even the raw max-sim score (0.938) rank frames better than every presence chain (0.82-0.92),
+and at Xu'21's FL our recall is lower (-0.06 TCEmin, -0.11 CPC+CS); Boreas NetVLAD is the opposite (CPC-HMM+CS pAUC 0.668
+vs Xu'21 0.571, recall at FL 0.01 0.678 vs 0.492).
 
 **Pre-registered protocol (written before the held-out results).** Development sets: Boreas, NCLT (seen). Held-out:
 CMU, Nordland, 4S office / old town / countryside. Candidates: M1 TCEmin, M2 TCEmin+CS, M3 CPC-HMM+CS, M4 CPC-SC+CS;

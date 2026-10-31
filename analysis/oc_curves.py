@@ -109,6 +109,9 @@ def families(z, b):
             for span, th in ((2.0, 1.0), (4.0, 1.0), (3.0, 0.75), (3.0, 1.25)):
                 cs = consistency_ok(x_c, z["o_q"], b["seqs"], b["excl"], span, None, th)
                 F[f"CPC-HMM+CS(span{span:g},thr{th:g})"] = (None, x_c, None, a0 & cs)
+            cs3 = consistency_ok(x_c, z["o_q"], b["seqs"], b["excl"], 3.0)
+            for al in (0.01, 0.1):
+                la, ka = sc_evidence(z, b, al); F[f"CPC-SC+CS(alpha={al:g})"] = (None, x_c, None, hyst(la, b["seqs"], ka, 0.0) & cs3)
     if "pcr_q" in z.files:                                       # predictive cell-rank evidence (nav_demo --pred)
         agree = np.linalg.norm(MP[top] - x_c, axis=1) <= b["excl"]
         pm, ptc, pmin = PCR.pcr_evalues(z, b["seqs"]); sig = lambda lo: 1 / (1 + np.exp(-lo))

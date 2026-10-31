@@ -11,7 +11,7 @@ Usage: run_kernel.py <kernel_dir> <out_dir> [stall=600] [max_restarts=4] [hard=1
   --attach : do not push; wait for an already-running kernel (e.g. after a local restart), then pull.
 Last line: STATUS=DONE:<complete|error|stall|timeout>
 """
-import sys, subprocess, time, os, json, glob
+import sys, subprocess, time, os, json, glob, re
 
 kdir, outdir = sys.argv[1], sys.argv[2]
 STALL = int(sys.argv[3]) if len(sys.argv) > 3 else 600
@@ -65,7 +65,11 @@ attempt_t0 = time.time(); restarts = 0; last = None; state = ""; running_since =
 time.sleep(15)
 while True:
     now = time.time()
-    st = kg("kernels", "status", kid); low = st.lower()
+    st = kg("kernels", "status", kid)
+    m = re.search(r"KernelWorkerStatus\.(\w+)", st)
+    if not m:                                                          # transient API / network error: not a kernel state
+        time.sleep(30); continue
+    low = m.group(1).lower()
     if low != last:
         print(ts(), f"[{int(now - t0)}s]", st[:140], flush=True); last = low
     if "complete" in low or "error" in low or "cancel" in low:
