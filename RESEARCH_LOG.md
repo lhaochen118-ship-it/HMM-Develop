@@ -48,6 +48,21 @@ route e-value power 1/2 (Entry 27), H = 10, p_in = p_out = 0.01, delta = 0.1 for
 4. *Selection.* Leave-one-dataset-out over all label-free rules (old and CMS) with the Entry 25 criterion (navigation
    error at the default point subject to mean segFAR <= alpha on the training folds).
 
+**Deviation from the pre-registration (2026-11-01 ~17:45 UTC, written BEFORE the full evaluation of either radius).**
+Theorem-6 diagnostics on all 366 runs of the pre-registered radius rho = off_d + excl (`analysis/cms_diag.py`, labels
+only for checking) show realized false-onset rates of CMS-T (route test alone, alpha = 0.05) that depend strongly on the
+SEED (hole layout): e.g. CMU CosPlace 0.006 (s0) but 0.14-0.25 (s5-s9), Boreas MegaLoc 0.0-0.16; the bound
+alpha (n+1)/(pi n+1) is exceeded on CMU on average. Mechanism (checked on CMU s7): the false onsets are deep inside the
+excursions (not a window carry-over at the map edge); the real off-map route cost has q05 0.74 while kappa_T = 0.84-0.86,
+i.e. the counterfactual null is LESS on-map-like than the real off-map frames. The pre-registered argument for
+rho = off_d + excl ("belief within excl -> every counterfactual frame > off_d") was wrong in direction: with a near-exact
+belief the counterfactual frames sit ~off_d + excl = 65 m from the remaining map, while real off-map frames can be at
+40-65 m; under S2 the conservative counterfactual is the one AT the off-map boundary, rho = off_d. Correction: rho = off_d
+becomes the main setting (all 366 runs recomputed, `nhatlong1103/hmm-cms-cache`); the pre-registered rho = off_d + excl
+is kept as `{r1}` families (`nhatlong1103/hmm-cms-cache-r1`) and reported. Local check CMU CosPlace s7: CMS-T segFAR
+0.254 -> 0.089 (alpha 0.05), 0.136 -> 0.008 (alpha 0.01); the hysteresis chain CMS-CPC/H+SH still exceeds alpha = 0.01
+there (0.042: a false streak that passes the shape stop), the finite-memory CMS-T/H+SH does not (0.000-0.008).
+
 ## Entry 27 (in progress, branch `hmm-navigation-4`) — condition-matched null, route-evidence power, SafeVPR / VLM beyond Boreas (2026-10-31)
 
 **Pre-registration (written before any result of these variants).**

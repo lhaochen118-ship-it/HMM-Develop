@@ -45,9 +45,14 @@ XNULL = sys.argv[sys.argv.index("--xnull") + 1] if "--xnull" in sys.argv else No
 TW = [float(x) for x in sys.argv[sys.argv.index("--tw") + 1].split(",")] if "--tw" in sys.argv else []   # extra route-component powers w3 for CPC-SC-T
 TAOC = sys.argv[sys.argv.index("--taocache") + 1] if "--taocache" in sys.argv else None   # dir of tao_<ds>_<desc>_s<seed>.npz (per-frame route costs; written to results/ on every run)
 MODES = sys.argv[sys.argv.index("--modes") + 1].split(",") if "--modes" in sys.argv else []   # route-evidence combinations (min, only)
-FAMS = set(sys.argv[sys.argv.index("--fams") + 1].split(",")) if "--fams" in sys.argv else None   # evaluate only these families
+FAM_PRESETS = {"@E28": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certified,max-sim,TAO-SC,CPC-SC+CS,CPC-SC-T+SH,CPC-SC-T0.5+SH,CPC-SC-T0.5+CS,CMS-T,CMS-T+SH,CMS-T/H,CMS-T/H+SH,CMS-F,CMS-F+SH,CMS-F-PAC,CMS-Tc-PAC,CMS-CPC,CMS-CPC+SH,CMS-CPC/H,CMS-CPC/H+SH,CMS-CPC/H+SH+G,CMS-U/H+SH,CMS-T(a=0.01),CMS-T+SH(a=0.01),CMS-T/H(a=0.01),CMS-T/H+SH(a=0.01),CMS-F(a=0.01),CMS-F+SH(a=0.01),CMS-F-PAC(a=0.01),CMS-Tc-PAC(a=0.01),CMS-CPC(a=0.01),CMS-CPC+SH(a=0.01),CMS-CPC/H(a=0.01),CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01),CMS-U/H+SH(a=0.01),CMS-T[loco],CMS-T[loco](a=0.01),CMS-CPC/H+SH[loco],CMS-CPC/H+SH[loco](a=0.01),CMS-U/H+SH[loco],CMS-U/H+SH[loco](a=0.01)",
+               "@E28H": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certified,max-sim,TAO-SC,CPC-SC+CS,CPC-SC-T+SH,CPC-SC-T0.5+SH,CPC-SC-T0.5+CS,CMS-T,CMS-T+SH,CMS-T/H,CMS-T/H+SH,CMS-F,CMS-F+SH,CMS-F-PAC,CMS-Tc-PAC,CMS-CPC,CMS-CPC+SH,CMS-CPC/H,CMS-CPC/H+SH,CMS-CPC/H+SH+G,CMS-U/H+SH,CMS-T(a=0.01),CMS-T+SH(a=0.01),CMS-T/H(a=0.01),CMS-T/H+SH(a=0.01),CMS-F(a=0.01),CMS-F+SH(a=0.01),CMS-F-PAC(a=0.01),CMS-Tc-PAC(a=0.01),CMS-CPC(a=0.01),CMS-CPC+SH(a=0.01),CMS-CPC/H(a=0.01),CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01),CMS-U/H+SH(a=0.01)",
+               "@RHO": "CMS-T,CMS-T(a=0.01),CMS-CPC/H+SH,CMS-CPC/H+SH(a=0.01),CMS-T/H+SH,CMS-U/H+SH"}   # Entry 28 family lists (short job args)
+_fa = sys.argv[sys.argv.index("--fams") + 1] if "--fams" in sys.argv else None
+FAMS = set(FAM_PRESETS.get(_fa, _fa).split(",")) if _fa else None   # evaluate only these families
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
-CMSD = sys.argv[sys.argv.index("--cms") + 1] if "--cms" in sys.argv else None   # dir of cms_<ds>_<desc>_s<seed>.npz (cms_dump.py) -> CMS families (Entry 28)
+CMSD = sys.argv[sys.argv.index("--cms") + 1] if "--cms" in sys.argv else None
+CMSX = (sys.argv[sys.argv.index("--cms-extra") + 1], sys.argv[sys.argv.index("--cms-extra-tag") + 1] if "--cms-extra-tag" in sys.argv else "r1") if "--cms-extra" in sys.argv else None   # second CMS set (other rho), families suffixed {tag}   # dir of cms_<ds>_<desc>_s<seed>.npz (cms_dump.py) -> CMS families (Entry 28)
 LIGHT = "--light" in sys.argv                     # with --variants: only CPC-SC / CPC-SC+CS (skip the other Entry 22-25 variants)
 CMS_GROUPS = sys.argv[sys.argv.index("--cms-groups") + 1].split(",") if "--cms-groups" in sys.argv else ["cond"]   # calibration units
 CMS_ALPHAS = [float(x) for x in sys.argv[sys.argv.index("--cms-alpha") + 1].split(",")] if "--cms-alpha" in sys.argv else [0.05]
@@ -210,6 +215,14 @@ def families(z, b):
                 CMS.GROUP = grp; Fc, _ = CMS.rules(z, b, stc, alpha=al)
                 F.update({k + ("" if grp == "cond" else f"[{grp}]") + ("" if al == 0.05 else f"(a={al:g})"): v for k, v in Fc.items()})
         CMS.GROUP = "cond"
+    if CMSX:                                                     # a second CMS statistics set (e.g. the other surgery radius)
+        import cms as CMS
+        xd, xtag = CMSX; xf = sorted(__import__("glob").glob(os.path.join(xd, f"*_{b['ds_tag']}_s{int(z['seed'])}.npz")))
+        if xf:
+            stx = dict(np.load(xf[0]))
+            for al in CMS_ALPHAS:
+                CMS.GROUP = "cond"; Fc, _ = CMS.rules(z, b, stx, alpha=al)
+                F.update({k + "{" + xtag + "}" + ("" if al == 0.05 else f"(a={al:g})"): v for k, v in Fc.items()})
     trf = os.path.join(TRAILD, f"trail_{b['ds_tag']}_s{int(z['seed'])}.npz") if TRAILD else None
     if trf and os.path.exists(trf):                              # TRAIL'26 (labels: threshold = conformal quantile on easy-condition off-map frames)
         r = np.load(trf); xt_ = MP[r["place"]]; cf = r["conf"].astype(float)

@@ -86,7 +86,7 @@ def run(ij):
     rs = lambda a: D if a == "DUMP" else CD if a == "CACHE" else TK if a == "TOPK" else (next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith(a[4:]) and f.endswith(".npz") for f in fs)), "") if a.startswith("DIR:") else a)
     if "DUMP" in args or "CACHE" in args or "TOPK" in args or any(a.startswith("DIR:") for a in args): cmd = [sys.executable, script] + [rs(a) for a in args]   # DIR:<prefix> = mounted dir of <prefix>*.npz
     else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
-    t = time.time(); log = os.path.join(C, "logs", "_".join(j).replace(".py", "").replace("/", "-") + ".log")
+    t = time.time(); log = os.path.join(C, "logs", ("%%03d_" %% i) + "_".join(j).replace(".py", "").replace("/", "-")[:120] + ".log")   # short: long job args overflow NAME_MAX
     r = subprocess.run(cmd, cwd=C, stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
     print(f"done {' '.join(j)} rc={r.returncode} {time.time()-t:.0f}s", flush=True); return r.returncode
 print("gpus", NGPU, "| parallel jobs", NW, "| threads/job", TH, flush=True)
