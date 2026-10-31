@@ -22,9 +22,10 @@ from hmm_eval import Filter
 from hmm_diag import DiagFilter
 from hmm_fix import beta_em
 
-A, SIG_FIX, DROP = 0.05, 5.0, 0.3
-if "--drop" in sys.argv:                       # --drop f: share of map blocks removed (default 0.3); results file gets _d<100 f>
-    i = sys.argv.index("--drop"); DROP = float(sys.argv[i + 1]); del sys.argv[i:i + 2]
+import hmm_fix as _HF
+# --drop f: share of map blocks removed (default 0.3); result / cache files get _d<100 f>. hmm_fix (imported above) already
+# parses and REMOVES --drop from sys.argv at import, so its value is read from there (reading sys.argv here would miss it)
+A, SIG_FIX, DROP = 0.05, 5.0, _HF.DROP
 DUMP = "--dump" in sys.argv                    # also save per-frame arrays (results/navframes_<ds>_<desc>_s<seed>.npz)
 if DUMP: sys.argv.remove("--dump")
 RHOS = []                                      # --rhos 0.03,0.3: extra ghost-gate floors (sensitivity of rho)
@@ -489,7 +490,8 @@ def main():
         if CACHE:                                                  # everything a new presence rule needs (nav_rules.py), no recompute
             os.makedirs("results", exist_ok=True)
             fl = np.concatenate(nchunks) if nchunks else np.zeros(0, int)
-            np.savez_compressed(f"results/navcache_{ds.replace(':', '_')}_{desc}_s{seed}.npz", MP=MP, kidx=kidx, est_c=est_c, top=top, x_hmm=x_hmm,
+            dtg = f"_d{int(round(DROP * 100))}" if abs(DROP - 0.3) > 1e-9 else ""      # other hole ratios: own file name
+            np.savez_compressed(f"results/navcache{dtg}_{ds.replace(':', '_')}_{desc}_s{seed}.npz", MP=MP, kidx=kidx, est_c=est_c, top=top, x_hmm=x_hmm,
                                 acc_h=acc_h, good=good, inm=inm, offm=offm, err_top=err_top, q_pos=ep.q_pos, o_q=o_q, U=U, q_sid=q_sid, q_k=q_k,
                                 cond=cond, real=real, excl=c["excl"], tol=c["tol"][0], H=H, hz=np.array(hz), lam=lam, loga=loga, e_R=e_R,
                                 p_frame=p_frame, p_q=p_q, pR=pR, p_n=p_n, pRn=pRn, nchunk_flat=fl, nchunk_len=np.array([len(x) for x in nchunks]),
