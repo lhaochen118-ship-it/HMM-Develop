@@ -25,7 +25,7 @@ import nav_rules as NR
 
 from hmm_fix import beta_em
 import pcr as PCR
-from cpc_sc import logodds, hyst, sc_evidence, consistency_ok
+from cpc_sc import logodds, hyst, sc_evidence, consistency_ok, cs_cal
 
 NAV_PTS = int(sys.argv[sys.argv.index("--nav-pts") + 1]) if "--nav-pts" in sys.argv else 14
 VARIANTS = "--variants" in sys.argv               # also the candidate fixes (TCE on R only, hysteresis, CPC-SC)
@@ -102,6 +102,9 @@ def families(z, b):
             for tag, rep in (("+CS", None), ("+CSr", a0)):
                 cs = consistency_ok(x_c, z["o_q"], b["seqs"], b["excl"], 3.0, rep)
                 F[n0 + tag] = (np.where(cs, sc0, -np.inf), xf0, t0, a0 & cs)
+        if "est_n" in z.files and len(z["est_n"]) == len(z["nchunk_flat"]):     # joint calibration of presence AND CS on the map null
+            for tag, wnd in (("CS-cal(W)", True), ("CS-cal(full)", False)):
+                acc, scr, kp = cs_cal(z, b, 0.05, 3.0, wnd); F[tag] = (scr - kp, x_c, 0.0, acc)
         for W in (10, 20):
             lw, kw = wcpc(z, b, W); F[f"W{W}-CPC"] = (lw - kw, x_c, 0.0, lw > kw)
         if CS_SENS:

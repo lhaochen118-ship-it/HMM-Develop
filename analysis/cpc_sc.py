@@ -97,3 +97,49 @@ def cpc_sc_cs(z, b, alpha=0.05, span=3.0):
     lo, kap = sc_evidence(z, b, alpha)
     cs = consistency_ok(b["MP"][b["est_c"]], z["o_q"], b["seqs"], b["excl"], span)
     return hyst(lo, b["seqs"], kap, 0.0) & cs, lo, kap, cs
+
+
+def window_logodds(ll, seqs, W, p_in=0.01, p_out=0.01):
+    """presence log-odds over the LAST W frames only (chain restarted at odds 1 at t-W+1), vectorised over t: the decision
+    at t then depends on frames t-W+1..t only, so query windows deep inside an off-map excursion are exchangeable with
+    map-null windows of the same length (no dependence on the chain's state when the excursion started)"""
+    out = np.zeros(len(ll)); sg = lambda x: 1 / (1 + np.exp(-x))
+    g = lambda x: np.log((sg(x) * (1 - p_out) + (1 - sg(x)) * p_in) / (1 - (sg(x) * (1 - p_out) + (1 - sg(x)) * p_in)))
+    for idx in seqs:
+        v = np.r_[np.zeros(W - 1), ll[idx]]; L = len(idx); x = v[:L].copy()
+        for j in range(1, W): x = np.clip(g(x) + v[j:j + L], -50, 50)
+        out[idx] = x
+    return out
+
+
+def cs_cal(z, b, alpha=0.05, span=3.0, windowed=True):
+    """JOINT segment calibration of (presence evidence AND odometry-consistency): score_t = presence log-odds if CS_t
+    holds, else -inf; kappa (per query condition) = conformal (1 - alpha) quantile of the max score over disjoint H-frame
+    segments of the map self-replay null, where the null score uses the null place chain's MAP (est_n, nav_demo --cache)
+    with the exact map odometry. windowed=True: the presence log-odds use the same finite window as CS (the frames of an
+    odometry path <= span * excl), so the whole decision depends on a finite window and the segment bound holds under
+    exchangeability of query off-map windows with null windows; windowed=False: full-memory chain, null started at odds 1.
+    Report iff score_t > kappa. Returns (accept, score, kappa)."""
+    H, excl = b["H"], b["excl"]; MP = b["MP"]
+    fl, ln = z["nchunk_flat"], z["nchunk_len"]; bounds = np.r_[0, np.cumsum(ln)]
+    nseqs = [np.arange(a, c) for a, c in zip(bounds[:-1], bounds[1:])]          # positions in the null arrays
+    est_n = z["est_n"]; x_n, o_n = MP[est_n], MP[fl].astype(float)
+    cs_n = consistency_ok(x_n, o_n, nseqs, excl, span); cs_q = consistency_ok(MP[b["est_c"]], z["o_q"], b["seqs"], excl, span)
+    step = np.median(np.linalg.norm(np.diff(o_n, axis=0), axis=1)) if len(o_n) > 1 else 1.0
+    W = int(max(H, np.ceil(span * excl / max(step, 1e-3)))) if windowed else None
+    cl = lambda x: np.clip(np.nan_to_num(x, nan=1.0), 1e-6, 1)
+    pn, prn, pq, pr = cl(z["p_n"][fl]), cl(z["pRn"][fl]), cl(z["p_q"]), cl(z["pR"])
+    agree = np.linalg.norm(MP[b["top"]] - MP[b["est_c"]], axis=1) <= excl
+    llq = np.zeros(len(pq)); kap = np.zeros(len(pq)); score = np.full(len(pq), -np.inf)
+    for cn in sorted(set(z["cond"])):
+        m = z["cond"] == cn; a1, _ = beta_em(pq[m]); a2, _ = beta_em(pr[m])
+        llq[m] = np.log(0.5 * (np.where(agree[m], a1 * pq[m] ** (a1 - 1), a1) + (a2 * pr[m] ** (a2 - 1)) ** (1.0 / H)))
+        lln = np.log(0.5 * (np.maximum(a1 * pn ** (a1 - 1), a1) + (a2 * prn ** (a2 - 1)) ** (1.0 / H)))
+        lo_n = window_logodds(lln, nseqs, W) if windowed else logodds(lln, nseqs)
+        s_n = np.where(cs_n, lo_n, -np.inf)
+        mx = [s_n[sq[i:i + H]].max() for sq in nseqs for i in range((W - 1) if windowed else 0, len(sq) - H + 1, H)]
+        mx = np.sort(mx); k = int(np.ceil((1 - alpha) * (len(mx) + 1)))
+        kap[m] = mx[k - 1] if 0 < k <= len(mx) else np.inf
+    lo_q = window_logodds(llq, b["seqs"], W) if windowed else logodds(llq, b["seqs"])
+    score = np.where(cs_q, lo_q, -np.inf)
+    return score > kap, score, kap

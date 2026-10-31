@@ -77,7 +77,10 @@ def pairwise(rdir, ours, base):
                  "d_err@base_recall": interp_at(cv, "recall", bd["recall"], "err_mean", nav_only=True) - bd["err_mean"],
                  "d_recall@base_FL": recall_at(cv, "FL", bd["FL"]) - bd["recall"]}
             out.setdefault(d["ds"], []).append(r)
-    return {ds: {k: (float(np.nanmean([r[k] for r in rs])), int(np.sum([r[k] < 0 if "recall" not in k else r[k] > 0 for r in rs])), len(rs))
+    # median paired difference (robust to the few runs where one rule collapses), wins = runs where `ours` is better,
+    # n = runs where the comparison is defined (base point reachable on ours' curve)
+    return {ds: {k: (float(np.nanmedian([r[k] for r in rs])) if np.isfinite([r[k] for r in rs]).any() else float("nan"),
+                     int(np.sum([r[k] > 0 if k.startswith("d_recall") else r[k] < 0 for r in rs if np.isfinite(r[k])])), int(np.isfinite([r[k] for r in rs]).sum()))
                  for k in rs[0]} for ds, rs in out.items()}
 
 
@@ -96,7 +99,7 @@ def main():
             lines.append(f"| {name} | " + " | ".join("" if np.isnan(m[k]) else (f"{m[k]:.1f}" if "err" in k else f"{m[k]:.3f}") for k in keys) + " |")
     bases = sorted({n for fams in rows.values() for n in fams} - set(OURS) - {"oracle"})
     for o in OURS:
-        lines.append(f"\n### Paired: {o} operated at each baseline's default point (mean difference; wins / runs)\n")
+        lines.append(f"\n### Paired: {o} operated at each baseline's default point (median difference; wins / defined runs)\n")
         lines.append("| dataset | baseline | dFL @ base recall | dsegFAR @ base recall | derr @ base recall | drecall @ base FL |")
         lines.append("|---|---|---|---|---|---|")
         for bname in bases:

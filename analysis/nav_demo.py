@@ -41,6 +41,8 @@ if "--seed0" in sys.argv:
 KAPPA = 0.05                                   # ghost position uncertainty growth per metre of odometry (as the nav filter)
 PRED = "--pred" in sys.argv                    # --pred: predictive cell-rank statistic of the place chain (query + map self-replay null) in the cache
 if PRED: sys.argv.remove("--pred")
+CACHE_ONLY = "--cache-only" in sys.argv        # --cache-only: write the cache, skip the label-trained baselines' fitting and the
+if CACHE_ONLY: sys.argv.remove("--cache-only") # per-rule navigation (nav_rules.py / oc_curves.py redo both from the cache)
 
 
 def pcr_stat(S, jp, cinv, nbr):
@@ -430,20 +432,24 @@ def main():
                                      ("CPC-HMM +TCEmin", "post", (em_t, em_a, em_r)), ("CPC-HMM +TCEmin+GG", "ghost", (em_t, em_a, em_r))):
             pj = cpc_presence(est_c, MP, top, xt, xa, xr, q_seqs, c["excl"], gate=gt, rho=0.1, s0=c["excl"], U=U)
             joint[jn] = (pj > 0.5, MP[est_c], pj)
-        pcr_q = pcr_n = None
-        if PRED:
-            # query: rank statistic at the place chain's predicted place; null: the SAME place chain run on the map's own
-            # held-out traversal (each null chunk lies in one block; that block's items are masked, as in the leave-block-out
-            # map null), noise-free map odometry (exact poses: the most coherent dead reckoning, i.e. a conservative null)
+        pcr_q = pcr_n = None; est_n = np.zeros(0, int)
+        if PRED or CACHE:
+            # NULL REPLAY OF THE PLACE CHAIN: the same chain run on the map's own held-out traversal (each null chunk lies in one
+            # block; that block's items are masked, as in the leave-block-out map null; noise-free map odometry = the most
+            # coherent dead reckoning, a conservative null). est_n (its MAP per null frame, order of nchunk_flat) lets any rule
+            # that uses the place chain's MAP (e.g. the odometry-consistency stop) be calibrated on the map, label-free.
+            # --pred also: rank statistic at the chain's predicted place (pcr_q / pcr_n)
             _, cinv = np.unique(V.map_cells(MP, c["cell"])[0], return_inverse=True); cinv = cinv.ravel()
-            pcr_q = pcr_stat(S, jp_q, cinv, nbr_x)
-            sdn = np.maximum(np.nan_to_num(Nr["sd_far"], nan=np.nanmedian(sdf)), 1e-4); pcr_n = []
+            if PRED: pcr_q = pcr_stat(S, jp_q, cinv, nbr_x)
+            sdn = np.maximum(np.nan_to_num(Nr["sd_far"], nan=np.nanmedian(sdf)), 1e-4); pcr_n, est_n = [], []
             for ch in nchunks:
                 Sn = M[ch] @ M.T; Sn[:, bidM == bidM[ch[0]]] = -np.inf
                 reln = (Sn - Sn.max(1, keepdims=True)) / (tau * sdn[ch][:, None]); reln[~np.isfinite(reln)] = -1e9
                 Un = np.vstack([np.zeros((1, MP.shape[1])), np.diff(MP[ch].astype(float), axis=0)])
-                Fp.run(reln, Un); pcr_n.append(pcr_stat(Sn, Fp.last_pred, cinv, nbr_x))
-            pcr_n = np.concatenate(pcr_n) if pcr_n else np.zeros(0)
+                en, _, _, _ = Fp.run(reln, Un); est_n.append(en)
+                if PRED: pcr_n.append(pcr_stat(Sn, Fp.last_pred, cinv, nbr_x))
+            est_n = np.concatenate(est_n) if est_n else np.zeros(0, int)
+            pcr_n = (np.concatenate(pcr_n) if pcr_n else np.zeros(0)) if PRED else None
         if DUMP:
             os.makedirs("results", exist_ok=True)
             np.savez_compressed(f"results/navframes_{ds.replace(':', '_')}_{desc}_s{seed}.npz", pon=pon, est_c=est_c, top=top, e_h=e_h,
@@ -457,7 +463,7 @@ def main():
                  **{f"CPC-HMM p_out={po}": a for po, a in acc_po.items()}, **{k: v[0] for k, v in joint.items()},
                  "certified (ours)": Rq > thr, "oracle": good}
         bad_top = offm | (err_top > c["excl"])
-        rules["Claxton24 MLP (labels)"] = claxton_rule(srt[:, :10], S.mean(1), S.std(1), bsel, good, bad_top, seed)
+        if not CACHE_ONLY: rules["Claxton24 MLP (labels)"] = claxton_rule(srt[:, :10], S.mean(1), S.std(1), bsel, good, bad_top, seed)
         if SAFEVPR:
             import glob as _g
             sv = SAFEVPR
@@ -468,8 +474,8 @@ def main():
             for z in parts:
                 r_, cd, mn = z["q_rows"], z[f"cand_{desc}"], z[f"mnn_{desc}"]
                 hit = cd == ftop[r_][:, None]; mtop[r_] = np.where(hit.any(1), (mn * hit).sum(1), 0.0)
-            rules["SafeVPR (labels)"] = safevpr_rule(mtop, Fr["maxsim"], bsel, bad_top)
-        for bn, xb in (("HMM off-map (labels)", x_hmm), ("SelfCal frame", x_fix), ("certified (ours)", x_fix),
+            if not CACHE_ONLY: rules["SafeVPR (labels)"] = safevpr_rule(mtop, Fr["maxsim"], bsel, bad_top)
+        for bn, xb in () if CACHE_ONLY else (("HMM off-map (labels)", x_hmm), ("SelfCal frame", x_fix), ("certified (ours)", x_fix),
                        ("Claxton24 MLP (labels)", x_fix), *((("SafeVPR (labels)", x_fix),) if SAFEVPR else ())):
             rules[bn + " +DRgate"] = dr_gate(rules[bn], xb, q_seqs, U, c["excl"])
         hz = [0] if ep.q_pos.shape[1] == 1 else ([0, 1] if ep.q_pos.shape[1] == 2 else list(np.argsort(ep.q_pos.var(0))[1:]))
@@ -489,9 +495,9 @@ def main():
                                 p_frame=p_frame, p_q=p_q, pR=pR, p_n=p_n, pRn=pRn, nchunk_flat=fl, nchunk_len=np.array([len(x) for x in nchunks]),
                                 Rq=Rq, thr=thr, maxsim=Fr["maxsim"], thr_ms=thr_ms, srt10=srt[:, :10], Smean=S.mean(1), Sstd=S.std(1), bsel=bsel,
                                 seed=seed, n_map=int(keep.sum()), n_null_seg=len(ns), hmm_T_k=np.array([best[1], best[2]]),
-                                pof_h=pof_h, e_h=e_h, conf_c=conf_c, lo_c=lo_c, Rn=Rn, ns=ns, jp_q=jp_q,
+                                pof_h=pof_h, e_h=e_h, conf_c=conf_c, lo_c=lo_c, Rn=Rn, ns=ns, jp_q=jp_q, est_n=est_n,
                                 **({"mtop": mtop} if SAFEVPR else {}), **({"pcr_q": pcr_q, "pcr_n": pcr_n} if PRED else {}))
-        run["rules"] = evaluate(rules, xfs, pons, cx, f"{ds}/{desc} s{seed}")
+        if not CACHE_ONLY: run["rules"] = evaluate(rules, xfs, pons, cx, f"{ds}/{desc} s{seed}")
         out["runs"].append(run)
     os.makedirs("results", exist_ok=True)
     dtag = f"_d{int(round(DROP * 100))}" if abs(DROP - 0.3) > 1e-9 else ""
