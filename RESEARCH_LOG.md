@@ -105,6 +105,22 @@ countryside 0.18)
 because the map null has fewer than 1/alpha - 1 = 99 segments, so the conformal quantile is infinite: CPC-SC needs enough
 null segments for small alpha (a limitation to report).
 
+**Hole ratio 10 % / 50 % (same constants; `nav_demo --drop`; 6 descriptors x 3 seeds).** recall / segFAR / error m:
+
+| | CMU | Nordland | 4S office | 4S old town | 4S countryside | Boreas |
+|---|---|---|---|---|---|---|
+| 10 %: Xu'21 (labels) | 0.70/0.047/5.6 | 0.75/0.027/29.3 | 0.73/0.145/12.4 | 0.65/0.072/37.5 | 0.28/0.093/60.1 | (running) |
+| 10 %: TCEmin | 0.74/0.012/3.0 | 0.56/0.000/13.0 | 0.70/0.013/12.0 | 0.60/0.007/28.5 | 0.20/0.003/55.9 | |
+| 10 %: CPC-SC+CS | 0.76/0.001/3.0 | 0.65/0.000/10.7 | 0.72/0.000/9.5 | 0.64/0.000/26.0 | 0.31/0.000/50.4 | |
+| 50 %: Xu'21 (labels) | 0.57/0.080/21.9 | 0.75/0.037/121.5 | 0.79/0.381/56.0 | 0.56/0.029/98.8 | 0.27/0.221/156.2 | 0.71/0.027/32.1 |
+| 50 %: TCEmin | 0.63/0.017/6.3 | 0.59/0.002/18.4 | 0.70/0.023/16.8 | 0.54/0.004/50.3 | 0.17/0.032/73.0 | 0.63/0.002/5.9 |
+| 50 %: CPC-SC+CS | 0.61/0.012/6.9 | 0.67/0.000/13.7 | 0.70/0.000/15.5 | 0.57/0.000/41.0 | 0.25/0.001/59.5 | 0.60/0.000/5.8 |
+
+segFAR <= 0.012 at every hole ratio; error below Xu'21 everywhere (10 %: 1.2-2.7x, 50 %: 2.4-8.9x); against TCEmin higher recall at 10 %
+on 5/5, at 50 % higher on Nordland / old town / countryside and lower on Boreas / CMU (-0.03 / -0.02). The first
+10 / 50 % runs silently used 30 % holes (hmm_fix strips --drop at import, fixed); 3 Boreas jobs at 10 % were killed
+by memory (two 8448-d descriptors per T4 session) and are rerun one per session.
+
 **Joint calibration of presence AND CS on the map null (`cpc_sc.cs_cal`, null place chain `est_n`): negative.** The
 null replay passes CS 2.6x more often than real off-map queries (CMU CosPlace: 0.229 vs 0.088; exact map odometry and
 same-condition images make the null track look-alikes more coherently), so the jointly calibrated threshold is MORE
