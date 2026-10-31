@@ -79,10 +79,10 @@ descriptor hoặc dataset mới.
 ```
 dump/
   <desc>/4s_<scene>_<recording>.npy     desc ∈ megaloc, salad, mixvpr, cosplace, netvlad, dinov2 (float16, L2-norm)
-  meta/4s_<scene>_<recording>.npz       names (timestamp ns), C (n,3) tâm camera trong hệ ENU riêng của scene,
-                                        R (n,3,3) camera→ENU (cột 3 = hướng đi), vio_C (n,3), vio_q (n,4) pose VIO
-                                        (hệ riêng của recording, metric) = odometry, fq (chất lượng fusion GNSS)
-README.md                               bảng recording / số frame / chiều dài
+  meta/4s_<scene>_<recording>.npz       names (timestamp ns), C (n,3) camera centre in the scene's own ENU frame,
+                                        R (n,3,3) camera->ENU (column 3 = heading), vio_C (n,3), vio_q (n,4) VIO pose
+                                        (recording's own metric frame) = odometry, fq (GNSS fusion quality)
+README.md                               table of recordings / frame counts / lengths
 ```
 
 **Quy ước toạ độ (đã verify):** ECEF = T_e_gpsw · (scale · T_w_gpsw⁻¹ · T_S_AS · p_GNSSPoses), đổi sang ENU tại pose
