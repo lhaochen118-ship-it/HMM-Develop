@@ -1,6 +1,8 @@
 # 05 — Hướng dẫn cho khung chat mới: đọc repo thế nào, làm gì tiếp
 
-*2026-10-31, từ branch `hmm-navigation-3`. Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
+*2026-10-31, cập nhật từ branch `hmm-navigation-4` (vòng 4). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
+
+**Vòng 4 (đọc trước):** `paper/BAO_CAO_E26.pdf`, `handoff/01_SCIENTIFIC_FINDINGS.md` §N0, `RESEARCH_LOG.md` Entry 26, `paper/cpc_theory.md` §3e–§3f, `LITERATURE_GATE.md` Gate 11, `literature/BASELINES_2026.md`, `handoff/02_ENGINEERING_OPS_NOTES.md` §00. Phương pháp tốt nhất hiện tại: **CPC-SC-T+SH** / **CPC-SC-T+CS** (họ luật trong `analysis/oc_curves.py --topk --mapdump`, `analysis/cpc_geo.py`, `analysis/tao.py`). Dữ liệu mới: `nhatlong1103/hmm-topk`. Tải dataset public không cần token: `automation/anon_download.py`.
 
 ## 1. Bối cảnh trong 5 dòng
 
@@ -65,7 +67,30 @@ Thêm một luật mới: viết hàm trong `analysis/cpc_sc.py` (hoặc module 
 chạy `oc_curves.py` trên cache. Chỉ chạy lại `nav_demo.py` trên Kaggle khi cần thống kê chưa có trong cache (ví dụ top-K
 chỉ số cho TAO'26).
 
+## 4b. Tái tạo bảng vòng 4 (CPU, không cần GPU)
+
+```bash
+python3 automation/anon_download.py nhatlong1103/hmm-navcache-v2 <scratch>/navcache --jobs 12
+```
+
+```bash
+python3 automation/anon_download.py nhatlong1103/hmm-topk <scratch>/topk --jobs 12
+```
+
+```bash
+python3 analysis/oc_curves.py <scratch>/navcache cmu cosplace --topk <scratch>/topk --mapdump <dump_dir> --fams TAO26,TAO-SC,CPC-SC-T,CPC-SC-T+CS,CPC-SC-T+SH --seeds 0,1,2 --jobs 3
+```
+
+(`<dump_dir>`: descriptor dumps, `analysis/topk_dump.py` / `vprlib` layout; trên Kaggle dùng token `DUMP`, `CACHE`, `TOPK`.)
+Bảng báo cáo: `paper/build_e26_report.py` (đầu vào: thư mục `oc_*.json`; kết quả thô nén ở `analysis/results/e26/`).
+
 ## 5. Việc tiếp theo (tóm tắt; chi tiết ở `03` §5)
+
+**Sau vòng 4 (ưu tiên):** (1) null **khớp điều kiện ảnh** để điểm mặc định bớt dè dặt (ví dụ pseudo-query từ traversal khác
+của bản đồ nhiều phiên; Boreas có 17 traversal chưa dùng); (2) CMU / descriptor mạnh: Claxton'24 và TAO'26 xếp hạng tốt hơn —
+thử chi phí tuyến với trọng số hình học/ngoại hình hiệu chuẩn trên null, hoặc K lớn hơn; (3) VLM-auditing và SafeVPR trên
+NCLT / 4Seasons (ảnh có sẵn: `nclt-cam5-*`, `4seasons`); (4) chạy robot thật vòng kín. Các mục cũ bên dưới vẫn đúng.
+
 
 1. **Lời giải mới cho A\*, tổng quát:** đào sâu ba sự thật thực nghiệm — phép thử một bước tự xác nhận; nhất quán odometry
    trên quãng dịch chuyển phân biệt mạnh; null tự-phát-lại của bản đồ thiếu phụ thuộc của đoạn off-map dài. Hướng gợi ý:

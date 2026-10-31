@@ -58,13 +58,38 @@ của bản đồ** (ảnh của block giữ lại, che block của chính nó, 
 
 {{TABLES}}
 
+## 6. Đọc kết quả
+
+1. **Cải thiện đo được, không nhãn.** CPC-SC-T+CS (CPC-SC+CS thêm bằng chứng kiểm định tuyến) là cải thiện Pareto so với
+   phương pháp vòng 3 tại điểm mặc định: recall cao hơn 7/7 dataset (+0.005…+0.032), segFAR như cũ (run tệ nhất ≤ 0.023
+   < α), sai số bằng hoặc thấp hơn 7/7. CPC-SC-T+SH cho recall cao nhất (+0.009…+0.053 trên 7/7; NCLT +0.05, CMU +0.04,
+   Nordland +0.05, old town +0.04), segFAR trung bình ≤ 0.010 (run tệ nhất 0.060 trên CMU), sai số thấp hơn trên 4/7; recall
+   cao hơn Xu'21 (có nhãn) trên 5/7 (vòng 3: 3/7) với sai số thấp hơn 2.4–6×. Trên đường cong (FL ≤ 0.01) CPC-SC-T+SH
+   hơn CPC-SC+CS 5/7, pAUC 6/7; hơn Xu'21 7/7, Claxton'24 và TAO'26 6/7 (trừ CMU).
+2. **Chọn biến thể theo leave-one-dataset-out** (tiêu chí đăng ký trước: sai số chuẩn hoá thấp nhất với segFAR ≤ α trên các
+   dataset khác) không phân biệt rõ: CPC-W+CS+SH được chọn 5/7 fold, regret 0–3.5 m; các biến thể khác nhau chủ yếu ở
+   recall, không ở sai số. Họ CPC-SC-T được thiết kế sau khi xem CMU CosPlace seed 0–1 (tập giữ lại): đã ghi rõ.
+3. **TAO'26** xếp hạng rất tốt trên CMU (recall 0.79 tại FL ≤ 0.01, ngang Claxton'24) nhưng ngưỡng 3σ của paper không chuyển
+   được sang điều kiện khác (segFAR 0.24–0.74, sai số 38–188 m). Hiệu chuẩn không nhãn của chúng tôi (TAO-SC) giữ đúng đường
+   cong của TAO nhưng điểm mặc định kém ổn định (CMU run tệ nhất 0.76): min-chi-phí theo đoạn với ~70 đoạn null dao động mạnh.
+   Đưa chi phí TAO vào chuỗi hiện diện (CPC-SC-T) ổn định hơn nhiều.
+4. **TRAIL'26** (MegaLoc, huấn luyện trên 6 dataset còn lại): vị trí đúng ≈ top-1 MegaLoc (khác ≤ 0.01, trừ Nordland −0.08);
+   ngưỡng hiệu chuẩn bằng nhãn trên điều kiện dễ vi phạm nặng (segFAR 0.15–0.29); đường cong ở FL ≤ 0.01 thấp nhất trong các
+   luật học được (Boreas 0.56, countryside 0.16).
+5. **VPR-auditing'26** (Qwen2.5-VL-7B mở, offline): trên Boreas FAR 0.24–0.37 và nhận 30–36 % frame off-map, sai số điều hướng
+   150 m; CPC-SC+CS trên cùng frame thắng cả theo metric S của paper với MegaLoc (0.840 so với 0.662). Mô hình mở 7B yếu hơn
+   GPT-4.1 / Gemini trong paper (S 0.60 so với 0.76–0.78), nên đây là cận dưới của họ phương pháp VLM.
+6. **Chỉ MegaLoc (descriptor mạnh nhất):** Claxton'24 (có nhãn) và TAO'26 xếp hạng tốt hơn CPC-SC-T+SH trên Boreas, NCLT, CMU,
+   4S office; CPC-SC-T+SH thắng trên Nordland, old town, countryside. Lợi thế của phương pháp là tính hợp lệ không nhãn và độ
+   bền trên mọi descriptor, không phải xếp hạng tốt nhất với descriptor mạnh.
+
 ## 7. Hạn chế và kết quả âm (đã xác minh)
 
 1. **Điểm mặc định vẫn dè dặt** so với chính đường cong. Nguyên nhân đã đo: null của bản đồ là **cùng điều kiện ảnh**, cho
    bằng chứng mạnh hơn query khác điều kiện, nên κ cao. Hiệu chuẩn chung (hiện diện ∧ hình học) và bỏ sàn κ ≥ 0 chỉ thêm
    +0.003…+0.011 recall (`cpc_geo.scj_kappa`). Null khớp điều kiện (ví dụ pseudo-query từ traversal khác của bản đồ nhiều
    phiên) là việc mở.
-2. **Luật cửa sổ hữu hạn (CPC-W):** trung bình ngang CPC-SC+CS, nhưng run tệ nhất trên CMU có tỷ lệ khởi phát sai 0.07–0.11
+2. **CMU với descriptor mạnh** vẫn là điểm yếu xếp hạng (mục 6.6). **Luật cửa sổ hữu hạn (CPC-W):** trung bình ngang CPC-SC+CS, nhưng run tệ nhất trên CMU có tỷ lệ khởi phát sai 0.07–0.11
    > α (bản đồ nhỏ, ~70 đoạn null): bảo đảm là biên theo hiệu chuẩn.
 3. **GPC** hợp lệ dưới mọi phụ thuộc nhưng power thấp (recall 0.04–0.28 ở α = 0.05).
 4. **Dừng hình dạng SH** chỉ là cải thiện nhỏ (pAUC tăng 6/7 dataset, recall tại FL ≤ 0.01 lẫn lộn).

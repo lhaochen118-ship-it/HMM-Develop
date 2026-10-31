@@ -56,7 +56,17 @@ def main():
                                                                          sys.argv[sys.argv.index("--md") + 1] if "--md" in sys.argv else "")]
     rules = sys.argv[sys.argv.index("--rules") + 1].split(",") if "--rules" in sys.argv else None
     out = []
-    T = defaults(load(a[0])); C = curves(load(a[1])) if len(a) > 1 else {}
+    def load_many(ds_):
+        R = {}
+        for d in ds_.split(","):
+            for k, bd in load(d).items():
+                for desc, runs in bd.items():
+                    tgt = R.setdefault(k, {}).setdefault(desc, {})
+                    for rk, run in runs.items():
+                        if rk in tgt: tgt[rk]["families"].update(run["families"])
+                        else: tgt[rk] = run
+        return R
+    T = defaults(load_many(a[0])); C = curves(load_many(a[1])) if len(a) > 1 else {}
     dss = [d for d in DS_ORDER if d in T]
     names = rules or sorted({n for d in dss for n in T[d]})
     out.append("### Default points: recall / mean segFAR / worst segFAR / false onsets per segment / error (m), mean over runs\n")

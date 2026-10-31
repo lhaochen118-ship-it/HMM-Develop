@@ -4,6 +4,18 @@
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
+## 0. Vòng 4 (branch `hmm-navigation-4`, 2026-10-31) — trạng thái
+
+- **Làm xong:** chẩn đoán phụ thuộc; lý thuyết §3e (Mệnh đề 5, Định lý 4 GPC, Định lý 5) và §3f; dừng hình dạng SH; họ luật
+  kiểm định tuyến hiệu chuẩn bằng bản đồ (TAO-SC, CPC-SC-T); tái hiện và so sánh TAO'26, TRAIL'26, VPR-auditing'26 trên cùng
+  giao thức; báo cáo `paper/BAO_CAO_E26.pdf`; dataset public `nhatlong1103/hmm-topk`.
+- **Phương pháp đề xuất mới:** CPC-SC-T+SH (recall cao nhất, segFAR trung bình ≤ 0.010) hoặc CPC-SC-T+CS (cải thiện Pareto
+  so với CPC-SC+CS, run tệ nhất ≤ 0.023). LODO theo sai số không phân biệt rõ các biến thể: chọn giữa hai luật theo mục tiêu
+  (recall hay độ an toàn tệ nhất).
+- **Kaggle:** không còn kernel nào chạy (mọi lô đã xong). 19 acc (thêm `quynhtran35`); token ở `~/.kaggle/tokens_raw` và
+  `~/.kaggle/tok_<acc>` (không vào git).
+- **Mức novelty:** A vững hơn, A\* chưa (Gate 11).
+
 ## 1. Mục tiêu nghiên cứu
 
 - **Đề bài gốc:** HMM cho định vị theo chuỗi (sequence-based visual localization) với camera đơn cho robot navigation,

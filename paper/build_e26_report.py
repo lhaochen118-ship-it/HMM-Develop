@@ -49,11 +49,13 @@ def main():
          "### Bảng 1. Điểm mặc định: recall / segFAR / sai số điều hướng (m), trung bình mọi run (10 seed; NCLT 1 seed; "
          "TRAIL'26 chỉ MegaLoc, seed 0–2)\n",
          "| Luật | " + " | ".join(E.DS_NAME[d] for d in dss) + " |", "|---" * (1 + len(dss)) + "|"]
-    for n, lab in RULES: L.append(f"| {lab} | " + " | ".join(fmt_def(T, d, n) for d in dss) + " |")
+    for n, lab in RULES:
+        if n == "TRAIL26": continue                                # MegaLoc only: compared in table 3b
+        L.append(f"| {lab} | " + " | ".join(fmt_def(T, d, n) for d in dss) + " |")
     L += ["", "### Bảng 2. Đường cong vận hành: recall tại FL ≤ 0.01 / pAUC (FL ∈ [0, 0.05]), seed 0–2\n",
           "| Luật | " + " | ".join(E.DS_NAME[d] for d in dss) + " |", "|---" * (1 + len(dss)) + "|"]
     for n, lab in RULES:
-        if n == "oracle": continue
+        if n in ("oracle", "TRAIL26"): continue
         cells = []
         for d in dss:
             v = np.array(C.get(d, {}).get(n, []), float); cells.append("–" if not len(v) else f"{v[:, 1].mean():.3f} / {v[:, 3].mean():.3f}")
@@ -64,6 +66,18 @@ def main():
         cells = []
         for d in dss:
             v = np.array(T.get(d, {}).get(n, []), float); cells.append("–" if not len(v) else f"{np.nanmean(v[:, 3]):.3f} / {np.nanmax(v[:, 3]):.3f}")
+        L.append(f"| {dict(RULES).get(n, n)} | " + " | ".join(cells) + " |")
+    # MegaLoc only, seeds 0-2 (TRAIL'26 is a MegaLoc method)
+    mk = lambda R: {ds: {"megaloc": {rk: run for rk, run in bd.get("megaloc", {}).items() if any(f"_s{s}." in rk for s in (0, 1, 2))}} for ds, bd in R.items()}
+    Tm, Cm = E.defaults(mk(Rd)), E.curves(mk(Rc))
+    L += ["", "### Bảng 3b. Chỉ MegaLoc, seed 0–2 (so với TRAIL'26): mặc định recall / segFAR / sai số (m) | recall tại FL ≤ 0.01\n",
+          "| Luật | " + " | ".join(E.DS_NAME[d] for d in dss) + " |", "|---" * (1 + len(dss)) + "|"]
+    for n in ("Xu21", "Claxton24", "TAO26", "TRAIL26", "CPC-SC+CS", "CPC-SC-T+SH", "oracle"):
+        cells = []
+        for d in dss:
+            v = np.array(Tm.get(d, {}).get(n, []), float); c = np.array(Cm.get(d, {}).get(n, []), float)
+            a = "–" if not len(v) else (f"{np.nanmean(v[:, 0]):.2f} / {np.nanmean(v[:, 1]):.3f} / {np.nanmean(v[:, 4]):.1f}" if n != "oracle" else f"{np.nanmean(v[:, 0]):.2f} / – / {np.nanmean(v[:, 4]):.1f}")
+            cells.append(a + ("" if not len(c) else f" \\| {c[:, 1].mean():.3f}"))
         L.append(f"| {dict(RULES).get(n, n)} | " + " | ".join(cells) + " |")
     if arg("--gpc"):
         g = json.load(open(arg("--gpc")))

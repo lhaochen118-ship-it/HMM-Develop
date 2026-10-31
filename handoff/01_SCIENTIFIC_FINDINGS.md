@@ -6,6 +6,27 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
+## N0. Vòng 4 (2026-10-31, branch `hmm-navigation-4`) — đọc trước §N
+
+**Báo cáo:** `paper/BAO_CAO_E26.pdf`; nhật ký `RESEARCH_LOG.md` Entry 26; lý thuyết `paper/cpc_theory.md` §3e–§3f; novelty
+`LITERATURE_GATE.md` Gate 11; baseline 2026 `literature/BASELINES_2026.md`.
+
+1. **Chẩn đoán phụ thuộc:** p-value top-1 của frame off-map hợp lệ biên ở phần trong đoạn off-map; vi phạm ở ~50 frame quanh
+   mép bản đồ (nhìn chồng lấn) và ở R neo odometry của đoạn dài; null bản đồ chỉ có 8–10 chunk ngắn (~10 đơn vị hoán đổi).
+2. **Lý thuyết:** Mệnh đề 5 (không giả định phụ thuộc thì không tích luỹ được bằng chứng); Định lý 4 (GPC: chứng chỉ đúng
+   với mọi phụ thuộc, nhưng recall chỉ 10–40 % của CPC-SC+CS); Định lý 5 (khởi phát cửa sổ hữu hạn + dừng/reset hình học:
+   tỷ lệ khởi phát sai mỗi đoạn ≤ α với mọi phụ thuộc giữa các đoạn; kiểm chứng: trung bình 0.001–0.006, run tệ nhất của
+   CPC-SC-T+SH ≤ 0.039).
+3. **Phương pháp mới (không nhãn):** bằng chứng kiểm định tuyến (chi phí TAO'26 trên 100 giả thuyết, 20 frame) **hiệu chuẩn
+   bằng null bản đồ** làm thành phần thứ ba của chuỗi hiện diện (CPC-SC-T), cộng dừng hình dạng SH (Procrustes). CPC-SC-T+CS:
+   cải thiện Pareto so với CPC-SC+CS (recall 7/7, sai số ≤ 7/7). CPC-SC-T+SH: recall +0.009…+0.053 trên 7/7, hơn Xu'21 về
+   recall 5/7; ở FL ≤ 1 % hơn Xu'21 7/7, Claxton'24 và TAO'26 6/7 (trừ CMU).
+4. **Baseline 2026 trên cùng giao thức:** TAO'26 xếp hạng mạnh trên CMU nhưng ngưỡng 3σ vi phạm (segFAR 0.24–0.74); TRAIL'26
+   ≈ top-1 MegaLoc, ngưỡng có nhãn vi phạm (0.15–0.29); VPR-auditing'26 (Qwen2.5-VL-7B) nhận 30–36 % frame off-map, sai số
+   150 m. Với riêng MegaLoc, Claxton'24/TAO'26 xếp hạng tốt hơn trên 4/7.
+5. **Âm / mở:** điểm mặc định còn dè dặt vì null **cùng điều kiện ảnh** (hiệu chuẩn chung, bỏ sàn κ: +0.003…+0.011); LODO không
+   phân biệt các biến thể theo sai số; CMU với descriptor mạnh vẫn thua về xếp hạng. Mức: A vững hơn, A\* chưa.
+
 ## N. Trạng thái mới nhất (2026-10-30 → 2026-10-31)
 
 ### N.1 Phương pháp chính hiện tại: CPC-SC+CS (thay CPC-HMM +TCEmin)

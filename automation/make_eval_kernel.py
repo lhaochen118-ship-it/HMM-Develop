@@ -74,8 +74,8 @@ for meta in [d for d, _, _ in os.walk("/kaggle/input") if os.path.basename(d) ==
 import torch
 print("dump dirs:", {s: len(os.listdir(os.path.join(D, s))) for s in sorted(os.listdir(D))}, "| cpus", os.cpu_count(), "| device", os.environ["SELFCAL_DEVICE"], "| cuda", torch.cuda.is_available(), flush=True)
 NGPU = torch.cuda.device_count()
-CD = next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith("navcache_") for f in fs)), "")   # token CACHE: mounted rule caches
-TK = next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith("topk_") for f in fs)), "")       # token TOPK: mounted top-K candidates
+CD = next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith("navcache_") and f.endswith(".npz") for f in fs)), "")   # token CACHE: mounted rule caches
+TK = next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith("topk_") and f.endswith(".npz") for f in fs)), "")       # token TOPK: mounted top-K candidates
 NW = max(1, min(len(JOBS), (os.cpu_count() or 4) - 1 if NGPU <= 2 else max(NGPU, (os.cpu_count() or 4) // 4)))
 if %d: NW = min(len(JOBS), %d)                                     # --par: explicit parallel width (memory-bound jobs)
 TH = str(max(1, (os.cpu_count() or 4) // NW))                       # BLAS threads per job (no oversubscription)

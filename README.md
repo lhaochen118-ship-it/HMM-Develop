@@ -1,6 +1,6 @@
 # HMM-navigation — sequence-based visual localization with a monocular camera (research repo)
 
-**Start here:** `handoff/05_NEW_CHAT_GUIDE.md` (reading order, code map, next steps; index in `handoff/00_READ_ME_FIRST.md`). Latest branch: `hmm-navigation-3`. Current method: CPC-SC+CS (`analysis/cpc_sc.py`); report `paper/BAO_CAO_PhanBien.pdf`.
+**Start here:** `handoff/05_NEW_CHAT_GUIDE.md` (reading order, code map, next steps; index in `handoff/00_READ_ME_FIRST.md`). Latest branch: `hmm-navigation-4`. Current methods: CPC-SC-T+SH / CPC-SC-T+CS (route-verification evidence calibrated on the map, `analysis/cpc_geo.py`, `analysis/tao.py`, families in `analysis/oc_curves.py`); report `paper/BAO_CAO_E26.pdf` (previous: CPC-SC+CS, `paper/BAO_CAO_PhanBien.pdf`).
 
 | Path | What |
 |---|---|

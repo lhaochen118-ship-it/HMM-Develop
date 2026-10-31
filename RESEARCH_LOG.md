@@ -68,6 +68,37 @@ First looks: TAO on CMU CosPlace seed 0 ranks well (recall 0.725 at FL 0.000 at 
 recall 0.947 / FL 0.083); Qwen2.5-VL-7B on 77 Boreas MegaLoc pairs: precision 0.70, FAR 0.52 (CPC-SC+CS on the same frames
 0.98 / 0.037).
 
+**Final (all batches; tables `paper/e26_tables.md`, report `paper/BAO_CAO_E26.pdf`, raw `analysis/results/e26/`).**
+Route-verification evidence calibrated on the map null (`cpc_theory` 3f): TAO'26 cost of the K = 100 route-anchored
+hypotheses, run on the map self-replay null too; its map-null rank p-value is a third presence component (CPC-SC-T).
+Designed after seeing CMU CosPlace seeds 0-1 (held-out set; disclosed). Default points, 10 seeds (recall / mean segFAR /
+error m):
+
+| rule | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| CPC-SC+CS (Entry 25) | 0.661/0.001/5.1 | 0.537/0.000/4.6 | 0.731/0.002/3.8 | 0.644/0.000/9.6 | 0.709/0.000/11.6 | 0.600/0.000/30.8 | 0.297/0.000/53.1 |
+| CPC-SC-T+CS | 0.666/0.001/5.1 | 0.552/0.000/4.6 | 0.749/0.002/3.8 | 0.676/0.000/9.5 | 0.719/0.000/11.6 | 0.614/0.000/30.5 | 0.310/0.000/52.6 |
+| CPC-SC-T+SH | 0.670/0.002/5.6 | 0.590/0.001/4.8 | 0.773/0.010/4.4 | 0.692/0.000/9.5 | 0.739/0.000/11.3 | 0.642/0.007/29.7 | 0.324/0.000/51.0 |
+| TAO'26 (3-sigma, labels) | 0.801/0.240/46.2 | 0.756/0.707/57.6 | 0.930/0.370/38.4 | 0.805/0.579/187.9 | 0.935/0.740/54.0 | 0.839/0.557/168.4 | 0.769/0.732/95.1 |
+| TAO-SC (map-null, ours) | 0.584/0.011/10.1 | 0.400/0.000/11.4 | 0.659/0.066/7.1 | 0.348/0.012/63.8 | 0.630/0.011/18.7 | 0.547/0.008/37.5 | 0.048/0.003/102.3 |
+
+CPC-SC-T+CS is a Pareto improvement over CPC-SC+CS (recall up on 7/7, worst-run segFAR <= 0.023, error equal or lower on
+7/7). CPC-SC-T+SH: recall +0.009..+0.053 on 7/7, recall above Xu'21 (labels) on 5/7 (Entry 25: 3/7), mean segFAR <= 0.010
+(worst run 0.060 on CMU), error lower than CPC-SC+CS on 4/7. Recall at FL <= 0.01 (seeds 0-2): CPC-SC-T+SH 0.761 / 0.610 /
+0.722 / 0.794 / 0.812 / 0.676 / 0.525 (CPC-SC+CS 0.766 / 0.586 / 0.705 / 0.780 / 0.771 / 0.664 / 0.545): higher on 5/7,
+pAUC higher on 6/7 (Boreas equal); above Xu'21 7/7, above Claxton'24 and TAO'26 6/7 (both win CMU, ~0.79). False onsets per
+off-map segment (Theorem 5 quantity): CPC-SC-T+SH mean 0.002-0.006, worst run <= 0.039 < alpha on 7/7. LODO with the
+pre-registered error criterion does not separate the variants (CPC-W+CS+SH chosen in 5/7 folds, regret 0-3.5 m).
+
+Baselines. TAO'26: strong ranking on CMU, its 3-sigma threshold does not transfer (segFAR 0.24-0.74). TAO-SC keeps TAO's
+curve but its default point is unstable (CMU worst run 0.76: segment minima over ~70 null segments). TRAIL'26 (MegaLoc,
+trained on the other 6 datasets): place ~= MegaLoc top-1 (<= 0.01 apart, Nordland -0.08), label-calibrated threshold
+segFAR 0.15-0.29, recall at FL <= 0.01 0.12-0.63. VPR auditing'26 (Qwen2.5-VL-7B, Boreas, every 5th frame, 15.3k frames
+per descriptor): P 0.75-0.80, FAR 0.24-0.37, accepts 30-36 % of off-map frames, navigation error 150 m; CPC-SC+CS on the same
+frames P 0.99, FAR 0.005-0.023, error 3.0-7.5 m, S 0.840 vs 0.662 (MegaLoc). MegaLoc only (seeds 0-2): Claxton'24 and TAO'26
+rank better than CPC-SC-T+SH on Boreas / NCLT / CMU / 4S office; CPC-SC-T+SH wins Nordland / old town / countryside.
+GPC (valid under any dependence): FL 0 everywhere, recall at alpha 0.05 only 0.04-0.28 (CPC-SC+CS 0.31-0.84).
+
 ## Entry 25 — "Only more conservative?": recall diagnosis, operating curves, odometry-consistency stop (2026-10-31)
 
 **Question (reviewer).** CPC-HMM +TCEmin has low error but also low recall. Is it better, or only more conservative?
