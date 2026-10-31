@@ -1,6 +1,8 @@
 """Tables for the report answering "is the method only more conservative?" (RESEARCH_LOG Entry 25).
 Reads oc_curves.py outputs (curves + default points of every rule, --variants --cs-sens) and oc_matched.py outputs.
-Usage: build_oc_report.py <oc_dir> <matched_dir> [--drop10 <oc_dir>] [--drop50 <oc_dir>] -> paper/oc_tables.md"""
+Usage: build_oc_report.py <oc_dir> <matched_dir> [--drop10 <oc_dir>] [--drop50 <oc_dir>]
+  -> paper/oc_tables.md and paper/BAO_CAO_PhanBien.md (= paper/phanbien_text.md with the tables at {{TABLES}});
+     PDF: python3 automation/md2pdf.py paper/BAO_CAO_PhanBien.md paper/BAO_CAO_PhanBien.pdf"""
 import sys, os, json, glob
 import numpy as np
 
@@ -31,7 +33,7 @@ def mean_def(runs, fam, key):
 def table_defaults(R, title):
     L = [f"### {title}\n", "Ô: recall / segFAR / sai số điều hướng trung bình (m); trung bình 6 descriptor × 3 seed (NCLT: × 1).\n",
          "| Luật | " + " | ".join(NAME[d] for d in ORDER if d in R) + " |", "|---" * (1 + sum(d in R for d in ORDER)) + "|"]
-    for fam, lab in RULES + [("oracle", "Oracle")]:
+    for fam, lab in [x for x in RULES if x[0] != "SafeVPR"] + [("oracle", "Oracle")]:   # SafeVPR: curve only (no default in the cache)
         cells = []
         for d in ORDER:
             if d not in R: continue
@@ -59,11 +61,11 @@ def table_matched_fl(R):
         for d in ORDER:
             if d not in R: continue
             rs = [r for r in R[d] if fam in r["families"] and r["families"][fam]["curve"]]
-            if len(rs) < len(R[d]): cells.append("–"); continue
+            if 2 * len(rs) < len(R[d]): cells.append("–"); continue
             a = np.mean([recall_at(r["families"][fam]["curve"], "FL", 0.01) for r in rs])
             b = np.mean([recall_at(r["families"][fam]["curve"], "seg_FAR", 0.025) for r in rs])
             c = np.mean([pauc(r["families"][fam]["curve"]) for r in rs])
-            cells.append(("**%.3f**" % a if abs(a - best[d]) < 1e-9 else "%.3f" % a) + f" / {b:.3f} / {c:.3f}")
+            cells.append(("**%.3f**" % a if abs(a - best[d]) < 1e-9 else "%.3f" % a) + f" / {b:.3f} / {c:.3f}" + (f" (n={len(rs)})" if len(rs) < len(R[d]) else ""))
         L.append(f"| {lab} | " + " | ".join(cells) + " |")
     return L
 
@@ -123,8 +125,10 @@ def main():
         if tag in sys.argv:
             Rd = load(sys.argv[sys.argv.index(tag) + 1])
             L += table_defaults(Rd, f"Điểm vận hành mặc định, bản đồ khuyết {tag[-2:]} % block"); L.append("")
-    out = os.path.join(os.path.dirname(os.path.abspath(__file__)), "oc_tables.md")
+    here = os.path.dirname(os.path.abspath(__file__)); out = os.path.join(here, "oc_tables.md")
     open(out, "w").write("\n".join(L) + "\n"); print("\n".join(L))
+    txt = open(os.path.join(here, "phanbien_text.md")).read().replace("{{TABLES}}", "\n".join(L))   # report = prose + tables
+    open(os.path.join(here, "BAO_CAO_PhanBien.md"), "w").write(txt)
 
 
 if __name__ == "__main__":

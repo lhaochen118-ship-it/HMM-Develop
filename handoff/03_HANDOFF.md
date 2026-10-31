@@ -155,3 +155,35 @@ thêm luật p_out mới nếu được chọn), rồi commit và push.
 - Trigger kiểm tra hằng giờ của khung chat cũ **đã tắt**. Khung chat mới tự đặt lịch kiểm tra nếu cần.
 - Scratchpad của khung chat cũ (thư mục `runs/` với kernel dir và npz) **không** sang được khung chat mới. Mọi thứ cần
   kéo lại đều nằm trên Kaggle theo `RUNNING_KERNELS.md`.
+
+## 7. Cập nhật 2026-10-31 (branch `hmm-navigation-3`)
+
+**Câu hỏi của user (phản biện):** phương pháp có sai số thấp nhưng recall thấp — có phải chỉ thận trọng hơn?
+
+**Đã làm (chi tiết: `RESEARCH_LOG.md` Entry 25, báo cáo `paper/BAO_CAO_PhanBien.{md,pdf}`, bảng `paper/oc_tables.md`):**
+- Chẩn đoán recall (`analysis/recall_diag.py`): mất ở chuỗi hiện diện; phép min TCE là nguyên nhân chính; vi phạm của
+  CPC-HMM không TCE đến từ báo cáo kéo dài khi chuỗi vị trí (không có trạng thái off-map) kẹt ở mép / nhảy.
+- **Phương pháp mới CPC-SC+CS** (`analysis/cpc_sc.py`, có trong `nav_rules.py`): chuỗi CPC-HMM + ngưỡng khởi phát hiệu chuẩn
+  theo đoạn trên null tự-phát-lại + quy tắc dừng nhất quán odometry (CS, cửa sổ 3·excl, ngưỡng excl). Đăng ký trước trên
+  tập phát triển Boreas/NCLT, kiểm định trên 5 tập giữ lại; leave-one-dataset-out chọn nó 6/7 fold.
+- **Đường cong vận hành** của mọi luật (`analysis/oc_curves.py`, `oc_summary.py`) và **so khớp chính xác**
+  (`analysis/oc_matched.py`): ở FL ≤ 1 % CPC-SC+CS có recall cao hơn Xu'21 7/7, Claxton'24 6/7 dataset.
+- Kết quả âm (đã loại): hedge e-value, trung bình e-process, TCE một thành phần, hysteresis, CPC-SC không CS, W-CPC, PCR,
+  cổng độ tin, hiệu chuẩn chung CS (`cs_cal`).
+- Dữ liệu tái sử dụng: `nhatlong1103/hmm-navcache-v2` (cache 7 dataset có Xu'21 posterior, `est_n`...). Kết quả nén:
+  `analysis/results/oc_curves_entry25.tgz`, `oc_matched_entry25.tgz`.
+
+**Đang chạy lúc viết (xem `RUNNING_KERNELS` trong log của phiên):** độ bền theo tỷ lệ lỗ bản đồ 10 % / 50 % (`nav_demo
+--drop`, cache `navcache_d10_*`, `navcache_d50_*`). Lần chạy đầu bị lỗi vì `hmm_fix` xoá cờ `--drop` khi import (đã sửa).
+
+**Việc tiếp theo gợi ý:**
+1. Ngưỡng mặc định của CPC-SC+CS còn dè dặt so với chính đường cong của nó (countryside: 0.30 ở FL 0.000, 0.55 ở FL 0.01).
+   Cần một null cho CS vừa hợp lệ vừa ít bảo thủ hơn (null tự-phát-lại qua CS nhiều gấp 2.6× off-map thật).
+2. CMU (descriptor mạnh): Claxton'24 và max-sim xếp hạng tốt hơn — tìm cách đưa bằng chứng tuyệt đối mạnh (raw similarity
+   đã hiệu chuẩn) vào chuỗi hiện diện mà không mất tính hợp lệ khi đổi điều kiện.
+3. α nhỏ (0.01) cần ≥ 99 đoạn null: tăng số đoạn null (thêm block giữ lại, stride) hoặc dùng cận Ville thay conformal.
+4. 10 seed cho bảng cuối nếu cần khoảng tin cậy hẹp hơn.
+
+**Vận hành (bài học mới):** `pkill -f` khớp cả lệnh shell của chính mình (dùng PID); một cờ CLI phải smoke-test đầu-cuối
+trước khi chạy hàng loạt (lỗi `--drop`); hàng đợi L4 hay tắc → job chỉ CPU chạy kernel CPU; `make_eval_kernel` bỏ qua
+upload code khi mã băm không đổi.

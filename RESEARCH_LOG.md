@@ -69,10 +69,46 @@ dataset, then lowest mean error / oracle error): CPC-SC+CS is chosen for 6/7 hel
 excursions. PCR: FL 0.35-0.63; besides the weak likelihood ratio, a scale bug (masked own-block cells make null rank-1
 values larger than query rank-1 values); not pursued. Place-chain confidence as a second gate: no change (overconfident).
 
-**Operating curves (in progress).** First complete runs: CMU MixVPR is a counter-example where the label-trained
-Claxton'24 (pAUC 0.952) and even the raw max-sim score (0.938) rank frames better than every presence chain (0.82-0.92),
-and at Xu'21's FL our recall is lower (-0.06 TCEmin, -0.11 CPC+CS); Boreas NetVLAD is the opposite (CPC-HMM+CS pAUC 0.668
-vs Xu'21 0.571, recall at FL 0.01 0.678 vs 0.492).
+**Operating curves (all 7 datasets, 114 runs; `oc_curves.py`, tables `paper/oc_tables.md`, raw curves
+`results/oc_curves_entry25.tgz`).** Every rule's own threshold is swept; labels only evaluate. Recall at FL <= 0.01:
+
+| rule | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| Xu'21 (labels) | 0.562 | 0.526 | 0.592 | 0.624 | 0.537 | 0.555 | 0.181 |
+| Claxton'24 (labels) | 0.687 | 0.574 | **0.793** | 0.439 | 0.749 | 0.644 | 0.420 |
+| max-sim (labels) | 0.594 | 0.495 | 0.752 | 0.112 | 0.655 | 0.582 | 0.191 |
+| certified | 0.674 | 0.588 | 0.729 | 0.573 | 0.731 | 0.595 | 0.262 |
+| TCEmin (Entry 24) | 0.692 | 0.590 | 0.713 | 0.619 | 0.733 | 0.616 | 0.245 |
+| CPC-HMM | 0.688 | **0.645** | 0.747 | 0.693 | 0.722 | 0.622 | 0.236 |
+| **CPC-SC+CS** | **0.766** | 0.586 | 0.705 | **0.780** | **0.771** | **0.664** | **0.545** |
+
+At the same false-report rate CPC-SC+CS finds more correct fixes than Xu'21 on 7/7 datasets and than the
+label-trained Claxton'24 on 6/7 (exception CMU). At segFAR <= 0.025: 6/7 vs both (NCLT -0.006 vs Xu'21, CMU vs
+Claxton'24). pAUC (mean recall over FL in [0, 0.05]): 7/7 vs Xu'21 but only 4/7 vs Claxton'24 (NCLT -0.004, CMU,
+old town -0.015): the advantage is in the low-false-report regime. So the new rule is not a more conservative point on
+the same curve. Two exceptions, kept: on CMU (strong descriptors, easy data) Claxton'24 and
+even the raw max-sim score rank frames better than every presence chain; on NCLT the CS stop removes correct frames and
+CPC-HMM without CS has the best curve. The large gains (countryside x3 vs Xu'21, Nordland +0.16, Boreas +0.20) come from
+the odometry-consistency stop: on 4S countryside the best recall at FL <= 0.01 of every "+CS" rule is reached with a
+presence threshold of only P(on) ~ 0.02, i.e. CS alone removes almost all off-map reports.
+
+**Exact matched points** (`oc_matched.py`: Kalman at the exact matched threshold; the interpolated error of oc_summary
+was unreliable because the error is not monotone along a curve). CPC-SC+CS placed at Xu'21's own default FL: recall
++0.197 (17/18 runs) countryside, +0.128 (16/18) Boreas, +0.040 Nordland, +0.038 old town, +0.021 office, -0.043 CMU,
+-0.026 NCLT; error lower on 6/7. In the high-FL regime (FL 3-8 %, Claxton'24's default) Claxton'24 has more recall on
+5/7 datasets (all but Boreas, Nordland), at segFAR 0.11-0.27.
+
+**Sensitivity (default points).** CS span 2 / 4 excl: recall +0.02-0.04 / -0.01-0.04, segFAR <= 0.014 everywhere;
+threshold 0.75 / 1.25 excl: small changes; alpha 0.1: as 0.05; alpha 0.01: recall 0 on CMU / office (old town 0.19,
+countryside 0.18)
+because the map null has fewer than 1/alpha - 1 = 99 segments, so the conformal quantile is infinite: CPC-SC needs enough
+null segments for small alpha (a limitation to report).
+
+**Joint calibration of presence AND CS on the map null (`cpc_sc.cs_cal`, null place chain `est_n`): negative.** The
+null replay passes CS 2.6x more often than real off-map queries (CMU CosPlace: 0.229 vs 0.088; exact map odometry and
+same-condition images make the null track look-alikes more coherently), so the jointly calibrated threshold is MORE
+conservative (recall 0.64 vs 0.72). The default point of CPC-SC+CS therefore stays conservative relative to its own
+curve (countryside: 0.30 at FL 0.000 vs 0.55 at FL 0.01); a valid but less conservative null for CS is open.
 
 **Pre-registered protocol (written before the held-out results).** Development sets: Boreas, NCLT (seen). Held-out:
 CMU, Nordland, 4S office / old town / countryside. Candidates: M1 TCEmin, M2 TCEmin+CS, M3 CPC-HMM+CS, M4 CPC-SC+CS;

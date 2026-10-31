@@ -38,9 +38,16 @@ stage = os.path.join(kdir, "_code"); shutil.rmtree(stage, ignore_errors=True); o
 for f in glob.glob(os.path.join(ROOT, "analysis", "*.py")) + glob.glob(os.path.join(ROOT, "analysis", "*.sh")):
     shutil.copy(f, stage)
 json.dump({"title": "dive-vpr-analysis", "id": CODE_DS, "licenses": [{"name": "CC0-1.0"}]}, open(os.path.join(stage, "dataset-metadata.json"), "w"))
+import hashlib
+h = hashlib.sha256(b"".join(open(f, "rb").read() for f in sorted(glob.glob(os.path.join(stage, "*.py")) + glob.glob(os.path.join(stage, "*.sh"))))).hexdigest()
+hf = os.path.expanduser(f"~/.kaggle/codehash_{OWNER}")          # skip the upload when this account already has this exact code
 exists = subprocess.run(["kaggle", "datasets", "status", CODE_DS], capture_output=True, text=True).stdout.strip().lower() == "ready"
-cmd = ["kaggle", "datasets", "version", "-p", stage, "-m", "update", "-q"] if exists else ["kaggle", "datasets", "create", "-p", stage, "-q"]
-r = subprocess.run(cmd, capture_output=True, text=True); print("code dataset:", (r.stdout + r.stderr).strip().splitlines()[-1:])
+if exists and os.path.isfile(hf) and open(hf).read().strip() == h:
+    print("code dataset: unchanged (hash), not re-uploaded")
+else:
+    cmd = ["kaggle", "datasets", "version", "-p", stage, "-m", "update", "-q"] if exists else ["kaggle", "datasets", "create", "-p", stage, "-q"]
+    r = subprocess.run(cmd, capture_output=True, text=True); print("code dataset:", (r.stdout + r.stderr).strip().splitlines()[-1:])
+    if r.returncode == 0: open(hf, "w").write(h)
 
 # --- 2. kernel
 runner = r'''

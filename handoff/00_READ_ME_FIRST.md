@@ -1,4 +1,11 @@
-# 00 — READ ME FIRST (khung chat mới, branch `hmm-navigation-2`)
+# 00 — READ ME FIRST (khung chat mới, branch `hmm-navigation-3`)
+
+> **Cập nhật 2026-10-31 (branch `hmm-navigation-3`, sao từ `hmm-navigation-2`).** Phương pháp chính đổi từ CPC-HMM +TCEmin
+> sang **CPC-SC+CS** (`analysis/cpc_sc.py`) sau khi trả lời phản biện "chỉ thận trọng hơn?": đọc trước
+> `paper/BAO_CAO_PhanBien.pdf` (báo cáo ngắn), `RESEARCH_LOG.md` Entry 25, `paper/cpc_theory.md` §3d. Mọi đánh giá mới
+> chạy lại từ cache công khai `nhatlong1103/hmm-navcache-v2` bằng `analysis/oc_curves.py` / `oc_matched.py` /
+> `nav_rules.py` trong vài phút. Việc tiếp theo: `handoff/03_HANDOFF.md` §7.
+
 
 *Cập nhật cuối ngày 2026-10-29. Repo `lhaochen118-ship-it/hmm-develop`. **Branch làm việc: `hmm-navigation-2`**, sao
 từ `hmm-navigation` lúc bàn giao. Không tạo PR. File này hướng dẫn đọc repo và nêu việc tiếp theo.*
