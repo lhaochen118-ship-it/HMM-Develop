@@ -26,10 +26,13 @@ import nav_rules as NR
 from hmm_fix import beta_em
 import pcr as PCR
 from cpc_sc import logodds, hyst, sc_evidence, consistency_ok, cs_cal
+import cpc_geo as CG
 
 NAV_PTS = int(sys.argv[sys.argv.index("--nav-pts") + 1]) if "--nav-pts" in sys.argv else 14
 VARIANTS = "--variants" in sys.argv               # also the candidate fixes (TCE on R only, hysteresis, CPC-SC)
 DEFAULTS_ONLY = "--defaults-only" in sys.argv     # only the default operating points (fast screening of variants)
+GEO = "--geo" in sys.argv                         # Entry 26 families: shape-consistency stop, reset-on-stop, finite-memory onset (cpc_geo.py)
+ONLY_GEO = "--only-geo" in sys.argv               # only the Entry 26 families + references (fast)
 CS_SENS = "--cs-sens" in sys.argv                 # one-at-a-time sensitivity of the CS constants (span, threshold) for CPC-HMM+CS
 JOBS = int(sys.argv[sys.argv.index("--jobs") + 1]) if "--jobs" in sys.argv else 4
 OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}   # map coverage radius (sc_eval CFG off_d)
@@ -115,6 +118,9 @@ def families(z, b):
             cs3 = consistency_ok(x_c, z["o_q"], b["seqs"], b["excl"], 3.0)
             for al in (0.01, 0.1):
                 la, ka = sc_evidence(z, b, al); F[f"CPC-SC+CS(alpha={al:g})"] = (None, x_c, None, hyst(la, b["seqs"], ka, 0.0) & cs3)
+    if GEO or ONLY_GEO:
+        G, xg = CG.rules(z, b)
+        for name, (scg, accg) in G.items(): F[name] = (scg, xg, 0.0, accg)
     if "pcr_q" in z.files:                                       # predictive cell-rank evidence (nav_demo --pred)
         agree = np.linalg.norm(MP[top] - x_c, axis=1) <= b["excl"]
         pm, ptc, pmin = PCR.pcr_evalues(z, b["seqs"]); sig = lambda lo: 1 / (1 + np.exp(-lo))

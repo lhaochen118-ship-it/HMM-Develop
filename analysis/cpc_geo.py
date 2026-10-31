@@ -1,0 +1,96 @@
+"""CPC-W/G: presence decision with a FINITE-MEMORY onset, reset-on-stop persistence and a SHAPE-consistency stop (Entry 26).
+
+Why (RESEARCH_LOG Entry 26, dep_diag.py):
+  * off-map SelfCal p-values are marginally valid in the interior of excursions; the violations sit within ~50 m of the
+    map edge (view overlap) and in the odometry-anchored R statistic of long excursions, where the map self-replay null
+    has no samples (its chunks are ~100 frames, ~10 per map);
+  * a full-memory presence chain makes a segment deep inside an excursion depend on the whole excursion (carried state),
+    so segment exchangeability with the short null chunks cannot hold there;
+  * the magnitude-only consistency stop CS misses tracks that move at the right speed on a wrong-shaped path; the 2-D
+    Procrustes residual of the reported track against the odometry (turns included) is far more specific
+    (geo_cons.py: off-map pass rate 0.000-0.005 vs 0.002-0.088 for CS at similar on-map pass rate).
+Rule (all constants in units of excl, H, alpha; one setting for every dataset):
+  onset        windowed presence log-odds over the last W = H frames (chain restarted at odds 1, cpc_sc.window_logodds)
+               above kappa_W = conformal (1 - alpha) quantile of the max windowed log-odds over disjoint H-frame segments of
+               the map self-replay null (oc_curves.wcpc)  -> depends on the last H frames only
+  persistence  full-memory CPC log-odds > 0
+  stop         shape test fails (RMS Procrustes residual of the place-chain MAP track vs the odometry over the last
+               D_s = 3 excl of path > eps = excl/2) or the magnitude test CS fails; a stop RESETS the decision (a new
+               onset is needed)
+Guarantee (cpc_theory.md section 3e): every off-map report belongs to a streak that started with an onset inside the
+excursion (no carried streak survives the stop beyond the map edge, geometric persistence lemma), and an onset in a segment
+lying >= W - 1 frames inside an excursion has probability <= alpha if query windows there are exchangeable with null
+windows; dependence inside windows and between segments is arbitrary (linearity), so E[segment onset rate] <= alpha."""
+import numpy as np
+from geo_cons import window_points, procrustes2
+from cpc_sc import logodds, window_logodds, consistency_ok, sc_evidence
+from hmm_fix import beta_em
+
+
+def shape_ok(x_m, o_q, seqs, excl, D_x=3.0, eps_x=0.5, step_x=0.2, min_x=1.0, hz=None):
+    """False at frame t when the reported track over the last D_x excl of odometry path does not fit the odometry by a
+    rigid 2-D motion within RMS eps_x excl (windows shorter than min_x excl of path always pass). 1-D maps: translation only."""
+    one_d = x_m.ndim == 1 or x_m.shape[1] == 1
+    if not one_d and hz is not None and x_m.shape[1] > 2: x_m, o_q = x_m[:, hz], o_q[:, hz]
+    ok = np.ones(len(x_m), bool); D, eps, step = D_x * excl, eps_x * excl, step_x * excl
+    for idx in seqs:
+        m, o = x_m[idx].astype(float), o_q[idx].astype(float)
+        if one_d: m, o = m.reshape(-1, 1), o.reshape(-1, 1)
+        cum = np.r_[0, np.cumsum(np.linalg.norm(np.diff(o, axis=0), axis=1))]
+        for i in range(len(idx)):
+            w = window_points(o, cum, i, D, step)
+            if len(w) < 3 or cum[i] - cum[w[0]] < min_x * excl: continue
+            if one_d:
+                d = (m[w, 0] - m[w, 0].mean()) - (o[w, 0] - o[w, 0].mean()); r = float(np.sqrt((d ** 2).mean()))
+            else:
+                r = procrustes2(m[w], o[w])[0]
+            ok[idx[i]] = r <= eps
+    return ok
+
+
+def hyst_ok(start, keep, ok, seqs):
+    """report from an onset (start & ok) while keep & ok; any frame with ok False ends the streak (reset: next report needs
+    a new onset)"""
+    acc = np.zeros(len(start), bool)
+    for idx in seqs:
+        rep = False
+        for t in idx:
+            rep = ok[t] and (keep[t] if rep else start[t]); acc[t] = rep
+    return acc
+
+
+def wcpc_parts(z, b, W, alpha=0.05):
+    """windowed CPC log-odds of the queries and kappa_W per frame (as oc_curves.wcpc, without the floor at 0)"""
+    H = b["H"]; fl, ln = z["nchunk_flat"], z["nchunk_len"]; nch = np.split(fl, np.cumsum(ln)[:-1]) if len(ln) else []
+    cl = lambda x: np.clip(np.nan_to_num(x, nan=1.0), 1e-6, 1)
+    pn, prn, pq, pr = cl(z["p_n"]), cl(z["pRn"]), cl(z["p_q"]), cl(z["pR"])
+    MP, est, top = b["MP"], b["est_c"], b["top"]; agree = np.linalg.norm(MP[top] - MP[est], axis=1) <= b["excl"]
+    llq = np.zeros(len(pq)); kap = np.zeros(len(pq))
+    for cn in sorted(set(z["cond"])):
+        m = z["cond"] == cn; a1, _ = beta_em(pq[m]); a2, _ = beta_em(pr[m])
+        llq[m] = np.log(0.5 * (np.where(agree[m], a1 * pq[m] ** (a1 - 1), a1) + (a2 * pr[m] ** (a2 - 1)) ** (1.0 / H)))
+        lln = np.log(0.5 * (np.maximum(a1 * pn ** (a1 - 1), a1) + (a2 * prn ** (a2 - 1)) ** (1.0 / H)))
+        mx = []
+        for ch in nch:
+            if len(ch) < W + H - 1: continue
+            w = window_logodds(lln, [ch], W)[ch][W - 1:]
+            mx += [w[i:i + H].max() for i in range(0, len(w) - H + 1, H)]
+        mx = np.sort(mx); k = int(np.ceil((1 - alpha) * (len(mx) + 1)))
+        kap[m] = mx[k - 1] if 0 < k <= len(mx) else np.inf
+    return window_logodds(llq, b["seqs"], W), llq, kap
+
+
+def rules(z, b, alpha=0.05):
+    """name -> (score for operating curves, accept mask at the default point) for the Entry 26 variants"""
+    excl, seqs, MP, est = b["excl"], b["seqs"], b["MP"], b["est_c"]; x_c = MP[est]; hz = list(z["hz"])
+    cs = consistency_ok(x_c, z["o_q"], seqs, excl, 3.0)
+    sh = shape_ok(x_c, z["o_q"], seqs, excl, 3.0, 0.5, hz=hz)
+    sh4 = shape_ok(x_c, z["o_q"], seqs, excl, 3.0, 0.25, hz=hz)
+    lo_s, kap = sc_evidence(z, b, alpha)                       # CPC-SC (Entry 25): full-memory log-odds, segment kappa
+    W = b["H"]; wlo, llq, kw = wcpc_parts(z, b, W, alpha); lo_full = logodds(llq, seqs)
+    out = {}
+    for tag, ok in (("+CS", cs), ("+SH", sh), ("+CS+SH", cs & sh), ("+CS+SH4", cs & sh4)):
+        out["CPC-SC" + tag] = (np.where(ok, lo_s - kap, -np.inf), hyst_ok(lo_s > kap, lo_s > 0, np.ones(len(ok), bool), seqs) & ok)
+        out["CPC-SC" + tag + "(reset)"] = (np.where(ok, lo_s - kap, -np.inf), hyst_ok(lo_s > kap, lo_s > 0, ok, seqs))
+        out["CPC-W" + tag] = (np.where(ok, wlo - kw, -np.inf), hyst_ok(wlo > kw, lo_full > 0, ok, seqs))
+    return out, x_c

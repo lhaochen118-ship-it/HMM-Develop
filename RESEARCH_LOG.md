@@ -7,6 +7,36 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 26 (in progress, branch `hmm-navigation-4`) — dependence diagnosis, shape-consistency stop, finite-memory onset, dependence-free certificate (2026-10-31)
+
+**Diagnosis before any new rule (labels used only here; `analysis/dep_diag.py`, seed 0).** (1) The top-1 SelfCal p-value of
+off-map query frames is super-uniform in the interior of excursions (P(p <= .05) 0.000-0.006 at >= 50 frames from both
+edges) but sub-uniform within ~50 frames of the map edge (CMU MegaLoc 0.12-0.16): view overlap, the top-1 is the edge
+image 40-100 m away. (2) The anchored-R p-value is sub-uniform in long excursions (Boreas CosPlace P(pR <= .05) 0.19-0.23
+at depth 0-100) where the map null has no samples: null chunks are short (mean 84-135 frames) and few (8-10 per map), so
+the null cannot represent long excursions and its effective number of exchangeable units is ~10. (3) Fresh-start segment
+exceedance of kappa (the SC onset quantity) is <= alpha on most runs but concentrated at shallow depth (Boreas CosPlace
+0.18-0.22 at depth < 50) and 0.099 on 4S countryside CosPlace.
+
+**Shape consistency (`analysis/geo_cons.py`, seed 0 of CMU / Boreas / countryside / NCLT / Nordland).** RMS Procrustes
+residual of the place-chain MAP track vs the odometry over 3 excl of path: off-map pass rate at eps = excl/4 0.000-0.005
+(CS: 0.002-0.088) at on-map pass rate 0.52-0.88 (lower than CS where sequences are shorter than the window). These seed-0
+looks are disclosed; seeds 3-9 of the held-out sets were not looked at.
+
+**Dependence-free certificate GPC (`analysis/gpc.py`).** Placements of the odometry window on the map traversal (shape fit
+only) + Markov on hit counts: P(false certificate at t) <= alpha for ANY temporal dependence (per-frame assumptions D and
+geometry-appearance independence). Seed 0: FL 0 at every alpha, recall 0.04-0.20 at alpha 0.05 (CPC-SC+CS 0.72-0.84):
+without an assumption on the dependence, evidence cannot accumulate beyond one frame (the price of dependence).
+
+**Pre-registered protocol for the new rules (written before the held-out results).** Development sets: Boreas, NCLT.
+Held-out: CMU, Nordland, 4S office / old town / countryside, seeds 0-9 (seed 0 partly seen as above). Candidates (all
+constants in units of excl / H / alpha, one setting for every dataset; `analysis/cpc_geo.py`): M5 CPC-SC+SH (shape stop
+D = 3 excl, eps = excl/2, replaces CS), M6 CPC-SC+CS+SH, M7 CPC-SC+CS+SH4 (eps = excl/4), M8 = M5-M7 with reset-on-stop,
+M9 CPC-W+CS+SH (onset from the windowed log-odds over the last H frames, kappa_W from the map null; persistence full
+memory; reset-on-stop; the rule covered by the onset + geometric-persistence theorem). Reference: M4 CPC-SC+CS (Entry 25).
+Order of criteria as Entry 25: mean segFAR <= 0.05 per dataset, then error and recall at the default point, then recall at
+matched FL / segFAR (operating curves); final choice by leave-one-dataset-out over all label-free variants.
+
 ## Entry 25 — "Only more conservative?": recall diagnosis, operating curves, odometry-consistency stop (2026-10-31)
 
 **Question (reviewer).** CPC-HMM +TCEmin has low error but also low recall. Is it better, or only more conservative?
