@@ -7,7 +7,7 @@ image condition, not the deployment condition (night, snow), (ii) uses exact map
 ~10 exchangeable chunks, so long-excursion dependence is missing and alpha = 0.01 is infeasible on small maps.
 
 CMS builds the null from the QUERY STREAM: for every frame t the evidence statistic is recomputed on a surgically altered
-map M \\ B_t, where B_t is the corridor of radius rho = off_d + excl around the system's OWN belief (the anchors of the
+map M \\ B_t, where B_t is the corridor of radius rho = off_d around the system's OWN belief (the anchors of the
 winning route hypothesis of the last N frames). If the belief is right (|belief - truth| <= excl), every frame of the
 window is > off_d from the remaining map: the counterfactual statistic is a draw of the OFF-MAP law, under the query's
 own condition, odometry noise and temporal dependence. If the belief is wrong the true place survives the surgery and the
@@ -57,7 +57,7 @@ def _lookup(ks, ss, key, tol, K, valid=None):
 def cms_stats(z, tk, rho=None, N=20, delta=8.0, trim=0.75, wapp=2.0, tol=4.0, ds=None):
     """real and counterfactual (map surgery around the winner's anchors) route cost and distinctiveness of every frame"""
     MP = z["MP"]; one_d = MP.ndim == 1 or MP.shape[1] == 1; hz = list(z["hz"]); excl = float(z["excl"])
-    if rho is None: rho = OFF_D.get((ds or "cmu").split(":")[0].split("_")[0], 40.0) + excl
+    if rho is None: rho = OFF_D.get((ds or "cmu").split(":")[0].split("_")[0], 40.0)    # rho = off_d (Entry 28 deviation note)
     P, cid, arc = TAO.route(MP[:, hz] if (not one_d and MP.shape[1] > 2) else MP)
     o_all = z["o_q"]; o_all = (o_all[:, hz] if (not one_d and o_all.shape[1] > 2) else o_all).astype(float)
     if one_d: o_all = o_all.reshape(-1, 1)
@@ -220,6 +220,31 @@ def chain_parts(z, b, st, w_route=0.5, alpha=0.05, use=("z", "cost")):
     return llq, llc, kap, nseg
 
 
+def windowed_parts(z, b, st, alpha=0.05, W=None, w_route=0.5):
+    """CMS-W: FINITE-MEMORY presence evidence -- the CMS presence chain restarted at odds 1 at t - W + 1 (W = H), so every
+    report (not only an onset) depends on the last W frames: Theorem 6 covers every reported frame, any dependence.
+    Returns the real windowed log-odds and kappa_W (conformal (1 - alpha) quantile of the max windowed counterfactual
+    log-odds over H-frame segments of the calibration stream)."""
+    from cpc_sc import window_logodds
+    H, seqs = b["H"], b["seqs"]; W = W or H; n = len(z["cond"])
+    wq, kap = np.full(n, -np.inf), np.full(n, np.inf)
+    for sqs, cqs in cal_groups(z, seqs):
+        m = np.concatenate(sqs); mc = np.concatenate(cqs); cq, cc = [], []
+        for key, low in (("cost", True), ("z", False)):
+            real, cf = st[key][m], st[key + "_cf"][mc]; fin = np.isfinite(cf)
+            pq = np.clip(rank_p(cf, real, low), 1e-6, 1)
+            srt = np.sort(cf[fin] if low else -cf[fin]); v = np.where(fin, cf if low else -cf, np.inf)
+            pc = np.clip(np.searchsorted(srt, v, side="right") / (1 + len(srt)), 1e-6, 1)
+            a, _ = beta_em(pq); pw = w_route if key == "cost" else 1.0
+            ec = (a * pc ** (a - 1)) ** pw; ec[~fin] = 1.0
+            cq.append((a * pq ** (a - 1)) ** pw); cc.append(ec)
+        llq = np.zeros(n); llq[m] = np.log(np.mean(cq, 0)); llc = np.zeros(n); llc[mc] = np.log(np.mean(cc, 0))
+        wq[m] = window_logodds(llq, sqs, W)[m]; wc = window_logodds(llc, cqs, W)
+        mx = np.sort([wc[sg].max() for sg in _segments(cqs, H)]); k = int(np.ceil((1 - alpha) * (len(mx) + 1)))
+        kap[m] = mx[k - 1] if 0 < k <= len(mx) else np.inf
+    return wq, kap
+
+
 def kappa_seg_max(cf_score, segs, alpha, delta=None):
     """threshold on a score (higher = more on-map) from the max of the counterfactual score over disjoint segments.
     delta None: marginal conformal (1 - alpha) quantile (P(report in an exchangeable segment) <= alpha);
@@ -293,5 +318,14 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
     scU = np.maximum(sc_t + kT2, lo2 - kap2)
     for tg, ok in (("H", one), ("H+SH", sh_c), ("H+SH+G", sh_c & agree)):
         F[f"CMS-U/{tg}"] = (np.where(ok, scU, -np.inf), xc, 0.0, CG.hyst_ok(onU, keepU, one, seqs) & ok)
+    # CMS-W: finite-memory presence chain, no hysteresis (every report covered by Theorem 6)
+    ALPHA_MIN[0] = alpha
+    wq, kW = windowed_parts(z, b, st, alpha)
+    for tg, ok in (("H", one), ("H+SH", sh_c)):
+        F[f"CMS-W/{tg}"] = (np.where(ok, wq - kW, -np.inf), xc, 0.0, (wq > kW) & ok)
+    ALPHA_MIN[0] = alpha / 2
+    wq2, kW2 = windowed_parts(z, b, st, alpha / 2)
+    onWU = (sc_t > -kT2) | (wq2 > kW2)
+    F["CMS-WU/H+SH"] = (np.where(sh_c, np.maximum(sc_t + kT2, wq2 - kW2), -np.inf), xc, 0.0, onWU & sh_c)
     ALPHA_MIN[0] = alpha
     return F, dict(kT=kT, nT=nT, kap=kap, lo=lo)

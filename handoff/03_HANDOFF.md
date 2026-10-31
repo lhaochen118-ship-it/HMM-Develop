@@ -1,8 +1,22 @@
-# 03 — Handoff (cho khung chat mới, từ branch `hmm-navigation-3`)
+# 03 — Handoff (cho khung chat mới; mới nhất: branch `hmm-navigation-5`, §000)
 
 *2026-10-31. Chỉ ghi mục tiêu, tiến độ, quyết định đã chốt, vị trí mọi thứ và việc tiếp theo. Chi tiết khoa học ở
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
+
+## 000. Vòng 6 (2026-11-01, branch `hmm-navigation-5`) — trạng thái
+
+- **Làm xong:** phương pháp mới CMS (phẫu thuật bản đồ phản thực, `analysis/cms.py`), lý thuyết `paper/cms_theory.md`
+  (Định lý 6, Mệnh đề 8, Hệ quả 9), đánh giá 366 run × 64 họ luật ở α = 0.05 và 0.01, nhân quả [loco], hai bán kính ρ, độ bền lỗ
+  10/50 %, kiểm Định lý 6, LODO; báo cáo `paper/BAO_CAO_E28.pdf`.
+- **Đề xuất hiện tại:** **CMS-CPC/H+SH ở α = 0.01** (đăng ký trước) hoặc **CMS-CPC/H+SH+G ở α = 0.01** (LODO chọn 7/7). Số liệu:
+  `01` §N000.
+- **Kaggle:** không còn kernel nào chạy (lô dự phòng `evlb-*` đã xoá). 10 acc vòng này (`ENVIRONMENT_SUMMARY` §3).
+- **Việc tiếp theo (ưu tiên):** (1) hiệu chuẩn **rủi ro điều hướng** (không chỉ segFAR) để dùng ngân sách α = 0.05 mà không tăng
+  sai số Kalman — ví dụ ngưỡng phản thực trên chính đổi mới (innovation) của bộ lọc; (2) lý thuyết/điều kiện cho S1 (khi nào phẫu
+  thuật tái tạo đúng luật off-map; có thể dùng hỗn hợp nhiều bán kính ρ ∈ [off_d − excl, off_d] làm null "biên"); (3) CMU/điều kiện
+  nhỏ: chia sẻ null phản thực giữa các phiên có trọng số (nhân quả [loco] đã hoạt động); (4) robot thật vòng kín; benchmark off-map
+  tự nhiên ngoài NCLT.
 
 ## 00. Vòng 5 (2026-10-31) — trạng thái
 

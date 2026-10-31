@@ -11,7 +11,9 @@ LAB = [("Xu21", "Xu'21 (nhãn)"), ("Claxton24", "Claxton'24 (nhãn)"), ("SafeVPR
 OLD = [("certified", "Certified (null bản đồ)"), ("TAO-SC", "TAO-SC (null bản đồ)"), ("CPC-SC+CS", "CPC-SC+CS (vòng 3)"),
        ("CPC-SC-T0.5+SH", "CPC-SC-T½+SH (vòng 5, tốt nhất cũ)")]
 CMS05 = [("CMS-T", "CMS-T (tuyến, winner TAO)"), ("CMS-T/H", "CMS-T/H (tuyến, vị trí HMM)"), ("CMS-T/H+SH", "CMS-T/H+SH"),
-         ("CMS-CPC/H+SH", "**CMS-CPC/H+SH (đề xuất)**"), ("CMS-U/H+SH", "CMS-U/H+SH (hợp, α/2 mỗi nhánh)"),
+         ("CMS-W/H+SH", "CMS-W/H+SH (chuỗi bộ nhớ hữu hạn)"), ("CMS-CPC/H+SH", "**CMS-CPC/H+SH (đề xuất, đăng ký trước)**"),
+         ("CMS-CPC/H+SH+G", "**CMS-CPC/H+SH+G (chọn bởi LODO)**"), ("CMS-U/H+SH", "CMS-U/H+SH (hợp, α/2 mỗi nhánh)"),
+         ("CMS-CPC/H+SH[loco]", "CMS-CPC/H+SH [nhân quả: chỉ phiên khác]"), ("CMS-CPC/H+SH{r1}", "CMS-CPC/H+SH {ρ = off_d + excl, đăng ký trước}"),
          ("CMS-F-PAC", "CMS-F-PAC (δ = 0.1)"), ("CMS-CPC", "CMS-CPC không dừng (chẩn đoán)")]
 A01 = lambda L: [(k + "(a=0.01)", v) for k, v in L]
 
@@ -29,7 +31,7 @@ def cell_def(v, oracle=False):
 def tab_def(T, rules, dss, title, oracle=True):
     L = [title, "", "| Luật | " + " | ".join(E.DS_NAME[d] for d in dss) + " |", "|---" * (1 + len(dss)) + "|"]
     for n, lab in rules + ([("oracle", "Oracle")] if oracle else []):
-        L.append(f"| {lab} | " + " | ".join(cell_def(np.array(T.get(d, {}).get(n, []), float), n == "oracle") for d in dss) + " |")
+        L.append(f"| {lab.replace('/H', '/ H')} | " + " | ".join(cell_def(np.array(T.get(d, {}).get(n, []), float), n == "oracle") for d in dss) + " |")
     return L + [""]
 
 
@@ -39,7 +41,7 @@ def tab_cur(C, rules, dss, title):
         cells = []
         for d in dss:
             v = np.array(C.get(d, {}).get(n, []), float); cells.append("–" if not len(v) else f"{v[:, 1].mean():.3f} / {v[:, 3].mean():.3f}")
-        L.append(f"| {lab} | " + " | ".join(cells) + " |")
+        L.append(f"| {lab.replace('/H', '/ H')} | " + " | ".join(cells) + " |")
     return L + [""]
 
 
@@ -73,20 +75,21 @@ def main():
                  "10 seed (NCLT 1), 6 descriptor")
     L += tab_def(T, [("CPC-SC+CS(alpha=0.01)", "CPC-SC+CS, α = 0.01 (null bản đồ)")] + A01(CMS05), dss,
                  "### Bảng 2. Điểm mặc định, α = 0.01 (cùng định dạng)")
-    L += tab_cur(C, LAB + OLD + CMS05 + A01([("CMS-CPC/H+SH", "**CMS-CPC/H+SH, α = 0.01**")]), dss,
+    L += tab_cur(C, LAB + OLD + [x for x in CMS05 if "[" not in x[0] and "{" not in x[0]] + A01([("CMS-CPC/H+SH", "**CMS-CPC/H+SH, α = 0.01**"), ("CMS-CPC/H+SH+G", "**CMS-CPC/H+SH+G, α = 0.01**")]), dss,
                  "### Bảng 3. Đường cong vận hành: recall tại FL ≤ 0.01 / pAUC (FL ∈ [0, 0.05]); seed 0–2")
     L += tab_def(T, [("TAO26", "ngưỡng nhãn 3σ (TAO'26)"), ("TAO-SC", "null bản đồ (TAO-SC)"), ("CMS-T", "null phản thực (CMS-T), α = 0.05"),
                      ("CMS-T(a=0.01)", "null phản thực (CMS-T), α = 0.01")], dss,
                  "### Bảng 4. Cùng một điểm số (chi phí tuyến TAO'26), ba cách đặt ngưỡng: recall / segFAR / run tệ nhất / sai số", oracle=False)
     L += tab_tight(T, [("CPC-SC+CS", "CPC-SC+CS", 0.05), ("CPC-SC-T0.5+SH", "CPC-SC-T½+SH", 0.05), ("TAO-SC", "TAO-SC", 0.05),
                        ("CMS-T", "CMS-T", 0.05), ("CMS-CPC/H+SH", "CMS-CPC/H+SH", 0.05),
-                       ("CMS-T(a=0.01)", "CMS-T", 0.01), ("CMS-CPC/H+SH(a=0.01)", "CMS-CPC/H+SH", 0.01)], dss,
+                       ("CMS-T(a=0.01)", "CMS-T", 0.01), ("CMS-CPC/H+SH(a=0.01)", "CMS-CPC/H+SH", 0.01), ("CMS-CPC/H+SH+G(a=0.01)", "CMS-CPC/H+SH+G", 0.01)], dss,
                    "### Bảng 5. Độ chặt của bảo đảm: tỷ lệ khởi phát sai mỗi đoạn off-map / α và segFAR / α (1 = dùng đúng ngân sách)", 0.05)
     # win counts of the proposed rule vs the best previous label-free rule
     P05, P01, REF = "CMS-CPC/H+SH", "CMS-CPC/H+SH(a=0.01)", "CPC-SC-T0.5+SH"
     L += ["### Bảng 6. Số dataset (trên " + str(len(dss)) + ") mà luật đề xuất hơn CPC-SC-T½+SH", "",
           "| So sánh | recall mặc định cao hơn | sai số thấp hơn | recall tại FL ≤ 0.01 cao hơn |", "|---|---|---|---|"]
-    for p, lab in ((P05, "CMS-CPC/H+SH α = 0.05"), (P01, "CMS-CPC/H+SH α = 0.01"), ("CMS-T(a=0.01)", "CMS-T α = 0.01"), ("CMS-U/H+SH", "CMS-U/H+SH α = 0.05")):
+    for p, lab in ((P05, "CMS-CPC/H+SH α = 0.05"), ("CMS-CPC/H+SH+G", "CMS-CPC/H+SH+G α = 0.05"), (P01, "CMS-CPC/H+SH α = 0.01"),
+                   ("CMS-CPC/H+SH+G(a=0.01)", "CMS-CPC/H+SH+G α = 0.01"), ("CMS-T(a=0.01)", "CMS-T α = 0.01")):
         cw = sum(1 for d in dss if len(C.get(d, {}).get(p, [])) and len(C.get(d, {}).get(REF, [])) and
                  np.mean(np.array(C[d][p])[:, 1]) > np.mean(np.array(C[d][REF])[:, 1]))
         L.append(f"| {lab} | {wins(T, p, REF, dss, 0)} | {wins(T, p, REF, dss, 4, min)} | {cw} |")
@@ -94,12 +97,23 @@ def main():
     for k, lab in (("--lodo05", "### Bảng 7a. Chọn luật leave-one-dataset-out (α = 0.05, tiêu chí đăng ký trước)"),
                    ("--lodo01", "### Bảng 7b. Chọn luật leave-one-dataset-out (α = 0.01)")):
         if arg(k): L += [lab, "", open(arg(k)).read(), ""]
+    if arg("--holes"):                                           # hole-ratio robustness (holes_eval.py outputs, oc_*_dXX_s*.json)
+        import glob as G
+        for ratio in ("10", "50"):
+            d = os.path.join(arg("--holes"), f"d{ratio}")
+            if not os.path.isdir(d): continue
+            TH = E.defaults(load(d)); dh = [x for x in E.DS_ORDER if x in TH]
+            L += tab_def(TH, [("Xu21", "Xu'21 (nhãn)"), ("Claxton24", "Claxton'24 (nhãn)"), ("TAO26", "TAO'26 (nhãn)"), ("CPC-SC+CS", "CPC-SC+CS (null bản đồ)"),
+                              ("CMS-T/H+SH", "CMS-T/H+SH"), ("CMS-W/H+SH", "CMS-W/H+SH"), ("CMS-CPC/H+SH", "CMS-CPC/H+SH"),
+                              ("CMS-T/H+SH(a=0.01)", "CMS-T/H+SH, α = 0.01"), ("CMS-CPC/H+SH(a=0.01)", "CMS-CPC/H+SH, α = 0.01")], dh,
+                         f"### Bảng 9{'a' if ratio == '10' else 'b'}. Bản đồ khuyết {ratio} % (cùng mọi hằng số), 3 seed × 6 descriptor: recall / segFAR / run tệ nhất / sai số")
+    if arg("--diag"): L += ["### Bảng 10. Kiểm chứng Định lý 6 (nhãn chỉ để kiểm): CMS-T, α = 0.05, theo điều kiện × run", "", open(arg("--diag")).read(), ""]
     if arg("--rho"):
         L += ["### Bảng 8. Độ nhạy bán kính phẫu thuật ρ (seed 0, 6 descriptor): CMS-CPC/H+SH α = 0.05 recall / segFAR / run tệ nhất / sai số", "",
               "| ρ | " + " | ".join(E.DS_NAME[d] for d in dss) + " |", "|---" * (1 + len(dss)) + "|"]
         for item in arg("--rho").split(","):
             dr, lab = item.split(":"); TR = E.defaults(load(dr))
-            L.append(f"| {lab} | " + " | ".join(cell_def(np.array(TR.get(d, {}).get(P05, []), float)) for d in dss) + " |")
+            L.append(f"| {lab.replace('/H', '/ H')} | " + " | ".join(cell_def(np.array(TR.get(d, {}).get(P05, []), float)) for d in dss) + " |")
         L.append("")
     tables = "\n".join(L) + "\n"
     open(os.path.join(HERE, "e28_tables.md"), "w").write(tables)

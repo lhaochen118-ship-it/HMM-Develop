@@ -1,6 +1,13 @@
 # 05 — Hướng dẫn cho khung chat mới: đọc repo thế nào, làm gì tiếp
 
-*2026-10-31, cập nhật từ branch `hmm-navigation-4` (vòng 4). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
+*2026-11-01, cập nhật từ branch `hmm-navigation-5` (vòng 6). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
+
+**Vòng 6 (đọc trước tiên):** `paper/BAO_CAO_E28.pdf` (báo cáo ngắn), `paper/cms_theory.md` (lý thuyết CMS: Định lý 6, Mệnh đề 8,
+Hệ quả 9), `RESEARCH_LOG.md` Entry 28 (đăng ký trước + **sai lệch về bán kính ρ** đã ghi trước khi đánh giá), `LITERATURE_GATE.md`
+Gate 12, `handoff/02_ENGINEERING_OPS_NOTES.md` §000. **Phương pháp mới: CMS (Counterfactual Map Surgery)** — null hiệu chuẩn
+sinh từ chính luồng query bằng cách cắt bỏ hành lang bán kính ρ = off_d quanh niềm tin của hệ thống (`analysis/cms.py`); luật
+`CMS-CPC/H+SH`, `CMS-T/H+SH`, `CMS-W/H+SH` trong `oc_curves.py --cms`. Dữ liệu mới: `nhatlong1103/hmm-cms-cache` (ρ = off_d),
+`hmm-cms-cache-r1` (ρ = off_d + excl). Tái tạo bảng: §4c bên dưới.
 
 **Vòng 4 (đọc trước):** `paper/BAO_CAO_E26.pdf`, `handoff/01_SCIENTIFIC_FINDINGS.md` §N0, `RESEARCH_LOG.md` Entry 26, `paper/cpc_theory.md` §3e–§3f, `LITERATURE_GATE.md` Gate 11, `literature/BASELINES_2026.md`, `handoff/02_ENGINEERING_OPS_NOTES.md` §00. Phương pháp tốt nhất hiện tại: **CPC-SC-T+SH** / **CPC-SC-T+CS** (họ luật trong `analysis/oc_curves.py --topk --mapdump`, `analysis/cpc_geo.py`, `analysis/tao.py`). Dữ liệu mới: `nhatlong1103/hmm-topk`. Tải dataset public không cần token: `automation/anon_download.py`.
 
@@ -67,6 +74,20 @@ Thêm một luật mới: viết hàm trong `analysis/cpc_sc.py` (hoặc module 
 chạy `oc_curves.py` trên cache. Chỉ chạy lại `nav_demo.py` trên Kaggle khi cần thống kê chưa có trong cache (ví dụ top-K
 chỉ số cho TAO'26).
 
+## 4c. Tái tạo bảng vòng 6 (CPU)
+
+```bash
+python3 automation/anon_download.py nhatlong1103/hmm-cms-cache <scratch>/cms --jobs 12
+```
+
+```bash
+python3 analysis/oc_curves.py <scratch>/navcache cmu cosplace --seeds 0 --topk <scratch>/topk --taocache <scratch>/taoc --cms <scratch>/cms --tw 0.5 --variants --light --cms-alpha 0.05,0.01 --cms-groups cond,loco --fams @E28
+```
+
+(`<scratch>/taoc` = `hmm-route-cache`; bộ ρ = off_d + excl thêm `--cms-extra <dir r1> --cms-extra-tag r1`.) Kiểm Định lý 6:
+`analysis/cms_diag.py <navcache> <cms>`; lỗ 10/50 %: `analysis/holes_eval.py` (Kaggle, `hmm-navcache-holes`); bảng báo cáo:
+`paper/build_e28_report.py <dir oc_*.json> --holes <dir d10,d50> --diag analysis/results/e28/diag_rho_offd.md`.
+
 ## 4b. Tái tạo bảng vòng 4 (CPU, không cần GPU)
 
 ```bash
@@ -84,7 +105,12 @@ python3 analysis/oc_curves.py <scratch>/navcache cmu cosplace --topk <scratch>/t
 (`<dump_dir>`: descriptor dumps, `analysis/topk_dump.py` / `vprlib` layout; trên Kaggle dùng token `DUMP`, `CACHE`, `TOPK`.)
 Bảng báo cáo: `paper/build_e26_report.py` (đầu vào: thư mục `oc_*.json`; kết quả thô nén ở `analysis/results/e26/`).
 
-## 5. Việc tiếp theo (tóm tắt; chi tiết ở `03` §5)
+## 5. Việc tiếp theo (tóm tắt; chi tiết ở `03` §000, §5)
+
+**Sau vòng 6 (ưu tiên):** (1) hiệu chuẩn phản thực trực tiếp rủi ro điều hướng (sai số Kalman), để α = 0.05 không làm tăng sai số;
+(2) điều kiện lý thuyết cho S1 / null "biên" nhiều bán kính; (3) điều kiện nhỏ (CMU): chia sẻ null phản thực giữa phiên; (4) vòng kín.
+Phương pháp hiện tại: **CMS-CPC/H+SH(+G) ở α = 0.01** (`analysis/cms.py`, `oc_curves.py --cms`).
+
 
 **Sau vòng 5 (ưu tiên):** (1) hiệu chuẩn **chung** (hiện diện ∧ dừng CS/SH) trên null chéo traversal — cần chạy chuỗi vị trí
 trên các pseudo-query (`hmm-xnull` đã có top-100 khi che block); đây là nguồn dè dặt chính còn lại; (2) CMU / descriptor mạnh:

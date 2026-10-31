@@ -9,7 +9,7 @@ import cms
 
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None
 JOBS = int(sys.argv[sys.argv.index("--jobs") + 1]) if "--jobs" in sys.argv else 3
-RHO_ADD = float(sys.argv[sys.argv.index("--rho-add") + 1]) if "--rho-add" in sys.argv else 1.0   # rho = off_d + RHO_ADD * excl (sensitivity)
+RHO_ADD = float(sys.argv[sys.argv.index("--rho-add") + 1]) if "--rho-add" in sys.argv else 0.0   # rho = off_d + RHO_ADD * excl (sensitivity)
 
 
 def one(a):

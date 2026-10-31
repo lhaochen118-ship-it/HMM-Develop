@@ -22,13 +22,19 @@ Cho bản đồ M (vị trí m_j, descriptor), luồng query (ảnh I_t, odometr
 T_t = τ(W_t; M) trên cửa sổ W_t (N = 20 frame gần nhất), lớn = nhiều bằng chứng có mặt. Hệ thống có một **niềm tin** b_t:
 các anchor a_{t,1..N} của giả thuyết tuyến thắng (vị trí bản đồ mà hệ thống tin là robot đã đi qua trong cửa sổ).
 
-**Phẫu thuật.** B_t = ∪_k B(a_{t,k}, ρ), ρ = off_d + excl. Thống kê phản thực T^cf_t = τ(W_t; M \ B_t), tính **y hệt** T_t:
+**Phẫu thuật.** B_t = ∪_k B(a_{t,k}, ρ), ρ = off_d (xem ghi chú về ρ bên dưới). Thống kê phản thực T^cf_t = τ(W_t; M \ B_t), tính **y hệt** T_t:
 giả thuyết trong B_t bị bỏ, tra cứu ngoại hình của entry bị che rơi về similarity thứ K, vệt anchor đi vào B_t rời khỏi
 chunk tuyến từ điểm đó (đúng như một lỗ thật: chunk tuyến kết thúc ở lỗ).
 
-**Quan sát then chốt.** Nếu niềm tin đúng (|a_{t,k} − x_{t−k}| ≤ excl với mọi k), mọi frame của cửa sổ cách bản đồ còn lại
-> ρ − excl = off_d: trên bản đồ đã phẫu thuật, cửa sổ là một cửa sổ **off-map hợp lệ theo đúng định nghĩa đánh giá**, với
-ảnh, điều kiện, nhiễu odometry và phụ thuộc thời gian **của chính query**. Nếu niềm tin sai, nơi thật còn nguyên sau phẫu
+**Quan sát then chốt.** Nếu niềm tin gần đúng (|a_{t,k} − x_{t−k}| = e nhỏ), mọi frame của cửa sổ cách bản đồ còn lại
+≈ ρ − e ≈ off_d: trên bản đồ đã phẫu thuật, cửa sổ là một cửa sổ off-map **nằm đúng ở biên định nghĩa off-map** — trường hợp
+khó nhất (giống bản đồ nhất) theo S2 — với ảnh, điều kiện, nhiễu odometry và phụ thuộc thời gian **của chính query**.
+
+*Ghi chú về ρ (sai lệch so với đăng ký trước, RESEARCH_LOG Entry 28).* Bản đăng ký trước dùng ρ = off_d + excl với lập luận
+"niềm tin sai tới excl thì frame phản thực vẫn > off_d". Lập luận này sai chiều: với niềm tin gần chính xác, frame phản thực
+nằm cách bản đồ ≈ off_d + excl, **xa hơn** các frame off-map thật ở 40–65 m, nên null phản thực ít giống bản đồ hơn thật ⇒
+chống-bảo-thủ (chẩn đoán có nhãn: vi phạm theo seed, ví dụ CMU seed 5–9). Theo S2 lựa chọn bảo thủ là null **ở biên**: ρ = off_d;
+niềm tin lệch e chỉ đưa frame phản thực vào vùng off_d − e (giống bản đồ hơn) ⇒ bảo thủ. Nếu niềm tin sai, nơi thật còn nguyên sau phẫu
 thuật và T^cf lớn (phía bảo thủ). Null = {T^cf_t} của luồng: hàng trăm–hàng nghìn đoạn mỗi điều kiện.
 
 Hai thống kê dùng trong Entry 28 (chỉ cần danh sách top-100, nên phẫu thuật là phép che chỉ số):

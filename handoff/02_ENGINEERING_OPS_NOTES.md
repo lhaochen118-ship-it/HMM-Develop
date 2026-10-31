@@ -5,6 +5,40 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 000. Vòng 6 (2026-11-01, branch `hmm-navigation-5`): bài học mới (đọc trước §00)
+
+### 000.1 Script mới
+
+| Script | Việc |
+|---|---|
+| `analysis/cms.py` | CMS (phẫu thuật bản đồ phản thực): `cms_stats` (chi phí tuyến TAO + độ khác biệt, thật và phản thực, một lượt), `rules` (CMS-T, CMS-T/H(+SH), CMS-CPC/H+SH, CMS-W/H(+SH), CMS-U/H+SH, CMS-F, -PAC), nhóm hiệu chuẩn `GROUP` = `cond` (Mondrian, điều kiện < 2/α đoạn được gộp) / `run` / `loco` (nhân quả: chỉ dùng phiên khác) |
+| `analysis/cms_dump.py` | Thống kê CMS cho mọi seed (`--rho-add k`: ρ = off_d + k·excl, mặc định 0) → `results/cms_*.npz`; dataset `nhatlong1103/hmm-cms-cache` (ρ = off_d), `hmm-cms-cache-r1` (ρ = off_d + excl, tiền tố `cmsr1_`) |
+| `analysis/cms_diag.py` | Kiểm Định lý 6 bằng nhãn (π, cận α(n+1)/(πn+1), tỷ lệ khởi phát sai thực tế, đuôi null phản thực so với off-map thật) |
+| `analysis/holes_eval.py` | Độ bền tỷ lệ lỗ 10/50 %: top-100 (GPU/CPU) + CMS + `oc_curves` trong một job (`hmm-navcache-holes`, token `DIR:navcache_`) |
+| `analysis/rho_eval.py` | Độ nhạy bán kính phẫu thuật (seed 0) |
+| `automation/cms_jobs.py` | File `--groups` cân bằng tải LPT theo số frame (`--script oc_curves.py` cho đánh giá: đường cong seed 0–2, mặc định seed 3–9) |
+| `paper/build_e28_report.py` | Bảng báo cáo vòng 6 |
+| `oc_curves.py` | Cờ mới: `--cms DIR`, `--cms-extra DIR --cms-extra-tag t` (bộ CMS thứ hai, hậu tố `{t}`), `--cms-alpha 0.05,0.01`, `--cms-groups cond,loco`, `--out-suffix`, `--light` (chỉ CPC-SC/CPC-SC+CS trong `--variants`), `--fams @E28` (preset họ luật: job ngắn) |
+
+### 000.2 Lỗi đã gặp và sửa
+
+| Lỗi | Hậu quả | Sửa / bài học |
+|---|---|---|
+| Danh sách họ luật dài trong tham số job → tên file log > 255 ký tự | 6 kernel L4 lỗi ngay (`OSError: File name too long`) | Runner cắt tên log (`%03d_` + 120 ký tự); preset `--fams @E28` |
+| `fanout.py` chỉ đếm `results/*.json` | "OK 0 results" với job chỉ ghi `.npz` | Bình thường khi `--nocopy`; kéo `.npz` từ `<run>/<slug>_out/results/` |
+| Sửa `analysis/*.py` trong lúc `fanout` đang tạo kernel | Mỗi acc kế tiếp upload lại code (~47 s mỗi lần) | Chỉ sửa code khi không có lô đang tạo kernel (code đang chạy không bị ảnh hưởng) |
+| Bán kính phẫu thuật ρ = off_d + excl (đăng ký trước) | Null phản thực ít giống bản đồ hơn off-map thật ⇒ vi phạm theo seed | ρ = off_d (đúng biên, S2); tính lại 366 run (~25 phút trên 50 kernel CPU) |
+| `publish_dataset.py` báo `499 Client Error` | Dataset vẫn tạo đủ (kiểm bằng `anon_download.list_files`) | Luôn kiểm số file sau khi publish |
+
+### 000.3 Kaggle vòng này
+
+- 10 acc được cấp (user, 2026-11-01): `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`, `nguyenhoa99`, `yuan1103`,
+  `synchan5704`, `anderson1202`, `loinguyentran`, `yeshenhi` (hai acc cuối thêm giữa phiên). `yuan1103`, `yeshenhi` không
+  còn trong `reserved_accounts.txt`.
+- 50 kernel CPU (10 acc × 5, lấp đầy từng acc) cho thống kê CMS: tạo ~10 phút, chạy ~25 phút (Boreas ~15 phút/seed/tiến
+  trình). L4×4 được cấp trong 1–2 phút ở hầu hết acc lần này (6/6 `holb`, 1/6 `holc` ngay, còn lại QUEUED rồi được cấp).
+- Thống kê CMS chỉ cần CPU: một lượt tính chung cho thật + phản thực (≈ 12 ms/frame/lõi).
+
 ## 00. Vòng 2026-10-31 (`hmm-navigation-4`): bài học mới (đọc trước §0)
 
 ### 00.1 Script mới

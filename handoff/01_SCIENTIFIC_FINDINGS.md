@@ -1,10 +1,32 @@
 # 01 — Scientific Findings (hướng HMM-navigation)
 
-*Cập nhật 2026-10-31 (branch `hmm-navigation-3`). Tài liệu chỉ nói về **kết quả khoa học**: đóng góp, ý nghĩa, kết quả
+*Cập nhật 2026-11-01 (branch `hmm-navigation-5`, §N000 mới nhất). Tài liệu chỉ nói về **kết quả khoa học**: đóng góp, ý nghĩa, kết quả
 tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứng. Vận hành ở `02`, trạng thái và việc tiếp theo ở `03`.
 **Đọc §N trước** (trạng thái khoa học mới nhất, 2026-10-30/31); §0–§5 là nền tảng từ 2026-10-29, vẫn đúng, trừ chỗ §N
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
+
+## N000. Vòng 6 (2026-11-01, branch `hmm-navigation-5`) — đọc trước §N00
+
+**Báo cáo:** `paper/BAO_CAO_E28.pdf`; lý thuyết `paper/cms_theory.md`; nhật ký `RESEARCH_LOG.md` Entry 28; novelty Gate 12.
+Dataset mới: `nhatlong1103/hmm-cms-cache` (ρ = off_d), `hmm-cms-cache-r1`, `hmm-e28-results`.
+
+1. **Phương pháp mới — CMS (Counterfactual Map Surgery).** Null hiệu chuẩn sinh từ **chính luồng query**: mỗi frame tính lại
+   bằng chứng (chi phí tuyến TAO'26 + độ khác biệt không gian, từ top-100) trên bản đồ đã cắt hành lang bán kính ρ = off_d quanh
+   niềm tin của hệ thống (anchor của giả thuyết tuyến thắng, 20 frame). Ngưỡng = phân vị conformal của luồng phản thực theo đoạn
+   H frame, Mondrian theo điều kiện. Luật chính CMS-CPC/H+SH (chuỗi hiện diện với e-value hạng phản thực, vị trí = MAP của HMM,
+   dừng hình dạng SH); biến thể +G (cổng đồng thuận TAO–MAP), CMS-T (phép thử tuyến trần), CMS-W (chuỗi bộ nhớ hữu hạn), [loco]
+   (nhân quả: chỉ phiên khác).
+2. **Lý thuyết:** Định lý 6 (tự-nhiễm: khởi phát sai ≤ α(n+1)/(πn+1)), Mệnh đề 8 (hướng nhiễm: niềm tin sai bảo thủ, frame
+   off-map trả 1/π), Hệ quả 9 (α = 0.01 và PAC khả thi). Kiểm chứng: thực tế/α = 0.48–1.14, ≤ cận 7/7.
+3. **Kết quả (366 run):** ở α = 0.01 CMS-CPC/H+SH so với CPC-SC-T½+SH (α = 0.05): recall cao hơn 6/7, sai số thấp hơn 5/7, segFAR
+   trung bình ≤ 0.01 trên 7/7; LODO chọn CMS-CPC/H+SH+G(α = 0.01) ở 7/7 fold. Đường cong: hơn luật cũ 5/7, Claxton'24/TAO'26
+   (nhãn) 6/7, SafeVPR'26 5/5 (CMU còn thua 0.013). Cùng điểm số TAO: null phản thực recall 0.28–0.82 so với null bản đồ 0.05–0.66.
+   Lỗ 10 %/50 %: recall cao hơn CPC-SC+CS 6/6.
+4. **Âm / mở:** ở α = 0.05 sai số điều hướng kém hơn 4/7 (dùng hết ngân sách; LODO α = 0.05 vẫn chọn luật cũ); CMU sát/ vượt α
+   (α = 0.01: 0.0097; lỗ 50 %: 0.029–0.053); S1 chỉ đúng trung bình theo bố cục lỗ (tỷ lệ thực tế của CMS-T theo run tới 0.34 trên
+   CMU); ρ đăng ký trước (off_d + excl) sai chiều (đã sửa trước đánh giá, ghi nhật ký); CMS-CPC không dừng vi phạm. Mức: cơ chế
+   mới (Gate 12: chưa thấy tiền lệ), bằng chứng mạnh hơn rõ; **không tuyên bố A\***.
 
 ## N00. Vòng 5 (2026-10-31, branch `hmm-navigation-4`) — đọc trước §N0
 

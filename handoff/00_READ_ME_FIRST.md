@@ -1,6 +1,6 @@
 # 00 — READ ME FIRST
 
-*Cập nhật 2026-10-31 (branch `hmm-navigation-3`). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
+*Cập nhật 2026-11-01 (branch `hmm-navigation-5`). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR. Báo cáo mới nhất: `paper/BAO_CAO_E28.pdf` (CMS).*
 
 **Khung chat mới: bắt đầu từ `handoff/05_NEW_CHAT_GUIDE.md`** (thứ tự đọc, bản đồ code, khởi động nhanh, việc tiếp theo).
 

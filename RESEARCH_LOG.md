@@ -7,7 +7,7 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
-## Entry 28 (in progress, branch `hmm-navigation-5`) — Counterfactual Map Surgery (CMS): self-calibration on the deployment stream (2026-11-01)
+## Entry 28 (branch `hmm-navigation-5`) — Counterfactual Map Surgery (CMS): self-calibration on the deployment stream (2026-11-01)
 
 **Motivation (Entries 25-27).** Every label-free rule so far is calibrated on the MAP's self-replay null (map frames with
 their block removed): same image condition as the map, exact map poses as odometry, ~10 exchangeable chunks. Consequences
@@ -62,6 +62,33 @@ becomes the main setting (all 366 runs recomputed, `nhatlong1103/hmm-cms-cache`)
 is kept as `{r1}` families (`nhatlong1103/hmm-cms-cache-r1`) and reported. Local check CMU CosPlace s7: CMS-T segFAR
 0.254 -> 0.089 (alpha 0.05), 0.136 -> 0.008 (alpha 0.01); the hysteresis chain CMS-CPC/H+SH still exceeds alpha = 0.01
 there (0.042: a false streak that passes the shape stop), the finite-memory CMS-T/H+SH does not (0.000-0.008).
+
+**Results (all 366 runs, 10 seeds, NCLT 1; report `paper/BAO_CAO_E28.pdf`, tables `paper/e28_tables.md`, raw
+`analysis/results/e28/` and `nhatlong1103/hmm-e28-results`).**
+1. *Theorem 6 check (rho = off_d, labels only to check):* realized false-onset rate of the bare route test CMS-T / alpha =
+   0.48-1.14 on 7/7 datasets, <= the bound alpha(n+1)/(pi n+1) on 7/7 (pi = 0.49-0.65); counterfactual cost tail below the real
+   off-map tail on 7/7 (S2 direction). Map-null rules use 0.00-0.09 of the budget (CPC-SC+CS). H28a: holds for the primary rule
+   (mean segFAR <= alpha on 7/7 at both alphas; 0.04-0.37 alpha at 0.05, 0.05-0.97 alpha at 0.01); the bare CMS-T is tight but
+   slightly above alpha on CMU (0.055 at 0.05) and on 4/7 at 0.01 (0.011-0.016) -- within the 1/pi factor of the bound.
+2. *H28b (alpha = 0.01 feasible):* yes on 7/7 (map null: recall 0 on CMU and 4S office).
+3. *H28c (alpha = 0.01, primary vs CPC-SC-T(1/2)+SH at 0.05):* recall higher on 6/7 (office -0.004), error lower on 5/7
+   (Boreas 6.9 vs 5.7, Nordland 10.3 vs 9.5 m worse), mean segFAR <= 0.010 on 7/7: **supported**. At alpha = 0.05 recall is higher
+   on 7/7 (+0.041..+0.189) but the error is lower only on 3/7 (Boreas 11.2 vs 5.7 m).
+4. *H28d (curves):* recall at FL <= 0.01 >= CPC-SC-T(1/2)+SH on 5/7 (NCLT 0.592 vs 0.612, Nordland 0.790 vs 0.794), pAUC >= on 6/7;
+   vs Claxton'24 / TAO'26 (labels) 6/7 each (CMU 0.778 vs 0.791 / 0.792), SafeVPR'26 5/5: **supported (5/7)**.
+5. *LODO (pre-registered criterion):* alpha = 0.01: CMS-CPC/H+SH+G chosen in 7/7 folds, regret 0.0-1.8 m (error lower than
+   CPC-SC-T(1/2)+SH on 6/7, recall higher on 3/7); alpha = 0.05: the old conservative CPC-SC-T(1/2)+CS is chosen in 5/7 folds
+   (spending the 0.05 budget costs navigation error).
+6. *Same score, three nulls:* TAO'26 route cost with the labelled 3-sigma threshold violates (segFAR 0.24-0.74), with the map
+   null (TAO-SC) recall 0.048-0.659, with the counterfactual null (CMS-T) 0.284-0.819 (> TAO-SC on 7/7), segFAR 0.024-0.055.
+7. *Causal [loco] (calibration on the other sessions only):* alpha = 0.01 segFAR <= 0.010 on 7/7, recall > CPC-SC-T(1/2)+SH on 6/7.
+8. *Hole ratio (same constants):* 10 %: recall > CPC-SC+CS on 6/6 at both alphas, segFAR <= 0.031 (0.05) and <= 0.005 on 5/6
+   (0.01; CMU 0.017), error lower on 4/6; 50 %: recall higher 6/6, CMU above alpha (0.053 / 0.029), error higher on 4/6.
+9. *Pre-registered radius {r1}:* the chain + stop stays valid on average at 0.05, CMU exceeds 0.01 (0.013); the bare test is
+   seed-dependent anti-conservative -> rho = off_d confirmed. CMS-CPC without stop violates (0.075-0.196), as predicted.
+**Verdict.** New mechanism (Gate 12), tight label-free calibration, alpha = 0.01 feasible, recall gains at a 5x stricter
+guarantee with lower navigation error on 5/7, ranking gains 5/7. Open: navigation risk at alpha = 0.05, CMU at small
+conditions, S1 only on average over hole layouts, closed-loop robot. Not claimed A* yet.
 
 ## Entry 27 (in progress, branch `hmm-navigation-4`) — condition-matched null, route-evidence power, SafeVPR / VLM beyond Boreas (2026-10-31)
 

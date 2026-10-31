@@ -1,6 +1,6 @@
 # Datasets & Environment Summary
 
-*Cập nhật 2026-10-31 (branch `hmm-navigation-3`). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
+*Cập nhật 2026-11-01 (branch `hmm-navigation-5`; dataset/acc mới ở §1d, §3). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
 cách đọc repo và việc tiếp theo ở `handoff/05_NEW_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Kết quả audit dữ liệu (Bước 1): `DATA_AUDIT.md`. Dataset mới
 cho hướng HMM (chuỗi dài + odometry thật): **§1b 4Seasons dump** và **§1c Boreas** bên dưới.*
 
@@ -156,6 +156,10 @@ Publish bằng `automation/publish_dataset.py <dir> <slug> "<title>" "<subtitle>
 | `nhatlong1103/hmm-route-cache` (vòng 5) | Chi phí tuyến TAO theo frame (query + null bản đồ, κ) của mọi run: dùng `oc_curves.py --taocache` để khỏi tính lại (366 file) | `oc_curves.py --topk --mapdump` |
 | `nhatlong1103/hmm-image-baselines` (vòng 5) | Điểm MNN SafeVPR (NCLT, 4S ×3) và phán quyết Qwen2.5-VL-7B (Boreas, NCLT, 4S; MegaLoc + NetVLAD, mỗi 5 frame) | `safevpr_mnn.py`, `vlm_audit.py` |
 
+| `nhatlong1103/hmm-cms-cache` (vòng 6, public) | Thống kê CMS (phẫu thuật bản đồ phản thực, ρ = off_d): chi phí tuyến và độ khác biệt, thật và phản thực, mỗi frame, 366 run (`cms_<ds>_<desc>_s<seed>.npz`, 155 MB); `oc_curves.py --cms` | `analysis/cms_dump.py` (CPU) |
+| `nhatlong1103/hmm-e28-results` (vòng 6, public) | Mọi `oc_<ds>_<desc>_s<seed>.json` của Entry 28 (đường cong + điểm mặc định của 64 họ luật, 366 run) | `oc_curves.py` trên 8 phiên L4 |
+| `nhatlong1103/hmm-cms-cache-r1` (vòng 6, public) | Như trên với ρ = off_d + excl (bán kính đăng ký trước), tiền tố `cmsr1_`; `oc_curves.py --cms-extra DIR --cms-extra-tag r1` | `cms_dump.py --rho-add 1` |
+
 Tải dataset public **không cần token**: `python3 automation/anon_download.py <owner/slug> <dir> --jobs 12 [--match regex]`.
 
 ## 2. Datasets ảnh gốc và trọng số (chỉ cần khi tạo dump mới)
@@ -180,6 +184,11 @@ BoQ vẫn chưa có trọng số (GitHub bị chặn, không có mirror).
   và dump. **Nên xoá; cần user tự xoá** vì môi trường chặn lệnh xoá.
 
 ## 3. Tài khoản Kaggle (18 acc; tối đa 2 phiên GPU + 5 phiên CPU mỗi acc)
+
+**Vòng 6 (2026-11-01, branch `hmm-navigation-5`):** user cấp 10 acc: `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`,
+`nguyenhoa99`, `yuan1103`, `synchan5704`, `anderson1202`, `loinguyentran`, `yeshenhi` (token ở `~/.kaggle/tokens_raw`,
+`tok_<acc>`; không vào git). L4×4 được cấp nhanh trên `nhatlong1103`, `anderson1202`, `caotienminh1`, `loinguyentran`,
+`nguyenhoa99`, `quynhle07` (phiên vòng này). `reserved_accounts.txt` chỉ còn `mxuanquy`, `nguynduylm`.
 
 Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo public nên token không nằm trong git; lấy từ tin nhắn của user (thứ tự trùng bảng dưới). `~/.kaggle/access_token` là của acc 1. Các script
 `automation/make_eval_kernel.py`, `run_kernel.py` và `fanout.py` tự đọc đúng token theo tên acc, nên không cần
