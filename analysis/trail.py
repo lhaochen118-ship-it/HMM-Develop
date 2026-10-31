@@ -67,6 +67,8 @@ def main():
             return s.tr(x).squeeze(-1)
 
     net = TRAIL().to(dev)
+    AMP = (torch.bfloat16 if torch.cuda.is_bf16_supported() else torch.float16) if dev == "cuda" else torch.bfloat16
+    state = {"amp": False}                                           # training in fp32; inference under autocast (T4: fp16)
 
     def gather(d, rows):
         q = torch.from_numpy(d["q"][rows].astype(np.float32)).to(dev)
@@ -80,8 +82,7 @@ def main():
         d = train[it % len(train)]; rows = rng.integers(0, len(d["q"]), 56)
         q, r, x, y = gather(d, rows); dist = (x - y[:, None]).norm(dim=-1); pos_ = dist.argmin(1); okp = dist.min(1).values <= d["excl"]
         if not okp.any(): continue
-        with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
-            lg = net.emis(q, r).float()
+        lg = net.emis(q, r).float()
         loss = nn.functional.cross_entropy(lg[okp], pos_[okp]); opt.zero_grad(); loss.backward(); opt.step()
         if it % 500 == 0: print(f"  A {it} loss {loss.item():.3f}", flush=True)
 
@@ -89,7 +90,7 @@ def main():
     def filt(q, r, x, excl, lo_prev=None, keep_graph=True):
         """one sequence chunk: q (T, D), r (T, K, D), x (T, K, d) -> list of log P(c_t) over K + dustbin"""
         T = len(q); out = []; Delta = 3 * excl
-        with torch.autocast(dev, dtype=torch.bfloat16, enabled=dev == "cuda"):
+        with torch.autocast(dev, dtype=AMP, enabled=dev == "cuda" and state["amp"]):
             pe = net.emis(q, r).float()                                              # (T, K)
             ptr = net.trans(q[1:], q[:-1], r[1:], r[:-1]).float() if T > 1 else None   # (T-1, K, K)
         la = torch.cat([pe[0], net.dust.view(1)]) if lo_prev is None else lo_prev
@@ -125,7 +126,7 @@ def main():
     print(f"trained ({time.time() - t0:.0f}s)", flush=True)
 
     # ---- inference on the held-out dataset (causal filter at every frame)
-    net.eval(); os.makedirs("results", exist_ok=True)
+    net.eval(); state["amp"] = True; os.makedirs("results", exist_ok=True)
     for seed in seeds:
         d = prep(dump, cdir, tkdir, held, seed); n = len(d["q"]); place = np.zeros(n, np.int64); conf = np.zeros(n, np.float32)
         with torch.no_grad():

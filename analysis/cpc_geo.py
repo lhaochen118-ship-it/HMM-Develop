@@ -141,3 +141,32 @@ def rules_scj(z, b, alpha=0.05):
         ku, _ = scj_kappa(z, b, tag, alpha, floor=-np.inf)
         out[f"CPC-SCJu+{tag}"] = (np.where(ok, lo_s - ku, -np.inf), hyst_ok(lo_s > ku, lo_s > np.minimum(ku, 0), ok, seqs))
     return out, x_c
+
+
+def sc_evidence_x(z, b, pq3, pn3, alpha=0.05, w3=None, p_in=0.01, p_out=0.01):
+    """CPC-SC with a THIRD presence component: per-frame p-value pq3 of the queries and pn3 of the map self-replay null
+    (indexed by map row, like p_n), e.g. the map-null rank of the TAO route-verification cost. LR = mean of the gated
+    top-1 e-value, e_R^(1/H) and e_3^(w3) (w3 = 1/H by default, as e_R: the statistic spans a window); kappa from the same
+    statistics on the null segments (SC). Validity as SC: segment exchangeability with the null, any dependence inside."""
+    H = b["H"]; w3 = 1.0 / H if w3 is None else w3
+    fl, ln = z["nchunk_flat"], z["nchunk_len"]; nch = np.split(fl, np.cumsum(ln)[:-1]) if len(ln) else []
+    segs = [ch[i:i + H] for ch in nch for i in range(0, len(ch) - H + 1, H)]
+    cl = lambda x: np.clip(np.nan_to_num(x, nan=1.0), 1e-6, 1)
+    pn, prn, pq, pr, q3, n3 = cl(z["p_n"]), cl(z["pRn"]), cl(z["p_q"]), cl(z["pR"]), cl(pq3), cl(pn3)
+    MP, est, top = b["MP"], b["est_c"], b["top"]; agree = np.linalg.norm(MP[top] - MP[est], axis=1) <= b["excl"]
+    llq, kap = np.zeros(len(pq)), np.zeros(len(pq))
+    for cn in sorted(set(z["cond"])):
+        m = z["cond"] == cn; a1, _ = beta_em(pq[m]); a2, _ = beta_em(pr[m]); a3, _ = beta_em(q3[m])
+        et = a1 * pq[m] ** (a1 - 1)
+        llq[m] = np.log((np.where(agree[m], et, a1) + (a2 * pr[m] ** (a2 - 1)) ** (1.0 / H) + (a3 * q3[m] ** (a3 - 1)) ** w3) / 3)
+        ll = np.log((np.maximum(a1 * pn ** (a1 - 1), a1) + (a2 * prn ** (a2 - 1)) ** (1.0 / H) + (a3 * n3 ** (a3 - 1)) ** w3) / 3)
+        mx = []
+        for sg in segs:
+            pon, best = 0.5, -np.inf
+            for i, t in enumerate(sg):
+                pr_ = pon * (1 - p_out) + (1 - pon) * p_in if i > 0 else 0.5
+                l = float(np.clip(np.log(pr_ / (1 - pr_)) + ll[t], -50, 50)); pon = 1 / (1 + np.exp(-l)); best = max(best, l)
+            mx.append(best)
+        mx = np.sort(mx); k = int(np.ceil((1 - alpha) * (len(mx) + 1)))
+        kap[m] = max(mx[k - 1] if k <= len(mx) else np.inf, 0.0)
+    return logodds(llq, b["seqs"], p_in, p_out), kap

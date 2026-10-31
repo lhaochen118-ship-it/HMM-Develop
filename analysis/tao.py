@@ -82,3 +82,32 @@ def tao_threshold(cost, good, bsel):
     (labels; the paper's '3-sigma residual bounds of the calibration split')"""
     c = cost[good & bsel & np.isfinite(cost)]
     return float(c.mean() + 3 * c.std()) if len(c) else np.inf
+
+
+def null_topk(z, M_full, block, K=100):
+    """top-K of the map self-replay null frames (nchunk_flat: held-out map frames) against the reduced map with the
+    pseudo-query's own block masked (the leave-block-out null of nav_demo). M_full: descriptors of the FULL map (rows of
+    the dump); returns dict(idx, sim) in reduced-map row space, aligned with nchunk_flat."""
+    import vprlib as V
+    kidx, MP, fl = z["kidx"], z["MP"], z["nchunk_flat"]
+    M = M_full[kidx].astype(np.float32); bid, _ = V.map_cells(MP, block)
+    S = M[fl] @ M.T; S[bid[fl][:, None] == bid[None, :]] = -np.inf
+    i = np.argpartition(-S, K - 1, axis=1)[:, :K]; v = np.take_along_axis(S, i, 1); o = np.argsort(-v, 1)
+    i, v = np.take_along_axis(i, o, 1), np.take_along_axis(v, o, 1)
+    return dict(idx=i, sim=np.where(np.isfinite(v), v, -1.0).astype(np.float16))
+
+
+def tao_null_kappa(z, tk_null, H, alpha=0.05, N=20):
+    """label-free threshold for the TAO winner cost: TAO is run on the map self-replay null (exact map odometry = the most
+    consistent dead reckoning, conservative), every null chunk cut into disjoint H-frame segments, and
+    kappa = the floor(alpha (n+1))-th smallest segment-minimum cost: a query segment exchangeable with the null segments
+    gets a report (cost < kappa) with probability <= alpha, any dependence inside the segment (finite-memory statistic:
+    the cost depends on the last N frames only)."""
+    fl, ln = z["nchunk_flat"], z["nchunk_len"]; ch = np.repeat(np.arange(len(ln)), ln); pos = np.concatenate([np.arange(l) for l in ln]) if len(ln) else np.zeros(0, int)
+    zn = dict(MP=z["MP"], o_q=z["MP"][fl].astype(float), hz=z["hz"], q_sid=ch, q_k=pos)
+    r = tao(zn, tk_null, N=N); c = r["cost"]; mins = []
+    for k in range(len(ln)):
+        cc = c[ch == k]; cc = cc[np.isfinite(cc)]
+        mins += [cc[i:i + H].min() for i in range(0, len(cc) - H + 1, H)]
+    mins = np.sort(mins); kk = int(np.floor(alpha * (len(mins) + 1)))
+    return (float(mins[kk - 1]) if kk >= 1 else -np.inf), len(mins), c

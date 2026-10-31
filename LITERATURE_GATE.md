@@ -3,6 +3,24 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 11 (2026-10-31, branch `hmm-navigation-4`): Entry 26 — guarantees under dependence, shape stop, 2026 baselines
+
+| Piece | Closest prior work found (paper text / abstracts only) | What is new here | Level |
+|---|---|---|---|
+| Diagnosis: violations of map-null validity sit at map edges (view overlap) and in long excursions; the null has ~10 exchangeable units | — (no VPR paper measures where map-calibrated validity fails) | Empirical analysis that redirects the theory | Supporting |
+| Prop. 5 (no accumulation without a dependence assumption) | Vovk & Wang 2021 (arithmetic mean is the admissible e-merging under arbitrary dependence); standard comonotone argument | Stated for sequential localisation; explains why every accumulating guarantee needs exchangeability / mixing | Low (known fact, new framing) |
+| Thm 4 GPC (placements of the odometry window on the map + Markov on hit counts: per-frame false-fix bound under ANY dependence) | Odometry-only map matching (Brubaker et al. CVPR'13 "Lost!"), TAO'26 (K hypotheses, Procrustes, no guarantee), ROVER (arXiv 2508.13488, trajectory prior for loop-closure verification), sequence-consistency admission for LiDAR loops (arXiv 2512.09447), Bonferroni / scan statistics | Using the geometry ONLY to fix the multiplicity of an appearance test, with a dependence-free bound; geometric coverage Q_t as the multiplicity | Moderate (clean construction; weak power: recall 0.04-0.20) |
+| Thm 5 (finite-memory onset + geometric persistence: false-onset rate <= alpha with any dependence between segments) | Block / trajectory conformal (Chernozhukov'18, Stankeviciute'21), online conformal with long-run coverage under arbitrary dependence (ACI, error-quantified CI ICLR'25: need outcome feedback), e-detectors (Shin-Ramdas-Rinaldo) | Removes the conditional-validity requirement of Thm 1/3 and the long-excursion exchangeability of SC; exchangeability only per H-frame window; label-free | Moderate |
+| SH stop (2-D Procrustes residual of the reported track vs odometry) | TAO'26, RRR / PCM / Olson consistency, SeqSLAM velocity | Drop-in stronger version of CS inside the guarantee (Lemma 7 still applies) | Low |
+| TAO'26 / TRAIL'26 / VPR auditing'26 reproduced on the same 7 datasets and protocol | the papers themselves (thermal / MSLS-Nordland-4Seasons / 6 VPR benchmarks) | First head-to-head on map-hole sequential localisation with segment-level metrics | Evaluation |
+
+**Verdict.** Entry 26 adds the missing theoretical piece asked for (a guarantee whose dependence assumption is local: per
+H-frame window, any dependence between windows) and an honest impossibility (no accumulation without a dependence
+assumption; the dependence-free certificate is valid but weak). Empirically the new rules are on par with CPC-SC+CS (small
+pAUC gain of SH), not a jump. The A* gap that remains: (1) the default point is conservative because the map null is
+same-condition (a condition-matched null is open); (2) CMU ranking (Claxton'24 / max-sim / TAO'26 rank better); (3) no
+closed-loop robot run. Readiness: A (RA-L / ICRA / IROS) strengthened (dependence theory + 2026 baselines); A* not yet.
+
 ## Gate 10 (2026-10-31): CPC-SC+CS (Entry 25) — novelty against the review (`literature/VISUAL_LOCALIZATION_REVIEW.md` §5, §6, §6b)
 
 | Piece of CPC-SC+CS | Closest prior work | What is new here | Level |

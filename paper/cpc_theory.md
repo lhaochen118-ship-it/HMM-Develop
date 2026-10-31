@@ -391,6 +391,34 @@ conformal dao động theo run — bảo đảm là biên theo hiệu chuẩn, k
 P(rủi ro > α + ε | hiệu chuẩn) ≤ δ cần n ≳ log(1/δ)/α đơn vị độc lập; bản đồ cho ~10 chunk null độc lập, nên chỉ bảo đảm
 biên là khả thi — đúng với dao động theo run quan sát được (worst-run > α trên CMU dù trung bình ≪ α).
 
+
+## 3f. Bằng chứng kiểm định tuyến (route verification) hiệu chuẩn bằng bản đồ: TAO-SC và CPC-SC-T (Entry 26)
+
+*Code: `analysis/tao.py` (`tao`, `null_topk`, `tao_null_kappa`), `analysis/cpc_geo.py` (`sc_evidence_x`), họ luật trong
+`analysis/oc_curves.py` (`--topk`, `--mapdump`).*
+
+**Thống kê.** Với mỗi frame t và mỗi giả thuyết j trong top-K (K = 100) của frame đó (TAO'26): neo truy ngược trên tuyến
+bản đồ theo quãng odometry của N = 20 frame gần nhất (hai chiều đi), khớp cứng 2-D, chi phí
+C_t(j) = trung bình cắt 75 % của Huber_8m(phần dư)/8² + 2 · trung bình (1 − s_i(j)); C_t = min_j C_t(j). C_t chỉ phụ
+thuộc N frame gần nhất (bộ nhớ hữu hạn).
+
+**Hiệu chuẩn không nhãn.** Chạy cùng thống kê trên **null tự-phát-lại của bản đồ**: frame của các block giữ lại làm
+pseudo-query, top-K trên bản đồ đã **che block của chính nó**, odometry = vị trí bản đồ chính xác (dead reckoning nhất
+quán nhất: chi phí hình học thấp nhất, nên null bảo thủ cho phần hình học).
+- *TAO-SC:* báo khi C_t < κ_T, κ_T = phân vị dưới conformal mức α của min_{t ∈ G} C_t trên các đoạn H frame G của null.
+  Dưới hoán đổi được theo đoạn (chỉ trong đoạn), P(có báo cáo trong đoạn off-map) ≤ α với mọi phụ thuộc trong đoạn; vì
+  C_t có bộ nhớ hữu hạn, Định lý 5 cho tỷ lệ khởi phát sai ≤ α với mọi phụ thuộc giữa các đoạn.
+- *CPC-SC-T:* p-value tuyến p^T_t = (1 + #{frame null có chi phí ≤ C_t})/(1 + n_null), e-value e^T = a₃(p^T)^{a₃−1}
+  (a₃ Beta-EM theo điều kiện, như a₁, a₂), đưa vào chuỗi hiện diện như thành phần thứ ba:
+  LR_t = ⅓(ẽ^top_t + (e^R_t)^{1/H} + (e^T_t)^{1/H}); κ hiệu chuẩn theo đoạn trên null với **cùng** ba thành phần (CPC-SC).
+  Trung bình của e-value vẫn là e-value (Bổ đề 2); tính hợp lệ theo đoạn y như CPC-SC. Luỹ thừa 1/H chọn trước, như e^R
+  (mỗi frame nằm trong nhiều cửa sổ).
+
+**Vì sao mạnh hơn.** p-value SelfCal của top-1 chỉ dùng một frame; e^R chỉ đếm frame có top-1 khớp odometry. C_t dùng
+**100 giả thuyết** và cả cửa sổ 20 frame: giả thuyết đúng có anchor khớp hình dạng odometry **và** ngoại hình ở mọi frame
+(dù top-1 của từng frame sai). Đây là bằng chứng hiện diện mạnh nhất tìm thấy trong dự án (đường cong của TAO'26 thắng mọi
+luật trên CMU), nhưng TAO'26 không có cách đặt ngưỡng không nhãn; hiệu chuẩn bằng null bản đồ cung cấp điều đó.
+
 ## 4. Định vị so với công trình gần nhất
 
 | | Bằng chứng on/off | Cần mô hình hoặc nhãn | Bảo đảm |

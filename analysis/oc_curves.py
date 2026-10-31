@@ -39,6 +39,8 @@ JOBS = int(sys.argv[sys.argv.index("--jobs") + 1]) if "--jobs" in sys.argv else 
 OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}   # map coverage radius (sc_eval CFG off_d)
 TOPK = sys.argv[sys.argv.index("--topk") + 1] if "--topk" in sys.argv else None   # dir of topk_<ds>_<desc>_s<seed>.npz (topk_dump.py) -> TAO26 family
 TRAILD = sys.argv[sys.argv.index("--trail") + 1] if "--trail" in sys.argv else None   # dir of trail_<ds>_megaloc_s<seed>.npz (trail.py) -> TRAIL26 family
+DUMPD = sys.argv[sys.argv.index("--mapdump") + 1] if "--mapdump" in sys.argv else None   # descriptor dumps -> map-null top-K for the label-free TAO-SC family
+_MFULL = {}
 FAMS = set(sys.argv[sys.argv.index("--fams") + 1].split(",")) if "--fams" in sys.argv else None   # evaluate only these families
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
 N_PTS = 48                                       # thresholds per curve (quantiles of the score + the default threshold)
@@ -129,6 +131,37 @@ def families(z, b):
         err_t = np.linalg.norm(xt_ - z["q_pos"], axis=1); good_t = z["inm"] & (err_t <= b["excl"]) & (r["j"] >= 0)
         tau = TAO.tao_threshold(r["cost"], good_t, z["bsel"]); sc_t = np.where(r["j"] >= 0, -r["cost"], -np.inf)
         F["TAO26"] = (sc_t, xt_, -tau, sc_t >= -tau)
+        if DUMPD and "nchunk_flat" in z.files and len(z["nchunk_flat"]):
+            import topk_dump as TKD
+            from sc_eval import CFG
+            key = b["ds_tag"]
+            if key not in _MFULL:
+                dsn = key.rsplit("_", 1)[0]; dsn = ("4s:" + dsn[3:]) if dsn.startswith("4s_") else dsn
+                _MFULL[key] = TKD.load(DUMPD, dsn, key.rsplit("_", 1)[1]).m
+            blk = CFG.get(b["ds"], CFG["cmu"])["block"]
+            kt, nseg, cn_ = TAO.tao_null_kappa(z, TAO.null_topk(z, _MFULL[key], blk), b["H"])
+            # TAO cost as a third presence component: map-null rank p-value (lower cost = more on-map), CPC-SC calibration
+            cnf = np.sort(cn_[np.isfinite(cn_)]); cq = np.where(r["j"] >= 0, r["cost"], np.inf)
+            pq3 = (1 + np.searchsorted(cnf, cq, side="right")) / (1 + len(cnf)); pn3 = np.ones(len(MP))
+            pn3[z["nchunk_flat"]] = (1 + np.searchsorted(cnf, np.nan_to_num(cn_, nan=np.inf, posinf=np.inf), side="right") - 1) / (1 + len(cnf))
+            lo3, k3 = CG.sc_evidence_x({k: z[k] for k in z.files}, b, np.minimum(pq3, 1.0), np.clip(pn3, 1e-6, 1.0))
+            xc3 = MP[est]; cs3 = consistency_ok(xc3, z["o_q"], b["seqs"], b["excl"], 3.0)
+            F["CPC-SC-T+CS"] = (np.where(cs3, lo3 - k3, -np.inf), xc3, 0.0, CG.hyst_ok(lo3 > k3, lo3 > 0, np.ones(len(cs3), bool), b["seqs"]) & cs3)
+            F["CPC-SC-T"] = (lo3 - k3, xc3, 0.0, CG.hyst_ok(lo3 > k3, lo3 > 0, np.ones(len(cs3), bool), b["seqs"]))
+            sh3 = CG.shape_ok(xc3, z["o_q"], b["seqs"], b["excl"], 3.0, 0.5, hz=list(z["hz"]))
+            F["CPC-SC-T+SH"] = (np.where(sh3, lo3 - k3, -np.inf), xc3, 0.0, CG.hyst_ok(lo3 > k3, lo3 > 0, np.ones(len(sh3), bool), b["seqs"]) & sh3)
+            ok_t = r["j"] >= 0
+            F["TAO-SC"] = (sc_t, xt_, -kt, sc_t > -kt)
+            for tg, fn in (("CS", lambda x: consistency_ok(x, z["o_q"], b["seqs"], b["excl"], 3.0)),
+                           ("SH", lambda x: CG.shape_ok(x, z["o_q"], b["seqs"], b["excl"], 3.0, 0.5, hz=list(z["hz"])))):
+                okg = fn(xt_) & ok_t; F[f"TAO-SC+{tg}"] = (np.where(okg, sc_t, -np.inf), xt_, -kt, (sc_t > -kt) & okg)
+        # label-free combination: CPC-SC + stop, gated by agreement of the place-chain MAP with TAO's winning hypothesis
+        agree_t = (np.linalg.norm(xt_ - MP[est], axis=1) <= b["excl"]) & (r["j"] >= 0)
+        lo_s2, kap2 = sc_evidence(z, b); x_c2 = MP[est]
+        cs2 = consistency_ok(x_c2, z["o_q"], b["seqs"], b["excl"], 3.0); sh2 = CG.shape_ok(x_c2, z["o_q"], b["seqs"], b["excl"], 3.0, 0.5, hz=list(z["hz"]))
+        for tg, okk in (("CS", cs2), ("SH", sh2)):
+            ok2 = okk & agree_t
+            F[f"CPC-SC+{tg}+TAOg"] = (np.where(ok2, lo_s2 - kap2, -np.inf), x_c2, 0.0, CG.hyst_ok(lo_s2 > kap2, lo_s2 > 0, np.ones(len(ok2), bool), b["seqs"]) & ok2)
     trf = os.path.join(TRAILD, f"trail_{b['ds_tag']}_s{int(z['seed'])}.npz") if TRAILD else None
     if trf and os.path.exists(trf):                              # TRAIL'26 (labels: threshold = conformal quantile on easy-condition off-map frames)
         r = np.load(trf); xt_ = MP[r["place"]]; cf = r["conf"].astype(float)
