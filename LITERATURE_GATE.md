@@ -3,6 +3,27 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 10 (2026-10-31): CPC-SC+CS (Entry 25) — novelty against the review (`literature/VISUAL_LOCALIZATION_REVIEW.md` §5, §6, §6b)
+
+| Piece of CPC-SC+CS | Closest prior work | What is new here | Level |
+|---|---|---|---|
+| Odometry-consistency stop CS | RRR (Latif'13), Olson'06/'08, PCM'18, group-k, χ² gating, SeqSLAM velocity constraint, Claxton RA-L'24 (odometry projection from the last verified match) | Used only to STOP reports of a place chain without off-map state (Lemma 7: segFAR / FL cannot rise; Prop. 4: no off-map report while the MAP sticks at the map edge) | Low: known mechanism, new role and diagnosis |
+| Segment-calibrated onset threshold (SC) | Trajectory-level conformal (Stankeviciute'21, Lindemann, Zhou'24), block conformal (Chernozhukov'18), scan statistics, our `certified` | Calibrating the ONSET of an HMM presence chain on the map's own held-out traversal (label-free) | Low-moderate: same exchangeability argument as `certified` |
+| Ranking / validity separation + operating-curve evaluation | Risk-coverage (Geifman'17), PR / R@100%P in VPR (Lowry'16), precision-coverage-FAR (VPR auditing'26) | Evaluation protocol, not a method | Not a novelty claim |
+| Diagnosis (TCE min kills presence evidence; carried streaks; PCR self-confirmation) | Mệnh đề 2 / Hệ quả 4 (cpc_theory), TCE | Empirical analysis | Supporting |
+
+**Verdict.** Entry 25 makes the method less conservative and empirically stronger (recall at FL <= 1 %: above Xu'21 on 7/7,
+above Claxton'24 on 6/7; every one of 366 runs at segFAR <= 0.021), but adds no new theory of A* level: the onset bound is
+exchangeability-based like `certified`, CS is a known consistency check, and the Gate 9 gap "a guarantee for the HMM
+decision under temporal dependence" is still open (W-CPC, joint CS calibration and segment calibration all fail or are
+conservative on Boreas / CMU). Readiness unchanged: **A (RA-L / ICRA / IROS) realistic** as one paper "label-free
+certified sequential localization" with CPC-SC+CS as the HMM rule; **A* not yet**. Remaining A* items from Gate 9:
+(1) conditional validity under dependence; (3) TRAIL'26 / TAO'26 / VLM-auditing'26 head-to-head (SafeVPR only on
+Boreas); (4) a closed-loop robot run. Item (2) is partly addressed (NCLT natural off-map), item (5) by the
+pre-registered held-out protocol and leave-one-dataset-out choice. Weaknesses a reviewer will find: CMU (label-trained
+Claxton'24 and raw max-sim rank better), lower default recall than Xu'21 on 4/7 datasets, alpha = 0.01 infeasible on maps
+with < 99 null segments.
+
 ## Gate 9 (2026-10-30): A/A* readiness of the whole contribution (paper search only; sources in `literature/VISUAL_LOCALIZATION_REVIEW.md` §6b, §8)
 
 **Closest prior work found this round:** Claxton et al. RA-L'24 (VPR integrity monitor + odometry projection from the
