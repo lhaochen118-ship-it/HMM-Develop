@@ -78,7 +78,7 @@ descriptor hoặc dataset mới.
 
 ```
 dump/
-  <desc>/4s_<scene>_<recording>.npy     desc ∈ megaloc, salad, mixvpr, cosplace, netvlad, dinov2 (float16, L2-norm)
+  <desc>/4s_<scene>_<recording>.npy     desc in megaloc, salad, mixvpr, cosplace, netvlad, dinov2 (float16, L2-norm)
   meta/4s_<scene>_<recording>.npz       names (timestamp ns), C (n,3) camera centre in the scene's own ENU frame,
                                         R (n,3,3) camera->ENU (column 3 = heading), vio_C (n,3), vio_q (n,4) VIO pose
                                         (recording's own metric frame) = odometry, fq (GNSS fusion quality)
@@ -113,7 +113,7 @@ chiều tối, đêm). Pose GT `applanix/camera_poses.csv` của mọi sequence 
 | `nhatlong1103/boreas-vpr-images-1` … `-4` | JPEG 640 px của các frame đã chọn, chia 4 phần (tổng khoảng 13 GB) |
 
 ```
-dump/<desc>/boreas_<seq>.npy        desc ∈ megaloc, salad, mixvpr, cosplace, netvlad, dinov2 (float16, L2-norm)
+dump/<desc>/boreas_<seq>.npy        desc in megaloc, salad, mixvpr, cosplace, netvlad, dinov2 (float16, L2-norm)
 dump/meta/boreas_<seq>.npz          names (timestamp µs = image name), C (easting, northing, altitude; shared ENU),
                                     rpy, vel, dmi (wheel pulse encoder), gyro_yaw (integrated IMU yaw rate)
 img/<seq>/<timestamp_us>.jpg        (datasets boreas-vpr-images-k)
