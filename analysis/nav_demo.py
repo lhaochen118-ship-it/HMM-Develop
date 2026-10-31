@@ -37,6 +37,29 @@ SEED0 = 0                                      # --seed0 k: run seeds k .. k+see
 if "--seed0" in sys.argv:
     i = sys.argv.index("--seed0"); SEED0 = int(sys.argv[i + 1]); del sys.argv[i:i + 2]
 KAPPA = 0.05                                   # ghost position uncertainty growth per metre of odometry (as the nav filter)
+PRED = "--pred" in sys.argv                    # --pred: predictive cell-rank statistic of the place chain (query + map self-replay null) in the cache
+if PRED: sys.argv.remove("--pred")
+
+
+def pcr_stat(S, jp, cinv, nbr):
+    """PREDICTIVE CELL RANK of each frame: v = best similarity within excl of the place chain's PREDICTED place jp
+    (argmax of the predicted belief, F_{t-1}-measurable); p = (1 + #other cells whose maximum >= v) / (1 + #other cells
+    with a finite maximum), cells = map cells (cinv: compact cell index per map item). Rows of S may carry -inf (masked
+    items of the null). No multiplicity over the N places: under H0 the predicted place is just one candidate, so a
+    tracked frame whose best match sits at the prediction gets p ~ 1 / #cells even when its similarity is weak.
+    NaN where there is no prediction (first frame of a run)."""
+    order = np.argsort(cinv, kind="stable"); starts = np.r_[0, np.flatnonzero(np.diff(cinv[order])) + 1]
+    out = np.full(len(S), np.nan)
+    for i0 in range(0, len(S), 2048):
+        s = S[i0:i0 + 2048]; cm = np.maximum.reduceat(s[:, order], starts, axis=1); fin = np.isfinite(cm)
+        for r in range(len(s)):
+            j = int(jp[i0 + r])
+            if j < 0: continue
+            nb = nbr[j]; v = s[r, nb].max()
+            if not np.isfinite(v): continue
+            own = np.unique(cinv[nb]); ge = cm[r] >= v; ge[own] = False; ok = fin[r].copy(); ok[own] = False
+            out[i0 + r] = (1 + ge.sum()) / (1 + ok.sum())
+    return out
 
 
 def cpc_joint(Fp, rel, U, e_top, e_a, e_r, top, excl_nbr, p_in=0.01, p_out=0.01, gate="pred", ghost=True, s0=25.0, eps=1e-4, couple=True, rho=0.1):
@@ -190,15 +213,16 @@ def safevpr_rule(mnn_top, cos_top, calib, bad, nbins=3, alpha=0.05, delta=0.1):
     return acc
 
 
-def claxton_rule(srt10, Smean, Sstd, calib, good, bad, seed):
+def claxton_rule(srt10, Smean, Sstd, calib, good, bad, seed, proba=False):
     """Claxton et al. RA-L'24 style integrity monitor: MLP on similarity-profile features, trained WITH LABELS on the
-    `calib` frames (in tolerance vs not), accept when P(in tolerance) > 0.5"""
+    `calib` frames (in tolerance vs not), accept when P(in tolerance) > 0.5 (proba=True: return P(in tolerance))"""
     from sklearn.neural_network import MLPClassifier
     s1 = srt10[:, 0]
     X = np.stack([s1, s1 - srt10[:, 1], s1 - srt10[:, 4], s1 - srt10[:, 9], s1 - Smean, Sstd], 1)
     X = (X - X[calib].mean(0)) / (X[calib].std(0) + 1e-9); tr = calib & (good | bad)
     clf = MLPClassifier((32, 16), max_iter=500, random_state=seed).fit(X[tr], good[tr])
-    return clf.predict_proba(X)[:, 1] > 0.5
+    pr = clf.predict_proba(X)[:, 1]
+    return pr if proba else pr > 0.5
 
 
 def track_head(acc, xf, q_pos, o_q, q_seqs, sig_th=0.004):
@@ -325,11 +349,13 @@ def main():
         U = np.zeros_like(ep.q_pos)
         for idx in q_seqs: U[idx[1:]] = np.diff(o_q[idx], axis=0)
         Fh = Filter(MP, 1.0 if nord else 2.0, 6.0 if nord else 15.0, conf_r=c["tol"][0])
+        pof_h = np.ones(len(q))                                     # Xu'21 posterior of the off-map state (last hmm_fix call)
         def hmm_fix(T, kk, subset):
             est = np.full(len(q), -1)
             for idx in q_seqs:
                 if not subset[idx].any(): continue
                 e, _ = Fh.run(np.exp((S[idx] - smax[idx]) / T), U[idx], np.exp((srt[idx, kk - 1] - smax[idx, 0]) / T)); est[idx] = e
+                pof_h[idx] = Fh.last_off
             return est
         bsel = np.isin(cond, benign); best = None
         for T in (0.01, 0.02, 0.05):
@@ -347,8 +373,8 @@ def main():
         sdf = np.maximum(np.nan_to_num(Fr["sd_far"], nan=np.nanmedian(Fr["sd_far"])), 1e-4)
         rel = (S - smax) / (tau * sdf[:, None])
         Fp = DiagFilter(MP, 1.0 if nord else 2.0, 6.0 if nord else 15.0, c["tol"][0], c["excl"])
-        est_c = np.zeros(len(q), int)
-        for idx in q_seqs: est_c[idx], _, _, _ = Fp.run(rel[idx], U[idx])
+        est_c = np.zeros(len(q), int); conf_c, lo_c = np.zeros(len(q)), np.zeros(len(q)); jp_q = np.full(len(q), -1)
+        for idx in q_seqs: est_c[idx], conf_c[idx], _, lo_c[idx] = Fp.run(rel[idx], U[idx]); jp_q[idx] = Fp.last_pred
         lam = np.zeros(len(q)); loga = np.zeros(len(q)); e_R = np.zeros(len(q))
         # CPC-HMM presence e-value: the R null uses NOISE-FREE map odometry (exact map poses). Adding independent symmetric
         # unimodal noise to the displacements can only lower P(|dx - do| <= rho_o) (Anderson), so this null dominates R of
@@ -402,6 +428,20 @@ def main():
                                      ("CPC-HMM +TCEmin", "post", (em_t, em_a, em_r)), ("CPC-HMM +TCEmin+GG", "ghost", (em_t, em_a, em_r))):
             pj = cpc_presence(est_c, MP, top, xt, xa, xr, q_seqs, c["excl"], gate=gt, rho=0.1, s0=c["excl"], U=U)
             joint[jn] = (pj > 0.5, MP[est_c], pj)
+        pcr_q = pcr_n = None
+        if PRED:
+            # query: rank statistic at the place chain's predicted place; null: the SAME place chain run on the map's own
+            # held-out traversal (each null chunk lies in one block; that block's items are masked, as in the leave-block-out
+            # map null), noise-free map odometry (exact poses: the most coherent dead reckoning, i.e. a conservative null)
+            _, cinv = np.unique(V.map_cells(MP, c["cell"])[0], return_inverse=True); cinv = cinv.ravel()
+            pcr_q = pcr_stat(S, jp_q, cinv, nbr_x)
+            sdn = np.maximum(np.nan_to_num(Nr["sd_far"], nan=np.nanmedian(sdf)), 1e-4); pcr_n = []
+            for ch in nchunks:
+                Sn = M[ch] @ M.T; Sn[:, bidM == bidM[ch[0]]] = -np.inf
+                reln = (Sn - Sn.max(1, keepdims=True)) / (tau * sdn[ch][:, None]); reln[~np.isfinite(reln)] = -1e9
+                Un = np.vstack([np.zeros((1, MP.shape[1])), np.diff(MP[ch].astype(float), axis=0)])
+                Fp.run(reln, Un); pcr_n.append(pcr_stat(Sn, Fp.last_pred, cinv, nbr_x))
+            pcr_n = np.concatenate(pcr_n) if pcr_n else np.zeros(0)
         if DUMP:
             os.makedirs("results", exist_ok=True)
             np.savez_compressed(f"results/navframes_{ds.replace(':', '_')}_{desc}_s{seed}.npz", pon=pon, est_c=est_c, top=top, e_h=e_h,
@@ -446,7 +486,9 @@ def main():
                                 cond=cond, real=real, excl=c["excl"], tol=c["tol"][0], H=H, hz=np.array(hz), lam=lam, loga=loga, e_R=e_R,
                                 p_frame=p_frame, p_q=p_q, pR=pR, p_n=p_n, pRn=pRn, nchunk_flat=fl, nchunk_len=np.array([len(x) for x in nchunks]),
                                 Rq=Rq, thr=thr, maxsim=Fr["maxsim"], thr_ms=thr_ms, srt10=srt[:, :10], Smean=S.mean(1), Sstd=S.std(1), bsel=bsel,
-                                seed=seed, n_map=int(keep.sum()), n_null_seg=len(ns), hmm_T_k=np.array([best[1], best[2]]))
+                                seed=seed, n_map=int(keep.sum()), n_null_seg=len(ns), hmm_T_k=np.array([best[1], best[2]]),
+                                pof_h=pof_h, e_h=e_h, conf_c=conf_c, lo_c=lo_c, Rn=Rn, ns=ns, jp_q=jp_q,
+                                **({"mtop": mtop} if SAFEVPR else {}), **({"pcr_q": pcr_q, "pcr_n": pcr_n} if PRED else {}))
         run["rules"] = evaluate(rules, xfs, pons, cx, f"{ds}/{desc} s{seed}")
         out["runs"].append(run)
     os.makedirs("results", exist_ok=True)

@@ -91,6 +91,8 @@ while True:
 os.makedirs(outdir, exist_ok=True)
 print(f"=== PULL ({state}) -> {outdir} ===", flush=True)
 print(kg("kernels", "output", kid, "-p", outdir, "-o")[-400:], flush=True)
+if os.path.isfile(os.path.join(outdir, "results.tar")):                # runner packs results/ + logs/ into one tar
+    subprocess.run(["tar", "-xf", os.path.join(outdir, "results.tar"), "-C", outdir])
 for f in sorted(glob.glob(outdir + "/*.log")):
     try:
         recs = json.load(open(f, errors="ignore"))

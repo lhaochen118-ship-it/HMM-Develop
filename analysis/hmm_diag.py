@@ -40,6 +40,7 @@ class DiagFilter:
         """logE (L,N) log-emissions, U (L,dim) odometry increments (world), logoff (L,) off-map log-emission or None"""
         L = len(logE); b = np.full(self.n, 1.0 / self.n); bo = 0.5 if logoff is not None else 0.0; b *= (1 - bo)
         est = np.empty(L, int); conf = np.empty(L); offm = np.zeros(L); lo = np.empty(L)
+        self.last_pred = np.full(L, -1)                                  # argmax of the PREDICTED belief (F_{t-1}-measurable; -1 at t=0)
         for t in range(L):
             if t > 0:
                 w = np.exp(-0.5 * ((self.D - U[t][None]) ** 2).sum(1) / self.sigma ** 2)
@@ -48,6 +49,7 @@ class DiagFilter:
                 if logoff is not None:
                     stay = nb.sum(); nb = (1 - self.p_out) * nb + self.p_in * bo / self.n; bo = (1 - self.p_in) * bo + self.p_out * stay
                 b = (1 - self.eps) * nb + self.eps * (nb.sum() + bo) / self.n
+                self.last_pred[t] = int(b.argmax())
             m = logE[t].max() if logoff is None else max(logE[t].max(), logoff[t])
             b = b * np.exp(logE[t] - m)
             if logoff is not None: bo = bo * np.exp(logoff[t] - m)

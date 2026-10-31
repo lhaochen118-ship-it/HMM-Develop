@@ -63,6 +63,7 @@ class Filter:
         """E (L,N) emission (unnormalised, linear), U (L,dim) odometry increments, off (L,) off-map emission or None.
         returns est (L,) map index or -1 (off-map), conf (L,) posterior mass within conf_r of the best place"""
         L = len(E); b = np.full(self.n, 1.0 / self.n); bo = 0.5 if off is not None else 0.0; b *= (1 - bo); est = np.empty(L, int); conf = np.empty(L)
+        self.last_off = np.zeros(L)                                      # posterior mass of the off-map state per frame (operating curves)
         for t in range(L):
             if t > 0:
                 u = U[t][None] if self.Ri is None else np.einsum("pij,j->pi", self.Ri, U[t])
@@ -74,7 +75,7 @@ class Filter:
                 b = (1 - self.eps) * nb + self.eps * (nb.sum() + bo) / self.n
             b = b * E[t]
             if off is not None: bo = bo * off[t]
-            s = b.sum() + bo; b /= s; bo /= s
+            s = b.sum() + bo; b /= s; bo /= s; self.last_off[t] = bo
             j = int(b.argmax()); est[t] = -1 if (off is not None and bo > b[j]) else j; conf[t] = b[self.nbr[j]].sum()
             if est[t] < 0: est[t] = -1 - j                                   # keep the best place, encoded (-1-j)
         return est, conf

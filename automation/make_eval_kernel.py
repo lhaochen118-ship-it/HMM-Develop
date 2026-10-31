@@ -27,7 +27,8 @@ DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps", "nhatlong1103/vpr-dumps-4seasons
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 L4 = "--l4" in sys.argv; GPU = "--gpu" in sys.argv or L4
 EXTRA_DS = sys.argv[sys.argv.index("--ds") + 1].split(",") if "--ds" in sys.argv else []   # extra dataset sources (images, weights)
-argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--acc2", "--acc3", "--owner", "--ds") and sys.argv[i - 1] not in ("--owner", "--ds")]
+PAR = int(sys.argv[sys.argv.index("--par") + 1]) if "--par" in sys.argv else 0   # parallel jobs per session (0: auto from CPUs / GPUs)
+argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--acc2", "--acc3", "--owner", "--ds", "--par") and sys.argv[i - 1] not in ("--owner", "--ds", "--par")]
 kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]
 dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
 
@@ -64,6 +65,7 @@ import torch
 print("dump dirs:", {s: len(os.listdir(os.path.join(D, s))) for s in sorted(os.listdir(D))}, "| cpus", os.cpu_count(), "| device", os.environ["SELFCAL_DEVICE"], "| cuda", torch.cuda.is_available(), flush=True)
 NGPU = torch.cuda.device_count()
 NW = max(1, min(len(JOBS), (os.cpu_count() or 4) - 1 if NGPU <= 2 else max(NGPU, (os.cpu_count() or 4) // 4)))
+if %d: NW = min(len(JOBS), %d)                                     # --par: explicit parallel width (memory-bound jobs)
 TH = str(max(1, (os.cpu_count() or 4) // NW))                       # BLAS threads per job (no oversubscription)
 def run(ij):
     i, j = ij; script, args = j[0], j[1:]
@@ -80,8 +82,11 @@ shutil.copytree(os.path.join(C, "results"), os.path.join(W, "results"), dirs_exi
 shutil.copytree(os.path.join(C, "logs"), os.path.join(W, "logs"), dirs_exist_ok=True)
 if os.path.isdir(os.path.join(C, "figs")): shutil.copytree(os.path.join(C, "figs"), os.path.join(W, "figs"), dirs_exist_ok=True)
 shutil.rmtree(D, ignore_errors=True); shutil.rmtree(C, ignore_errors=True)
+# one tar instead of many small files: Kaggle's output download is per file and slow
+subprocess.run(["tar", "-cf", os.path.join(W, "results.tar"), "-C", W, "results", "logs"])
+shutil.rmtree(os.path.join(W, "results"), ignore_errors=True); shutil.rmtree(os.path.join(W, "logs"), ignore_errors=True)
 print("EVAL_DONE", rcs, f"{time.time()-t0:.0f}s", flush=True)
-''' % (json.dumps(jobs), "cuda" if GPU else "numpy")
+''' % (json.dumps(jobs), "cuda" if GPU else "numpy", PAR, PAR)
 os.makedirs(kdir, exist_ok=True); open(os.path.join(kdir, "run.py"), "w").write(runner)
 meta = {"id": f"{OWNER}/{slug}", "title": slug, "code_file": "run.py", "language": "python", "kernel_type": "script",
         "is_private": True, "enable_gpu": GPU, "enable_tpu": False, "enable_internet": False,

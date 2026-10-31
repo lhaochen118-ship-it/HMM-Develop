@@ -4,7 +4,8 @@ Tokens: ~/.kaggle/tok_<username> (one file per account). Jobs are split round-ro
 kernel goes to the next free (account, slot); kernels beyond 2 x #accounts become CPU kernels (use only for light jobs).
 Usage: fanout.py <work_dir> <slug_prefix> <jobs_file|"job;job;..."> [n_kernels=all GPU slots] [--accounts a,b,...] [--cpu|--l4]
 Each kernel: <work_dir>/<slug>/ (kernel dir), <work_dir>/<slug>_out/ (outputs), <work_dir>/<slug>.log (runner log).
-Prints one line per kernel; waits for all runners; then copies every results/*.json into analysis/results/."""
+Prints one line per kernel; waits for all runners; then copies every results/*.json into analysis/results/ (unless --nocopy).
+--par N: parallel jobs per session; --ds a,b: extra dataset sources."""
 import sys, os, glob, subprocess, shutil, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -14,16 +15,24 @@ _res = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reserved_accoun
 RESERVED = {l.strip() for l in open(_res) if l.strip() and not l.startswith("#")} if os.path.isfile(_res) else set()
 ACCOUNTS = [a for a in ACCOUNTS if a not in RESERVED]
 DSARG = ["--ds", sys.argv[sys.argv.index("--ds") + 1]] if "--ds" in sys.argv else []   # extra dataset sources for every kernel
+DSARG += ["--par", sys.argv[sys.argv.index("--par") + 1]] if "--par" in sys.argv else []   # parallel jobs per session
 L4 = "--l4" in sys.argv                                                   # 4x L4 sessions (competition grant)
-args = [a for a in sys.argv[1:] if not a.startswith("--") and a not in DSARG]
-if "--accounts" in sys.argv: ACCOUNTS = sys.argv[sys.argv.index("--accounts") + 1].split(","); args = [a for a in args if a != ",".join(ACCOUNTS)]
+_val = {i + 1 for i, a in enumerate(sys.argv) if a in ("--ds", "--par", "--accounts")}  # positions of option values
+args = [a for i, a in enumerate(sys.argv) if i > 0 and i not in _val and not a.startswith("--")]
+if "--accounts" in sys.argv: ACCOUNTS = sys.argv[sys.argv.index("--accounts") + 1].split(",")
 work, prefix, jobs = args[0], args[1], args[2]
-jobs = [j.strip() for j in (open(jobs).read().replace("\n", ";") if os.path.isfile(jobs) else jobs).split(";") if j.strip()]
+GROUPS = "--groups" in sys.argv                                          # --groups: each line of the jobs file is ONE kernel (jobs ';'-separated)
+if GROUPS:
+    groups = [[j.strip() for j in l.split(";") if j.strip()] for l in open(jobs) if l.strip()]
+    jobs = [j for g in groups for j in g]
+else:
+    jobs = [j.strip() for j in (open(jobs).read().replace("\n", ";") if os.path.isfile(jobs) else jobs).split(";") if j.strip()]
 slots = [(a, s) for a in ACCOUNTS for s in (0, 1)]                       # fill BOTH GPU sessions of an account before the next (user rule: do not spend quota of extra accounts)
-nk = min(int(args[3]) if len(args) > 3 else len(slots), len(jobs))
+nk = len(groups) if GROUPS else min(int(args[3]) if len(args) > 3 else len(slots), len(jobs))
+part_of = (lambda k: groups[k]) if GROUPS else (lambda k: jobs[k::nk])
 os.makedirs(work, exist_ok=True); procs = []
 for k in range(nk):
-    part = jobs[k::nk]; acc, _ = slots[k % len(slots)]; gpu = k < len(slots) and "--cpu" not in sys.argv
+    part = part_of(k); acc, _ = slots[k % len(slots)]; gpu = k < len(slots) and "--cpu" not in sys.argv
     slug = f"{prefix}-{k + 1}"; kd = os.path.join(work, slug)
     cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + ((["--l4"] if L4 else ["--gpu"]) if gpu else []) + DSARG
     r = subprocess.run(cmd, capture_output=True, text=True)
@@ -58,9 +67,10 @@ while procs:
         gpu = k < len(slots) and "--cpu" not in sys.argv
         if "STATUS=PUSH_FAILED" in log and len(tried[k]) < len(ACCOUNTS):
             acc = [a for a in ACCOUNTS[k % len(ACCOUNTS):] + ACCOUNTS if a not in tried[k]][0]; tried[k].add(acc)
-            make(os.path.join(work, slug), slug, jobs[k::nk], acc, gpu); time.sleep(40)
+            make(os.path.join(work, slug), slug, part_of(k), acc, gpu); time.sleep(40)
             print(f"{slug}: push failed -> retry on {acc}", flush=True); procs[k] = launch(k); continue
         res = glob.glob(os.path.join(work, slug + "_out", "results", "*.json"))
-        for f in res: shutil.copy(f, os.path.join(ROOT, "analysis", "results"))
+        if "--nocopy" not in sys.argv:                                     # --nocopy: keep results in <work>/<slug>_out only
+            for f in res: shutil.copy(f, os.path.join(ROOT, "analysis", "results"))
         print(f"{slug}: {'OK' if 'STATUS=DONE:complete' in log else 'FAILED'} {len(res)} results, rc!=0: {log.count('rc=') - log.count('rc=0')}", flush=True)
     time.sleep(15)

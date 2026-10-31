@@ -7,6 +7,42 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 25 — "Only more conservative?": recall diagnosis, operating curves, odometry-consistency stop (2026-10-31, in progress)
+
+**Question (reviewer).** CPC-HMM +TCEmin has low error but also low recall. Is it better, or only more conservative?
+
+**Diagnosis (Boreas + NCLT caches, `analysis/recall_diag.py`).** On-map frames split into hit / place chain wrong /
+not yet reported in this on-map run (re-entry) / dropped after reporting (dropout):
+- Strong descriptors lose little (Boreas MegaLoc: hit 0.94-0.97). Weak descriptors lose most of it in the PRESENCE chain
+  while the place chain is right: Boreas NetVLAD place chain correct on 0.85 of on-map frames, reported 0.30
+  (re-entry 0.30, dropout 0.25); Boreas DINOv2: 83 % of on-map frames lie in on-map runs that are never reported
+  (whole traversals), although the place chain is correct on 86 % of them.
+- Per-frame presence evidence is weak there (AUC dropout-vs-off 0.62-0.88 for every component). The TCE min is the main
+  recall cost: NCLT DINOv2 recall 0.16 (TCEmin) vs 0.50 (CPC-HMM), Boreas DINOv2 0.01 vs 0.13.
+- First operating curve (NCLT NetVLAD): at CPC-HMM's recall, TCEmin has error 12.9 vs 6.3 m and pAUC 0.490 vs 0.525, so
+  relative to CPC-HMM, TCEmin IS mostly a more conservative point on a slightly worse curve; both are far above the
+  baselines (Claxton'24 pAUC 0.37, SelfCal frame 0.31, max-sim 0.02).
+- Tried and dropped on the development sets: hedged two-group e-values 1 - l + l e (recall +0.006 / +0.02);
+  process-averaged e-detectors (small gain); TCE min on one component only (moves along the trade-off); hysteresis
+  TCEmin onset / CPC persistence (moves along the trade-off); CPC-SC = CPC chain + segment-calibrated onset threshold:
+  the ONSET part holds (segments with a false onset 0.010-0.041 <= alpha), but CARRIED report streaks (place chain stuck
+  at the map edge or jumped to a look-alike place, presence chain still on) give segFAR up to 0.10.
+- Predictive cell rank (PCR, IPDA-style gate at the place chain's predicted place, `analysis/pcr.py`, `nav_demo --pred`):
+  under H0 the predicted place is also the top cell in 62 % of frames (CMU CosPlace null 0.624, off-map queries 0.606,
+  on-map 0.968): consecutive frames are near-duplicates, so the chain follows the top-1 whether on or off the map. The
+  null calibration matches (null ~ off-map), but the likelihood ratio is only ~1.5. Kept as an exploratory variant.
+
+**New module: odometry-consistency stop (CS).** Stop reporting at frame t when, for a lag k whose odometry path is
+<= 3 excl, | ||m_t - m_{t-k}|| - ||o_t - o_{t-k}|| | > excl (m = reported place). Leaving the map makes the place chain
+(no off-map state) stick at the edge or jump; magnitudes only, so heading drift (NCLT) does not trigger it. It only
+removes reports, so it cannot reduce validity.
+
+**Pre-registered protocol (written before the held-out results).** Development sets: Boreas, NCLT (seen). Held-out:
+CMU, Nordland, 4S office / old town / countryside. Candidates: M1 TCEmin, M2 TCEmin+CS, M3 CPC-HMM+CS, M4 CPC-SC+CS;
+CS span 3 excl, threshold excl (span off_d/excl was dropped: Boreas MegaLoc segFAR 0.057). Order of criteria: mean
+segFAR <= 0.05 per dataset, then error and recall at the default point, then recall at matched FL / segFAR and error at
+matched recall (operating curves, `analysis/oc_curves.py`, `oc_summary.py`).
+
 ## Entry 24 — Self-audit: is the method general, or tuned to these datasets? NCLT as a hold-out (2026-10-30)
 
 **Question (user).** Is the proposed method sound and general, or do the scores come from choices fitted to these
