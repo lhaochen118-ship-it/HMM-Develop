@@ -35,7 +35,8 @@ not yet reported in this on-map run (re-entry) / dropped after reporting (dropou
 **New module: odometry-consistency stop (CS).** Stop reporting at frame t when, for a lag k whose odometry path is
 <= 3 excl, | ||m_t - m_{t-k}|| - ||o_t - o_{t-k}|| | > excl (m = reported place). Leaving the map makes the place chain
 (no off-map state) stick at the edge or jump; magnitudes only, so heading drift (NCLT) does not trigger it. It only
-removes reports, so it cannot reduce validity.
+removes reports, so it cannot raise segFAR or FL (it can split a false streak into two onsets, so an onset-count ARL0 is
+not covered).
 
 **Held-out result (pre-registered protocol; default points, 6 descriptors x 3 seeds = 18 runs per dataset; recall /
 segFAR / error m).**

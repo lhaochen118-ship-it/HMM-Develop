@@ -304,8 +304,10 @@ với quãng đường odometry giữa t−k và t không quá 3·excl sao cho
 
 Chỉ dùng độ lớn, nên bất biến với trôi hướng của odometry (NCLT trôi 10–25°).
 
-- **Bổ đề 7 (lọc đơn điệu giữ bảo đảm).** Nếu luật A có segFAR ≤ α (hoặc ARL₀ ≥ B) thì luật A ∧ CS cũng vậy, vì tập báo cáo
-  của A ∧ CS là tập con của A trên mọi đoạn. *Chứng minh:* hiển nhiên từ {báo trong đoạn | A ∧ CS} ⊆ {báo trong đoạn | A}. ∎
+- **Bổ đề 7 (lọc đơn điệu giữ bảo đảm dạng "có báo cáo").** Nếu luật A có segFAR ≤ α (hoặc FL ≤ f) thì luật A ∧ CS cũng
+  vậy, vì tập báo cáo của A ∧ CS là tập con của A trên mọi đoạn. *Chứng minh:* {báo trong đoạn | A ∧ CS} ⊆ {báo trong đoạn |
+  A}. ∎ *Lưu ý:* không áp dụng cho ARL₀ tính theo số lần khởi phát — bỏ một báo cáo giữa một chuỗi báo sai có thể tách nó
+  thành hai khởi phát.
 - **Mệnh đề 4 (trễ khi rời bản đồ khi MAP kẹt ở mép).** Giả sử nơi báo luôn là một nơi của bản đồ; robot rời bản đồ sau
   frame τ (cách bản đồ ≤ in_d); sau đó MAP kẹt trong bán kính δ quanh m_τ (δ = khoảng cách giữa hai nơi liền kề của bản đồ,
   vài mét); sai số độ lớn của odometry trên quãng ≤ 3·excl không quá ε; và robot ra tới khoảng cách off_d trước khi đi quá

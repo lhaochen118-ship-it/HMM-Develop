@@ -38,7 +38,8 @@ neo odometry R_t, excl dung sai định vị, H độ dài đoạn, α mức FAR
    có khởi phát báo với xác suất ≤ α, với mọi phụ thuộc trong đoạn (log-odds đơn điệu theo odds ban đầu).
 3. **Quy tắc dừng nhất quán odometry (CS):** dừng báo ở t nếu tồn tại độ trễ k với quãng odometry ≤ 3·excl sao cho
    | ‖m_t − m_{t−k}‖ − ‖o_t − o_{t−k}‖ | > excl  (chỉ độ lớn, bất biến với trôi hướng).
-   *Bổ đề 7:* CS chỉ bỏ bớt báo cáo nên giữ mọi bảo đảm của luật gốc. *Mệnh đề 4:* nếu MAP kẹt trong bán kính δ quanh
+   *Bổ đề 7:* CS chỉ bỏ bớt báo cáo nên giữ các bảo đảm dạng "có báo cáo trong đoạn" (segFAR, FL) của luật gốc (không áp
+   dụng cho ARL₀ đếm theo khởi phát). *Mệnh đề 4:* nếu MAP kẹt trong bán kính δ quanh
    nơi rời bản đồ và excl + in_d + ε + δ < off_d thì không có báo cáo ở frame off-map (ε: sai số độ lớn odometry trên 3·excl).
 
 Mọi hằng số tính theo đơn vị của bài toán (excl, H, α); cùng một giá trị cho 7 dataset, 6 descriptor. Kiểm tra nhất quán với

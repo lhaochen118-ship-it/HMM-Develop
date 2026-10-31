@@ -8,7 +8,8 @@
   persistence      log-odds > 0 (MAP decision of the presence chain)
   stop rule CS     report only while the reported place moves with the odometry: no lag k with odometry path
                    <= 3 excl and | ||m_t - m_{t-k}|| - ||o_t - o_{t-k}|| | > excl (only removes reports: keeps every
-                   guarantee, Lemma 7; stops reports of a place chain stuck at the map edge before off_d, Prop. 4)
+                   "some report in the segment" guarantee such as segFAR / FL, Lemma 7 -- not an onset-count ARL0;
+                   stops reports of a place chain stuck at the map edge before off_d, Prop. 4)
 Every constant is in units of the problem (excl = localisation tolerance, H, alpha); nothing is tuned per dataset.
 Inputs: `z` = nav_demo --cache arrays (or a dict with the same keys), `b` = nav_rules.base_parts(z)."""
 import numpy as np
