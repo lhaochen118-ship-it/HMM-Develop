@@ -114,9 +114,9 @@ chiều tối, đêm). Pose GT `applanix/camera_poses.csv` của mọi sequence 
 
 ```
 dump/<desc>/boreas_<seq>.npy        desc ∈ megaloc, salad, mixvpr, cosplace, netvlad, dinov2 (float16, L2-norm)
-dump/meta/boreas_<seq>.npz          names (timestamp µs = tên ảnh), C (easting, northing, altitude; ENU chung),
-                                    rpy, vel, dmi (pulse encoder bánh xe), gyro_yaw (tích phân IMU yaw rate)
-img/<seq>/<timestamp_us>.jpg        (các dataset boreas-vpr-images-k)
+dump/meta/boreas_<seq>.npz          names (timestamp µs = image name), C (easting, northing, altitude; shared ENU),
+                                    rpy, vel, dmi (wheel pulse encoder), gyro_yaw (integrated IMU yaw rate)
+img/<seq>/<timestamp_us>.jpg        (datasets boreas-vpr-images-k)
 ```
 
 **Loader:** `V.load_boreas(dump, desc)`, gọi bằng `ds = "boreas"`.
