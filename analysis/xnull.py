@@ -34,9 +34,11 @@ def calib_traversals(dump, desc, ref="boreas-2020-11-26-13-58"):
     seqs = sorted(f[7:-4] for f in os.listdir(os.path.join(dump, "meta")) if f.startswith("boreas_")
                   and os.path.isfile(os.path.join(dump, desc, f[:-4] + ".npy")))
     cal = [s for s in seqs if s != ref and s not in V.BOREAS_Q]
+    from concurrent.futures import ThreadPoolExecutor                  # /kaggle/input is a slow network FS: read all files concurrently
+    rd = lambda s: (dict(np.load(os.path.join(dump, "meta", f"boreas_{s}.npz"), allow_pickle=True)), np.load(os.path.join(dump, desc, f"boreas_{s}.npy")))
+    with ThreadPoolExecutor(16) as ex: loaded = list(ex.map(rd, cal))
     X, P, sid, k, dmi, gy = [], [], [], [], [], []
-    for i, s in enumerate(cal):
-        m = np.load(os.path.join(dump, "meta", f"boreas_{s}.npz"), allow_pickle=True); x = np.load(os.path.join(dump, desc, f"boreas_{s}.npy"))
+    for i, (m, x) in enumerate(loaded):
         X.append(x); P.append(m["C"][:, :2]); sid.append(np.full(len(x), i)); k.append(np.arange(len(x))); dmi.append(m["dmi"]); gy.append(m["gyro_yaw"])
     cat = np.concatenate; X, P, sid, k = cat(X).astype(np.float32), cat(P), cat(sid), cat(k)
     o = odometry_wheel(_Ep(P, cat(dmi), cat(gy)), sid, k)

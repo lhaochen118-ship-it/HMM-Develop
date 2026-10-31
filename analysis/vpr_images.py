@@ -38,12 +38,13 @@ def _path(ds, rec, name):
     d = _IMG.get(rec); return os.path.join(d, key + ".jpg") if d else None
 
 
-def image_paths(ds, dump, ep, check=True):
+def image_paths(ds, dump, ep, check=None):
     """(query paths, full-map paths); None where the image is not mounted"""
     _scan(); qrecs = list(dict.fromkeys(ep.q_rec)); qp = []
     for r in qrecs: qp += [_path(ds, r, n) for n in _names(dump, ds, r)]
     mp = [_path(ds, ep.ref, n) for n in _names(dump, ds, ep.ref)]
     assert len(qp) == len(ep.q) and len(mp) == len(ep.m), (len(qp), len(ep.q), len(mp), len(ep.m))
+    if check is None: check = not ds.startswith("4s:")      # 4Seasons cam0 paths are deterministic; stat() of ~20k PNGs on /kaggle/input costs 10-17 min
     if check:
         from concurrent.futures import ThreadPoolExecutor
         with ThreadPoolExecutor(32) as ex:

@@ -143,7 +143,7 @@ def rules_scj(z, b, alpha=0.05):
     return out, x_c
 
 
-def sc_evidence_x(z, b, pq3, pn3, alpha=0.05, w3=None, p_in=0.01, p_out=0.01):
+def sc_evidence_x(z, b, pq3, pn3, alpha=0.05, w3=None, p_in=0.01, p_out=0.01, mode="mean3"):
     """CPC-SC with a THIRD presence component: per-frame p-value pq3 of the queries and pn3 of the map self-replay null
     (indexed by map row, like p_n), e.g. the map-null rank of the TAO route-verification cost. LR = mean of the gated
     top-1 e-value, e_R^(1/H) and e_3^(w3) (w3 = 1/H by default, as e_R: the statistic spans a window); kappa from the same
@@ -158,8 +158,12 @@ def sc_evidence_x(z, b, pq3, pn3, alpha=0.05, w3=None, p_in=0.01, p_out=0.01):
     for cn in sorted(set(z["cond"])):
         m = z["cond"] == cn; a1, _ = beta_em(pq[m]); a2, _ = beta_em(pr[m]); a3, _ = beta_em(q3[m])
         et = a1 * pq[m] ** (a1 - 1)
-        llq[m] = np.log((np.where(agree[m], et, a1) + (a2 * pr[m] ** (a2 - 1)) ** (1.0 / H) + (a3 * q3[m] ** (a3 - 1)) ** w3) / 3)
-        ll = np.log((np.maximum(a1 * pn ** (a1 - 1), a1) + (a2 * prn ** (a2 - 1)) ** (1.0 / H) + (a3 * n3 ** (a3 - 1)) ** w3) / 3)
+        tq, rq, eq = np.where(agree[m], et, a1), (a2 * pr[m] ** (a2 - 1)) ** (1.0 / H), (a3 * q3[m] ** (a3 - 1)) ** w3
+        tn, rn_, en = np.maximum(a1 * pn ** (a1 - 1), a1), (a2 * prn ** (a2 - 1)) ** (1.0 / H), (a3 * n3 ** (a3 - 1)) ** w3
+        comb = {"mean3": lambda t, r, e: (t + r + e) / 3,                     # Entry 26
+                "min": lambda t, r, e: (np.minimum(t, e) + r) / 2,            # route evidence can veto the top-1 evidence (Lemma 6)
+                "only": lambda t, r, e: e}[mode]                              # route evidence alone
+        llq[m] = np.log(comb(tq, rq, eq)); ll = np.log(comb(tn, rn_, en))
         mx = []
         for sg in segs:
             pon, best = 0.5, -np.inf

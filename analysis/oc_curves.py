@@ -43,6 +43,8 @@ DUMPD = sys.argv[sys.argv.index("--mapdump") + 1] if "--mapdump" in sys.argv els
 _MFULL = {}
 XNULL = sys.argv[sys.argv.index("--xnull") + 1] if "--xnull" in sys.argv else None   # dir of xnull_boreas_<desc>_s<seed>.npz -> cross-traversal-null families
 TW = [float(x) for x in sys.argv[sys.argv.index("--tw") + 1].split(",")] if "--tw" in sys.argv else []   # extra route-component powers w3 for CPC-SC-T
+TAOC = sys.argv[sys.argv.index("--taocache") + 1] if "--taocache" in sys.argv else None   # dir of tao_<ds>_<desc>_s<seed>.npz (per-frame route costs; written to results/ on every run)
+MODES = sys.argv[sys.argv.index("--modes") + 1].split(",") if "--modes" in sys.argv else []   # route-evidence combinations (min, only)
 FAMS = set(sys.argv[sys.argv.index("--fams") + 1].split(",")) if "--fams" in sys.argv else None   # evaluate only these families
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
 N_PTS = 48                                       # thresholds per curve (quantiles of the score + the default threshold)
@@ -129,7 +131,12 @@ def families(z, b):
                 la, ka = sc_evidence(z, b, al); F[f"CPC-SC+CS(alpha={al:g})"] = (None, x_c, None, hyst(la, b["seqs"], ka, 0.0) & cs3)
     tkf = os.path.join(TOPK, f"topk_{b['ds_tag']}_s{int(z['seed'])}.npz") if TOPK else None
     if tkf and os.path.exists(tkf):                              # TAO'26 (labels: tau_OOD = 3-sigma bound on easy conditions)
-        r = TAO.tao(z, np.load(tkf)); jj = np.maximum(r["j"], 0); xt_ = MP[jj]
+        tcf = os.path.join(TAOC, f"tao_{b['ds_tag']}_s{int(z['seed'])}.npz") if TAOC else None
+        if tcf and os.path.exists(tcf):
+            tc = np.load(tcf); r = dict(cost=tc["cost"], j=tc["j"])
+        else:
+            r = TAO.tao(z, np.load(tkf))
+        jj = np.maximum(r["j"], 0); xt_ = MP[jj]
         err_t = np.linalg.norm(xt_ - z["q_pos"], axis=1); good_t = z["inm"] & (err_t <= b["excl"]) & (r["j"] >= 0)
         tau = TAO.tao_threshold(r["cost"], good_t, z["bsel"]); sc_t = np.where(r["j"] >= 0, -r["cost"], -np.inf)
         F["TAO26"] = (sc_t, xt_, -tau, sc_t >= -tau)
@@ -141,7 +148,13 @@ def families(z, b):
                 dsn = key.rsplit("_", 1)[0]; dsn = ("4s:" + dsn[3:]) if dsn.startswith("4s_") else dsn
                 _MFULL[key] = TKD.load(DUMPD, dsn, key.rsplit("_", 1)[1]).m
             blk = CFG.get(b["ds"], CFG["cmu"])["block"]
-            kt, nseg, cn_ = TAO.tao_null_kappa(z, TAO.null_topk(z, _MFULL[key], blk), b["H"])
+            if tcf and os.path.exists(tcf) and "cn" in np.load(tcf).files:
+                tc = np.load(tcf); kt, nseg, cn_ = float(tc["kt"]), int(tc["nseg"]), tc["cn"]
+            else:
+                kt, nseg, cn_ = TAO.tao_null_kappa(z, TAO.null_topk(z, _MFULL[key], blk), b["H"])
+            os.makedirs("results", exist_ok=True)                 # reusable per-frame route costs (published as a dataset)
+            np.savez_compressed(f"results/tao_{key}_s{int(z['seed'])}.npz", cost=r["cost"].astype(np.float32), j=r["j"].astype(np.int32),
+                                cn=np.asarray(cn_, np.float32), kt=kt, nseg=nseg)
             # TAO cost as a third presence component: map-null rank p-value (lower cost = more on-map), CPC-SC calibration
             cnf = np.sort(cn_[np.isfinite(cn_)]); cq = np.where(r["j"] >= 0, r["cost"], np.inf)
             pq3 = (1 + np.searchsorted(cnf, cq, side="right")) / (1 + len(cnf)); pn3 = np.ones(len(MP))
@@ -150,6 +163,11 @@ def families(z, b):
             xc3 = MP[est]; cs3 = consistency_ok(xc3, z["o_q"], b["seqs"], b["excl"], 3.0)
             F["CPC-SC-T+CS"] = (np.where(cs3, lo3 - k3, -np.inf), xc3, 0.0, CG.hyst_ok(lo3 > k3, lo3 > 0, np.ones(len(cs3), bool), b["seqs"]) & cs3)
             F["CPC-SC-T"] = (lo3 - k3, xc3, 0.0, CG.hyst_ok(lo3 > k3, lo3 > 0, np.ones(len(cs3), bool), b["seqs"]))
+            for md in MODES:                                # exploratory (Entry 27): how the route evidence is combined
+                lm, km = CG.sc_evidence_x({k: z[k] for k in z.files}, b, np.minimum(pq3, 1.0), np.clip(pn3, 1e-6, 1.0), w3=1.0, mode=md)
+                shm = CG.shape_ok(xc3, z["o_q"], b["seqs"], b["excl"], 3.0, 0.5, hz=list(z["hz"]))
+                for tg, okm in (("SH", shm), ("CS", cs3)):
+                    F[f"CPC-SC-T{md}+{tg}"] = (np.where(okm, lm - km, -np.inf), xc3, 0.0, CG.hyst_ok(lm > km, lm > 0, np.ones(len(okm), bool), b["seqs"]) & okm)
             for w3 in TW:                                   # power of the route e-value (1/H by default): ranking with strong descriptors
                 lw, kw = CG.sc_evidence_x({k: z[k] for k in z.files}, b, np.minimum(pq3, 1.0), np.clip(pn3, 1e-6, 1.0), w3=w3)
                 shw = CG.shape_ok(xc3, z["o_q"], b["seqs"], b["excl"], 3.0, 0.5, hz=list(z["hz"]))
@@ -206,6 +224,15 @@ def families(z, b):
     pc = N.claxton_rule(z["srt10"], z["Smean"], z["Sstd"], z["bsel"], z["good"], bad_top, int(z["seed"]), proba=True)
     F["Claxton24"] = (pc, x_t, 0.5, pc > 0.5)
     if "mtop" in z.files: F["SafeVPR"] = (z["mtop"], x_t, None, None)
+    elif N.SAFEVPR:                                          # --safevpr DIR (nav_demo parses it): MNN scores of safevpr_mnn.py, any dataset
+        parts = sorted(glob.glob(os.path.join(N.SAFEVPR, f"safevpr_{b['ds_tag'].rsplit('_', 1)[0]}_p*.npz")))
+        if parts:
+            desc_ = b["ds_tag"].rsplit("_", 1)[1]; mtop = np.zeros(len(top)); ftop = z["kidx"][top]
+            for f_ in parts:
+                q = np.load(f_); r_, cd, mn = q["q_rows"], q[f"cand_{desc_}"], q[f"mnn_{desc_}"]
+                hit = cd == ftop[r_][:, None]; mtop[r_] = np.where(hit.any(1), (mn * hit).sum(1), 0.0)
+            bad_s = z["offm"] | (z["err_top"] > b["excl"])
+            F["SafeVPR"] = (mtop, x_t, None, N.safevpr_rule(mtop, z["maxsim"], z["bsel"], bad_s))
     return F
 
 

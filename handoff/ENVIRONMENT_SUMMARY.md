@@ -196,7 +196,7 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo pub
 | 11 | `mxuanquy` | **chỉ T4**; **dành cho user từ 2026-10-30** (không chạy job mới) |
 | 12 | `linhmai24` | L4×4 OK + T4 (thêm 2026-10-30) |
 | 13 | `phatle1578` | L4×4 OK (thêm 2026-10-30; smoke test: 4× L4 23 GB, 48 CPU) |
-| 14 | `anderson1202` | thêm 2026-10-31; T4 OK |
+| 14 | `anderson1202` | thêm 2026-10-31; T4 OK; **L4×4 OK** (user đã accept rules competition `gemma-4-developer-agent`, 2026-10-31) |
 | 15 | `nguyenhoa99` | thêm 2026-10-31; T4 OK |
 | 16 | `lelynhan` | thêm 2026-10-31; thường có kernel của người khác (zc-*) |
 | 17 | `caotienminh1` | thêm 2026-10-31 (user: L4×4; L4 thường xếp hàng lâu) |
