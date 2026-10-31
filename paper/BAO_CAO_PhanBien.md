@@ -38,7 +38,8 @@ neo odometry R_t, excl dung sai định vị, H độ dài đoạn, α mức FAR
    có khởi phát báo với xác suất ≤ α, với mọi phụ thuộc trong đoạn (log-odds đơn điệu theo odds ban đầu).
 3. **Quy tắc dừng nhất quán odometry (CS):** dừng báo ở t nếu tồn tại độ trễ k với quãng odometry ≤ 3·excl sao cho
    | ‖m_t − m_{t−k}‖ − ‖o_t − o_{t−k}‖ | > excl  (chỉ độ lớn, bất biến với trôi hướng).
-   *Bổ đề 7:* CS chỉ bỏ bớt báo cáo nên giữ mọi bảo đảm của luật gốc. *Mệnh đề 4:* nếu MAP kẹt trong bán kính δ quanh
+   *Bổ đề 7:* CS chỉ bỏ bớt báo cáo nên giữ các bảo đảm dạng "có báo cáo trong đoạn" (segFAR, FL) của luật gốc (không áp
+   dụng cho ARL₀ đếm theo khởi phát). *Mệnh đề 4:* nếu MAP kẹt trong bán kính δ quanh
    nơi rời bản đồ và excl + in_d + ε + δ < off_d thì không có báo cáo ở frame off-map (ε: sai số độ lớn odometry trên 3·excl).
 
 Mọi hằng số tính theo đơn vị của bài toán (excl, H, α); cùng một giá trị cho 7 dataset, 6 descriptor. Kiểm tra nhất quán với
@@ -47,8 +48,9 @@ vi phạm, vai trò trong khung có bảo đảm, và bằng chứng đường c
 
 ## 4. Giao thức đánh giá (chống thiên lệch chọn lựa)
 
-- 7 dataset (Boreas, NCLT, CMU, Nordland, 4Seasons office/old town/countryside), 6 descriptor, 3 seed; bản đồ khuyết 30 %
-  block (NCLT: off-map tự nhiên).
+- 7 dataset (Boreas, NCLT, CMU, Nordland, 4Seasons office/old town/countryside), 6 descriptor; bản đồ khuyết 30 % block
+  (NCLT: off-map tự nhiên). Điểm mặc định: 10 seed; đường cong và so khớp: seed 0–2. Độ bền: bản đồ khuyết 10 % và 50 %
+  với **cùng** hằng số.
 - **Đăng ký trước** (ghi vào nhật ký trước khi xem): Boreas + NCLT là tập phát triển; 5 tập còn lại là tập giữ lại.
 - **Chọn leave-one-dataset-out** trong 15 biến thể không nhãn: CPC-SC+CS được chọn ở 6/7 fold (CMU: CPC-HMM+CS), regret
   0–3.5 m (phương pháp cũ: tới 30 m).
@@ -58,21 +60,21 @@ vi phạm, vai trò trong khung có bảo đảm, và bằng chứng đường c
 
 ## 5. Kết quả
 
-### Điểm vận hành mặc định (bản đồ khuyết 30 % block)
+### Điểm vận hành mặc định, 10 seed (bản đồ khuyết 30 % block)
 
-Ô: recall / segFAR / sai số điều hướng trung bình (m); trung bình 6 descriptor × 3 seed (NCLT: × 1).
+Ô: recall / segFAR / sai số điều hướng trung bình (m); trung bình trên các run (6 descriptor × số seed; NCLT không có lỗ tổng hợp nên 1 seed). Số run: Boreas 60, NCLT 6, CMU 60, Nordland 60, 4S office 60, 4S old town 60, 4S countryside 60.
 
 | Luật | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
 |---|---|---|---|---|---|---|---|
-| Xu'21 HMM off-map (nhãn) | 0.62 / 0.028 / 22.6 | 0.53 / 0.021 / 13.7 | 0.65 / 0.127 / 13.0 | 0.73 / 0.040 / 68.0 | 0.76 / 0.284 / 22.7 | 0.60 / 0.030 / 76.9 | 0.31 / 0.095 / 76.0 |
-| Claxton'24 MLP (nhãn) | 0.74 / 0.110 / 42.5 | 0.66 / 0.203 / 32.3 | 0.85 / 0.110 / 14.3 | 0.51 / 0.274 / 87.0 | 0.80 / 0.159 / 18.0 | 0.71 / 0.143 / 100.8 | 0.59 / 0.201 / 41.8 |
-| Ngưỡng max-sim (nhãn) | 0.65 / 0.080 / 37.1 | 0.60 / 0.193 / 42.2 | 0.80 / 0.100 / 15.5 | 0.33 / 0.182 / 211.1 | 0.68 / 0.088 / 16.9 | 0.64 / 0.107 / 68.0 | 0.30 / 0.084 / 54.3 |
-| Certified | 0.66 / 0.039 / 15.7 | 0.48 / 0.001 / 3.7 | 0.65 / 0.012 / 3.8 | 0.57 / 0.039 / 17.2 | 0.66 / 0.018 / 11.3 | 0.53 / 0.016 / 37.0 | 0.22 / 0.018 / 51.5 |
-| CPC-HMM +TCEmin (cũ) | 0.66 / 0.013 / 8.9 | 0.49 / 0.000 / 3.7 | 0.68 / 0.009 / 3.5 | 0.56 / 0.002 / 16.2 | 0.71 / 0.017 / 12.5 | 0.58 / 0.007 / 36.3 | 0.23 / 0.012 / 59.8 |
-| CPC-HMM (không TCE) | 0.73 / 0.066 / 17.7 | 0.64 / 0.005 / 7.9 | 0.80 / 0.040 / 5.7 | 0.69 / 0.009 / 19.7 | 0.81 / 0.069 / 12.8 | 0.70 / 0.038 / 46.3 | 0.36 / 0.069 / 52.2 |
-| CPC-HMM +CS | 0.67 / 0.004 / 5.2 | 0.55 / 0.000 / 4.6 | 0.70 / 0.006 / 4.6 | 0.63 / 0.000 / 11.7 | 0.72 / 0.000 / 11.5 | 0.59 / 0.000 / 31.6 | 0.31 / 0.000 / 54.6 |
-| **CPC-SC+CS (đề xuất)** | 0.66 / 0.003 / 5.3 | 0.54 / 0.000 / 4.6 | 0.66 / 0.001 / 3.7 | 0.64 / 0.000 / 11.6 | 0.71 / 0.000 / 12.1 | 0.58 / 0.000 / 32.8 | 0.30 / 0.000 / 54.3 |
-| Oracle | 0.89 / – / 2.3 | 0.72 / – / 2.2 | 0.91 / – / 2.9 | 0.66 / – / 5.4 | 0.91 / – / 8.4 | 0.84 / – / 21.1 | 0.73 / – / 17.8 |
+| Xu'21 HMM off-map (nhãn) | 0.68 / 0.043 / 25.3 | 0.53 / 0.021 / 13.7 | 0.69 / 0.227 / 18.1 | 0.74 / 0.038 / 59.3 | 0.72 / 0.215 / 21.2 | 0.62 / 0.101 / 70.9 | 0.25 / 0.088 / 81.0 |
+| Claxton'24 MLP (nhãn) | 0.74 / 0.116 / 36.9 | 0.66 / 0.203 / 32.3 | 0.87 / 0.166 / 14.3 | 0.52 / 0.263 / 88.0 | 0.80 / 0.152 / 18.7 | 0.72 / 0.166 / 90.4 | 0.60 / 0.213 / 42.9 |
+| Ngưỡng max-sim (nhãn) | 0.66 / 0.089 / 25.5 | 0.60 / 0.193 / 42.2 | 0.76 / 0.095 / 10.7 | 0.29 / 0.176 / 237.1 | 0.69 / 0.090 / 17.2 | 0.66 / 0.114 / 62.2 | 0.32 / 0.084 / 55.4 |
+| Certified | 0.65 / 0.022 / 8.5 | 0.48 / 0.001 / 3.7 | 0.69 / 0.025 / 4.2 | 0.58 / 0.025 / 12.7 | 0.66 / 0.016 / 11.2 | 0.54 / 0.015 / 33.1 | 0.20 / 0.013 / 52.5 |
+| CPC-HMM +TCEmin (cũ) | 0.66 / 0.008 / 6.4 | 0.49 / 0.000 / 3.7 | 0.75 / 0.018 / 3.9 | 0.57 / 0.002 / 13.0 | 0.70 / 0.013 / 12.5 | 0.59 / 0.008 / 33.7 | 0.21 / 0.010 / 59.1 |
+| CPC-HMM (không TCE) | 0.72 / 0.042 / 11.3 | 0.64 / 0.005 / 7.9 | 0.85 / 0.058 / 7.1 | 0.68 / 0.008 / 15.3 | 0.82 / 0.067 / 13.1 | 0.71 / 0.047 / 43.5 | 0.36 / 0.055 / 51.6 |
+| CPC-HMM +CS | 0.67 / 0.002 / 5.0 | 0.55 / 0.000 / 4.6 | 0.77 / 0.005 / 4.7 | 0.64 / 0.000 / 9.6 | 0.72 / 0.000 / 11.1 | 0.62 / 0.001 / 30.1 | 0.31 / 0.000 / 52.2 |
+| **CPC-SC+CS (đề xuất)** | 0.66 / 0.001 / 5.1 | 0.54 / 0.000 / 4.6 | 0.73 / 0.002 / 3.8 | 0.64 / 0.000 / 9.6 | 0.71 / 0.000 / 11.6 | 0.60 / 0.000 / 30.8 | 0.30 / 0.000 / 53.1 |
+| Oracle | 0.88 / – / 2.1 | 0.72 / – / 2.2 | 0.94 / – / 3.0 | 0.67 / – / 4.8 | 0.91 / – / 8.3 | 0.84 / – / 19.4 | 0.73 / – / 16.5 |
 
 ### Recall ở cùng mức báo sai (đường cong vận hành)
 
@@ -140,19 +142,57 @@ vi phạm, vai trò trong khung có bảo đảm, và bằng chứng đường c
 | CPC-SC+CS(alpha=0.01) | 0.64 / 0.001 / 5.3 | 0.49 / 0.000 / 4.1 | 0.00 / 0.000 / 4.0 | 0.63 / 0.000 / 11.7 | 0.00 / 0.000 / 37.4 | 0.19 / 0.000 / 76.7 | 0.18 / 0.000 / 75.1 |
 | CPC-SC+CS(alpha=0.1) | 0.66 / 0.004 / 5.3 | 0.54 / 0.000 / 4.6 | 0.69 / 0.002 / 4.0 | 0.64 / 0.000 / 11.6 | 0.71 / 0.000 / 11.8 | 0.58 / 0.000 / 32.2 | 0.31 / 0.000 / 52.7 |
 
+### Độ bền: điểm vận hành mặc định khi bản đồ khuyết 10 % block (cùng hằng số)
+
+Ô: recall / segFAR / sai số điều hướng trung bình (m); trung bình trên các run (6 descriptor × số seed; NCLT không có lỗ tổng hợp nên 1 seed). Số run: Boreas 18, CMU 18, Nordland 18, 4S office 18, 4S old town 18, 4S countryside 18.
+
+| Luật | Boreas | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|
+| Xu'21 HMM off-map (nhãn) | 0.77 / 0.076 / 19.9 | 0.70 / 0.047 / 5.6 | 0.75 / 0.027 / 29.3 | 0.73 / 0.145 / 12.4 | 0.65 / 0.072 / 37.5 | 0.28 / 0.093 / 60.1 |
+| Claxton'24 MLP (nhãn) | 0.79 / 0.218 / 33.8 | 0.89 / 0.266 / 10.5 | 0.55 / 0.517 / 66.7 | 0.81 / 0.211 / 17.4 | 0.75 / 0.257 / 85.2 | 0.62 / 0.260 / 37.6 |
+| Ngưỡng max-sim (nhãn) | 0.65 / 0.084 / 12.2 | 0.71 / 0.083 / 7.4 | 0.29 / 0.246 / 200.2 | 0.70 / 0.113 / 13.2 | 0.67 / 0.125 / 54.5 | 0.34 / 0.093 / 54.9 |
+| Certified | 0.65 / 0.029 / 4.4 | 0.72 / 0.032 / 3.2 | 0.57 / 0.014 / 8.9 | 0.68 / 0.022 / 9.1 | 0.57 / 0.017 / 25.8 | 0.18 / 0.004 / 54.1 |
+| CPC-HMM +TCEmin (cũ) | 0.65 / 0.007 / 4.8 | 0.74 / 0.012 / 3.0 | 0.56 / 0.000 / 13.0 | 0.70 / 0.013 / 12.0 | 0.60 / 0.007 / 28.5 | 0.20 / 0.003 / 55.9 |
+| CPC-HMM (không TCE) | 0.72 / 0.030 / 5.3 | 0.86 / 0.084 / 4.3 | 0.68 / 0.003 / 12.3 | 0.79 / 0.048 / 10.3 | 0.72 / 0.030 / 31.8 | 0.36 / 0.054 / 47.7 |
+| CPC-HMM +CS | 0.70 / 0.000 / 4.3 | 0.79 / 0.006 / 3.4 | 0.65 / 0.000 / 10.7 | 0.73 / 0.000 / 9.3 | 0.66 / 0.000 / 25.1 | 0.33 / 0.000 / 49.0 |
+| **CPC-SC+CS (đề xuất)** | 0.69 / 0.000 / 4.4 | 0.76 / 0.001 / 3.0 | 0.65 / 0.000 / 10.7 | 0.72 / 0.000 / 9.5 | 0.64 / 0.000 / 26.0 | 0.31 / 0.000 / 50.4 |
+| Oracle | 0.88 / – / 1.8 | 0.94 / – / 2.7 | 0.66 / – / 4.3 | 0.90 / – / 6.3 | 0.84 / – / 15.9 | 0.74 / – / 14.2 |
+
+### Độ bền: điểm vận hành mặc định khi bản đồ khuyết 50 % block (cùng hằng số)
+
+Ô: recall / segFAR / sai số điều hướng trung bình (m); trung bình trên các run (6 descriptor × số seed; NCLT không có lỗ tổng hợp nên 1 seed). Số run: Boreas 18, CMU 18, Nordland 18, 4S office 18, 4S old town 18, 4S countryside 18.
+
+| Luật | Boreas | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|
+| Xu'21 HMM off-map (nhãn) | 0.71 / 0.027 / 32.1 | 0.57 / 0.080 / 21.9 | 0.75 / 0.037 / 121.5 | 0.79 / 0.381 / 56.0 | 0.56 / 0.029 / 98.8 | 0.27 / 0.221 / 156.2 |
+| Claxton'24 MLP (nhãn) | 0.72 / 0.064 / 34.5 | 0.80 / 0.070 / 16.2 | 0.51 / 0.133 / 89.0 | 0.77 / 0.087 / 24.9 | 0.71 / 0.090 / 134.2 | 0.57 / 0.099 / 47.9 |
+| Ngưỡng max-sim (nhãn) | 0.64 / 0.074 / 28.1 | 0.75 / 0.079 / 24.3 | 0.36 / 0.170 / 266.8 | 0.69 / 0.078 / 25.1 | 0.66 / 0.107 / 139.6 | 0.38 / 0.075 / 59.9 |
+| Certified | 0.64 / 0.008 / 6.9 | 0.60 / 0.031 / 7.6 | 0.60 / 0.015 / 21.1 | 0.69 / 0.033 / 15.7 | 0.49 / 0.006 / 52.0 | 0.16 / 0.030 / 65.3 |
+| CPC-HMM +TCEmin (cũ) | 0.63 / 0.002 / 5.9 | 0.63 / 0.017 / 6.3 | 0.59 / 0.002 / 18.4 | 0.70 / 0.023 / 16.8 | 0.54 / 0.004 / 50.3 | 0.17 / 0.032 / 73.0 |
+| CPC-HMM (không TCE) | 0.72 / 0.026 / 15.8 | 0.76 / 0.086 / 23.0 | 0.73 / 0.009 / 28.4 | 0.81 / 0.068 / 21.5 | 0.70 / 0.035 / 79.3 | 0.34 / 0.161 / 73.0 |
+| CPC-HMM +CS | 0.62 / 0.001 / 5.9 | 0.66 / 0.023 / 12.4 | 0.67 / 0.000 / 13.7 | 0.70 / 0.000 / 15.5 | 0.60 / 0.000 / 39.9 | 0.26 / 0.002 / 58.9 |
+| **CPC-SC+CS (đề xuất)** | 0.60 / 0.000 / 5.8 | 0.61 / 0.012 / 6.9 | 0.67 / 0.000 / 13.7 | 0.70 / 0.000 / 15.5 | 0.57 / 0.000 / 41.0 | 0.25 / 0.001 / 59.5 |
+| Oracle | 0.89 / – / 2.5 | 0.90 / – / 3.3 | 0.69 / – / 8.0 | 0.91 / – / 12.0 | 0.85 / – / 31.8 | 0.73 / – / 23.6 |
+
 
 ## 6. Trả lời phản biện
 
 1. **Không chỉ thận trọng hơn.** Ở cùng mức báo sai FL ≤ 1 %, CPC-SC+CS bắt được nhiều fix đúng hơn Xu'21 trên 7/7
    dataset và hơn Claxton'24 (dùng nhãn) trên 6/7; đặt tại đúng FL của Xu'21, recall cao hơn trên 5/7 và sai số thấp hơn
-   trên 6/7. Ở điểm mặc định, so với phương pháp cũ (TCEmin): recall cao hơn trên NCLT / Nordland / countryside (+0.05 /
-   +0.08 / +0.07), ngang trên 4S office, thấp hơn ≤ 0.02 trên Boreas / CMU / old town; segFAR thấp hơn trên 6/7 (NCLT cùng
-   0); sai số thấp hơn trên 5/7. segFAR ≈ 0 ở mọi dataset, trong khi baseline dùng nhãn vi phạm (0.02–0.28).
-2. **Phản biện đúng một phần với phương pháp cũ**: so với CPC-HMM, TCEmin là điểm thận trọng hơn trên một đường cong kém
+   trên 6/7. Ở điểm mặc định (10 seed, 366 run), so với phương pháp cũ (TCEmin): recall cao hơn trên 5/7 (NCLT +0.05,
+   Nordland +0.07, countryside +0.09, office/old town +0.01), bằng trên Boreas, thấp hơn 0.02 trên CMU; segFAR thấp hơn
+   hoặc bằng trên 7/7; sai số thấp hơn trên 6/7 (NCLT +0.9 m). segFAR tệ nhất trong **từng run** là 0.021 (mọi run dưới
+   α = 0.05), trong khi TCEmin tới 0.171 và Xu'21 tới 1.0; so với Xu'21 sai số thấp hơn 1.5–6.2× trên 7/7.
+2. **Tổng quát, không tune theo dataset:** cùng một bộ hằng số (đơn vị excl, H, α) cho 7 dataset, 6 descriptor, 3 tỷ lệ
+   lỗ bản đồ (10/30/50 %) và off-map tự nhiên (NCLT); segFAR trung bình ≤ 0.012 ở mọi cấu hình; chọn leave-one-dataset-out
+   ổn định (6/7 fold).
+3. **Phản biện đúng một phần với phương pháp cũ**: so với CPC-HMM, TCEmin là điểm thận trọng hơn trên một đường cong kém
    hơn; phép min với TCE đã được thay bằng hiệu chuẩn ngưỡng khởi phát và quy tắc dừng CS.
 
 ## 7. Hạn chế (giữ nguyên, không che)
 
+- **Ở điểm mặc định, recall vẫn thấp hơn Xu'21 trên 4/7 dataset** (Nordland −0.10, Boreas/old town −0.02, office −0.01),
+  dù sai số thấp hơn 1.5–6.2× và Xu'21 vi phạm segFAR; ở cùng FL thì đường cong của đề xuất cao hơn (mục 6).
 - **CMU (descriptor mạnh, dữ liệu dễ):** Claxton'24 và cả điểm max-sim thô xếp hạng tốt hơn mọi chuỗi hiện diện; ở FL
   của Xu'21 recall của đề xuất thấp hơn 0.04.
 - **Vùng FL cao (3–8 %):** Claxton'24 có recall cao hơn trên 5/7 dataset — nhưng ở đó segFAR của nó 0.11–0.27.

@@ -1,6 +1,6 @@
 """Tables for the report answering "is the method only more conservative?" (RESEARCH_LOG Entry 25).
 Reads oc_curves.py outputs (curves + default points of every rule, --variants --cs-sens) and oc_matched.py outputs.
-Usage: build_oc_report.py <oc_dir> <matched_dir> [--drop10 <oc_dir>] [--drop50 <oc_dir>]
+Usage: build_oc_report.py <oc_dir> <matched_dir> [--s39 <oc_dir of seeds 3-9>] [--drop10 <oc_dir>] [--drop50 <oc_dir>]
   -> paper/oc_tables.md and paper/BAO_CAO_PhanBien.md (= paper/phanbien_text.md with the tables at {{TABLES}});
      PDF: python3 automation/md2pdf.py paper/BAO_CAO_PhanBien.md paper/BAO_CAO_PhanBien.pdf"""
 import sys, os, json, glob
@@ -31,7 +31,8 @@ def mean_def(runs, fam, key):
 
 
 def table_defaults(R, title):
-    L = [f"### {title}\n", "Ô: recall / segFAR / sai số điều hướng trung bình (m); trung bình 6 descriptor × 3 seed (NCLT: × 1).\n",
+    L = [f"### {title}\n", "Ô: recall / segFAR / sai số điều hướng trung bình (m); trung bình trên các run (6 descriptor × số seed; "
+         "NCLT không có lỗ tổng hợp nên 1 seed). Số run: " + ", ".join(f"{NAME[d]} {len(R[d])}" for d in ORDER if d in R) + ".\n",
          "| Luật | " + " | ".join(NAME[d] for d in ORDER if d in R) + " |", "|---" * (1 + sum(d in R for d in ORDER)) + "|"]
     for fam, lab in [x for x in RULES if x[0] != "SafeVPR"] + [("oracle", "Oracle")]:   # SafeVPR: curve only (no default in the cache)
         cells = []
@@ -117,14 +118,19 @@ def table_sens(R):
 
 def main():
     R = load(sys.argv[1]); L = []
-    L += table_defaults(R, "Điểm vận hành mặc định (bản đồ khuyết 30 % block)"); L.append("")
+    if "--s39" in sys.argv:                                   # seeds 3-9 (default points only): 10-seed default table
+        R10 = {d: list(v) for d, v in R.items()}
+        for d, v in load(sys.argv[sys.argv.index("--s39") + 1]).items(): R10[d] = R10.get(d, []) + v
+        L += table_defaults(R10, "Điểm vận hành mặc định, 10 seed (bản đồ khuyết 30 % block)"); L.append("")
+    else:
+        L += table_defaults(R, "Điểm vận hành mặc định (bản đồ khuyết 30 % block)"); L.append("")
     L += table_matched_fl(R); L.append("")
     L += table_paired(sys.argv[2]); L.append("")
     L += table_sens(R); L.append("")
     for tag in ("--drop10", "--drop50"):
         if tag in sys.argv:
             Rd = load(sys.argv[sys.argv.index(tag) + 1])
-            L += table_defaults(Rd, f"Điểm vận hành mặc định, bản đồ khuyết {tag[-2:]} % block"); L.append("")
+            L += table_defaults(Rd, f"Độ bền: điểm vận hành mặc định khi bản đồ khuyết {tag[-2:]} % block (cùng hằng số)"); L.append("")
     here = os.path.dirname(os.path.abspath(__file__)); out = os.path.join(here, "oc_tables.md")
     open(out, "w").write("\n".join(L) + "\n"); print("\n".join(L))
     txt = open(os.path.join(here, "phanbien_text.md")).read().replace("{{TABLES}}", "\n".join(L))   # report = prose + tables

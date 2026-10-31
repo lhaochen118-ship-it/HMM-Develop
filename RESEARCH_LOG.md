@@ -109,17 +109,29 @@ null segments for small alpha (a limitation to report).
 
 | | CMU | Nordland | 4S office | 4S old town | 4S countryside | Boreas |
 |---|---|---|---|---|---|---|
-| 10 %: Xu'21 (labels) | 0.70/0.047/5.6 | 0.75/0.027/29.3 | 0.73/0.145/12.4 | 0.65/0.072/37.5 | 0.28/0.093/60.1 | (running) |
-| 10 %: TCEmin | 0.74/0.012/3.0 | 0.56/0.000/13.0 | 0.70/0.013/12.0 | 0.60/0.007/28.5 | 0.20/0.003/55.9 | |
-| 10 %: CPC-SC+CS | 0.76/0.001/3.0 | 0.65/0.000/10.7 | 0.72/0.000/9.5 | 0.64/0.000/26.0 | 0.31/0.000/50.4 | |
+| 10 %: Xu'21 (labels) | 0.70/0.047/5.6 | 0.75/0.027/29.3 | 0.73/0.145/12.4 | 0.65/0.072/37.5 | 0.28/0.093/60.1 | 0.77/0.076/19.9 |
+| 10 %: TCEmin | 0.74/0.012/3.0 | 0.56/0.000/13.0 | 0.70/0.013/12.0 | 0.60/0.007/28.5 | 0.20/0.003/55.9 | 0.65/0.007/4.8 |
+| 10 %: CPC-SC+CS | 0.76/0.001/3.0 | 0.65/0.000/10.7 | 0.72/0.000/9.5 | 0.64/0.000/26.0 | 0.31/0.000/50.4 | 0.69/0.000/4.4 |
 | 50 %: Xu'21 (labels) | 0.57/0.080/21.9 | 0.75/0.037/121.5 | 0.79/0.381/56.0 | 0.56/0.029/98.8 | 0.27/0.221/156.2 | 0.71/0.027/32.1 |
 | 50 %: TCEmin | 0.63/0.017/6.3 | 0.59/0.002/18.4 | 0.70/0.023/16.8 | 0.54/0.004/50.3 | 0.17/0.032/73.0 | 0.63/0.002/5.9 |
 | 50 %: CPC-SC+CS | 0.61/0.012/6.9 | 0.67/0.000/13.7 | 0.70/0.000/15.5 | 0.57/0.000/41.0 | 0.25/0.001/59.5 | 0.60/0.000/5.8 |
 
-segFAR <= 0.012 at every hole ratio; error below Xu'21 everywhere (10 %: 1.2-2.7x, 50 %: 2.4-8.9x); against TCEmin higher recall at 10 %
-on 5/5, at 50 % higher on Nordland / old town / countryside and lower on Boreas / CMU (-0.03 / -0.02). The first
+segFAR <= 0.012 at every hole ratio; error below Xu'21 everywhere (10 %: 1.2-4.5x, 50 %: 2.4-8.9x); against TCEmin higher recall at 10 %
+on 6/6, at 50 % higher on Nordland / old town / countryside and lower on Boreas / CMU (-0.03 / -0.02). The first
 10 / 50 % runs silently used 30 % holes (hmm_fix strips --drop at import, fixed); 3 Boreas jobs at 10 % were killed
-by memory (two 8448-d descriptors per T4 session) and are rerun one per session.
+by memory (two 8448-d descriptors per T4 session) and were rerun one per session.
+
+**10 seeds (seeds 3-9 added; default points; 60 runs per dataset, NCLT 6; 366 runs).** recall / segFAR / error m:
+
+| rule | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| Xu'21 (labels) | 0.68/0.043/25.3 | 0.53/0.021/13.7 | 0.69/0.227/18.1 | 0.74/0.038/59.3 | 0.72/0.215/21.2 | 0.62/0.101/70.9 | 0.25/0.088/81.0 |
+| TCEmin | 0.66/0.008/6.4 | 0.49/0.000/3.7 | 0.75/0.018/3.9 | 0.57/0.002/13.0 | 0.70/0.013/12.5 | 0.59/0.008/33.7 | 0.21/0.010/59.1 |
+| CPC-SC+CS | 0.66/0.001/5.1 | 0.54/0.000/4.6 | 0.73/0.002/3.8 | 0.64/0.000/9.6 | 0.71/0.000/11.6 | 0.60/0.000/30.8 | 0.30/0.000/53.1 |
+
+Worst single-run segFAR of CPC-SC+CS: 0.021 (all 366 runs below alpha = 0.05); TCEmin up to 0.171, Xu'21 up to 1.0.
+Against TCEmin: recall higher on 5/7 (CMU -0.02, Boreas equal), segFAR lower or equal on 7/7, error lower on 6/7 (NCLT
++0.9 m). Against Xu'21: error 1.5-6.2x lower on 7/7; recall higher on 3/7, lower on 4/7 (Nordland -0.10, others <= 0.02).
 
 **Joint calibration of presence AND CS on the map null (`cpc_sc.cs_cal`, null place chain `est_n`): negative.** The
 null replay passes CS 2.6x more often than real off-map queries (CMU CosPlace: 0.229 vs 0.088; exact map odometry and
