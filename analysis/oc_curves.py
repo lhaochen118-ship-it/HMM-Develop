@@ -25,33 +25,15 @@ import nav_rules as NR
 
 from hmm_fix import beta_em
 import pcr as PCR
+from cpc_sc import logodds, hyst, sc_evidence, consistency_ok
 
 NAV_PTS = int(sys.argv[sys.argv.index("--nav-pts") + 1]) if "--nav-pts" in sys.argv else 14
 VARIANTS = "--variants" in sys.argv               # also the candidate fixes (TCE on R only, hysteresis, CPC-SC)
 DEFAULTS_ONLY = "--defaults-only" in sys.argv     # only the default operating points (fast screening of variants)
+CS_SENS = "--cs-sens" in sys.argv                 # one-at-a-time sensitivity of the CS constants (span, threshold) for CPC-HMM+CS
 JOBS = int(sys.argv[sys.argv.index("--jobs") + 1]) if "--jobs" in sys.argv else 4
 OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}   # map coverage radius (sc_eval CFG off_d)
 N_PTS = 48                                       # thresholds per curve (quantiles of the score + the default threshold)
-
-
-def logodds(ll, seqs, p_in=0.01, p_out=0.01):
-    """presence log-odds (cpc_presence recursion) for per-frame log LR `ll`"""
-    lo = np.zeros(len(ll))
-    for idx in seqs:
-        pon = 0.5
-        for i, t in enumerate(idx):
-            pr = pon * (1 - p_out) + (1 - pon) * p_in if i > 0 else 0.5
-            l = float(np.clip(np.log(pr / (1 - pr)) + ll[t], -50, 50)); pon = 1 / (1 + np.exp(-l)); lo[t] = l
-    return lo
-
-
-def hyst(lo, seqs, on_thr, keep_thr):
-    """report from the frame the log-odds exceeds on_thr (onset) while it stays above keep_thr (Schmitt trigger)"""
-    acc = np.zeros(len(lo), bool); on_thr, keep_thr = np.broadcast_to(on_thr, lo.shape), np.broadcast_to(keep_thr, lo.shape)
-    for idx in seqs:
-        rep = False
-        for t in idx: rep = lo[t] > (keep_thr[t] if rep else on_thr[t]); acc[t] = rep
-    return acc
 
 
 def hyst2(start, keep, seqs):
@@ -63,58 +45,43 @@ def hyst2(start, keep, seqs):
     return acc
 
 
-def sc_evidence(z, b, alpha=0.05, p_in=0.01, p_out=0.01):
-    """CPC-SC: CPC-HMM presence chain + SEGMENT-CALIBRATED ONSET threshold (label-free).
-    Query and null use the SAME statistics so that they are exchangeable: the top-1 SelfCal p-value of the half-map test
-    (p_q for queries, p_n for the held-out map frames), the anchored R p-value (pR, pRn), and per query condition the
-    calibrators a1 = Beta-EM of p_q, a2 = Beta-EM of pR. Per frame LR = 1/2 (e~_top + e_R^(1/H)), gated as CPC-HMM; the
-    null uses max(e_top, a1) >= any gated value. kappa (per condition) = conformal (1 - alpha) quantile of the MAX
-    presence log-odds over disjoint H-frame segments of the map self-replay null, the chain started at odds 1 (the most a
-    non-reporting chain holds; log-odds are monotone in the initial odds). Decision: start reporting when the log-odds
-    exceed kappa, keep reporting while they exceed 0. If the query off-map segments are exchangeable with the null
-    segments, a segment entered while not reporting contains a report with probability <= alpha, for ANY dependence
-    inside the segment (as `certified`). Returns (query log-odds, kappa per frame)."""
+def windowed_logodds(ll, seqs, W, p_in=0.01, p_out=0.01):
+    """presence log-odds over the LAST W frames only (chain restarted at odds 1 at t-W+1): finite memory, so a report can
+    outlive the evidence that started it by at most W-1 frames. Vectorised over t; sequences are front-padded with W-1
+    neutral frames (log LR 0 keeps odds 1 when p_in = p_out), i.e. a short history starts at odds 1 at the first frame."""
+    out = np.zeros(len(ll))
+    g = lambda x: np.log((1 / (1 + np.exp(-x)) * (1 - p_out) + (1 - 1 / (1 + np.exp(-x))) * p_in) /
+                         (1 - (1 / (1 + np.exp(-x)) * (1 - p_out) + (1 - 1 / (1 + np.exp(-x))) * p_in)))
+    for idx in seqs:
+        v = np.r_[np.zeros(W - 1), ll[idx]]; L = len(idx); x = v[:L].copy()
+        for j in range(1, W): x = np.clip(g(x) + v[j:j + L], -50, 50)
+        out[idx] = x
+    return out
+
+
+def wcpc(z, b, W, alpha=0.05):
+    """W-CPC: windowed CPC presence log-odds (query/null statistics as sc_evidence) and a per-condition threshold kappa =
+    conformal (1 - alpha) quantile of the MAX windowed log-odds over disjoint H-frame segments of the map self-replay null
+    (windows fully inside the null chunk). Report iff log-odds > kappa: under exchangeability of the query off-map segments
+    lying >= W-1 frames inside an excursion with the null segments, P(report in such a segment) <= alpha for any
+    dependence; reports carried out of the map last at most W-1 frames (finite memory)."""
     H = b["H"]; fl, ln = z["nchunk_flat"], z["nchunk_len"]; nch = np.split(fl, np.cumsum(ln)[:-1]) if len(ln) else []
-    segs = [ch[i:i + H] for ch in nch for i in range(0, len(ch) - H + 1, H)]
     cl = lambda x: np.clip(np.nan_to_num(x, nan=1.0), 1e-6, 1)
     pn, prn, pq, pr = cl(z["p_n"]), cl(z["pRn"]), cl(z["p_q"]), cl(z["pR"])
     MP, est, top = b["MP"], b["est_c"], b["top"]; agree = np.linalg.norm(MP[top] - MP[est], axis=1) <= b["excl"]
-    llq, kap = np.zeros(len(pq)), np.zeros(len(pq))
+    llq = np.zeros(len(pq)); kap = np.zeros(len(pq))
     for cn in sorted(set(z["cond"])):
         m = z["cond"] == cn; a1, _ = beta_em(pq[m]); a2, _ = beta_em(pr[m])
-        et = a1 * pq[m] ** (a1 - 1); llq[m] = np.log(0.5 * (np.where(agree[m], et, a1) + (a2 * pr[m] ** (a2 - 1)) ** (1.0 / H)))
-        ll = np.log(0.5 * (np.maximum(a1 * pn ** (a1 - 1), a1) + (a2 * prn ** (a2 - 1)) ** (1.0 / H)))
+        llq[m] = np.log(0.5 * (np.where(agree[m], a1 * pq[m] ** (a1 - 1), a1) + (a2 * pr[m] ** (a2 - 1)) ** (1.0 / H)))
+        lln = np.log(0.5 * (np.maximum(a1 * pn ** (a1 - 1), a1) + (a2 * prn ** (a2 - 1)) ** (1.0 / H)))
         mx = []
-        for sg in segs:
-            pon, best = 0.5, -np.inf
-            for i, t in enumerate(sg):
-                pr_ = pon * (1 - p_out) + (1 - pon) * p_in if i > 0 else 0.5
-                l = float(np.clip(np.log(pr_ / (1 - pr_)) + ll[t], -50, 50)); pon = 1 / (1 + np.exp(-l)); best = max(best, l)
-            mx.append(best)
+        for ch in nch:
+            if len(ch) < W + H - 1: continue
+            w = windowed_logodds(lln, [ch], W)[ch][W - 1:]
+            mx += [w[i:i + H].max() for i in range(0, len(w) - H + 1, H)]
         mx = np.sort(mx); k = int(np.ceil((1 - alpha) * (len(mx) + 1)))
-        kap[m] = max(mx[k - 1] if k <= len(mx) else np.inf, 0.0)
-    return logodds(llq, b["seqs"], p_in, p_out), kap
-
-
-def consistency_ok(x_m, o_q, seqs, excl, span=3.0):
-    """ODOMETRY-CONSISTENCY of the reported place: False at frame t when, for some lag k whose odometry path stays within
-    span * excl, the travelled distance of the reported place differs from the odometry distance by more than excl:
-        max_k | ||m_t - m_{t-k}|| - ||o_t - o_{t-k}|| | > excl.
-    On the map with correct tracking the MAP moves with the odometry; after leaving the map the place chain (no off-map
-    state) either sticks at the map edge (distance ~0 while the odometry moves) or jumps to a look-alike place (distance
-    >> odometry). Magnitudes only: invariant to the heading drift of the odometry (NCLT). Used only to STOP reports."""
-    ok = np.ones(len(x_m), bool)
-    for idx in seqs:
-        if len(idx) < 2: continue
-        m, o = x_m[idx].astype(float), o_q[idx].astype(float)
-        step = np.linalg.norm(np.diff(o, axis=0), axis=1); K = int(min(len(idx) - 1, np.ceil(span * excl / max(np.median(step), 1e-3))))
-        cum = np.r_[0, np.cumsum(step)]; bad = np.zeros(len(idx), bool)
-        for k in range(1, K + 1):
-            dm = np.linalg.norm(m[k:] - m[:-k], axis=1); do = np.linalg.norm(o[k:] - o[:-k], axis=1)
-            win = (cum[k:] - cum[:-k]) <= span * excl
-            bad[k:] |= win & (np.abs(dm - do) > excl)
-        ok[idx] = ~bad
-    return ok
+        kap[m] = max(mx[k - 1] if 0 < k <= len(mx) else np.inf, 0.0)
+    return windowed_logodds(llq, b["seqs"], W), kap
 
 
 def families(z, b):
@@ -130,10 +97,18 @@ def families(z, b):
         lo_s, kap = sc_evidence(z, b); b["kappa"] = kap
         F["CPC-SC"] = (lo_s - kap, x_c, 0.0, hyst(lo_s, b["seqs"], kap, 0.0))
         F["hyst TCEmin>CPC"] = (None, x_c, None, hyst2(p_t > 0.5, p_c > 0.5, b["seqs"]))
-        for tag, span in (("+CS", 3.0), ("+CSd", OFF_D[b["ds"]] / b["excl"])):
-            cs = consistency_ok(x_c, z["o_q"], b["seqs"], b["excl"], span)
-            for n0 in ("TCEmin", "CPC-HMM", "CPC-SC"):
-                sc0, xf0, t0, a0 = F[n0]; F[n0 + tag] = (np.where(cs, sc0, -np.inf), xf0, t0, a0 & cs)
+        for n0 in ("TCEmin", "CPC-HMM", "CPC-SC"):
+            sc0, xf0, t0, a0 = F[n0]
+            for tag, rep in (("+CS", None), ("+CSr", a0)):
+                cs = consistency_ok(x_c, z["o_q"], b["seqs"], b["excl"], 3.0, rep)
+                F[n0 + tag] = (np.where(cs, sc0, -np.inf), xf0, t0, a0 & cs)
+        for W in (10, 20):
+            lw, kw = wcpc(z, b, W); F[f"W{W}-CPC"] = (lw - kw, x_c, 0.0, lw > kw)
+        if CS_SENS:
+            a0 = F["CPC-HMM"][3]
+            for span, th in ((2.0, 1.0), (4.0, 1.0), (3.0, 0.75), (3.0, 1.25)):
+                cs = consistency_ok(x_c, z["o_q"], b["seqs"], b["excl"], span, None, th)
+                F[f"CPC-HMM+CS(span{span:g},thr{th:g})"] = (None, x_c, None, a0 & cs)
     if "pcr_q" in z.files:                                       # predictive cell-rank evidence (nav_demo --pred)
         agree = np.linalg.norm(MP[top] - x_c, axis=1) <= b["excl"]
         pm, ptc, pmin = PCR.pcr_evalues(z, b["seqs"]); sig = lambda lo: 1 / (1 + np.exp(-lo))

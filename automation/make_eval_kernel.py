@@ -10,7 +10,8 @@ Usage: make_eval_kernel.py <kernel_dir> <slug> "<script> <ds> <desc>;<script> <d
   --acc2/--acc3/--owner <user>: run under another Kaggle account (export KAGGLE_API_TOKEN for both scripts)
   --gpu : T4 kernel, SELFCAL_DEVICE=cuda (PyTorch backend in selfcal.qm_stats); default CPU/numpy.
   script = eval_all.py | exp9_natural.py | ... ; for exp9_natural.py write "exp9_natural.py <desc>" (dumps auto).
-  Any other argument order: put the literal token DUMP where the merged dump directory goes, e.g. "exp10_shiftfix.py salad DUMP".
+  Any other argument order: put the literal token DUMP where the merged dump directory goes, e.g. "exp10_shiftfix.py salad DUMP";
+  CACHE = the mounted directory holding navcache_*.npz (e.g. "oc_curves.py CACHE boreas megaloc --variants").
 """
 import sys, os, json, glob, shutil, subprocess
 
@@ -64,6 +65,7 @@ for meta in [d for d, _, _ in os.walk("/kaggle/input") if os.path.basename(d) ==
 import torch
 print("dump dirs:", {s: len(os.listdir(os.path.join(D, s))) for s in sorted(os.listdir(D))}, "| cpus", os.cpu_count(), "| device", os.environ["SELFCAL_DEVICE"], "| cuda", torch.cuda.is_available(), flush=True)
 NGPU = torch.cuda.device_count()
+CD = next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith("navcache_") for f in fs)), "")   # token CACHE: mounted rule caches
 NW = max(1, min(len(JOBS), (os.cpu_count() or 4) - 1 if NGPU <= 2 else max(NGPU, (os.cpu_count() or 4) // 4)))
 if %d: NW = min(len(JOBS), %d)                                     # --par: explicit parallel width (memory-bound jobs)
 TH = str(max(1, (os.cpu_count() or 4) // NW))                       # BLAS threads per job (no oversubscription)
@@ -71,7 +73,7 @@ def run(ij):
     i, j = ij; script, args = j[0], j[1:]
     env = dict(os.environ, OMP_NUM_THREADS=TH, MKL_NUM_THREADS=TH, OPENBLAS_NUM_THREADS=TH)
     if NGPU and len(JOBS) > 1: env["CUDA_VISIBLE_DEVICES"] = str(i %% NGPU)   # a single job keeps every GPU (multi-GPU scripts)              # spread jobs round-robin over all GPUs of the session
-    if "DUMP" in args: cmd = [sys.executable, script] + [D if a == "DUMP" else a for a in args]
+    if "DUMP" in args or "CACHE" in args: cmd = [sys.executable, script] + [D if a == "DUMP" else CD if a == "CACHE" else a for a in args]
     else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
     t = time.time(); log = os.path.join(C, "logs", "_".join(j).replace(".py", "").replace("/", "-") + ".log")
     r = subprocess.run(cmd, cwd=C, stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)

@@ -7,6 +7,7 @@ import sys, os, json, glob
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import nav_demo as N
+import cpc_sc as CSC
 from hmm_fix import beta_em
 
 A = N.A
@@ -55,6 +56,7 @@ def base_rules(z, b, safevpr=None, ds=None, desc=None):
                      ("CPC-HMM +TCEmin", "post", em), ("CPC-HMM +TCEmin+GG", "ghost", em)):
         p = b["pres"](*xs, gate=g); add(n, p > 0.5, x_cpc, p)
     add("certified (ours)", z["Rq"] > z["thr"], x_fix); add("oracle", z["good"], x_fix)
+    acc_sc, lo_sc, _, _ = CSC.cpc_sc_cs(z, b); add("CPC-SC+CS (ours)", acc_sc, x_cpc, 1 / (1 + np.exp(-lo_sc)))   # Entry 25 rule
     bad_top = z["offm"] | (z["err_top"] > b["excl"])
     add("Claxton24 MLP (labels)", N.claxton_rule(z["srt10"], z["Smean"], z["Sstd"], z["bsel"], z["good"], bad_top, int(z["seed"])), x_fix)
     if safevpr:

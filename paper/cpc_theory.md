@@ -283,6 +283,52 @@ segFAR thực nghiệm của TCEmin là 0.000–0.015 (Nordland, CMU).
 e-detector có bảo đảm dưới phụ thuộc thời gian, ở cả mức ARL₀ và mức đoạn, không cần nhãn. Tài liệu gần nhất là
 conformal e-testing (Vovk 2020) và conformal e-process cho change detection (2026); cả hai giả định quan sát độc lập.
 
+## 3d. "Chỉ thận trọng hơn?" — đánh giá theo đường cong vận hành và quy tắc dừng nhất quán odometry (CS)
+
+*Code: `analysis/oc_curves.py`, `analysis/oc_summary.py` (đường cong), hàm `consistency_ok` (CS), `sc_evidence` (CPC-SC).
+Nhật ký: `RESEARCH_LOG.md` Entry 25.*
+
+**Vì sao điểm mặc định không đủ.** Mỗi luật chấp nhận là "báo khi điểm số s_t vượt ngưỡng θ". Điểm mặc định chỉ là một
+điểm trên đường cong (recall(θ), FL(θ), segFAR(θ), sai số(θ)). Hai luật cùng đường cong nhưng khác θ thì luật có θ cao hơn
+"ít sai hơn nhưng bắt ít hơn" mà không tốt hơn. Vì các tập báo cáo {s_t > θ} lồng nhau, recall, FL và segFAR đơn điệu theo
+θ, nên so sánh được ở **recall khớp** (FL, segFAR, sai số khi mọi luật cùng recall với một luật tham chiếu) và ở **báo sai
+khớp** (recall khi FL = 0.005/0.01/0.02, segFAR = 0.01/0.025/0.05), cùng pAUC = recall trung bình trên FL ∈ [0, 0.05].
+Đây là cách cộng đồng VPR/loop closure so các bộ phát hiện có điểm vận hành khác nhau (đường PR, recall ở 100 %
+precision; Lowry et al. 2016) và là đường risk–coverage của selective prediction (Geifman & El-Yaniv 2017). Nhãn chỉ dùng
+để đánh giá.
+
+**Quy tắc dừng CS.** Gọi m_t là nơi được báo (MAP của chuỗi vị trí), o_t là odometry. Dừng báo ở frame t nếu tồn tại độ trễ k
+với quãng đường odometry giữa t−k và t không quá 3·excl sao cho
+
+> | ‖m_t − m_{t−k}‖ − ‖o_t − o_{t−k}‖ | > excl.
+
+Chỉ dùng độ lớn, nên bất biến với trôi hướng của odometry (NCLT trôi 10–25°).
+
+- **Bổ đề 7 (lọc đơn điệu giữ bảo đảm).** Nếu luật A có segFAR ≤ α (hoặc ARL₀ ≥ B) thì luật A ∧ CS cũng vậy, vì tập báo cáo
+  của A ∧ CS là tập con của A trên mọi đoạn. *Chứng minh:* hiển nhiên từ {báo trong đoạn | A ∧ CS} ⊆ {báo trong đoạn | A}. ∎
+- **Mệnh đề 4 (trễ khi rời bản đồ khi MAP kẹt ở mép).** Giả sử nơi báo luôn là một nơi của bản đồ; robot rời bản đồ sau
+  frame τ (cách bản đồ ≤ in_d); sau đó MAP kẹt trong bán kính δ quanh m_τ (δ = khoảng cách giữa hai nơi liền kề của bản đồ,
+  vài mét); sai số độ lớn của odometry trên quãng ≤ 3·excl không quá ε; và robot ra tới khoảng cách off_d trước khi đi quá
+  3·excl kể từ τ. Nếu excl + in_d + ε + δ < off_d thì không có báo cáo nào ở frame cách bản đồ hơn off_d (frame off-map) cho
+  tới khi MAP rời khỏi bán kính δ đó. *Chứng minh:* tại frame off-map t, dist(x_t, bản đồ) ≤ ‖x_t − x_τ‖ + in_d nên
+  ‖x_t − x_τ‖ > off_d − in_d, do đó ‖o_t − o_τ‖ > off_d − in_d − ε > excl + δ ≥ excl + ‖m_t − m_τ‖; độ trễ k = t − τ nằm
+  trong cửa sổ theo giả định nên CS dừng báo. Ở các frame sau, các độ trễ có quãng odometry trong (excl + δ, 3·excl] vẫn vi
+  phạm chừng nào MAP còn kẹt. ∎ Biên δ, ε: Boreas/CMU/4S cần ε + δ < 10 m (40 − 25 − 5), NCLT < 7 m, Nordland < 4.5 frame.
+- **Không bảo đảm** cho aliasing kết hợp song song (MAP trượt trên một đường giống, cùng tốc độ odometry): trường hợp này
+  vẫn do bằng chứng hiện diện xử lý (TCEmin hoặc ngưỡng khởi phát hiệu chuẩn theo đoạn).
+
+**CPC-SC (ngưỡng khởi phát hiệu chuẩn theo đoạn).** Chuỗi CPC-HMM giữ nguyên (xếp hạng tốt hơn TCEmin), chỉ hiệu chuẩn
+ngưỡng *khởi phát* κ = phân vị conformal (1−α) của max log-odds trên các đoạn H frame của null tự-phát-lại của bản đồ,
+chuỗi khởi đầu ở odds 1 (log-odds đơn điệu theo odds ban đầu). Query dùng cùng thống kê với null (p-value SelfCal nửa bản
+đồ p_q, p^R, cùng calibrator của điều kiện), nên dưới exchangeability của các đoạn off-map với đoạn null: một đoạn được
+đi vào khi không báo chứa khởi phát báo với xác suất ≤ α, với mọi phụ thuộc trong đoạn (như certified). Thực nghiệm (Boreas
+seed 0–2): tỷ lệ đoạn có khởi phát sai 0.010–0.041 ≤ α, đúng như định lý; vi phạm segFAR còn lại đến từ báo cáo **kéo
+dài** (carried), đúng phần CS xử lý.
+
+**Định vị.** Kiểm tra nhất quán với odometry để loại loop closure sai đã có (RRR, Latif et al. IJRR 2013; ràng buộc chuỗi
+vận tốc của SeqSLAM, Milford & Wyeth 2012), nên CS **không mới** tự thân. Phần đóng góp là vai trò của nó trong khung có bảo
+đảm (Bổ đề 7, Mệnh đề 4) và chẩn đoán cho thấy nó nhắm đúng nguồn vi phạm còn lại.
+
 ## 4. Định vị so với công trình gần nhất
 
 | | Bằng chứng on/off | Cần mô hình hoặc nhãn | Bảo đảm |

@@ -12,6 +12,8 @@ import sys, os, json, glob
 import numpy as np
 
 REF = sys.argv[sys.argv.index("--ref") + 1] if "--ref" in sys.argv else "Xu21"
+RULES = sys.argv[sys.argv.index("--rules") + 1].split(",") if "--rules" in sys.argv else None     # rows to print
+OURS = sys.argv[sys.argv.index("--ours") + 1].split(",") if "--ours" in sys.argv else ["CPC-HMM+CS", "TCEmin"]
 MD = sys.argv[sys.argv.index("--md") + 1] if "--md" in sys.argv else None
 FLS, SEGS = (0.005, 0.01, 0.02), (0.01, 0.025, 0.05)
 
@@ -60,6 +62,25 @@ def summarize(rdir):
     return rows
 
 
+def pairwise(rdir, ours, base):
+    """per run: does `ours` beat `base` when operated at base's default recall (lower FL / segFAR / error), and at
+    matched FL (higher recall)? returns per-dataset means of the paired differences"""
+    out = {}
+    for f in sorted(glob.glob(os.path.join(rdir, "oc_*.json"))):
+        d = json.load(open(f))
+        for run in d["runs"].values():
+            F = run["families"]
+            if ours not in F or base not in F or "default" not in F[base] or not F[ours]["curve"]: continue
+            bd, cv = F[base]["default"], F[ours]["curve"]
+            r = {"d_FL@base_recall": interp_at(cv, "recall", bd["recall"], "FL") - bd["FL"],
+                 "d_segFAR@base_recall": interp_at(cv, "recall", bd["recall"], "seg_FAR") - bd["seg_FAR"],
+                 "d_err@base_recall": interp_at(cv, "recall", bd["recall"], "err_mean", nav_only=True) - bd["err_mean"],
+                 "d_recall@base_FL": recall_at(cv, "FL", bd["FL"]) - bd["recall"]}
+            out.setdefault(d["ds"], []).append(r)
+    return {ds: {k: (float(np.nanmean([r[k] for r in rs])), int(np.sum([r[k] < 0 if "recall" not in k else r[k] > 0 for r in rs])), len(rs))
+                 for k in rs[0]} for ds, rs in out.items()}
+
+
 def main():
     rows = summarize(sys.argv[1]); lines = []
     keys = ["def_recall", "def_FL", "def_seg_FAR", "def_err_mean", "FL@refrecall", "seg_FAR@refrecall", "precision@refrecall", "err@refrecall",
@@ -69,9 +90,20 @@ def main():
         lines.append(f"\n### {ds}  (reference recall = {REF} default)\n")
         lines.append("| rule | " + " | ".join(keys) + " |"); lines.append("|---" * (len(keys) + 1) + "|")
         for name, rs in fams.items():
+            if RULES and name not in RULES and name != "oracle": continue
             m = {k: float(np.nanmean([r[k] for r in rs if k in r])) if any(k in r for r in rs) else float("nan") for k in keys}
             agg.setdefault(ds, {})[name] = dict(m, n=len(rs))
             lines.append(f"| {name} | " + " | ".join("" if np.isnan(m[k]) else (f"{m[k]:.1f}" if "err" in k else f"{m[k]:.3f}") for k in keys) + " |")
+    bases = sorted({n for fams in rows.values() for n in fams} - set(OURS) - {"oracle"})
+    for o in OURS:
+        lines.append(f"\n### Paired: {o} operated at each baseline's default point (mean difference; wins / runs)\n")
+        lines.append("| dataset | baseline | dFL @ base recall | dsegFAR @ base recall | derr @ base recall | drecall @ base FL |")
+        lines.append("|---|---|---|---|---|---|")
+        for bname in bases:
+            if RULES and bname not in RULES: continue
+            for ds, m in pairwise(sys.argv[1], o, bname).items():
+                cell = lambda k: f"{m[k][0]:+.3f} ({m[k][1]}/{m[k][2]})" if "err" not in k else f"{m[k][0]:+.1f} ({m[k][1]}/{m[k][2]})"
+                lines.append(f"| {ds} | {bname} | " + " | ".join(cell(k) for k in ("d_FL@base_recall", "d_segFAR@base_recall", "d_err@base_recall", "d_recall@base_FL")) + " |")
     txt = "\n".join(lines); print(txt)
     if MD:
         open(MD, "w").write(txt + "\n"); json.dump(agg, open(MD.rsplit(".", 1)[0] + ".json", "w"), indent=1)
