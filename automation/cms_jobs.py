@@ -14,7 +14,12 @@ for f in glob.glob(os.path.join(cdir, "navcache_*.npz")):
     if ds == "4s_office": ds, desc = "4s_office_loop", desc
     if "office_loop" in base: ds, desc = "4s_office_loop", base.rsplit("_", 1)[1]
     ds_arg = ds.replace("4s_", "4s:", 1) if ds.startswith("4s_") else ds
-    jobs.append((NFR[ds], f"{SCRIPT} CACHE TOPK {ds_arg} {desc} --seeds {seed} --jobs 1 {EXTRA}".strip()))
+    if SCRIPT == "oc_curves.py":                     # Entry 28 evaluation: curves on seeds 0-2, default points on 3-9
+        cur = int(seed) <= 2
+        jobs.append((NFR[ds] * (3 if cur else 1), f"oc_curves.py CACHE {ds_arg} {desc} --seeds {seed} --jobs 1 --out-suffix _s{seed} "
+                     f"{'' if cur else '--defaults-only '}{EXTRA}".strip()))
+    else:
+        jobs.append((NFR[ds], f"{SCRIPT} CACHE TOPK {ds_arg} {desc} --seeds {seed} --jobs 1 {EXTRA}".strip()))
 jobs.sort(key=lambda x: -x[0]); load = np.zeros(nk); groups = [[] for _ in range(nk)]
 for w, j in jobs:
     k = int(np.argmin(load)); groups[k].append(j); load[k] += w / nw

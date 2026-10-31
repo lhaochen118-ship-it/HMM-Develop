@@ -50,7 +50,8 @@ SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if 
 CMSD = sys.argv[sys.argv.index("--cms") + 1] if "--cms" in sys.argv else None   # dir of cms_<ds>_<desc>_s<seed>.npz (cms_dump.py) -> CMS families (Entry 28)
 LIGHT = "--light" in sys.argv                     # with --variants: only CPC-SC / CPC-SC+CS (skip the other Entry 22-25 variants)
 CMS_GROUPS = sys.argv[sys.argv.index("--cms-groups") + 1].split(",") if "--cms-groups" in sys.argv else ["cond"]   # calibration units
-CMS_ALPHA = float(sys.argv[sys.argv.index("--cms-alpha") + 1]) if "--cms-alpha" in sys.argv else 0.05
+CMS_ALPHAS = [float(x) for x in sys.argv[sys.argv.index("--cms-alpha") + 1].split(",")] if "--cms-alpha" in sys.argv else [0.05]
+OUT_SFX = sys.argv[sys.argv.index("--out-suffix") + 1] if "--out-suffix" in sys.argv else ""   # results/oc_<ds>_<desc><sfx>.json
 N_PTS = 48                                       # thresholds per curve (quantiles of the score + the default threshold)
 
 
@@ -203,9 +204,11 @@ def families(z, b):
     cmf = os.path.join(CMSD, f"cms_{b['ds_tag']}_s{int(z['seed'])}.npz") if CMSD else None
     if cmf and os.path.exists(cmf):                              # Entry 28: counterfactual map surgery (cms.py)
         import cms as CMS
-        for grp in CMS_GROUPS:
-            CMS.GROUP = grp; Fc, _ = CMS.rules(z, b, dict(np.load(cmf)), alpha=CMS_ALPHA)
-            F.update({k + ("" if grp == "cond" else "[run]") + ("" if CMS_ALPHA == 0.05 else f"(a={CMS_ALPHA:g})"): v for k, v in Fc.items()})
+        stc = dict(np.load(cmf))
+        for al in CMS_ALPHAS:
+            for grp in CMS_GROUPS:
+                CMS.GROUP = grp; Fc, _ = CMS.rules(z, b, stc, alpha=al)
+                F.update({k + ("" if grp == "cond" else f"[{grp}]") + ("" if al == 0.05 else f"(a={al:g})"): v for k, v in Fc.items()})
         CMS.GROUP = "cond"
     trf = os.path.join(TRAILD, f"trail_{b['ds_tag']}_s{int(z['seed'])}.npz") if TRAILD else None
     if trf and os.path.exists(trf):                              # TRAIL'26 (labels: threshold = conformal quantile on easy-condition off-map frames)
@@ -295,7 +298,7 @@ def main():
         if not files: continue
         with Pool(min(JOBS, len(files))) as p: res = dict(p.map(one, [(f, ds) for f in files]))
         os.makedirs("results", exist_ok=True)
-        json.dump({"ds": ds, "desc": desc, "runs": res}, open(f"results/oc_{ds.replace(':', '_')}_{desc}.json", "w"), default=float)
+        json.dump({"ds": ds, "desc": desc, "runs": res}, open(f"results/oc_{ds.replace(':', '_')}_{desc}{OUT_SFX}.json", "w"), default=float)
         print(f"{ds}/{desc}: {len(res)} runs", flush=True)
 
 

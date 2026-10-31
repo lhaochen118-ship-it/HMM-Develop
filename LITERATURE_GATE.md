@@ -3,6 +3,24 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 12 (2026-11-01, branch `hmm-navigation-5`): Entry 28 — Counterfactual Map Surgery (CMS)
+
+Searches (paper text / abstracts only, 2026-11-01): open-set recognition thresholds from gallery removal; conformal outlier
+detection with contaminated / synthetic references; VPR self-calibrated / adaptive thresholds; loop-closure verification
+nulls; training-conditional and rolling conformal on streams.
+
+| Piece | Closest prior work found | What is new here | Level |
+|---|---|---|---|
+| Null from the DEPLOYMENT stream by removing, from the map, the corridor around the system's own belief (counterfactual map surgery) | Our SelfCal / certified / CPC-SC (map leave-block-out null, map condition, exact odometry); SAFEVPR'26 (arXiv 2605.28048) and Quantile Transfer (LTT / quantile normalisation on a LABELLED calibration traversal); open-set face ID calibrated on identities kept out of the gallery (labelled dev set); Lee & Pollefeys ICRA'14 (log-normal mixture on inlier counts, label-free but model-based) | A do-operation on the environment representation at the model's own estimate turns every deployment frame into a condition-, noise- and dependence-matched null draw; no labels, no calibration traversal, no parametric model | **High** (no prior instance found) |
+| Validity under self-contamination (Thm 6: alpha (n+1)/(pi n+1)); direction of each contamination (Prop 8) | Bashari, Sesia, Romano ICML'25 (conformal outlier detection with contaminated inlier reference: conservative); Barber et al. (conformal beyond exchangeability) | Contamination of a GENERATED null analysed by its mechanism: wrong beliefs are conservative, off-map frames cost a factor 1/pi | Moderate-high |
+| alpha = 0.01 and training-conditional (PAC) guarantees per deployment (Cor 9) | Vovk 2012 (training-conditional conformal), RCPS (Bates et al. 2021) | Made feasible by the stream null (hundreds of segments per condition vs ~10 map chunks) | Moderate (known tool, new feasibility) |
+| Calibrating TAO'26's route cost (which has no label-free threshold) and the presence chain on the counterfactual stream | TAO'26 (3-sigma on labelled easy conditions), SeqSLAM uniqueness ratio (score, no calibration), knockoffs (synthetic null copies of variables) | Same score, three nulls (labels / map / counterfactual) isolates the effect of the null | Supporting (ablation) |
+
+**Verdict (before the full results).** The mechanism is new to our knowledge and general (any retrieval-against-a-database
+decision with a spatial / identity structure: VPR, LiDAR loop closure, open-set re-identification). Whether it is A*-level
+depends on the evidence: tight (realized ~ alpha, not << alpha) and valid control on 7 datasets x 6 descriptors, recall gains
+at matched guarantees, alpha = 0.01 everywhere. Assumptions S1-S3 are empirical (checked with labels in the evaluation only).
+
 ## Gate 11 (2026-10-31, branch `hmm-navigation-4`): Entry 26 — guarantees under dependence, shape stop, 2026 baselines
 
 | Piece | Closest prior work found (paper text / abstracts only) | What is new here | Level |

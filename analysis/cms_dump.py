@@ -1,5 +1,5 @@
 """Compute the CMS statistics (real + counterfactual route cost and distinctiveness, cms.cms_stats) of every run.
-Usage: cms_dump.py <cache_dir> <topk_dir> <ds> <desc> [--seeds 0,1,2] [--jobs 3]  -> results/cms_<ds>_<desc>_s<seed>.npz
+Usage: cms_dump.py <cache_dir> <topk_dir> <ds> <desc> [--seeds 0,1,2] [--jobs 3] [--rho-add 1]  -> results/cms_<ds>_<desc>_s<seed>.npz
 (ds with ':' written with '_', e.g. 4s_old_town). Published as nhatlong1103/hmm-cms-cache; read by oc_curves.py --cms."""
 import sys, os, glob, time
 import numpy as np
@@ -9,6 +9,7 @@ import cms
 
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None
 JOBS = int(sys.argv[sys.argv.index("--jobs") + 1]) if "--jobs" in sys.argv else 3
+RHO_ADD = float(sys.argv[sys.argv.index("--rho-add") + 1]) if "--rho-add" in sys.argv else 1.0   # rho = off_d + RHO_ADD * excl (sensitivity)
 
 
 def one(a):
@@ -17,7 +18,8 @@ def one(a):
     if os.path.exists(out): return out, 0.0
     tf = os.path.join(tkd, f"topk_{tag}.npz")
     if not os.path.exists(tf): return out + " (no topk)", 0.0
-    t0 = time.time(); z = np.load(cf, allow_pickle=True); st = cms.cms_stats(z, np.load(tf), ds=ds)
+    t0 = time.time(); z = np.load(cf, allow_pickle=True); rho = cms.OFF_D.get(ds.split(":")[0].split("_")[0], 40.0) + RHO_ADD * float(z["excl"])
+    st = cms.cms_stats(z, np.load(tf), rho=rho, ds=ds)
     np.savez_compressed(out, **{k: (v.astype(np.float32) if isinstance(v, np.ndarray) and v.dtype == np.float64 else v) for k, v in st.items()})
     return out, time.time() - t0
 

@@ -140,7 +140,7 @@ def _segments(seqs, H):
     return [sq[i:i + H] for sq in seqs for i in range(0, len(sq) - H + 1, H)]
 
 
-GROUP = "cond"                      # calibration unit: "cond" (Mondrian by query condition, small ones pooled) or "run"
+GROUP = "cond"                      # calibration unit: "cond" (Mondrian by condition, small ones pooled), "run", "loco" (causal)
 ALPHA_MIN = [0.05]                  # smallest alpha the current rules use (sets the minimum calibration size)
 
 
@@ -158,6 +158,17 @@ def cond_seqs(z, seqs):
     pool = [q for k in small for q in g.pop(k)]
     if nseg(pool) >= nmin or not g: g["_pooled"] = pool; return g
     return {"all": list(seqs)}
+
+
+def cal_groups(z, seqs):
+    """[(test sequences, calibration sequences)]: GROUP "cond"/"run": transductive (a condition is calibrated on its own
+    counterfactual stream); GROUP "loco": CAUSAL deployment protocol -- a condition is calibrated on the counterfactual
+    streams of the OTHER conditions only (the robot's previous sessions), nothing of the current session is looked at."""
+    if GROUP != "loco": return [(v, v) for v in cond_seqs(z, seqs).values()]
+    cond = z["cond"]; g = {}
+    for sq in seqs: g.setdefault(cond[sq[0]], []).append(sq)
+    if len(g) < 2: return [(v, v) for v in g.values()]
+    return [(v, [q for k2, v2 in g.items() if k2 != k for q in v2]) for k, v in g.items()]
 
 
 def kappa_min(cf, segs, alpha):
@@ -190,11 +201,11 @@ def chain_parts(z, b, st, w_route=0.5, alpha=0.05, use=("z", "cost")):
     """per-condition CMS presence chain: query log LR, counterfactual log LR, kappa per frame, n segments per frame"""
     H, seqs = b["H"], b["seqs"]; n = len(z["cond"])
     llq, llc, kap, nseg = np.zeros(n), np.zeros(n), np.full(n, np.inf), np.zeros(n, int)
-    for cn, sqs in cond_seqs(z, seqs).items():
-        m = np.concatenate(sqs); comps_q, comps_c = [], []
+    for sqs, cqs in cal_groups(z, seqs):
+        m = np.concatenate(sqs); mc = np.concatenate(cqs); comps_q, comps_c = [], []
         for key, low in (("cost", True), ("z", False)):
             if key not in use: continue
-            real, cf = st[key][m], st[key + "_cf"][m]
+            real, cf = st[key][m], st[key + "_cf"][mc]
             fin = np.isfinite(cf)
             pq = np.clip(rank_p(cf, real, low), 1e-6, 1)
             # leave-one-out rank of every counterfactual value within the pool (exchangeable with a fresh off-map draw)
@@ -203,8 +214,9 @@ def chain_parts(z, b, st, w_route=0.5, alpha=0.05, use=("z", "cost")):
             a, _ = beta_em(pq); pw = w_route if key == "cost" else 1.0
             ec = (a * pc ** (a - 1)) ** pw; ec[~fin] = 1.0                       # missing counterfactual: neutral e-value
             comps_q.append((a * pq ** (a - 1)) ** pw); comps_c.append(ec)
-        llq[m] = np.log(np.mean(comps_q, 0)); llc[m] = np.log(np.mean(comps_c, 0))
-        segs = _segments(sqs, H); k, ns = kappa_max_chain(llc, segs, alpha); kap[m] = k; nseg[m] = ns
+        llq[m] = np.log(np.mean(comps_q, 0)); llc_g = np.zeros(n); llc_g[mc] = np.log(np.mean(comps_c, 0))
+        if mc is m or np.array_equal(mc, m): llc[m] = llc_g[m]
+        segs = _segments(cqs, H); k, ns = kappa_max_chain(llc_g, segs, alpha); kap[m] = k; nseg[m] = ns
     return llq, llc, kap, nseg
 
 
@@ -225,28 +237,28 @@ def kappa_seg_max(cf_score, segs, alpha, delta=None):
 def fisher_parts(z, b, st, keys=(("cost", True), ("z", False))):
     """CMS-F: per-condition score = sum_k -log p_k with p_k the conformal rank of the real statistic in the condition's
     counterfactual pool; counterfactual score with leave-one-out ranks inside the pool (missing -> p = 1/2)."""
-    H, seqs = b["H"], b["seqs"]; n = len(z["cond"]); sq_, sc_ = np.zeros(n), np.zeros(n); segs_by = {}
-    for cn, sqs in cond_seqs(z, seqs).items():
-        m = np.concatenate(sqs)
+    H, seqs = b["H"], b["seqs"]; n = len(z["cond"]); sq_ = np.zeros(n); segs_by = {}
+    for gi, (sqs, cqs) in enumerate(cal_groups(z, seqs)):
+        m = np.concatenate(sqs); mc = np.concatenate(cqs); sc_ = np.zeros(n)
         for key, low in keys:
-            real, cf = st[key][m], st[key + "_cf"][m]; fin = np.isfinite(cf)
+            real, cf = st[key][m], st[key + "_cf"][mc]; fin = np.isfinite(cf)
             pq = np.clip(rank_p(cf, real, low), 1e-6, 1)
             srt = np.sort(cf[fin] if low else -cf[fin]); v = np.where(fin, cf if low else -cf, np.inf)
             pc = np.clip(np.searchsorted(srt, v, side="right") / (1 + len(srt)), 1e-6, 1); pc[~fin] = 0.5
-            sq_[m] += -np.log(pq); sc_[m] += -np.log(pc)
-        segs_by[cn] = (m, _segments(sqs, H))
-    return sq_, sc_, segs_by
+            sq_[m] += -np.log(pq); sc_[mc] += -np.log(pc)
+        segs_by[gi] = (m, _segments(cqs, H), sc_)
+    return sq_, None, segs_by
 
 
 def rules(z, b, st, alpha=0.05, delta=0.1):
     """CMS decision rules: name -> (score, fix positions, default threshold, default accept)"""
-    ALPHA_MIN[0] = alpha / 2                                                 # CMS-U uses alpha / 2
+    ALPHA_MIN[0] = alpha                                                     # Mondrian minimum size for this alpha
     H, seqs, excl, MP = b["H"], b["seqs"], b["excl"], b["MP"]; hz = list(z["hz"])
     jj = np.maximum(st["j"], 0); xt = MP[jj]; okj = st["j"] >= 0
     F = {}
     kT = np.full(len(jj), -np.inf); nT = np.zeros(len(jj), int)
-    for cn, sqs in cond_seqs(z, seqs).items():
-        m = np.concatenate(sqs); k, ns = kappa_min(st["cost_cf"], _segments(sqs, H), alpha); kT[m] = k; nT[m] = ns
+    for sqs, cqs in cal_groups(z, seqs):
+        m = np.concatenate(sqs); k, ns = kappa_min(st["cost_cf"], _segments(cqs, H), alpha); kT[m] = k; nT[m] = ns
     sc_t = np.where(okj, -st["cost"], -np.inf)
     F["CMS-T"] = (sc_t + kT, xt, 0.0, sc_t > -kT)
     sh_t = CG.shape_ok(xt, z["o_q"], seqs, excl, 3.0, 0.5, hz=hz) & okj
@@ -255,7 +267,7 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
         sq_, sc_, segs_by = fisher_parts(z, b, st, keys)
         for tg, dl in (("", None), ("-PAC", delta)):
             kF = np.full(len(jj), np.inf)
-            for cn, (m, segs) in segs_by.items(): kF[m] = kappa_seg_max(sc_, segs, alpha, dl)[0]
+            for gi, (m, segs, scg) in segs_by.items(): kF[m] = kappa_seg_max(scg, segs, alpha, dl)[0]
             sF = np.where(okj, sq_, -np.inf)
             F[nm + tg] = (sF - kF, xt, 0.0, sF > kF)
             if tg == "": F[nm + "+SH"] = (np.where(sh_t, sF - kF, -np.inf), xt, 0.0, (sF > kF) & sh_t)
@@ -272,12 +284,14 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
         F[f"CMS-CPC/{tg}"] = (np.where(ok, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & ok)
         F[f"CMS-T/{tg}"] = (np.where(ok, sc_t + kT, -np.inf), xc, 0.0, (sc_t > -kT) & ok)
     # CMS-U: union of the route test and the presence-chain onset, each at alpha/2 (union bound: false onset <= alpha)
+    ALPHA_MIN[0] = alpha / 2
     kT2 = np.full(len(jj), -np.inf)
-    for cn, sqs in cond_seqs(z, seqs).items():
-        m = np.concatenate(sqs); kT2[m] = kappa_min(st["cost_cf"], _segments(sqs, H), alpha / 2)[0]
+    for sqs, cqs in cal_groups(z, seqs):
+        m = np.concatenate(sqs); kT2[m] = kappa_min(st["cost_cf"], _segments(cqs, H), alpha / 2)[0]
     llq2, _, kap2, _ = chain_parts(z, b, st, alpha=alpha / 2); lo2 = logodds(llq2, seqs)
     onU = (sc_t > -kT2) | (lo2 > kap2); keepU = (sc_t > -kT2) | (lo2 > 0)
     scU = np.maximum(sc_t + kT2, lo2 - kap2)
     for tg, ok in (("H", one), ("H+SH", sh_c), ("H+SH+G", sh_c & agree)):
         F[f"CMS-U/{tg}"] = (np.where(ok, scU, -np.inf), xc, 0.0, CG.hyst_ok(onU, keepU, one, seqs) & ok)
+    ALPHA_MIN[0] = alpha
     return F, dict(kT=kT, nT=nT, kap=kap, lo=lo)
