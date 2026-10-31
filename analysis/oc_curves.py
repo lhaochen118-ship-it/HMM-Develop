@@ -47,6 +47,10 @@ TAOC = sys.argv[sys.argv.index("--taocache") + 1] if "--taocache" in sys.argv el
 MODES = sys.argv[sys.argv.index("--modes") + 1].split(",") if "--modes" in sys.argv else []   # route-evidence combinations (min, only)
 FAMS = set(sys.argv[sys.argv.index("--fams") + 1].split(",")) if "--fams" in sys.argv else None   # evaluate only these families
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
+CMSD = sys.argv[sys.argv.index("--cms") + 1] if "--cms" in sys.argv else None   # dir of cms_<ds>_<desc>_s<seed>.npz (cms_dump.py) -> CMS families (Entry 28)
+LIGHT = "--light" in sys.argv                     # with --variants: only CPC-SC / CPC-SC+CS (skip the other Entry 22-25 variants)
+CMS_GROUPS = sys.argv[sys.argv.index("--cms-groups") + 1].split(",") if "--cms-groups" in sys.argv else ["cond"]   # calibration units
+CMS_ALPHA = float(sys.argv[sys.argv.index("--cms-alpha") + 1]) if "--cms-alpha" in sys.argv else 0.05
 N_PTS = 48                                       # thresholds per curve (quantiles of the score + the default threshold)
 
 
@@ -111,15 +115,15 @@ def families(z, b):
         lo_s, kap = sc_evidence(z, b); b["kappa"] = kap
         F["CPC-SC"] = (lo_s - kap, x_c, 0.0, hyst(lo_s, b["seqs"], kap, 0.0))
         F["hyst TCEmin>CPC"] = (None, x_c, None, hyst2(p_t > 0.5, p_c > 0.5, b["seqs"]))
-        for n0 in ("TCEmin", "CPC-HMM", "CPC-SC"):
+        for n0 in (("CPC-SC",) if LIGHT else ("TCEmin", "CPC-HMM", "CPC-SC")):
             sc0, xf0, t0, a0 = F[n0]
             for tag, rep in (("+CS", None), ("+CSr", a0)):
                 cs = consistency_ok(x_c, z["o_q"], b["seqs"], b["excl"], 3.0, rep)
                 F[n0 + tag] = (np.where(cs, sc0, -np.inf), xf0, t0, a0 & cs)
-        if "est_n" in z.files and len(z["est_n"]) == len(z["nchunk_flat"]):     # joint calibration of presence AND CS on the map null
+        if not LIGHT and "est_n" in z.files and len(z["est_n"]) == len(z["nchunk_flat"]):     # joint calibration of presence AND CS on the map null
             for tag, wnd in (("CS-cal(W)", True), ("CS-cal(full)", False)):
                 acc, scr, kp = cs_cal(z, b, 0.05, 3.0, wnd); F[tag] = (scr - kp, x_c, 0.0, acc)
-        for W in (10, 20):
+        for W in (() if LIGHT else (10, 20)):
             lw, kw = wcpc(z, b, W); F[f"W{W}-CPC"] = (lw - kw, x_c, 0.0, lw > kw)
         if CS_SENS:
             a0 = F["CPC-HMM"][3]
@@ -140,11 +144,12 @@ def families(z, b):
         err_t = np.linalg.norm(xt_ - z["q_pos"], axis=1); good_t = z["inm"] & (err_t <= b["excl"]) & (r["j"] >= 0)
         tau = TAO.tao_threshold(r["cost"], good_t, z["bsel"]); sc_t = np.where(r["j"] >= 0, -r["cost"], -np.inf)
         F["TAO26"] = (sc_t, xt_, -tau, sc_t >= -tau)
-        if DUMPD and "nchunk_flat" in z.files and len(z["nchunk_flat"]):
+        have_cn = bool(tcf and os.path.exists(tcf) and "cn" in np.load(tcf).files)
+        if (DUMPD or have_cn) and "nchunk_flat" in z.files and len(z["nchunk_flat"]):
             import topk_dump as TKD
             from sc_eval import CFG
             key = b["ds_tag"]
-            if key not in _MFULL:
+            if key not in _MFULL and not have_cn:
                 dsn = key.rsplit("_", 1)[0]; dsn = ("4s:" + dsn[3:]) if dsn.startswith("4s_") else dsn
                 _MFULL[key] = TKD.load(DUMPD, dsn, key.rsplit("_", 1)[1]).m
             blk = CFG.get(b["ds"], CFG["cmu"])["block"]
@@ -195,6 +200,13 @@ def families(z, b):
         for tg, okk in (("CS", cs2), ("SH", sh2)):
             ok2 = okk & agree_t
             F[f"CPC-SC+{tg}+TAOg"] = (np.where(ok2, lo_s2 - kap2, -np.inf), x_c2, 0.0, CG.hyst_ok(lo_s2 > kap2, lo_s2 > 0, np.ones(len(ok2), bool), b["seqs"]) & ok2)
+    cmf = os.path.join(CMSD, f"cms_{b['ds_tag']}_s{int(z['seed'])}.npz") if CMSD else None
+    if cmf and os.path.exists(cmf):                              # Entry 28: counterfactual map surgery (cms.py)
+        import cms as CMS
+        for grp in CMS_GROUPS:
+            CMS.GROUP = grp; Fc, _ = CMS.rules(z, b, dict(np.load(cmf)), alpha=CMS_ALPHA)
+            F.update({k + ("" if grp == "cond" else "[run]") + ("" if CMS_ALPHA == 0.05 else f"(a={CMS_ALPHA:g})"): v for k, v in Fc.items()})
+        CMS.GROUP = "cond"
     trf = os.path.join(TRAILD, f"trail_{b['ds_tag']}_s{int(z['seed'])}.npz") if TRAILD else None
     if trf and os.path.exists(trf):                              # TRAIL'26 (labels: threshold = conformal quantile on easy-condition off-map frames)
         r = np.load(trf); xt_ = MP[r["place"]]; cf = r["conf"].astype(float)
@@ -256,7 +268,7 @@ def one(args):
     out = {"seed": int(z["seed"]), "families": {}}
     with contextlib.redirect_stdout(io.StringIO()):
         F = families(z, b)
-    if FAMS is not None: F = {k: v for k, v in F.items() if k in FAMS}
+    if FAMS is not None: F = {k: v for k, v in F.items() if k in FAMS or any(f.endswith("*") and k.startswith(f[:-1]) for f in FAMS)}
     for name, (sc, xf, thr0, acc0) in F.items():
         if sc is None or DEFAULTS_ONLY:                           # rule without a scalar score: default point only
             if acc0 is not None: out["families"][name] = {"curve": [], "default": point(acc0, xf, z, b, cx, True)}

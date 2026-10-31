@@ -7,6 +7,47 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 28 (in progress, branch `hmm-navigation-5`) — Counterfactual Map Surgery (CMS): self-calibration on the deployment stream (2026-11-01)
+
+**Motivation (Entries 25-27).** Every label-free rule so far is calibrated on the MAP's self-replay null (map frames with
+their block removed): same image condition as the map, exact map poses as odometry, ~10 exchangeable chunks. Consequences
+measured before: realized false-onset rate 0.001-0.006 << alpha (structural slack), alpha = 0.01 infeasible on maps with
+< 99 null segments (CMU, 4S office: kappa = inf), and the long-excursion dependence is missing from the null.
+
+**Idea.** Build the null from the QUERY stream: for every frame t, recompute the evidence statistic on the map with the
+corridor of radius rho = off_d + excl around the system's OWN belief removed (the anchors of the winning route hypothesis
+over the last N = 20 frames). If the belief is right, every frame of the window is > off_d from the remaining map, so the
+counterfactual statistic is a draw from the OFF-MAP law under the query's condition, odometry noise and dependence; if
+the belief is wrong, the true place survives the surgery (conservative). Thresholds = conformal quantiles of the
+counterfactual stream (segment-level, H frames), per query condition (Mondrian; conditions with fewer than 2/alpha
+counterfactual segments pooled). Code: `analysis/cms.py` (statistics + rules), `analysis/cms_dump.py` (Kaggle),
+`oc_curves.py --cms DIR [--cms-alpha a] [--cms-groups cond,run]`. Theory: `paper/cms_theory.md`.
+
+**Statistics (identical for real and counterfactual maps, from the top-100 lists `hmm-topk` only):** TAO'26 route cost C_t
+(surgery: hypotheses in the corridor removed, masked anchor look-ups fall back to the K-th similarity, a backward trace
+entering the corridor leaves the route chunk -- what a real hole does) and the spatial distinctiveness
+z_t = (s1 - s_far)/std_t (s_far: best entry > excl from the top-1; all top-100 masked -> missing).
+
+**Pre-registration (written before the full evaluation; seeds 1-9 and every other (dataset, descriptor) not looked at).**
+Design was informed by seed 0 of four held-out runs (4S old town CosPlace, Nordland CosPlace, 4S office MegaLoc, CMU
+CosPlace): that is where the choices below (HMM place reported, shape stop on the HMM track, Mondrian pooling) were made;
+these four runs are flagged in the report. Constants a priori: rho = off_d + excl, N = 20 and every TAO constant from TAO'26,
+route e-value power 1/2 (Entry 27), H = 10, p_in = p_out = 0.01, delta = 0.1 for the PAC variants.
+1. *Primary rule* **CMS-CPC/H+SH**: presence chain with LR = 1/2 (e^z + (e^C)^(1/2)), e = a p^(a-1), p = conformal rank of
+   the real statistic in the counterfactual pool, a = Beta-EM per condition; onset when log-odds > kappa (conformal
+   (1 - alpha) quantile of max fresh-start counterfactual log-odds over H-frame segments), persistence log-odds > 0;
+   reported place = HMM place-chain MAP; shape stop SH on that track. Reported at alpha = 0.05 and alpha = 0.01.
+2. *Secondary:* CMS-T (route cost alone, finite memory, no hysteresis: report iff C_t < kappa_T; TAO winner reported),
+   CMS-T/H (HMM place), CMS-U/H+SH (union of route test and chain onset at alpha/2 each), CMS-F (sum of -log p of both
+   components), PAC versions, `[run]` (whole-stream calibration) versions; CMS-CPC without stop (expected to violate segFAR:
+   reports carried out of the map, diagnostic only).
+3. *Hypotheses.* H28a: mean segFAR <= alpha on every dataset at both alphas (validity) with realized/alpha in [0.1, 1.5]
+   (tightness, vs <= 0.1 for CPC-SC). H28b: alpha = 0.01 feasible on all 7 datasets (finite kappa, recall > 0). H28c: at
+   alpha = 0.01 the primary rule has recall >= CPC-SC-T(1/2)+SH on >= 5/7 datasets with navigation error not worse by
+   > 10 % on >= 5/7. H28d: curves (recall at FL <= 0.01, pAUC) of the primary rule >= CPC-SC-T(1/2)+SH on >= 5/7.
+4. *Selection.* Leave-one-dataset-out over all label-free rules (old and CMS) with the Entry 25 criterion (navigation
+   error at the default point subject to mean segFAR <= alpha on the training folds).
+
 ## Entry 27 (in progress, branch `hmm-navigation-4`) — condition-matched null, route-evidence power, SafeVPR / VLM beyond Boreas (2026-10-31)
 
 **Pre-registration (written before any result of these variants).**
