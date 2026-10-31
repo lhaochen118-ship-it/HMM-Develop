@@ -6,6 +6,19 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
+## N00. Vòng 5 (2026-10-31, branch `hmm-navigation-4`) — đọc trước §N0
+
+**Báo cáo:** `paper/BAO_CAO_E27.pdf`; nhật ký `RESEARCH_LOG.md` Entry 27. Dataset public mới: `nhatlong1103/hmm-xnull`,
+`hmm-route-cache`, `hmm-image-baselines`.
+
+1. **Null khớp điều kiện (17 traversal Boreas chưa dùng):** 300–360 chunk/seed (null bản đồ ~10); recall +0.007…+0.008 ở mọi
+   luật, segFAR như cũ. Sự dè dặt của điểm mặc định chủ yếu là **cấu trúc** (κ chỉ cho chuỗi hiện diện; bước dừng loại tiếp),
+   không phải do null cùng điều kiện.
+2. **Công suất tuyến w₃ = ½ (CPC-SC-T½):** đường cong ≥ vòng 4 trên 7/7, pAUC > CPC-SC+CS 7/7; CPC-SC-T½+CS tăng recall mặc
+   định 7/7 với run tệ nhất ≤ 0.046. Biến thể chỉ-tuyến / min (thăm dò) không tổng quát → loại. CMU vẫn thua Claxton'24/TAO'26.
+3. **SafeVPR'26 và VPR-auditing'26 ngoài Boreas (NCLT, 4Seasons):** CPC-SC-T½+SH cao hơn SafeVPR tại FL ≤ 0.01 trên 4/5;
+   VLM 7B nhận 8–18 % frame off-map, sai số 23–102 m.
+
 ## N0. Vòng 4 (2026-10-31, branch `hmm-navigation-4`) — đọc trước §N
 
 **Báo cáo:** `paper/BAO_CAO_E26.pdf`; nhật ký `RESEARCH_LOG.md` Entry 26; lý thuyết `paper/cpc_theory.md` §3e–§3f; novelty

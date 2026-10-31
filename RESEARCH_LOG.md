@@ -25,6 +25,27 @@ Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Com
 Criteria as Entries 25-26 (mean segFAR <= 0.05 per dataset, then error and recall at the default point, then curves);
 final choice by leave-one-dataset-out over all label-free variants. Seeds 3-9 not looked at for any of these variants.
 
+**Results (all batches; report `paper/BAO_CAO_E27.pdf`, tables `paper/e27_tables.md`, raw `analysis/results/e27/`).**
+1. *Cross-traversal null (Boreas, 10 seeds):* 76-85k pseudo off-map frames in 300-360 chunks per seed (map null: ~10).
+   kappa from it raises recall by +0.007..+0.008 for every rule (CPC-SC(X)+CS 0.669 vs 0.661, CPC-SC-T(X)+SH 0.677 vs
+   0.670), mean segFAR 0.002-0.003, worst run <= 0.029, error equal or lower; curves unchanged. P(p <= .05) of the
+   pseudo-queries 0.010-0.035 vs 0.004-0.079 on the map null: the cross-condition null is NOT much weaker. The hypothesis
+   "the default is conservative because the null is same-condition" is only weakly supported; the conservativeness is
+   structural (kappa covers the presence chain alone, the CS / SH stop then removes most false reports: actual false-onset
+   rate 0.001-0.006 << alpha). Joint calibration on this null needs the place chain run on the pseudo-queries (open).
+2. *Route power (pre-registered):* w3 = 1/2 gives recall at FL <= 0.01 >= w3 = 1/H on 7/7 (CMU +0.022), pAUC above
+   CPC-SC+CS on 7/7, above Claxton'24 (labels) 6/7, SafeVPR'26 (labels) 4/5, TAO'26 6/7 (CMU 0.744 vs ~0.79 remains the
+   gap). Default points: CPC-SC-T(1/2)+CS recall above CPC-SC+CS on 7/7 with worst-run segFAR <= 0.046; CPC-SC-T(1/2)+SH CMU
+   recall 0.789 but one CMU run at segFAR 0.188 > alpha. Exploratory route-only / min combinations (designed after looking
+   at CMU): good with strong descriptors (CMU seed 0 CosPlace 0.819, MegaLoc 0.866) but not general (CMU 6-descriptor mean
+   0.658 / 0.693, worse on NCLT / Nordland): dropped. LODO (error criterion) again does not separate the variants
+   (CPC-W+CS+SH 5/7 folds, regret <= 3.5 m).
+3. *SafeVPR'26 beyond Boreas (labels):* mean segFAR 0.004-0.041, worst run up to 0.22; recall at FL <= 0.01 0.397 / 0.757
+   / 0.698 / 0.252 (NCLT / office / old town / countryside) vs CPC-SC-T(1/2)+SH 0.612 / 0.812 / 0.680 / 0.528.
+   *VPR auditing'26 (Qwen2.5-VL-7B) beyond Boreas:* precision 0.50-0.93, FAR 0.13-0.46, accepts 8-18 % of off-map frames,
+   navigation error 23-102 m; CPC-SC+CS on the same frames FAR 0.002-0.085 and higher S on every MegaLoc set (VLM higher S
+   only with NetVLAD, through coverage).
+
 ## Entry 26 (in progress, branch `hmm-navigation-4`) — dependence diagnosis, shape-consistency stop, finite-memory onset, dependence-free certificate (2026-10-31)
 
 **Diagnosis before any new rule (labels used only here; `analysis/dep_diag.py`, seed 0).** (1) The top-1 SelfCal p-value of

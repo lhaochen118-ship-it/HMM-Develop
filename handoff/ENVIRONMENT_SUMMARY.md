@@ -152,6 +152,10 @@ Publish bằng `automation/publish_dataset.py <dir> <slug> "<title>" "<subtitle>
 | `nhatlong1103/hmm-topk` (2026-10-31, public) | Top-100 ứng viên (`idx` = hàng bản đồ rút gọn, `sim` fp16, `mean`, `std`) của mọi frame query cho **7 dataset × 6 descriptor × 10 seed** (366 file, 2.4 GB), cùng thứ tự với `hmm-navcache-v2`; đầu vào của TAO'26 / TRAIL'26 / TAO-SC / CPC-SC-T | `analysis/topk_dump.py` (GPU) |
 | Kaggle model `qwen-lm/qwen2.5-vl/transformers/7b-instruct/2` | Qwen2.5-VL-7B-Instruct (dùng cho VPR-auditing'26, offline trên L4; vá `preprocessor_config.json`, xem `02` §00.2) | (model công khai của Qwen) |
 
+| `nhatlong1103/hmm-xnull` (vòng 5) | Null chéo traversal Boreas: pseudo-query từ 17 traversal chưa dùng (p, pR, top-1, top-100 khi che block, odometry thật, chunk) × 6 descriptor × 10 seed (60 file, 1.3 GB) | `analysis/xnull.py` (GPU) |
+| `nhatlong1103/hmm-route-cache` (vòng 5) | Chi phí tuyến TAO theo frame (query + null bản đồ, κ) của mọi run: dùng `oc_curves.py --taocache` để khỏi tính lại (366 file) | `oc_curves.py --topk --mapdump` |
+| `nhatlong1103/hmm-image-baselines` (vòng 5) | Điểm MNN SafeVPR (NCLT, 4S ×3) và phán quyết Qwen2.5-VL-7B (Boreas, NCLT, 4S; MegaLoc + NetVLAD, mỗi 5 frame) | `safevpr_mnn.py`, `vlm_audit.py` |
+
 Tải dataset public **không cần token**: `python3 automation/anon_download.py <owner/slug> <dir> --jobs 12 [--match regex]`.
 
 ## 2. Datasets ảnh gốc và trọng số (chỉ cần khi tạo dump mới)

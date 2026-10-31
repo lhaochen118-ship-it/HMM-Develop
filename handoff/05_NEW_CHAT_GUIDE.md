@@ -86,7 +86,12 @@ Bảng báo cáo: `paper/build_e26_report.py` (đầu vào: thư mục `oc_*.jso
 
 ## 5. Việc tiếp theo (tóm tắt; chi tiết ở `03` §5)
 
-**Sau vòng 4 (ưu tiên):** (1) null **khớp điều kiện ảnh** để điểm mặc định bớt dè dặt (ví dụ pseudo-query từ traversal khác
+**Sau vòng 5 (ưu tiên):** (1) hiệu chuẩn **chung** (hiện diện ∧ dừng CS/SH) trên null chéo traversal — cần chạy chuỗi vị trí
+trên các pseudo-query (`hmm-xnull` đã có top-100 khi che block); đây là nguồn dè dặt chính còn lại; (2) CMU / descriptor mạnh:
+khoảng cách ~0.05 với Claxton'24/TAO'26 vẫn còn (biến thể chỉ-tuyến không tổng quát); (3) robot thật vòng kín. Báo cáo mới
+nhất: `paper/BAO_CAO_E27.pdf`.
+
+**Sau vòng 4 (đã làm ở vòng 5: mục 1 phần null X, mục 2 một phần, mục 3):** (1) null **khớp điều kiện ảnh** để điểm mặc định bớt dè dặt (ví dụ pseudo-query từ traversal khác
 của bản đồ nhiều phiên; Boreas có 17 traversal chưa dùng); (2) CMU / descriptor mạnh: Claxton'24 và TAO'26 xếp hạng tốt hơn —
 thử chi phí tuyến với trọng số hình học/ngoại hình hiệu chuẩn trên null, hoặc K lớn hơn; (3) VLM-auditing và SafeVPR trên
 NCLT / 4Seasons (ảnh có sẵn: `nclt-cam5-*`, `4seasons`); (4) chạy robot thật vòng kín. Các mục cũ bên dưới vẫn đúng.

@@ -4,6 +4,12 @@
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
+## 00. Vòng 5 (2026-10-31) — trạng thái
+
+- Làm xong: null chéo traversal Boreas, công suất tuyến w₃, SafeVPR/VLM trên NCLT + 4Seasons; báo cáo `paper/BAO_CAO_E27.pdf`.
+- Đề xuất hiện tại: **CPC-SC-T½+CS** (an toàn: run tệ nhất ≤ 0.046, recall mặc định > CPC-SC+CS 7/7) hoặc **CPC-SC-T½+SH**
+  (đường cong tốt nhất; một run CMU vượt α). Không còn kernel nào chạy. `anderson1202` đã có L4×4.
+
 ## 0. Vòng 4 (branch `hmm-navigation-4`, 2026-10-31) — trạng thái
 
 - **Làm xong:** chẩn đoán phụ thuộc; lý thuyết §3e (Mệnh đề 5, Định lý 4 GPC, Định lý 5) và §3f; dừng hình dạng SH; họ luật

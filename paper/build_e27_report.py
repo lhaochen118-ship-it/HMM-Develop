@@ -35,7 +35,7 @@ def table(T, C, rules, dss, title_d, title_c):
         cells = []
         for d in dss:
             v = np.array(T.get(d, {}).get(n, []), float)
-            cells.append("–" if not len(v) else (f"{np.nanmean(v[:, 0]):.2f} / {np.nanmean(v[:, 1]):.3f} / {np.nanmax(v[:, 1]):.3f} / {np.nanmean(v[:, 4]):.1f}"
+            cells.append("–" if not len(v) else (f"{np.nanmean(v[:, 0]):.3f} / {np.nanmean(v[:, 1]):.3f} / {np.nanmax(v[:, 1]):.3f} / {np.nanmean(v[:, 4]):.1f}"
                                                if n != "oracle" else f"{np.nanmean(v[:, 0]):.2f} / – / – / {np.nanmean(v[:, 4]):.1f}"))
         L.append(f"| {lab} | " + " | ".join(cells) + " |")
     L += ["", title_c, "", "| Luật | " + " | ".join(E.DS_NAME[d] for d in dss) + " |", "|---" * (1 + len(dss)) + "|"]
