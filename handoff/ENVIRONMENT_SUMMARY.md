@@ -1,7 +1,7 @@
 # Datasets & Environment Summary
 
-*Cập nhật cuối ngày 2026-10-29 (branch `hmm-navigation` → `hmm-navigation-2`). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
-đề bài và việc tiếp theo ở `handoff/00_READ_ME_FIRST.md`. Kết quả audit dữ liệu (Bước 1): `DATA_AUDIT.md`. Dataset mới
+*Cập nhật 2026-10-31 (branch `hmm-navigation-3`). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
+cách đọc repo và việc tiếp theo ở `handoff/05_NEW_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Kết quả audit dữ liệu (Bước 1): `DATA_AUDIT.md`. Dataset mới
 cho hướng HMM (chuỗi dài + odometry thật): **§1b 4Seasons dump** và **§1c Boreas** bên dưới.*
 
 ## 1. Dataset quan trọng nhất: descriptor dumps (PUBLIC)
@@ -142,7 +142,9 @@ img/<seq>/<timestamp_us>.jpg        (các dataset boreas-vpr-images-k)
 | `nhatlong1103/vpr-safevpr-scores` | Điểm MNN patch DINOv2 (SafeVPR) Boreas, top-20 ứng viên × 6 descriptor | `analysis/safevpr_mnn.py` (L4) |
 | `nhatlong1103/hmm-navcache` (sắp có) | Cache đầu vào mọi luật của `nav_demo` theo (ds, desc, seed); dùng với `analysis/nav_rules.py` | `nav_demo.py --cache` |
 
-| `nhatlong1103/hmm-navcache-v2` (2026-10-31) | Cache `nav_demo --cache` của **cả 7 dataset** × 6 descriptor × 3 seed (NCLT 1), thêm hậu nghiệm off-map của Xu'21 (`pof_h`, `e_h`), độ tin của chuỗi vị trí (`conf_c`, `lo_c`), điểm SafeVPR (`mtop`, Boreas), PCR (`pcr_q/pcr_n`, vài cache). Mọi luật (kể cả CPC-SC+CS) và mọi đường cong vận hành tính lại từ đây trong vài phút: `nav_rules.py`, `oc_curves.py` | `nav_demo.py --cache [--pred]` (branch `hmm-navigation-3`) |
+| `nhatlong1103/hmm-navcache-v2` (2026-10-31) | Cache `nav_demo --cache` của **cả 7 dataset** × 6 descriptor × **10 seed** (NCLT 1; 366 file, 1.3 GB), thêm hậu nghiệm off-map của Xu'21 (`pof_h`, `e_h`), độ tin của chuỗi vị trí (`conf_c`, `lo_c`), điểm SafeVPR (`mtop`, Boreas), PCR (`pcr_q/pcr_n`, vài cache). Mọi luật (kể cả CPC-SC+CS) và mọi đường cong vận hành tính lại từ đây trong vài phút: `nav_rules.py`, `oc_curves.py` | `nav_demo.py --cache [--cache-only] [--pred]` (branch `hmm-navigation-3`) |
+| `nhatlong1103/hmm-navcache-holes` (2026-10-31) | Cùng loại cache với bản đồ khuyết 10 % (`d10/`) và 50 % (`d50/`), 6 dataset × 6 descriptor × 3 seed (NCLT không có lỗ tổng hợp) | `nav_demo.py --cache --drop 0.1 / 0.5` |
+| `nhatlong1103/nclt-vpr-dump` (2026-10-30) | Dump descriptor NCLT (bản đồ 2012-01-08, 8 phiên query) + `sensors/` (FOG); thêm vào kernel bằng `--ds nhatlong1103/nclt-vpr-dump` | `automation/make_dump_nclt.py` |
 
 Publish bằng `automation/publish_dataset.py <dir> <slug> "<title>" "<subtitle>"`. Trong kernel: `nav_demo.py ... --safevpr auto`
 (thêm `--ds nhatlong1103/vpr-safevpr-scores` cho `fanout.py`).
@@ -168,7 +170,7 @@ BoQ vẫn chưa có trọng số (GitHub bị chặn, không có mirror).
 - Dataset `nhatlong1103/norlandshort` (Nordland 2 mùa dùng để smoke-test) đã có bản thay thế là `nordland-full-47-6gb`
   và dump. **Nên xoá; cần user tự xoá** vì môi trường chặn lệnh xoá.
 
-## 3. Tài khoản Kaggle (8 acc × 2 T4 = 16 GPU chạy song song)
+## 3. Tài khoản Kaggle (18 acc; tối đa 2 phiên GPU + 5 phiên CPU mỗi acc)
 
 Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo public nên token không nằm trong git; lấy từ tin nhắn của user (thứ tự trùng bảng dưới). `~/.kaggle/access_token` là của acc 1. Các script
 `automation/make_eval_kernel.py`, `run_kernel.py` và `fanout.py` tự đọc đúng token theo tên acc, nên không cần
@@ -192,7 +194,8 @@ Token của mỗi acc nằm ở `~/.kaggle/tok_<username>` (chmod 600); repo pub
 | 14 | `anderson1202` | thêm 2026-10-31; T4 OK |
 | 15 | `nguyenhoa99` | thêm 2026-10-31; T4 OK |
 | 16 | `lelynhan` | thêm 2026-10-31; thường có kernel của người khác (zc-*) |
-| 17 | `caotienminh1` | thêm 2026-10-31 (user: L4×4) |
+| 17 | `caotienminh1` | thêm 2026-10-31 (user: L4×4; L4 thường xếp hàng lâu) |
+| 18 | `quynhle07` | thêm 2026-10-31 (user: L4×4) |
 
 **2026-10-31 (branch `hmm-navigation-3`):** user cho dùng **tất cả** acc (kể cả 4 acc trong `reserved_accounts.txt`, ưu tiên
 sau cùng). Một số acc có kernel của phiên khác (`zc-*`, `vicoqa-*` trên `thnliu`, `linhmai24`, `lelynhan`, `huyenco`,
@@ -254,6 +257,11 @@ cp <out_dir>/results/*.json analysis/results/
 - Ngắt một kernel: chỉ `kaggle kernels delete -y <owner>/<slug>` mới có tác dụng.
 - Chi tiết vận hành: `handoff/02_ENGINEERING_OPS_NOTES.md`.
 
+**Chính sách 2026-10-31:** thử L4 trước (`fanout.py --l4 --par N`); L4 hay kẹt hàng đợi → job chỉ dùng CPU (đánh giá từ
+cache) chạy kernel CPU (`--cpu`), job nặng (`nav_demo` Boreas) chạy T4 (≤ 2 job/phiên, 1 job khi bản đồ lớn). Dataset
+mount sẵn trong runner: `vpr-descriptor-dumps`, `vpr-dumps-4seasons`, `boreas-vpr-dump`; thêm bằng `--ds a,b`
+(`nclt-vpr-dump`, `vpr-safevpr-scores`, `hmm-navcache-v2`).
+
 ## 5. Môi trường container (Claude Code cloud)
 
 - Không có GPU, 4 nhân CPU. Chỉ dùng local CPU cho kiểm tra nhanh (dưới ~2 phút).
@@ -264,4 +272,4 @@ cp <out_dir>/results/*.json analysis/results/
   - Phục hồi: `python3 automation/resume.py <scratchpad>/runs` (danh sách run ở `runs/active_runs.txt`).
   - Khung chat mới, không có scratchpad cũ: `python3 automation/pull_kernels.py` kéo output các kernel trong
     `handoff/RUNNING_KERNELS.md`.
-- Gói cần: `pip install kaggle markdown xhtml2pdf`. md → pdf: `python3 automation/md2pdf.py <in.md> <out.pdf>`.
+- Gói cần: `pip install kaggle markdown xhtml2pdf scipy scikit-learn` (scipy/sklearn không có sẵn sau khi khởi động lại). md → pdf: `python3 automation/md2pdf.py <in.md> <out.pdf>`.

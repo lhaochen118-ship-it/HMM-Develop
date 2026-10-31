@@ -1,6 +1,6 @@
 # HMM-navigation — sequence-based visual localization with a monocular camera (research repo)
 
-**Start here:** `handoff/00_READ_ME_FIRST.md` (task, reading order, next steps). Working branch: `hmm-navigation`.
+**Start here:** `handoff/05_NEW_CHAT_GUIDE.md` (reading order, code map, next steps; index in `handoff/00_READ_ME_FIRST.md`). Latest branch: `hmm-navigation-3`. Current method: CPC-SC+CS (`analysis/cpc_sc.py`); report `paper/BAO_CAO_PhanBien.pdf`.
 
 | Path | What |
 |---|---|

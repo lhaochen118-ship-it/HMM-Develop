@@ -1,6 +1,6 @@
-# 04 — Research Workflow (cập nhật 2026-10-29)
+# 04 — Research Workflow (cập nhật 2026-10-31)
 
-*Cập nhật cuối ngày 2026-10-29 (branch `hmm-navigation-2`). Quy trình chuẩn của dự án (giữ tinh thần bản gốc `RESEARCH_WORKFLOW_original.pdf`) và trạng thái hiện tại của từng
+*Cập nhật 2026-10-31 (branch `hmm-navigation-3`). Quy trình chuẩn của dự án (giữ tinh thần bản gốc `RESEARCH_WORKFLOW_original.pdf`) và trạng thái hiện tại của từng
 phase. Không lặp chi tiết vận hành (`02`) hay việc tiếp theo cụ thể (`00`).*
 
 ## Mục tiêu
@@ -24,16 +24,16 @@ thuyết phục, câu chuyện ở mức paper.
 6. **Viết paper và bàn giao.** Bảng sinh tự động từ `analysis/results/`. Tài liệu bàn giao 00–04 cùng
    environment summary.
 
-## Trạng thái theo phase (hướng HMM-navigation, cuối ngày 2026-10-29)
+## Trạng thái theo phase (hướng HMM-navigation, 2026-10-31)
 
 | Phase | Trạng thái |
 |---|---|
-| 1 | **Xong.** Gate 6 (certified sequential) và Gate 7 (CPC-HMM: IPDA, e-detectors, SAFEVPR, Xu'21) trong `LITERATURE_GATE.md`. |
-| 2 | **Hai ý tưởng đã chốt.** (A) Certified sequential localization: bảo đảm theo đoạn off-map, không nhãn. (B) CPC-HMM: chuỗi vị trí bất biến affine + chuỗi hiện diện nuôi bằng e-value hiệu chuẩn bằng bản đồ. |
-| 3 | **Có phương pháp và lý thuyết đầy đủ.** Định lý theo đoạn cho A; ARL₀ (Shiryaev–Roberts), độ trễ, Anderson cho B (`paper/cpc_theory.md`). |
-| 4 | **Có 7 dataset × 6 descriptor.** RobotCar, CMU, Nordland, 4Seasons ×3 (VIO thật), Boreas (bánh xe + gyro thật; đã sửa lỗi bộ đếm). Có thể thêm benchmark chuỗi dài nếu cần (NCLT, Oxford RobotCar gốc). |
-| 5 | **Đang lặp ở vòng CPC-HMM.** Thắng Xu'21 trên 5/7; thua Boreas (khuyết 30 %) và RobotCar. Đang chạy lưới tách p_in/p_out và fix7. |
-| 6 | **Báo cáo ngắn** `paper/BAO_CAO_CertSeq.pdf` (tiếng Việt, không hình). Không viết paper. Bàn giao 00–04 + `RUNNING_KERNELS.md`. |
+| 1 | **Xong đến Gate 10.** Gate 9 (A/A\* readiness), Gate 10 (CPC-SC+CS: CS là cơ chế đã biết, SC cùng lập luận với certified). Related work: `literature/VISUAL_LOCALIZATION_REVIEW.md` §5, §6, §6b. **Cần mở lại** cho hướng mới (bảo đảm dưới phụ thuộc, null tự sinh, hình học bản đồ) và cho TRAIL'26 / TAO'26 / VPR-auditing'26. |
+| 2 | **Ý tưởng hiện có:** (A) certified sequential; (C) CPC-HMM; (D) CPC-SC+CS (Entry 25). **Chưa đủ A\*:** cần một ý tưởng mới có insight lý thuyết (xem `03` §5 Bước 1). |
+| 3 | Lý thuyết: định lý theo đoạn (A), ARL₀/Shiryaev–Roberts (C), TCE (§3c), Bổ đề 7 + Mệnh đề 4 + định lý khởi phát (§3d). **Thiếu:** bảo đảm cho quyết định HMM dưới phụ thuộc thời gian. |
+| 4 | **7 dataset × 6 descriptor** (RobotCar ngoài lưới điều hướng; CMU, Nordland, 4S ×3, Boreas, NCLT 8 phiên). Cache công khai 10 seed + tỷ lệ lỗ 10/50 %. Ảnh gốc có cho baseline cần ảnh (TRAIL, VPR-auditing). |
+| 5 | **Vòng Entry 25 xong:** đường cong vận hành, so khớp chính xác, đăng ký trước + LODO, độ nhạy, tỷ lệ lỗ, 10 seed. Baseline có nhãn đã có: Xu'21, Claxton'24, SafeVPR (Boreas), max-sim. **Thiếu:** TRAIL'26, TAO'26, VPR-auditing'26. |
+| 6 | Báo cáo ngắn `paper/BAO_CAO_PhanBien.pdf`. Bàn giao 01–05 + `ENVIRONMENT_SUMMARY`. Không viết paper. |
 
 Lịch sử hướng trước (CCBF → CRSG → SelfCal): xem `RESEARCH_LOG.md` (Entry ≤ 17) và branch `claude/selfcal-aa`.
 
@@ -48,3 +48,7 @@ Lịch sử hướng trước (CCBF → CRSG → SelfCal): xem `RESEARCH_LOG.md`
 - Đo vị trí và điều kiện xảy ra lỗi (`--dump` + phân tích offline) **trước** khi đề xuất bản sửa và chạy lại.
 - Chọn siêu tham số bằng lý thuyết hoặc dữ liệu không nhãn, một cấu hình chung cho mọi dataset; quét tham số chỉ là
   ablation.
+- **Đánh giá theo đường cong** (recall ở FL/segFAR khớp, so khớp chính xác tại điểm của baseline) trước khi kết luận một
+  luật tốt hơn hay chỉ dè dặt hơn; điểm mặc định chỉ là một điểm trên đường cong.
+- **Đăng ký trước** ứng viên/tiêu chí/tập giữ lại (commit trước khi xem), rồi chọn bằng leave-one-dataset-out.
+- **Smoke-test đầu-cuối mọi cờ CLI mới** trên dữ liệu nhỏ cục bộ trước khi chạy hàng loạt trên Kaggle.

@@ -1,10 +1,71 @@
 # 02 — Engineering & Operations Lessons
 
-*Cập nhật 2026-10-29 cuối ngày (branch `hmm-navigation` → `hmm-navigation-2`). Tài liệu này chỉ về **kỹ thuật và vận
-hành**: code, môi trường, Kaggle, cách chạy thí nghiệm, lỗi đã gặp và cách sửa, bài học. §1–§7 viết trong giai đoạn
-SelfCal và vẫn đúng. **§8 là các bài học mới của vòng HMM-navigation; nên đọc trước.** Các script SelfCal được nhắc tới
-(`eval_all.py`, `exp*`) chỉ còn ở branch `claude/selfcal-aa` / `claude/selfcal-seq`. Bảng tài khoản và dataset:
+*Cập nhật 2026-10-31 (branch `hmm-navigation-3`). Chỉ về **kỹ thuật và vận hành**: code, môi trường, Kaggle, cách chạy
+thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trước** (vòng 2026-10-31, mới nhất), rồi §8 (vòng HMM-navigation
+2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
+
+## 0. Vòng 2026-10-31 (`hmm-navigation-3`): bài học mới
+
+### 0.1 Script và công cụ mới
+
+| Script | Việc |
+|---|---|
+| `analysis/cpc_sc.py` | Luật đề xuất CPC-SC+CS (`cpc_sc_cs`), `sc_evidence`, `consistency_ok`, `cs_cal` (thử nghiệm, âm) |
+| `analysis/oc_curves.py` | Đường cong vận hành mọi luật từ cache; `--variants` (biến thể), `--cs-sens` (độ nhạy), `--defaults-only` (nhanh) |
+| `analysis/oc_matched.py` | So khớp chính xác tại FL / recall của baseline (Kalman chạy thật); `--summary` |
+| `analysis/oc_summary.py`, `lodo_select.py` | Tổng hợp đường cong; chọn biến thể leave-one-dataset-out |
+| `analysis/recall_diag.py`, `pcr.py` | Phân rã recall; PCR (âm) |
+| `paper/build_oc_report.py` | Bảng `paper/oc_tables.md` + ghép `paper/phanbien_text.md` → `BAO_CAO_PhanBien.md` |
+| `nav_demo.py` | `--cache` có thêm `pof_h`, `e_h` (Xu'21), `conf_c`, `lo_c`, `est_n` (MAP chuỗi vị trí trên null), `mtop` (SafeVPR); `--pred`; `--cache-only` (bỏ fit baseline có nhãn và Kalman, nhanh hơn); `--drop f` (cache `navcache_dXX_*`) |
+| `automation/fanout.py` | `--groups` (mỗi dòng file job = 1 kernel), `--par N` (số job song song/phiên), `--nocopy` (không chép JSON vào repo) |
+| `automation/make_eval_kernel.py` | Token `CACHE` (thư mục cache được mount); gói `results/`+`logs/` thành `results.tar`; **bỏ qua upload code khi mã băm không đổi** (`~/.kaggle/codehash_<acc>`) |
+| `automation/run_kernel.py` | Giải nén `results.tar` khi kéo; **chỉ đọc `KernelWorkerStatus.*`** (lỗi mạng tạm thời không còn bị hiểu là kernel lỗi) |
+
+**Mẫu dùng nhiều nhất:** phân tích mọi luật mới hoàn toàn từ cache (không chạy lại `nav_demo`): thêm family vào
+`oc_curves.families`, chạy `oc_curves.py <cache_dir> <ds> <descs> --variants --defaults-only` cục bộ (Boreas 18 cache ≈ 10
+phút với 4 tiến trình) hoặc trên kernel CPU với token `CACHE`.
+
+### 0.2 Kaggle
+
+- **Token:** `~/.kaggle/tokens_raw` (danh sách gốc, chmod 600), `~/.kaggle/tok_<acc>`; tên acc của token lấy bằng
+  `KAGGLE_API_TOKEN=<tok> kaggle config view`. 18 acc (xem `ENVIRONMENT_SUMMARY` §3). Kiểm kết nối:
+  `kaggle competitions list`.
+- **Hàng đợi L4 tắc thường xuyên** (2026-10-31: QUEUED > 20 phút sau 4 lần huỷ/đẩy lại trên `caotienminh1`,
+  `phuongnehe`, `phatle1578`). Khi chạy được, một phiên L4 (48 CPU, 197 GB) làm 14 job `nav_demo` trong ≈ 60 phút.
+  Chiến lược: thử L4; nếu kẹt thì job chỉ cần CPU (đường cong, phân tích, dataset nhẹ) chạy **kernel CPU** (4 nhân, 5 phiên
+  mỗi acc, quota riêng với GPU), job nặng chạy T4.
+- **RAM T4 30 GB:** 2 job Boreas với descriptor 8448 chiều (SALAD, MegaLoc) trong một phiên bị OOM (rc = −9) khi bản đồ
+  lớn (khuyết 10 %). Quy tắc: Boreas ≤ 2 job/phiên T4 ở 30 % lỗ, 1 job/phiên với bản đồ lớn hơn.
+- **Tách job theo seed** (`--seed0 s`, 1 seed/job) để cắt đuôi dài (4S countryside 3 seed: 61 phút → ≈ 20 phút/job).
+- **Acc dùng chung với phiên khác:** `thnliu`, `linhmai24`, `lelynhan`, `huyenco`, `mucnokieu`, `mxuanquy` có kernel
+  `zc-*`, `vicoqa-*` không phải của dự án này — không đụng vào, chỉ dùng slot còn trống.
+- **Huỷ kernel:** `kaggle kernels delete -y`, từng lệnh một. Sau STALL_GIVEUP phải tự xoá kernel (nếu không nó có thể chạy
+  muộn và trùng lặp).
+
+### 0.3 Lỗi đã gặp vòng này
+
+| Lỗi | Hậu quả | Sửa / bài học |
+|---|---|---|
+| `hmm_fix` tự đọc và **xoá** `--drop` khỏi `sys.argv` khi import (trước `nav_demo`) | Lô 10 %/50 % đầu tiên (18 phiên T4) thực chất chạy 30 % | `nav_demo` đọc `hmm_fix.DROP`; **smoke-test đầu-cuối mọi cờ mới** (kiểm `n_map`, tên file) trước khi chạy hàng loạt. Cùng loại lỗi với `--safevpr` (Entry 23) |
+| Hai job cùng (ds, desc) khác tỷ lệ lỗ trong một kernel ghi cùng tên cache | Ghi đè | Tên cache mang hậu tố `_dXX` |
+| `pkill -f <pattern>` khớp cả lệnh shell của chính mình | Lệnh bị giết (exit 144) | Lấy PID bằng `ps -eo pid,args | grep … | grep -v grep` rồi `kill <pid>` |
+| Container khởi động lại giữa lúc fanout đang tạo kernel | Lô `dropB` chưa push được kernel nào; monitor chết | Gắn lại bằng `reattach.py`; lô dở dang thì chạy lại toàn bộ; ghi tên run vào `runs/active_runs.txt` (mỗi dòng **chỉ tên**, không kèm đường dẫn) |
+| `run_kernel` thấy chữ "error" trong traceback lỗi mạng | Báo nhầm kernel lỗi, ngừng theo dõi | Chỉ đọc `KernelWorkerStatus.*` |
+| Sai số điều hướng **nội suy** dọc đường cong | Số vô lý (sai số không đơn điệu theo ngưỡng) | `oc_matched.py`: Kalman tại đúng ngưỡng khớp |
+| Đếm "thắng" sai chiều vì khoá `d_FL@base_recall` chứa chữ "recall" | Bảng thắng/thua đảo ngược | So khớp tiền tố khoá |
+| Null của PCR che block của chính nó → ít ô cạnh tranh hơn query | p-value hạng-1 lệch thang | Không sửa (PCR đã loại); nếu dùng lại thì xếp hạng ngẫu nhiên hoá |
+
+### 0.4 Bài học tổ chức thí nghiệm
+
+- **Đăng ký trước** ứng viên, tiêu chí và tập giữ lại trong `RESEARCH_LOG.md` (có commit/push) **trước** khi xem kết quả
+  tập giữ lại; sau đó chọn biến thể bằng leave-one-dataset-out để đo thiên lệch chọn lựa.
+- **Tách điểm số và ngưỡng** khi đánh giá: một luật "dè dặt" chỉ được kết luận sau khi so đường cong ở FL/recall khớp.
+- **Tự kiểm mọi con số trước khi ghi** vào log/báo cáo (vòng này bắt được 5 câu nói quá: "7/7" thực ra 4/7, "4/7" thực ra
+  5/7, Bổ đề 7 quá rộng…).
+- Cache công khai (`hmm-navcache-v2`, `hmm-navcache-holes`) biến mọi biến thể mới thành phép tính vài phút, không phải
+  vài giờ trên Kaggle.
+- Kết quả lớn nén vào `analysis/results/*.tgz` (đường cong 22 MB → 5 MB) thay vì commit hàng chục JSON.
 
 ## 1. Chính sách tính toán (user chỉ định)
 
@@ -199,7 +260,7 @@ python3 automation/fanout.py <work_dir> <prefix> "eval_all.py rc salad;eval_all.
 - **Tác vụ nền của Claude có trần 2 giờ.** Waiter chờ lâu bị giết. Dùng lượt kiểm tra hẹn giờ (`send_later` hoặc
   trigger hằng giờ) thay vì waiter dài.
 - **Waiter chờ một đợt đã bị dừng sẽ chờ mãi** (ví dụ fix2). Khi dừng collector của một đợt thì dừng luôn waiter của nó.
-- **Không dùng `sleep` dài trong lệnh foreground** (bị chặn). Dùng `until <điều kiện>; do sleep 15; done` trong lệnh nền.
+- **Không dùng `sleep` dài trong lệnh foreground** (bị chặn). Dùng `until <condition>; do sleep 15; done` trong lệnh nền.
 
 ### 8.4 Quản lý kết quả
 

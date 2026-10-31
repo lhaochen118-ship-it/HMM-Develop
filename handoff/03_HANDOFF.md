@@ -1,190 +1,121 @@
-# 03 — Handoff (khung chat mới, branch `hmm-navigation-2`)
+# 03 — Handoff (cho khung chat mới, từ branch `hmm-navigation-3`)
 
-*2026-10-29. Chỉ ghi mục tiêu, trạng thái, quyết định đã chốt, vị trí mọi thứ và việc tiếp theo. Nội dung khoa học chi
-tiết ở `01_SCIENTIFIC_FINDINGS`; kinh nghiệm vận hành ở `02_ENGINEERING_OPS_NOTES` (§8).*
+*2026-10-31. Chỉ ghi mục tiêu, tiến độ, quyết định đã chốt, vị trí mọi thứ và việc tiếp theo. Chi tiết khoa học ở
+`01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
+`05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
 ## 1. Mục tiêu nghiên cứu
 
 - **Đề bài gốc:** HMM cho định vị theo chuỗi (sequence-based visual localization) với camera đơn cho robot navigation,
-  trên nền Sattler et al. CVPR'18.
-- **Mục tiêu:** đóng góp đủ mạnh cho venue A\*.
-- **Hướng đang theo:**
-  1. **Certified sequential localization** (hướng chính, đã vững): bảo đảm FAR theo đoạn off-map, không cần nhãn.
-  2. **CPC-HMM** (module): sửa các điểm yếu cấu trúc của HMM. Thắng HMM Xu'21 trên 5/7 dataset, thua trên **Boreas**
-     và **RobotCar**.
+  nền Sattler et al. CVPR'18.
+- **Mục tiêu của khung chat tiếp theo (user, 2026-10-31):**
+    1. Đào sâu bản chất bài toán (toán, thống kê, mô hình) để tìm **giải pháp mới, tổng quát** (không fix theo dataset), đạt
+        **score cao hơn** và **đủ novel cho hội nghị A\***; hạn chế dùng lại ý tưởng/kỹ thuật đã có.
+    2. **Bảo đảm cho quyết định HMM khi các frame phụ thuộc nhau** (hiện định lý khởi phát dựa trên exchangeability; mọi cách
+        hiệu chuẩn theo đoạn đều thất bại hoặc quá bảo thủ trên Boreas).
+    3. **So sánh trực tiếp với TRAIL'26, TAO'26, VPR-auditing'26** (SafeVPR mới chạy trên Boreas).
 
-## 2. Trạng thái hiện tại (một dòng mỗi mục)
+## 2. Tiến độ (một dòng mỗi mục)
 
-- **Certified:** hợp lệ trên 7/7 dataset, power gấp 1.3–2.7× per-frame. Báo cáo ngắn ở `paper/BAO_CAO_CertSeq.pdf`
-  (cần rebuild).
-- **CPC-HMM:**
-  - lý thuyết (ARL₀, Shiryaev–Roberts, Anderson) ở `paper/cpc_theory.md`;
-  - ARL₀ thực nghiệm 762–3930, vượt cận 98;
-  - novelty ở `LITERATURE_GATE.md` Gate 7.
-- **Boreas:**
-  - Đã sửa lỗi odometry (bước nhảy 8.7 km).
-  - Còn thua Xu'21 khoảng 3× về sai số điều hướng (21.0 m so với 6.2 m), do độ trễ khi rời bản đồ và e^R vi phạm D_R.
-  - Ngược lại, khi bản đồ khuyết 50 % thì CPC thắng: 13.7 m so với 40.8 m.
-- **Đang chạy trên Kaggle:** xem `handoff/RUNNING_KERNELS.md`.
-  - navF/navFc/navG: điều hướng đầy đủ có biến thể `CPC-HMM p_out=*`.
-  - fix7: `hmm_fix` 7 dataset, gồm quét p_out, a_t dự đoán được và KL.
-  - bfix: Boreas `hmm_fix` + `cert_seq` với odometry đã sửa.
-  - fix6: `hmm_fix` với null cũ, bị fix7 thay thế.
-
-### Cập nhật 2026-10-30 (khung chat `hmm-navigation-2`)
-
-- **Bước 1 đã xong:** CPC-HMM + cổng dead-reckoning (`+GG`, ρ = 0.1) thắng Xu'21 trên 6/6 descriptor Boreas (trung bình
-  7.1 so với 22.6 m) và trên trung bình cả 6 dataset; không làm CPC-HMM tệ đi ở dataset nào. Chi tiết: `RESEARCH_LOG.md`
-  Entry 22, `paper/cpc_theory.md` §3b, báo cáo `paper/BAO_CAO_CertSeq.pdf` §5.4, Gate 8.
-- **Đã thử và loại:** p_out cố định hoặc theo KL₀; rò rỉ ở mép bản đồ; cổng dự đoán (PG); vào lại theo dead-reckoning (DR).
-- **Việc tiếp theo gợi ý:**
-  1. chạy lại `hmm_fix.py` với +GG để có ARL₀, recall, ECE (chưa có);
-  2. RobotCar trong lưới điều hướng (snippet 9 frame);
-  3. độ bền theo tỷ lệ lỗ 10 % / 50 % cho +GG (`nav_demo` chưa có `--drop`);
-  4. benchmark chuỗi dài mới (NCLT, Oxford RobotCar gốc) nếu muốn chứng minh tổng quát hơn;
-  5. kiểm thêm các giá trị ρ (0.03, 0.3) để báo độ nhạy.
-- **Kaggle:** `nhatlong1103` và `huyenco` hết quota GPU tuần (30 h) lúc 2026-10-29 tối; dùng CPU cho 2 acc này.
+- **Phương pháp hiện tại:** CPC-SC+CS (`analysis/cpc_sc.py`). Trả lời được phản biện "chỉ thận trọng hơn": ở FL ≤ 1 % recall
+  cao hơn Xu'21 7/7 và Claxton'24 6/7 dataset; mọi 366 run có segFAR ≤ 0.021. Số liệu: `01` §N.3.
+- **Mức novelty:** A (RA-L/ICRA/IROS) khả thi, **A\* chưa** (`LITERATURE_GATE.md` Gate 9–10).
+- **Điểm yếu đã biết:** CMU (descriptor mạnh) thua Claxton'24/max-sim về xếp hạng; điểm mặc định dè dặt hơn chính đường
+  cong của nó; recall mặc định thấp hơn Xu'21 trên 4/7; chưa có bảo đảm dưới phụ thuộc; α = 0.01 cần ≥ 99 đoạn null.
+- **Báo cáo:** `paper/BAO_CAO_PhanBien.pdf` (tiếng Việt, ngắn, không hình); lý thuyết `paper/cpc_theory.md` §3d.
+- **Kaggle:** không còn kernel nào chạy; cache công khai đủ để tính lại mọi bảng trong vài phút.
 
 ## 3. Quyết định đã chốt (không bàn lại trừ khi user yêu cầu)
 
-1. **Không viết paper.** Chỉ báo cáo PDF ngắn **tiếng Việt**: method + công thức, bảng kết quả, so sánh baseline mới
-   nhất, **không hình**. Chỉ viết khi có phương pháp novel và thực nghiệm ủng hộ mạnh.
-2. **Không làm phương pháp nào phụ thuộc nhãn** của điều kiện deploy. Baseline dùng nhãn chỉ để so sánh.
-3. **Không bỏ phương pháp chỉ vì yếu trên chuỗi ngắn** (RobotCar). Bổ sung benchmark chuỗi dài thay vì bỏ.
-4. **Tài nguyên:**
-   - **Kiểm tra tình trạng mọi acc 40 phút/lần** bằng một lượt hẹn giờ (`send_later`), không dùng monitor liên tục (tốn token; user chốt 2026-10-30).
-   - **Luôn tối thiểu thời gian chạy mà không làm giảm độ chính xác** (user chốt 2026-10-30): chạy song song mọi thứ độc
-     lập (không đợi bước kiểm tra nếu sửa được sau), dùng hết CPU/GPU của phiên (job song song, ghim GPU, threads/job),
-     đóng gói output nhiều file nhỏ thành 1 tar (kéo output Kaggle theo từng file rất chậm), tránh tải lại dữ liệu đã có.
-
-   - **Mỗi acc dùng đủ 2 phiên GPU trước khi sang acc khác** (không rải 1 phiên mỗi acc, tốn quota GPU của nhiều acc; user chốt 2026-10-30). `fanout.py` cấp slot theo thứ tự (acc1, 0), (acc1, 1), (acc2, 0)…
-   - Dùng **hết GPU** (8 acc × 2 T4; GPU của `mucnokieu` hay bị người khác chiếm). RTX PRO 6000 chỉ cho việc rất lớn.
-   - Hết GPU: job **rất nhẹ** (dưới khoảng 30 phút trên CPU, ví dụ nav_demo CMU/4S/Nordland, phân tích offline) thì chạy CPU (5 phiên mỗi acc); job **nặng** (Boreas nav_demo/hmm_fix, dump descriptor) thì **đợi GPU trống**, không đẩy sang CPU (user chốt 2026-10-30).
-   - Kernel kẹt hàng đợi quá 10 phút thì huỷ và chạy lại, tối đa 4 lần, rồi mới tìm lỗi.
-5. **Dữ liệu mới:**
-   - Upload lên acc `nhatlong1103`, để **public**.
-   - Cập nhật `ENVIRONMENT_SUMMARY` (tên, link, cấu trúc).
-   - Xoá bản cũ đã có bản thay. Môi trường chặn lệnh xoá hàng loạt, nên xoá từng lệnh hoặc nhờ user.
-6. **User không quan tâm bảo mật**, nhưng token **không** được commit (repo public). Token đặt ở `~/.kaggle/tok_<acc>`.
-7. **Định kỳ kiểm tra tiến trình treo** và tự chạy lại. Cái gì không tự ngắt được thì báo user.
-8. **Git:**
-   - Làm và push trên branch được giao (`hmm-navigation-2`); không tạo PR.
-   - Commit có trailer `Co-Authored-By` / `Claude-Session`, không ghi model ID.
+1. **Không viết paper.** Chỉ báo cáo PDF ngắn tiếng Việt (method + công thức, bảng, so sánh baseline, không hình), chỉ khi
+   có kết quả mạnh.
+2. **Không dùng nhãn của điều kiện triển khai** trong phương pháp; baseline dùng nhãn chỉ để so sánh.
+3. **Giải pháp phải tổng quát:** một cấu hình cho mọi dataset/descriptor/tỷ lệ lỗ; hằng số theo đơn vị bài toán; mọi lựa
+   chọn sau khi xem dữ liệu phải ghi lại và kiểm định trên tập giữ lại (đăng ký trước + leave-one-dataset-out).
+4. **Novelty A\*:** mỗi ý tưởng qua gate trong `LITERATURE_GATE.md`; chỉ đọc paper (không đọc code repo của người khác);
+   chỉ khẳng định "mới / tốt hơn SOTA" khi có bằng chứng thực nghiệm và đối chiếu phù hợp.
+5. **Báo cáo trung thực** cả kết quả âm; tự kiểm mọi con số trước khi ghi.
+6. **Tài nguyên (user chốt):**
+    - Dùng **tất cả** acc được cung cấp; ưu tiên L4×4 (thiết kế để dùng cả 4 GPU, batch lớn, gần hết 96 GB), không có thì
+        T4×2; **mỗi acc dùng đủ 2 phiên GPU trước khi sang acc khác**.
+    - Phiên không có output ≈ 10 phút (T4) hoặc ≈ 5 phút (L4/CPU) → huỷ, thử lại tối đa 4 lần, rồi tìm nguyên nhân. Tiến
+        trình treo → ngắt; không tự ngắt được → báo user.
+    - Hết GPU: tác vụ rất nhẹ sang CPU; tác vụ nặng chờ GPU.
+    - Thư viện/tệp phụ trợ cho chạy offline: đưa lên Kaggle Dataset **public** của `nhatlong1103`. Kết quả/code tái sử dụng:
+        dataset public `nhatlong1103` hoặc thư mục trên branch.
+    - **Theo dõi tự động** (waiter nền / hẹn giờ) thay vì kiểm tra thủ công liên tục; luôn tìm cách chạy song song để giảm
+        thời gian mà không giảm độ chính xác.
+7. **Bảo mật token:** danh sách gốc ở `~/.kaggle/tokens_raw` (chmod 600), không đưa vào prompt, code, báo cáo hay git.
+8. **Git:** làm trên branch được giao; không tạo PR; commit có trailer `Co-Authored-By` / `Claude-Session`, không ghi model ID.
 
 ## 4. Vị trí mọi thứ
 
 | Cái gì | Ở đâu |
 |---|---|
-| Dataset, dump, acc Kaggle | `handoff/ENVIRONMENT_SUMMARY.md` (§1, §1b 4Seasons, §1c Boreas, §3 acc) |
-| Code phương pháp | `analysis/cert_seq.py` (certified), `analysis/hmm_fix.py` (CPC-HMM + ablation + Xu'21), `analysis/nav_demo.py` (điều hướng), `analysis/hmm_diag.py` (chẩn đoán), `analysis/selfcal.py` (p-value), `analysis/vprlib.py` (loader) |
-| Hạ tầng Kaggle | `automation/fanout.py`, `make_eval_kernel.py`, `run_kernel.py`, `reattach.py`, `resume.py`, `pull_kernels.py` |
-| Kết quả | `analysis/results/{cert,nav,natural,hmmdiag,hmmfix,hmmfix_d10,hmmfix_d50}_*.json` |
-| Báo cáo và bảng | `paper/BAO_CAO_CertSeq.{md,pdf}` (`build_report.py`), `paper/cert_tables.md` (`build_cert_tables.py`) |
-| Lý thuyết CPC-HMM | `paper/cpc_theory.md` |
-| Nhật ký và novelty | `RESEARCH_LOG.md` (Entry 18–21), `LITERATURE_GATE.md` (Gate 6–7), `DATA_AUDIT.md` |
-| Kernel đang chạy | `handoff/RUNNING_KERNELS.md` (kéo bằng `python3 automation/pull_kernels.py`) |
-| Script chẩn đoán offline | `analysis/navdiag.py`, `analysis/presence_variants.py`: đọc `navframes_*.npz` từ `nav_demo --dump`. File npz nằm trong output kernel (bfix, enull, cdiag, bdiag), không có trong git |
+| Phương pháp đề xuất | `analysis/cpc_sc.py`; luật trong `analysis/nav_rules.py` |
+| Sinh cache (nặng, Kaggle) | `analysis/nav_demo.py --cache [--cache-only] [--pred] [--drop f] [--seed0 k]` |
+| Đánh giá từ cache (nhẹ) | `analysis/oc_curves.py`, `oc_matched.py`, `oc_summary.py`, `lodo_select.py`, `recall_diag.py`, `nav_rules.py` |
+| Cache công khai | `nhatlong1103/hmm-navcache-v2` (7 dataset × 6 desc × 10 seed), `nhatlong1103/hmm-navcache-holes` (`d10/`, `d50/`), `nhatlong1103/hmm-navcache` (cũ) |
+| Dump descriptor / ảnh | `ENVIRONMENT_SUMMARY.md` §1–§2 (dump 4 benchmark, 4Seasons, Boreas, NCLT; ảnh Boreas `boreas-vpr-images-1..5`, NCLT `nclt-cam5-*`, …) |
+| Kết quả Entry 25 | `analysis/results/oc_curves_entry25.tgz`, `oc_matched_entry25.tgz`, `oc_defaults_s39_holes_entry25.tgz`; bảng `paper/oc_tables.md` |
+| Báo cáo | `paper/BAO_CAO_PhanBien.{md,pdf}` (`paper/build_oc_report.py` + `paper/phanbien_text.md`), `paper/BAO_CAO_CertSeq.pdf` (cũ) |
+| Lý thuyết | `paper/cpc_theory.md` (§3c TCE, §3d CS/CPC-SC) |
+| Nhật ký / novelty / related work | `RESEARCH_LOG.md` (Entry 25 mới nhất), `LITERATURE_GATE.md` (Gate 10), `literature/VISUAL_LOCALIZATION_REVIEW.md` |
+| Hạ tầng Kaggle | `automation/fanout.py`, `make_eval_kernel.py`, `run_kernel.py`, `reattach.py`, `resume.py`, `publish_dataset.py` |
 
-## 5. Việc tiếp theo (theo thứ tự ưu tiên của user)
+## 5. Việc tiếp theo
 
-### Bước 0 — Khởi động (khoảng 15 phút)
+### Bước 0 — Khởi động (≈ 15 phút)
 
-1. Tạo `~/.kaggle/tok_<acc>` từ tin nhắn user (thứ tự acc ở `ENVIRONMENT_SUMMARY` §3).
-2. `pip install kaggle markdown xhtml2pdf`.
-3. `python3 automation/pull_kernels.py /tmp/kpull`: kéo kết quả các kernel đã xong. Kernel chưa xong thì kéo lại sau.
-4. Tổng hợp:
-   - `nav_*`: luật `CPC-HMM p_out=0.05/0.1/0.2` so với Xu'21, per-frame, certified;
-   - `hmmfix_*` của fix7: `cpc_pout*`, `cpc_p*`, `cpc_pred`, `KL`, `ARL0`.
-5. Ghi Entry 22 vào `RESEARCH_LOG.md`.
+1. Tạo branch mới theo yêu cầu của user (thường: sao `hmm-navigation-3` thành `hmm-navigation-4`).
+2. Token: lưu danh sách user gửi vào `~/.kaggle/tokens_raw`, tạo `tok_<acc>` bằng `kaggle config view` (`02` §0.2).
+3. `pip install kaggle markdown xhtml2pdf scipy scikit-learn`; tải `hmm-navcache-v2` về scratchpad (1.3 GB) nếu cần phân
+   tích cục bộ.
 
-### Bước 1 — Chạy tiếp hướng CPC-HMM (đang làm dở)
+### Bước 1 — Hiểu sâu và đề xuất lời giải mới (mục tiêu A\*)
 
-- **Mục tiêu:** CPC-HMM không thua Xu'21 trên Boreas, mà không làm hỏng các dataset khác. Dùng **một** cấu hình chung,
-  chọn bằng lý thuyết hoặc không nhãn, không tune theo từng dataset.
-- **Ứng viên đã có cơ sở:**
-  1. **p_out không nhãn:**
-     - độ trễ khi rời bản đồ ≈ log((1−p_out)/p_out)/|KL₀|;
-     - KL₀ = E₀[log LR] ước lượng được trên các pseudo-query của null bản đồ (là mẫu H0);
-     - chọn p_out sao cho độ trễ ≤ L frame (ví dụ 3);
-     - so tỷ lệ rơi on-map ước lượng từ Beta(a,1) đã fit.
-  2. **Sửa e^R (D_R):**
-     - Dựng null R trên **đoạn giữ lại dài** (nhiều block liên tiếp), để mô phỏng aliasing kết hợp trong đoạn off-map
-       dài.
-     - Hoặc bỏ e^R, chỉ dùng e^top (vốn hợp lệ ở mọi dataset), rồi bù power bằng chuỗi vị trí.
-     - Kiểm bằng P(p^R ≤ u | off) ≤ u, dùng `presence_variants.py` trên npz.
-  3. **Theo dõi:** độ trễ vào lại (Nordland chậm hơn Xu'21), và việc CPC-HMM thiếu tự tin (ECE).
-- **Tiêu chí dừng:** sau 2–3 vòng mà Boreas vẫn thua Xu'21 (sai số điều hướng trung bình qua 6 descriptor) thì sang
-  Bước 2.
+Đọc `01` §N.2/§N.4 và `paper/cpc_theory.md` §1, §3c, §3d. Ba sự thật thực nghiệm cần một lý thuyết giải thích:
+(a) phép thử một bước tự xác nhận (frame liên tiếp gần như trùng nhau); (b) nhất quán odometry trên **quãng dịch chuyển**
+lại phân biệt on/off rất mạnh (TPR 0.83 / FPR 0.09 mỗi frame, CMU CosPlace); (c) null tự-phát-lại của bản đồ đánh giá
+thiếu phụ thuộc của đoạn off-map dài (cùng điều kiện ảnh, block ngắn) và lại quá bảo thủ cho CS.
 
-### Bước 2 — Đi sâu vào nơi HMM thua baseline
+Hướng gợi ý (chưa qua gate novelty, phải kiểm trước khi làm):
+- **Bảo đảm dựa trên hình học bản đồ thay vì thống kê ảnh:** báo sai bền vững cần chuỗi vị trí bị buộc trượt trên một
+  đường của bản đồ khớp hình dạng quãng odometry trong khi robot ở ngoài bản đồ. Xác suất này bị chặn bởi "phổ mơ hồ
+  đường đi" của chính bản đồ (tỷ lệ đoạn đường bản đồ dài L khớp một hình dạng quỹ đạo trong ε dưới chuyển động cứng),
+  tính từ pose bản đồ và mô hình sai số odometry, **không phụ thuộc phụ thuộc thời gian của ảnh**.
+- **Null tự sinh từ chính query (self-null):** dịch vòng / hoán vị theo khối odometry so với chuỗi ảnh để phá liên kết
+  ảnh–chuyển động nhưng giữ nguyên tự tương quan của từng dòng (kiểu kiểm định dịch vòng cho chuỗi thời gian) → null có
+  đúng cấu trúc phụ thuộc và điều kiện ảnh của query.
+- **Khối theo quãng đường** (không theo frame) với hệ số mixing ước lượng không nhãn, cận mất mát kiểu Barber'23 /
+  blocking lemma để có bảo đảm định lượng dưới phụ thuộc.
+- **Điểm vận hành không nhãn gần đường cong** (khai thác TPR/FPR của nhất quán quãng dịch chuyển) và **bằng chứng tuyệt đối
+  mạnh** cho chế độ descriptor mạnh (CMU).
 
-- Phân tích theo bản chất toán, thuật toán, mô hình và bài toán tại **chính các chỗ thua**:
-  - Boreas: Xu'21 mạnh vì odometry gần hoàn hảo và tuyến lặp lại;
-  - RobotCar: snippet 9 frame;
-  - 4S countryside: bằng chứng yếu, ARL₀ và FL cao.
-- Đề xuất **một** module, công thức, cơ chế hoặc kỹ thuật cho HMM. Gợi ý chưa kiểm novelty:
-  - tái khởi động có hiệu chuẩn (sensor resetting) cho chuỗi vị trí, có trọng số theo local fdr của top-1;
-  - p_out thích nghi theo KL ước lượng online;
-  - emission có tính tới phụ thuộc (ESS chỉ cho tầng hiện diện).
-- Mỗi đề xuất phải qua gate novelty (`LITERATURE_GATE.md`).
+### Bước 2 — Bảo đảm dưới phụ thuộc (yêu cầu 2)
 
-### Bước 3 — Nếu vấn đề nằm ở bản chất dataset
+Mục tiêu: một định lý cho chính quyết định HMM (khởi phát và duy trì) không cần exchangeability của đoạn off-map với
+đoạn bản đồ, hoặc có cận mất mát định lượng ước lượng được; kiểm thực nghiệm trên Boreas (nơi certified, W-CPC, CPC-SC
+không CS đều vi phạm) và NCLT (off-map tự nhiên).
 
-Nếu dataset không phù hợp với phương pháp (ví dụ snippet quá ngắn, hoặc tuyến lặp lại với odometry gần như GT khiến
-HMM thường đã đủ mạnh): bỏ qua dataset đó và tìm **benchmark mới uy tín, phù hợp hơn**. Yêu cầu: chuỗi dài, odometry
-thật, nhiều điều kiện, có GT pose. Ứng viên cần kiểm tra license và cách tải:
+### Bước 3 — Baseline mới (yêu cầu 3; tái hiện từ paper, không đọc code)
 
-| Dataset | Ghi chú |
-|---|---|
-| NCLT (Michigan) | 27 phiên trong 15 tháng, odometry bánh xe + IMU, GT RTK/SLAM |
-| Oxford RobotCar gốc | Chuỗi dài, VO + INS; RobotCar-Seasons chỉ là tập con ngắn |
-| Oxford Radar RobotCar | |
-| St Lucia | |
-| SFU Mountain | |
-| KITTI / KITTI-360 | Có vòng lặp, odometry |
+| Baseline | Cần gì | Ghi chú |
+|---|---|---|
+| TRAIL'26 (CRF trên top-K MegaLoc, transition CNN trên tương quan DINOv2 cục bộ, dustbin) | ảnh + đặc trưng DINOv2 cục bộ; huấn luyện | Nặng nhất; huấn luyện trên dataset khác tập kiểm tra để công bằng |
+| TAO'26 / Route-MHT (K = 100 giả thuyết, Procrustes SE(2), ràng buộc vận tốc, quyết định map-out) | top-K chỉ số + similarity mỗi frame, odometry | Cache hiện chỉ có `srt10` (giá trị, không chỉ số) → mở rộng `nav_demo --cache` lưu top-K chỉ số |
+| VPR-auditing'26 (VLM xác minh cặp query–top-1) | ảnh query + ảnh bản đồ; VLM mở chạy offline trên L4 (trọng số đưa lên dataset public) | Đắt: lấy mẫu con frame; báo cả precision–coverage–FAR như paper |
 
-Thêm dataset theo quy trình §3.5 (upload `nhatlong1103`, public, cập nhật `ENVIRONMENT_SUMMARY`).
+Ảnh có sẵn: Boreas (`boreas-vpr-images-1..5`), 4Seasons, NCLT (`nclt-cam5-*`), CMU, RobotCar, Nordland
+(`ENVIRONMENT_SUMMARY` §1–§2).
 
-### Bước 4 — Báo cáo
+### Bước 4 — Báo cáo và bàn giao
 
-Khi có kết quả mạnh: rebuild `paper/BAO_CAO_CertSeq.pdf` (`paper/build_report.py` đã có mục 5 về HMM và CPC-HMM; cần
-thêm luật p_out mới nếu được chọn), rồi commit và push.
+Khi có kết quả mạnh: báo cáo PDF ngắn tiếng Việt; cập nhật 01–05, `ENVIRONMENT_SUMMARY`; commit và push.
 
 ## 6. Lưu ý chuyển giao
 
-- Trigger kiểm tra hằng giờ của khung chat cũ **đã tắt**. Khung chat mới tự đặt lịch kiểm tra nếu cần.
-- Scratchpad của khung chat cũ (thư mục `runs/` với kernel dir và npz) **không** sang được khung chat mới. Mọi thứ cần
-  kéo lại đều nằm trên Kaggle theo `RUNNING_KERNELS.md`.
-
-## 7. Cập nhật 2026-10-31 (branch `hmm-navigation-3`)
-
-**Câu hỏi của user (phản biện):** phương pháp có sai số thấp nhưng recall thấp — có phải chỉ thận trọng hơn?
-
-**Đã làm (chi tiết: `RESEARCH_LOG.md` Entry 25, báo cáo `paper/BAO_CAO_PhanBien.{md,pdf}`, bảng `paper/oc_tables.md`):**
-- Chẩn đoán recall (`analysis/recall_diag.py`): mất ở chuỗi hiện diện; phép min TCE là nguyên nhân chính; vi phạm của
-  CPC-HMM không TCE đến từ báo cáo kéo dài khi chuỗi vị trí (không có trạng thái off-map) kẹt ở mép / nhảy.
-- **Phương pháp mới CPC-SC+CS** (`analysis/cpc_sc.py`, có trong `nav_rules.py`): chuỗi CPC-HMM + ngưỡng khởi phát hiệu chuẩn
-  theo đoạn trên null tự-phát-lại + quy tắc dừng nhất quán odometry (CS, cửa sổ 3·excl, ngưỡng excl). Đăng ký trước trên
-  tập phát triển Boreas/NCLT, kiểm định trên 5 tập giữ lại; leave-one-dataset-out chọn nó 6/7 fold.
-- **Đường cong vận hành** của mọi luật (`analysis/oc_curves.py`, `oc_summary.py`) và **so khớp chính xác**
-  (`analysis/oc_matched.py`): ở FL ≤ 1 % CPC-SC+CS có recall cao hơn Xu'21 7/7, Claxton'24 6/7 dataset.
-- Kết quả âm (đã loại): hedge e-value, trung bình e-process, TCE một thành phần, hysteresis, CPC-SC không CS, W-CPC, PCR,
-  cổng độ tin, hiệu chuẩn chung CS (`cs_cal`).
-- Dữ liệu tái sử dụng: `nhatlong1103/hmm-navcache-v2` (cache 7 dataset có Xu'21 posterior, `est_n`...). Kết quả nén:
-  `analysis/results/oc_curves_entry25.tgz`, `oc_matched_entry25.tgz`.
-
-**Đã xong thêm:** 10 seed cho điểm mặc định (366 run; cache `hmm-navcache-v2` bản mới), độ bền theo tỷ lệ lỗ 10 % / 50 %
-(cache công khai `nhatlong1103/hmm-navcache-holes`, thư mục `d10/`, `d50/`). Lần chạy đầu bị lỗi vì `hmm_fix` xoá cờ
-`--drop` khi import (đã sửa). Không còn kernel nào chạy lúc bàn giao.
-
-**Việc tiếp theo gợi ý:**
-1. Ngưỡng mặc định của CPC-SC+CS còn dè dặt so với chính đường cong của nó (countryside: 0.30 ở FL 0.000, 0.55 ở FL 0.01).
-   Cần một null cho CS vừa hợp lệ vừa ít bảo thủ hơn (null tự-phát-lại qua CS nhiều gấp 2.6× off-map thật).
-2. CMU (descriptor mạnh): Claxton'24 và max-sim xếp hạng tốt hơn — tìm cách đưa bằng chứng tuyệt đối mạnh (raw similarity
-   đã hiệu chuẩn) vào chuỗi hiện diện mà không mất tính hợp lệ khi đổi điều kiện.
-3. α nhỏ (0.01) cần ≥ 99 đoạn null: tăng số đoạn null (thêm block giữ lại, stride) hoặc dùng cận Ville thay conformal.
-4. 10 seed cho bảng cuối nếu cần khoảng tin cậy hẹp hơn.
-
-**Vận hành (bài học mới):** `pkill -f` khớp cả lệnh shell của chính mình (dùng PID); một cờ CLI phải smoke-test đầu-cuối
-trước khi chạy hàng loạt (lỗi `--drop`); hàng đợi L4 hay tắc → job chỉ CPU chạy kernel CPU; `make_eval_kernel` bỏ qua
-upload code khi mã băm không đổi.
+- Scratchpad của khung chat này (cache tải về, thư mục `runs/`) **không** sang khung mới; mọi thứ cần thiết đã ở git hoặc
+  dataset public.
+- Không có kernel nào đang chạy. Acc `thnliu`, `linhmai24`, `lelynhan`, `huyenco`, `mucnokieu`, `mxuanquy` có kernel của
+  phiên khác (`zc-*`, `vicoqa-*`): không đụng vào.

@@ -1,9 +1,104 @@
 # 01 — Scientific Findings (hướng HMM-navigation)
 
-*Cập nhật 2026-10-29. Branch `hmm-navigation` → bàn giao sang `hmm-navigation-2`. Tài liệu chỉ nói về **kết quả khoa
-học**: đóng góp, ý nghĩa, kết quả tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứng. Vận hành ở `02`, trạng
-thái và việc tiếp theo ở `03`. Số liệu đọc từ `analysis/results/*.json`, bảng sinh bằng `paper/build_cert_tables.py`
-và `paper/build_report.py`.*
+*Cập nhật 2026-10-31 (branch `hmm-navigation-3`). Tài liệu chỉ nói về **kết quả khoa học**: đóng góp, ý nghĩa, kết quả
+tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứng. Vận hành ở `02`, trạng thái và việc tiếp theo ở `03`.
+**Đọc §N trước** (trạng thái khoa học mới nhất, 2026-10-30/31); §0–§5 là nền tảng từ 2026-10-29, vẫn đúng, trừ chỗ §N
+ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
+`analysis/results/oc_*_entry25.tgz`.*
+
+## N. Trạng thái mới nhất (2026-10-30 → 2026-10-31)
+
+### N.1 Phương pháp chính hiện tại: CPC-SC+CS (thay CPC-HMM +TCEmin)
+
+`analysis/cpc_sc.py` (cũng là luật `CPC-SC+CS (ours)` trong `nav_rules.py`). Ba thành phần, mọi hằng số theo đơn vị bài
+toán (excl, H, α), một cấu hình cho mọi dataset:
+
+1. **Chuỗi hiện diện CPC-HMM** (không TCE): LR_t = ½(ẽ^top_t + (e^R_t)^{1/H}), e = a·p^{a−1} (a: Beta-EM theo traversal),
+   ẽ^top có cổng top-1 = MAP; p_in = p_out = 0.01.
+2. **SC — ngưỡng khởi phát hiệu chuẩn theo đoạn:** κ = phân vị conformal (1−α) của max log-odds trên các đoạn H frame
+   của null tự-phát-lại của bản đồ (chuỗi khởi đầu ở odds 1). Báo từ khi ℓ_t > κ, duy trì khi ℓ_t > 0.
+   *Định lý (khởi phát):* dưới exchangeability của đoạn off-map với đoạn null, P(khởi phát báo trong đoạn | chưa báo khi
+   vào đoạn) ≤ α, mọi phụ thuộc trong đoạn. Thực nghiệm Boreas: tỷ lệ đoạn có khởi phát sai 0.010–0.041.
+3. **CS — quy tắc dừng nhất quán odometry:** dừng nếu ∃k, quãng odometry ≤ 3·excl, | ‖m_t − m_{t−k}‖ − ‖o_t − o_{t−k}‖ | >
+   excl. *Bổ đề 7:* chỉ bỏ bớt báo cáo nên segFAR/FL không tăng (không áp cho ARL₀ đếm khởi phát). *Mệnh đề 4:* nếu MAP
+   kẹt trong bán kính δ quanh nơi rời bản đồ và excl + in_d + ε + δ < off_d thì không có báo cáo ở frame off-map.
+
+Lý thuyết đầy đủ: `paper/cpc_theory.md` §3c (TCE) và §3d (đường cong, CS, CPC-SC).
+
+### N.2 Chẩn đoán dẫn tới phương pháp (Entry 25, `analysis/recall_diag.py`)
+
+- Recall mất ở **chuỗi hiện diện**, không ở chuỗi vị trí: Boreas NetVLAD chuỗi vị trí đúng 85 % frame on-map, chỉ báo
+  30 %; Boreas DINOv2 83 % frame on-map nằm trong đoạn không bao giờ được báo dù chuỗi vị trí đúng 86 % ở đó.
+- **Phép min TCE** là nguyên nhân chính (NCLT DINOv2 recall 0.16 TCEmin vs 0.50 CPC-HMM).
+- **So với CPC-HMM, TCEmin là điểm vận hành thận trọng hơn trên đường cong kém hơn** (NCLT NetVLAD, cùng recall: sai số
+  12.9 vs 6.3 m) → phản biện "chỉ thận trọng hơn" đúng với phương pháp cũ.
+- Vi phạm segFAR của CPC-HMM không TCE đến từ **báo cáo kéo dài** (chuỗi vị trí không có trạng thái off-map: MAP kẹt ở
+  mép hoặc nhảy sang nơi giống), không phải từ khởi phát.
+- **Tính nhất quán odometry trên quãng dịch chuyển là bằng chứng hiện diện mạnh:** ở 4S countryside, mọi luật "+CS" đạt
+  recall tốt nhất tại FL ≤ 0.01 khi ngưỡng P(on) chỉ ≈ 0.02 (CS gần như tự loại hết báo sai). Ngược lại phép thử một bước
+  (PCR, cổng dự đoán kiểu IPDA) **tự xác nhận**: dưới H0 nơi dự đoán cũng là ô top-1 ở 62 % frame (CMU CosPlace).
+
+### N.3 Kết quả (7 dataset, 6 descriptor; bản đồ khuyết 30 %; NCLT off-map tự nhiên)
+
+**Điểm mặc định, 10 seed (366 run)** — recall / segFAR / sai số (m):
+
+| Luật | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| Xu'21 (nhãn) | 0.68 / 0.043 / 25.3 | 0.53 / 0.021 / 13.7 | 0.69 / 0.227 / 18.1 | 0.74 / 0.038 / 59.3 | 0.72 / 0.215 / 21.2 | 0.62 / 0.101 / 70.9 | 0.25 / 0.088 / 81.0 |
+| Claxton'24 (nhãn) | 0.74 / 0.116 / 36.9 | 0.66 / 0.203 / 32.3 | 0.87 / 0.166 / 14.3 | 0.52 / 0.263 / 88.0 | 0.80 / 0.152 / 18.7 | 0.72 / 0.166 / 90.4 | 0.60 / 0.213 / 42.9 |
+| TCEmin (cũ) | 0.66 / 0.008 / 6.4 | 0.49 / 0.000 / 3.7 | 0.75 / 0.018 / 3.9 | 0.57 / 0.002 / 13.0 | 0.70 / 0.013 / 12.5 | 0.59 / 0.008 / 33.7 | 0.21 / 0.010 / 59.1 |
+| **CPC-SC+CS** | 0.66 / 0.001 / 5.1 | 0.54 / 0.000 / 4.6 | 0.73 / 0.002 / 3.8 | 0.64 / 0.000 / 9.6 | 0.71 / 0.000 / 11.6 | 0.60 / 0.000 / 30.8 | 0.30 / 0.000 / 53.1 |
+| Oracle | 0.88 / – / 2.1 | 0.72 / – / 2.2 | 0.94 / – / 3.0 | 0.67 / – / 4.8 | 0.91 / – / 8.3 | 0.84 / – / 19.4 | 0.73 / – / 16.5 |
+
+**Recall ở cùng FL ≤ 0.01 (đường cong vận hành, 3 seed):**
+
+| Luật | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| Xu'21 (nhãn) | 0.562 | 0.526 | 0.592 | 0.624 | 0.537 | 0.555 | 0.181 |
+| Claxton'24 (nhãn) | 0.687 | 0.574 | **0.793** | 0.439 | 0.749 | 0.644 | 0.420 |
+| SafeVPR (nhãn) | 0.486 | – | – | – | – | – | – |
+| TCEmin (cũ) | 0.692 | **0.590** | 0.713 | 0.619 | 0.733 | 0.616 | 0.245 |
+| **CPC-SC+CS** | **0.766** | 0.586 | 0.705 | **0.780** | **0.771** | **0.664** | **0.545** |
+
+- Ở cùng FL ≤ 1 %: hơn Xu'21 7/7, hơn Claxton'24 6/7 (trừ CMU). Đặt tại đúng FL của Xu'21 (Kalman chạy thật,
+  `oc_matched.py`): recall cao hơn 5/7, sai số thấp hơn 6/7.
+- segFAR tệ nhất trong từng run: 0.021 (mọi 366 run < α = 0.05); TCEmin tới 0.171, Xu'21 tới 1.0.
+- So với TCEmin: recall cao hơn 5/7 (CMU −0.02), segFAR ≤ 7/7, sai số thấp hơn 6/7 (NCLT +0.9 m).
+- **Độ bền tỷ lệ lỗ bản đồ** (cùng hằng số): 10 % và 50 % → segFAR ≤ 0.012 mọi nơi; sai số thấp hơn Xu'21 ở mọi dataset
+  (10 %: 1.2–4.5×, 50 %: 2.4–8.9×).
+- **Chọn leave-one-dataset-out** (15 biến thể không nhãn): CPC-SC+CS ở 6/7 fold, regret 0–3.5 m (TCEmin trước đây: tới
+  30 m). Giao thức **đăng ký trước**: Boreas/NCLT phát triển, 5 tập còn lại giữ lại.
+- Độ nhạy: span CS 2/4·excl đổi recall ±0.02–0.04, segFAR ≤ 0.014; ngưỡng 0.75/1.25·excl ảnh hưởng nhỏ; α = 0.1 như 0.05.
+
+### N.4 Kết quả âm và hạn chế mới (đã xác minh)
+
+1. **CMU (descriptor mạnh, dữ liệu dễ):** Claxton'24 (nhãn) và cả max-sim thô xếp hạng tốt hơn mọi chuỗi hiện diện.
+2. **Vùng FL cao (3–8 %):** Claxton'24 recall cao hơn trên 5/7 (segFAR của nó 0.11–0.27).
+3. **Điểm mặc định còn dè dặt so với chính đường cong** (countryside recall 0.30 ở FL 0 vs 0.55 ở FL 0.01). Hiệu chuẩn
+   chung (hiện diện ∧ CS) trên null không nới được: null tự-phát-lại qua CS nhiều gấp 2.6× off-map thật (0.229 vs 0.088).
+4. **Recall mặc định thấp hơn Xu'21 trên 4/7** (Nordland −0.10, còn lại ≤ 0.02).
+5. **α = 0.01 không khả thi** khi null có < 99 đoạn (CMU, 4S office: κ = ∞, recall 0).
+6. **Bảo đảm dưới phụ thuộc thời gian vẫn chưa có:** W-CPC (bộ nhớ hữu hạn + hiệu chuẩn theo đoạn) vi phạm trên Boreas
+   (segFAR 0.030, tệ nhất 0.099) như certified; nguyên nhân: null tự-phát-lại của bản đồ (block ngắn, cùng điều kiện ảnh)
+   biểu diễn thiếu phụ thuộc của đoạn off-map dài.
+7. Đã thử và loại: e-value hai nhóm (hedge, +0.006 recall), trung bình e-process, TCE trên một thành phần, hysteresis
+   TCEmin→CPC, CPC-SC không CS, PCR (kèm lỗi thang đo khi che block của null), cổng độ tin chuỗi vị trí (conf quá tự tin),
+   hiệu chuẩn chung CS.
+8. NCLT: CS xoá frame đúng; CPC-HMM không CS có đường cong tốt nhất; sai số nhạy với vài fix sai (EKF có hướng).
+
+### N.5 Kết quả 2026-10-30 (Entry 22–24, tóm tắt)
+
+- **TCE / TCEmin** (e-value hiệu chuẩn theo chuyển tiếp, min với e-value biên): segFAR ≤ 0.025 trên 7/7, nhưng recall
+  thấp (§N.2).
+- **NCLT** (8 phiên, off-map tự nhiên) được thêm như tập giữ lại; mọi luật không nhãn thắng baseline có nhãn về segFAR.
+- **Cổng dead-reckoning +GG** tốt trên Boreas nhưng khoá chết trên 4S old town/countryside và NCLT → chỉ là module tuỳ chọn.
+
+### N.6 Novelty (Gate 9–10, `LITERATURE_GATE.md`)
+
+- CS: cơ chế đã biết (RRR, PCM/Olson, SeqSLAM, Claxton'24) — vai trò và chẩn đoán là mới. SC: cùng lập luận exchangeability
+  như certified (conformal theo quỹ đạo/block). Đánh giá theo đường cong: giao thức, không phải phương pháp.
+- **Mức hiện tại: A (RA-L/ICRA/IROS) khả thi; A\* chưa.** Thiếu: bảo đảm dưới phụ thuộc; so sánh TRAIL'26 / TAO'26 /
+  VPR-auditing'26; chạy robot thật vòng kín.
 
 ## 0. Bài toán
 
@@ -201,3 +296,14 @@ exp(s/T)), có hoặc không có trạng thái off-map của Xu et al. RA-L'21.
 - **Baseline Xu'21:** emission exp(s/T), off-map exp(s₍ₖ₎/T), p_out = 0.01, p_in = 0.05; (T, k) ∈ {0.01, 0.02, 0.05} ×
   {5, 10, 20} chọn bằng nhãn trên 2 điều kiện dễ nhất với FL ≤ α.
 - **Baseline khác:** per-frame SelfCal (p ≤ α), ngưỡng max-sim hiệu chuẩn bằng nhãn, accept-all, oracle.
+- **Bổ sung 2026-10-31:**
+  - Baseline có nhãn tái hiện từ paper (không có code gốc): Claxton'24 = MLP (32, 16) trên 6 đặc trưng profile
+    similarity, huấn luyện bằng nhãn trên 2 điều kiện dễ nhất (`bsel`), chấp nhận khi P > 0.5; SafeVPR = điểm MNN patch
+    DINOv2 trên top-20 + Mondrian LTT (FDR α = 0.05, δ = 0.1), chỉ có trên Boreas (`nhatlong1103/vpr-safevpr-scores`).
+  - Đường cong: 48 ngưỡng (phân vị của điểm từng luật) + ngưỡng mặc định; Kalman ở 14 ngưỡng (`oc_curves.py`); so khớp
+    chính xác: 200 ngưỡng, Kalman tại đúng ngưỡng khớp (`oc_matched.py`). Nhãn chỉ dùng để đánh giá.
+  - 10 seed cho điểm mặc định (seed 0–9; NCLT 1 seed vì không có lỗ tổng hợp); đường cong và so khớp dùng seed 0–2.
+  - Độ bền: `nav_demo.py --drop 0.1 / 0.5` (cùng mọi hằng số). NCLT: bản đồ 2012-01-08, 8 phiên query, excl 10 m, EKF có
+    trạng thái lệch hướng.
+  - Mọi số trong §N tái tạo từ cache công khai `nhatlong1103/hmm-navcache-v2` (10 seed) và `hmm-navcache-holes` bằng
+    `oc_curves.py --variants [--defaults-only] [--cs-sens]`, `oc_matched.py`, `lodo_select.py`, `paper/build_oc_report.py`.
