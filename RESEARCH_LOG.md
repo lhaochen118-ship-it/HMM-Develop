@@ -51,6 +51,16 @@ s0 segFAR CST 0.058, CSTt 0.048, SH 0.018. **Main rule of H34a / H34b is therefo
 CMS-CPC/H+CST+G+NGRr and CMS-CPCW/H+CST+NGRr; CST2 and CSTt are reported as pre-specified alternatives. H34c applies to
 CST[both]. Preset `@E34` (updated), groups cond + loco, alpha 0.05, 366 runs, local CPU.
 
+**Correction (18:15, after the first full local run, before any conclusion was written).** The local counterfactual-statistics
+cache was the OLD approximate one (Entry 28: top-100 truncation, shown anti-conservative by the Entry 29 audit). Every Kaggle
+evaluation since Entry 29 uses `nhatlong1103/hmm-cms-cache-exact`. Consequences:
+- The Step-1 diagnosis numbers, the two design checks above and the first full local run (kept in the scratchpad as
+  `results_approx_cache`, not reported) were computed on the approximate null. They are void as evidence.
+- The exact cache was downloaded. A local run on it reproduces the Kaggle E33 result of the same run to 4 decimals (4S
+  countryside CosPlace s0: 0.6588 / 0.0 for the main rule, 0.5023 / 0.0 for CPC-SC-T(1/2)+SH).
+- The evaluation was restarted on the exact cache, with the hypotheses and the main rule unchanged: Boreas (60 runs) plus the
+  Boreas part of the a_sh sensitivity on 20 Kaggle CPU kernels, the other 306 runs locally.
+
 ## Entry 33 (branch `hmm-navigation-5`) — competitors read in full, improvement attempts, reputable new datasets (2026-11-01)
 
 **Competitors (read in full; `literature/RELATED_WORK_E32.md` section 7).** SafeVPR'26 (labelled Mondrian LTT, FDR under
