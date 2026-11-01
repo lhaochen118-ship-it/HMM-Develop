@@ -19,6 +19,15 @@ calibrated on labelled off-map SEGMENTS, the most favourable fair version), Cars
 SU25 0.379 / segFAR 0.354, SU25-seg 0.150 / 0.046, SUE24 0.458 / 0.336, SUE24-seg 0.347 / 0.038, Carson23 0.603 / 0.982,
 proposed 0.826 / 0.000.
 
+**Pre-registration of the Entry 33 evaluation (366 runs, before any of it).** (a) New competitor baselines SU25, SUE24, SU25-seg,
+SUE24-seg, Carson23 (`--newbase`). (b) *Counterfactual-calibrated SH* (`--shcf`, families /H+SHcf): the shape tolerance eps of
+the SH stop = beta-quantile (beta = 0.01) of the shape residual of the COUNTERFACTUAL track MP[j_cf] (false by construction) in
+the calibration group, instead of the a-priori 0.5 excl; on the 5 design runs it recovers eps = 0.39-0.58 excl. Hypotheses:
+H33a the proposed rule has higher recall than every new competitor whose mean segFAR <= alpha, on >= 6/7 datasets; H33b
+CMS-CPC/H+SHcf+G+NGRr is within 0.01 recall of CMS-CPC/H+SH+G+NGRr on >= 5/7 with mean segFAR <= alpha on 7/7 (the hand-set
+tolerance is replaceable by a calibrated one). (c) New dataset: Oxford RobotCar (PointNetVLAD split, 44 traversals), dump
+kernel republishes it as `nhatlong1103/oxford-robotcar-vpr-dump` / `-images`; evaluated with the same protocol (30 % holes).
+
 **Improvement attempts (design runs only, labels only to diagnose; negative results recorded).**
 1. *SU as a third CMS statistic:* AUROC (correct on-map vs off-map) of the logistic combination route cost + z vs + SU:
    0.949 -> 0.952 (Nordland), unchanged on 4S old town / countryside, Boreas, CMU; SU alone 0.48-0.84 (route cost 0.90-0.98)
