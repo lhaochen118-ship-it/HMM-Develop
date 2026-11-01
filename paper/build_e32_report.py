@@ -96,7 +96,11 @@ def main():
     tables = "\n".join(L) + "\n"
     open(os.path.join(HERE, "e32_tables.md"), "w").write(tables)
     tx = os.path.join(HERE, "e32_text.md")
-    if os.path.exists(tx): open(os.path.join(HERE, "BAO_CAO_E32.md"), "w").write(open(tx).read().replace("{{TABLES}}", tables))
+    if os.path.exists(tx):
+        doc = open(tx).read().replace("{{TABLES}}", tables)
+        for tag, fn in (("{{TABLES33}}", "e33_tables.md"), ("{{TABLES34}}", "e34_tables.md")):   # Entry 33 / 34 tables (own builders)
+            f = os.path.join(HERE, fn); doc = doc.replace(tag, open(f).read() if os.path.exists(f) else "*(chưa có kết quả)*")
+        open(os.path.join(HERE, "BAO_CAO_E32.md"), "w").write(doc)
     print(tables)
 
 
