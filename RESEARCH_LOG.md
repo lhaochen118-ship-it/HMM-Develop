@@ -12,9 +12,11 @@ Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Com
 **Step 1 (core limitation, diagnosed with labels on CMU / 4S countryside CosPlace s0-1).** Theorems 6 / 6' / 6'' bound the ONSET
 of a report chain inside an excursion. They say nothing about PERSISTENCE: a chain that is ON when the robot leaves the map is
 kept while log-odds > 0. The presence chain's log-odds are capped near log((1-p)/p) = 4.6 and off-map evidence is weak, so a
-carried chain survives ~20 frames. Without the shape stop SH (CMS-CPC/H+G) the off-map false fixes are 528 / 366 / 320 / 206
-frames per run, 62 / 14 / 20 / 13 % of them in streaks that started ON the map, and 74-87 % at depth >= 20 frames into the
-excursion. SH removes almost all of them (0 / 7 / 86 / 7). SH is therefore the only guard against persistence errors, and its
+carried chain survives ~20 frames. Without the shape stop SH (CMS-CPC/H+G) the off-map false fixes are 491 / 174 / 374 / 28
+frames per run (4S countryside s0 / s1, CMU s0 / s1; exact cache, re-run after the correction below). 65 / 29 / 18 / 61 % of them
+are in streaks that started ON the map, and 73 / 72 / 70 / 39 % are at depth >= 20 frames into the excursion. SH removes almost
+all of them (0 / 0 / 74 / 0). CST (exact cache) leaves 0 / 0 / 126 / 1; on CMU s0, 94 of the 126 are within 20 frames of the
+excursion start, i.e. the boundary region outside Proposition 14. SH is therefore the only guard against persistence errors, and its
 tolerance is the one hand-set constant that validity depends on (Entry 32: x 2 breaks validity).
 
 **Step 2 (hypothesis and mechanism).** The map surgery gives a null for the TRACK as well as for the presence statistics. The
