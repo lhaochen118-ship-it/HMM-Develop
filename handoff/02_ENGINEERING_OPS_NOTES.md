@@ -5,6 +5,18 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 000000. Vòng 9 (2026-11-01): vận hành
+
+- **Rate limit API Kaggle:** 59 tiến trình `run_kernel.py` hỏi trạng thái 30 s/lần (≈ 2 yêu cầu/s từ một IP) ⇒ mọi lệnh `kaggle`
+  trả "You have been rate limited" từ khoảng 11:45; kernel vẫn chạy trên Kaggle nhưng không ai phát hiện xong / tải output.
+  Sửa: `run_kernel.py` hỏi mỗi `RK_POLL` giây (mặc định 120, jitter +50 %) và lùi 5–6 phút khi gặp rate limit; khôi phục bằng
+  `reattach.py` (gắn lại theo thư mục kernel). Không chạy thêm lệnh `kaggle` thủ công khi đang có hàng chục monitor.
+- `pkill -f run_kernel.py` / `kill $(pgrep -f run_kernel.py)` cũng giết các vòng chờ bash có chuỗi đó trong dòng lệnh — dùng
+  `pgrep -f "[r]un_kernel.py"` và tránh viết nguyên chuỗi trong lệnh chờ (ghép chuỗi `run_""kernel.py`).
+- Khi mọi phiên GPU đều bận, `fanout.py` thử đẩy lại trên mọi acc rồi bỏ cuộc (`PUSH_FAILED`): ghi lại nhóm job để chạy lại sau.
+- Dataset mới phải được đăng lại dưới `nhatlong1103` (quy định user 2026-11-01): kernel dump tự đăng bằng token (kernel GPU có
+  internet, không phải L4). Kaggle bỏ "+" khỏi tên file trong dataset.
+
 ## 00000. Vòng 8 (2026-11-01): vận hành
 
 - Script mới: `analysis/natural_eval.py` (benchmark off-map tự nhiên 4Seasons chéo cảnh, cả pipeline trong một job: nav_demo

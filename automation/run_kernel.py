@@ -11,7 +11,7 @@ Usage: run_kernel.py <kernel_dir> <out_dir> [stall=600] [max_restarts=4] [hard=1
   --attach : do not push; wait for an already-running kernel (e.g. after a local restart), then pull.
 Last line: STATUS=DONE:<complete|error|stall|timeout>
 """
-import sys, subprocess, time, os, json, glob, re
+import random, sys, subprocess, time, os, json, glob, re
 
 kdir, outdir = sys.argv[1], sys.argv[2]
 STALL = int(sys.argv[3]) if len(sys.argv) > 3 else 600
@@ -58,6 +58,7 @@ def cancel():
     time.sleep(20)
 
 
+POLL = float(os.environ.get("RK_POLL", "120"))                   # seconds between status polls
 t0 = time.time()
 if not ATTACH and not push():
     print("STATUS=PUSH_FAILED", flush=True); sys.exit(1)
@@ -68,7 +69,8 @@ while True:
     st = kg("kernels", "status", kid)
     m = re.search(r"KernelWorkerStatus\.(\w+)", st)
     if not m:                                                          # transient API / network error: not a kernel state
-        time.sleep(30); continue
+        # rate limit (many monitors share one IP, 2026-11-01): back off 5 min instead of hammering the API
+        time.sleep(300 + random.uniform(0, 60) if "rate limit" in st.lower() else 30); continue
     low = m.group(1).lower()
     if low != last:
         print(ts(), f"[{int(now - t0)}s]", st[:140], flush=True); last = low
@@ -90,7 +92,7 @@ while True:
         cancel(); push(); attempt_t0 = time.time(); running_since = None; saw_out = False; time.sleep(15); continue
     if now - t0 > HARD:
         print("STATUS=HARD_TIMEOUT", flush=True); state = "timeout"; break
-    time.sleep(30)
+    time.sleep(POLL + random.uniform(0, POLL / 2))                    # jittered poll (was 30 s; dozens of monitors hit the rate limit)
 
 os.makedirs(outdir, exist_ok=True)
 print(f"=== PULL ({state}) -> {outdir} ===", flush=True)
