@@ -3,6 +3,24 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 14 (Entry 31, 2026-11-01) — HMM with a counterfactually calibrated off-map state
+
+**Claim checked.** A joint place-presence HMM whose OFF-map state emission is set from a counterfactual null (map surgery around
+the system's own belief) so that the HMM's OFF marginal equals a calibrated presence chain with a finite-sample false-onset bound.
+**Queries (web, standard):** "hidden Markov model off-map state calibrated emission conformal visual place recognition localization
+guarantee"; "conformal calibration of HMM state posterior out-of-map / off-map detection sequential localization false alarm
+guarantee 2025".
+**Closest work found.** Xu et al. 2021 (arXiv 2105.03091, HMM with an off-map state, emission exp(s_(k)/T) tuned with labels —
+our baseline Xu'21); SafeVPR 2026 (arXiv 2605.28048, Mondrian conformal LTT on accept/reject of sequence VPR, needs calibration
+labels/exchangeability — our baseline); Su–Zhou–Luo 2024 (arXiv 2411.01558, adaptive conformal inference with particle filters under
+HMMs: COVERAGE sets, not detection / false-onset control); conformalized Kalman filters (arXiv 2609.27506: coverage regions);
+conformal indoor localization (arXiv 2505.08639). HMM-based VPR sequence matching (Hansen–Browning 2014; HM4, Doan et al. 2020)
+has no calibrated off-map decision.
+**Verdict.** Not found in the queries performed: no prior HMM localizer whose off-map state is calibrated label-free from a
+counterfactual stream with a false-onset guarantee. Weaker claims that ARE prior art: an HMM with an off-map state (Xu'21);
+conformal accept/reject for VPR (SafeVPR); conformal coverage for HMM / Kalman state estimates. A wider search (journals, RSS/ICRA
+2025-26 proceedings) is still needed before submission.
+
 ## Gate 13 (2026-11-01, branch `hmm-navigation-5`): Entry 29 — wider search for CMS, counterfactual innovation gate
 
 Searches: retrieval OOD with removed nearest classes / self-supervised nulls; place-recognition hold-out of own locations;

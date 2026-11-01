@@ -81,6 +81,26 @@ bound of Theorem 6 is vacuous for the per-session (cond) calibration.
    validity of H30d; main rule CMS-CPCW/H+SH+NGR (exact onset theorem, Theorem 6'), recall-oriented variant
    CMS-CPC/H+SH+G+NGR (LODO choice of Entry 29). Paired cluster-bootstrap CIs by seed (`analysis/paired_stats.py`).
 
+**Results (366 main runs x {F0, F1, F2, F3}, 36 natural runs x 2 inits, 216 hole runs; both gate variants; report
+`paper/BAO_CAO_E30.pdf`; raw `analysis/results/e30/`).**
+1. *Reproducibility:* ungated families identical to Entry 29 on 366/366 runs; +NGRr identical to the Entry 29 gate on 360/366
+   (6 NCLT runs differ by <= 0.001 recall through the uncertainty floor).
+2. *Selection:* LODO over every label-free family (both gate variants, all calibration groups) picks **CMS-CPC/H+SH+G+NGRr** in
+   7/7 folds at alpha = 0.05 (regret 0.1-2.5 m) and its alpha = 0.01 version in 6/7 folds at alpha = 0.01. Streak-open vs
+   rate-limited release (same runs): Boreas +2.0 to +2.9 m, CMU +0.5 m (CI > 0), 4S countryside -0.5 to -1.0 m.
+3. *H30a supported:* [online] and [both] mean segFAR <= alpha on 7/7 at both alphas (max mean 0.009 at alpha 0.05).
+4. *H30b supported (with +NGRr):* CMS-CPCW/H+SH[both]+NGRr vs CPC-SC-T(1/2)+SH: recall higher 7/7 (CI > 0 6/7), error lower 7/7
+   (CI < 0 7/7); CMS-CPC/H+SH+G[both]+NGRr: recall 7/7 (CI 6/7), error 7/7 (CI 5/7). [online] loses recall on Nordland.
+5. *H30c:* proposed rule vs CPC-SC-T(1/2)+SH under F1 / F2 / F3: recall 7/7 / 7/7 / 7/7 (CI 6/7 each), error 7/7 / 7/7 / 7/7 (CI 5/7,
+   7/7, 6/7) -> supported. Gate effect: 7/7 under F1 and F2, only 2/7 under F3 (label-free init: the gate assumes a localised
+   filter) -> partially supported.
+6. *H30d supported:* natural off-map (36 runs): every CMS variant valid at alpha = 0.05 (no run above alpha; worst 0.044 ungated,
+   0.013 with +NGRr); scene-A recall above CPC-SC-T(1/2)+SH on 6/6 pairs (pooled 0.70-0.72 vs 0.59; error 18-20 vs 26 m); label
+   baselines exceed alpha in 11-28 % of the runs. The transductive cond variant exceeds alpha = 0.01 in 2/36 runs (1/36 with the
+   gate), the causal variants never.
+**Verdict.** Proposed method unchanged: CMS-CPC/H+SH+G+NGRr (rate-limited release); deployable causal version
+CMS-CPCW/H+SH[both]+NGRr or [online]+NGRr; conclusions robust to the evaluation filter.
+
 ## Entry 29 (branch `hmm-navigation-5`) — navigation-risk calibration and self-audit (2026-11-01)
 
 **Pre-registration (written before the full evaluation; design used 6 runs: Boreas MegaLoc s1, 4S old town CosPlace s0,

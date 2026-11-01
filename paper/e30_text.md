@@ -19,7 +19,9 @@
 5. **Hai phát hiện về cổng** (báo cáo thẳng): code vòng 7 khác mô tả (mở khoá giới hạn tốc độ thay vì mở cả chuỗi); bản sửa "mở cả
    chuỗi" đăng ký trước hoá ra **kém hơn** (Boreas +2.0 đến +2.9 m, CI > 0) ⇒ giữ cả hai, LODO chọn bản giới hạn tốc độ.
 6. **HMM là trung tâm (Entry 31):** HMM liên hợp vị trí–hiện diện với trạng thái OFF có emission hiệu chuẩn phản thực; biên OFF của nó
-   **trùng chính xác** chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13), nên mọi định lý là phát biểu về chính HMM. {{E31}}
+   **trùng chính xác** chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13), nên mọi định lý là phát biểu về chính HMM. Trên 3 run thiết kế, ghép nối liên hợp giữ nguyên quyết định (cùng biên OFF) và
+   chữa lock-in của cùng chuỗi vị trí (Nordland: sai số CMS-CPCW 27.3 → 6.0 m, độ đúng vị trí sau lỗ 0.80 → 0.90) nhưng **không tăng
+   recall** so với chuỗi vị trí gốc (−0.01, do emission dựng lại từ top-K); đánh giá 114 run đang chạy (§5).
 
 ## 1. Câu hỏi của vòng này (không có robot thật, chỉ benchmark trên dataset)
 
@@ -87,13 +89,14 @@ cổng (giả định bộ lọc đã định vị) giữ lại chúng — sàn 
 thiết kế của cổng, không phải của CMS (bản không cổng vẫn hơn luật cũ dưới F3).
 
 **Off-map tự nhiên (Bảng 7–8).** Đây là phép thử quan trọng nhất về tính hợp lệ: phiên của cảnh B hoàn toàn off-map nên nhóm `cond` có
-π = 0 trong phiên đó. Thực tế ở α = 0.05 mọi biến thể vẫn hợp lệ (segFAR tệ nhất 0.044 với CMS-CPC/H+SH+G, 0.029 với CMS-CPCW):
-nhiễm của frame off-map yếu vì xoá một hành lang chỉ bỏ một phần nhỏ các khớp giả. Ở α = 0.01 bản `cond` vượt α ở 2/36 run (đúng dự báo
-của Mệnh đề 8), các bản nhân quả không. Recall cảnh A: CMS 0.67–0.72 so với 0.59 của luật cũ (6/6 cặp). Baseline có nhãn (được xem
+π = 0 trong phiên đó. Thực tế ở α = 0.05 mọi biến thể vẫn hợp lệ (segFAR tệ nhất 0.044 với CMS-CPC/H+SH+G không cổng, 0.013 với cổng +NGRr):
+nhiễm của frame off-map yếu vì xoá một hành lang chỉ bỏ một phần nhỏ các khớp giả. Ở α = 0.01 bản `cond` vượt α ở 2/36 run không cổng, 1/36 với +NGRr (đúng dự báo
+của Mệnh đề 8), các bản nhân quả không run nào. Recall cảnh A: CMS 0.67–0.72 so với 0.59 của luật cũ (6/6 cặp). Baseline có nhãn (được xem
 một bản ghi có nhãn của cảnh B): Claxton'24 recall cao hơn ở hai cặp countryside nhưng vượt α ở 14 % run; Xu'21 28 %; TAO'26 11 %.
 ⇒ **Khuyến nghị triển khai:** `[online]` hoặc `[both]` (không bao giờ vượt α ở đây), mất ≈ 0.01–0.05 recall so với bản chuyển đạo.
 
-{{E31READ}}
+**HMM liên hợp (Entry 31, §2 lý thuyết §4d).** Kết quả thiết kế (3 run): xem `RESEARCH_LOG.md` Entry 31. Đánh giá 114 run (seed 0–2,
+7 dataset × 6 descriptor) đang chạy trên 20 phiên L4; bảng E31 sẽ được thêm vào báo cáo này khi xong.
 
 ## 6. Hạn chế và việc tiếp theo
 
