@@ -6,6 +6,28 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
+## N000000. Vòng 9 (2026-11-01 → 02, branch `hmm-navigation-5`, vòng lặp tự động 9 giờ) — đọc trước §N00000
+
+**Báo cáo:** `paper/BAO_CAO_E32.pdf` (E32–E34 + Oxford); bản nháp bài báo `paper/cms_paper_draft.md`; hình
+`paper/fig_validity_recall.png`; lý thuyết `paper/cms_theory.md` §4e (Mệnh đề 14, Hệ quả 15); nhật ký Entry 32–35.
+
+1. **Độ bền (E32, 366 run × 14 biến thể + 42 run × 5 cách dựng null):** 12/14 hằng số và mọi cách dựng null (N, ρ) giữ hợp lệ 7/7 và
+   ưu thế recall 7/7. Hằng số mong manh duy nhất: dung sai SH (× 2 vỡ α ở CMU, 4S countryside). N = 40 tăng recall 0.015–0.027 (seed 0).
+   Thời gian ~20 ms/frame (thời gian thực 10 Hz trên 1 nhân; ngưỡng đặt trước < 10 ms / < 1 ms không đạt).
+2. **NCLT, mỗi phiên làm bản đồ (9 bản đồ, off-map tự nhiên sát bản đồ):** hợp lệ trên mọi bản đồ, recall > CPC-SC-T½+SH 9/9.
+3. **Đối thủ mới đọc toàn văn (E33):** SU'25, SUE'24, Carson'23 vi phạm α hoặc mất 40–70 % recall (H33a 7/7). SHcf (phân vị frame) không
+   đủ (H33b không đạt).
+4. **Oxford RobotCar (dataset uy tín mới, 60 run; dump `nhatlong1103/oxford-robotcar-vpr-dump`):** null bản đồ suy biến 36/60 run
+   (bản đồ nhỏ, Hệ quả 9); CMS hợp lệ ở mọi run (0.719–0.753 recall, 0 % run vượt α). Khi null bản đồ còn chạy, ưu thế recall nhỏ
+   (CPCW +0.008), sai số thấp hơn 19/24. Mọi baseline có nhãn vượt α.
+5. **Novelty mới (E34): phẫu thuật cũng hiệu chuẩn lối THOÁT.** Lỗi còn lại là *duy trì* chuỗi báo sau khi rời bản đồ; quỹ đạo phản
+   thực là null của "quỹ đạo ma" ⇒ phép thử hình dạng phản thực theo đoạn CST (Mệnh đề 14: báo sai theo đoạn sâu ≤ a_sh/π, giao biến
+   cố). 366 run: hợp lệ 7/7, recall ≥ SH 6/7, a_sh × 2 vẫn hợp lệ. **Nhưng** sai số điều hướng tăng ở Boreas (+9 m) và old town
+   (+13.6 m): fix sai ở mép chuyến off-map (ngoài mệnh đề) ⇒ CST một mình không thay SH.
+6. **E35 (SH ∧ CST):** {{E35H}}
+7. **Lỗi quy trình đã sửa:** cache thống kê phản thực local là bản xấp xỉ cũ ⇒ E34 lần đầu và các run thiết kế vô hiệu; đã chạy lại
+   trên cache chính xác (tái lập Kaggle tới 4 chữ số). Cache local hiện tại: `$S/cmscache → cmsx` (= `nhatlong1103/hmm-cms-cache-exact`).
+
 ## N00000. Vòng 8 (2026-11-01, branch `hmm-navigation-5`) — đọc trước §N0000
 
 **Báo cáo:** `paper/BAO_CAO_E30.pdf`; lý thuyết `paper/cms_theory.md` §4c–4d; nhật ký Entry 30–31; novelty Gate 14.

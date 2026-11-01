@@ -4,6 +4,17 @@
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
+## 000000. Vòng 9 (2026-11-01 → 02, branch `hmm-navigation-5`) — trạng thái
+
+- **Làm xong:** E32 (độ nhạy, thời gian, NCLT mỗi phiên làm bản đồ), E33 (đối thủ mới, SHcf, Oxford RobotCar 60 run), E34 (CST, 366
+  run + độ nhạy mức), E35 (SH ∧ CST). Báo cáo `paper/BAO_CAO_E32.pdf`, bản nháp bài báo `paper/cms_paper_draft.md`.
+- **Đề xuất hiện tại:** {{E35REC}}
+- **Kaggle:** luật hiện hành ở `ENVIRONMENT_SUMMARY.md` (tối đa 8 acc cùng lúc, dồn đủ 2 GPU + 5 CPU mỗi acc, bớt 1 acc mỗi lần bị
+  chặn API, một tiến trình theo dõi duy nhất `automation/central_monitor.py`). Không còn kernel nào chạy.
+- **Kết quả thô:** `analysis/results/e32/`, `e33/` (nb.tgz, oxford.tgz), `e34/e34.tgz`, `e35/`.
+- **Việc tiếp theo:** (1) phẫu thuật "tiến" cho đoạn ở mép chuyến off-map (khoảng trống cuối của Mệnh đề 14); (2) xác nhận N = 40
+  trên seed 1–9; (3) vector hoá thống kê phản thực; (4) St Lucia + so sánh trực tiếp SafeVPR'26; (5) hoàn thiện bài báo.
+
 ## 00000. Vòng 8 (2026-11-01, branch `hmm-navigation-5`) — trạng thái
 
 - **Làm xong (Entry 30):** hiệu chuẩn nhân quả `[online]`, `[both]` (Định lý 6″, Mệnh đề 12); độ bền bộ lọc F1–F3; benchmark off-map tự
