@@ -41,7 +41,7 @@ from cpc_sc import logodds, consistency_ok
 import cpc_geo as CG
 import tao as TAO
 
-OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}
+OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}
 
 
 def _lookup(ks, ss, key, tol, K, valid=None):
@@ -334,3 +334,68 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
     F["CMS-WU/H+SH"] = (np.where(sh_c, np.maximum(sc_t + kT2, wq2 - kW2), -np.inf), xc, 0.0, onWU & sh_c)
     ALPHA_MIN[0] = alpha
     return F, dict(kT=kT, nT=nT, kap=kap, lo=lo)
+
+def _seg_chain_max(ll, segs, p_in=0.01, p_out=0.01):
+    """max fresh-start presence log-odds of every segment"""
+    out = []
+    for sg in segs:
+        pon, best = 0.5, -np.inf
+        for i, t in enumerate(sg):
+            pr_ = pon * (1 - p_out) + (1 - pon) * p_in if i > 0 else 0.5
+            l = float(np.clip(np.log(pr_ / (1 - pr_)) + ll[t], -50, 50)); pon = 1 / (1 + np.exp(-l)); best = max(best, l)
+        out.append(best)
+    return out
+
+
+def online_parts(z, b, st, alpha=0.05, W=None, w_route=0.5):
+    """ONLINE CAUSAL calibration (Entry 30). For the session (query condition) c being processed:
+      * the p-value transform of each statistic and its Beta-EM calibrator a are FIXED from the OTHER sessions only (their
+        counterfactual pool; a fitted on their real p-values) -> no look-ahead into session c;
+      * the onset threshold at frame t is the conformal (1 - alpha) quantile of the segment maxima of the counterfactual
+        stream of the other sessions PLUS the counterfactual segments of session c that ended before t (growing pool).
+    Returns (windowed log-odds, kappa_W per frame, full-chain log-odds, kappa_chain per frame) or None (one session only)."""
+    from cpc_sc import window_logodds
+    import bisect
+    H, seqs = b["H"], b["seqs"]; W = W or H; n = len(z["cond"]); cond = z["cond"]
+    g = {}
+    for sq in seqs: g.setdefault(cond[sq[0]], []).append(sq)
+    if len(g) < 2: return None
+    wq, kW, llq_all, kC = np.full(n, -np.inf), np.full(n, np.inf), np.zeros(n), np.full(n, np.inf)
+    for c, sqs in g.items():
+        oth = [q for k2, v in g.items() if k2 != c for q in v]; mo = np.concatenate(oth); m = np.concatenate(sqs)
+        cq, cc = [], []
+        for key, low in (("cost", True), ("z", False)):
+            pool = st[key + "_cf"][mo]; fin = np.isfinite(pool); srt = np.sort(pool[fin] if low else -pool[fin])
+            tr = lambda x: np.clip((1 + np.searchsorted(srt, np.where(np.isfinite(x), x if low else -x, np.inf), side="right")) / (1 + len(srt)), 1e-6, 1)
+            a, _ = beta_em(tr(st[key][mo])); pw = w_route if key == "cost" else 1.0
+            e = lambda p: (a * p ** (a - 1)) ** pw
+            cq.append(e(tr(st[key]))); x = st[key + "_cf"]; ec = e(tr(x)); ec[~np.isfinite(x)] = 1.0; cc.append(ec)
+        llq = np.log(np.mean(cq, 0)); llc = np.log(np.mean(cc, 0))
+        llq_all[m] = llq[m]
+        wq_c = window_logodds(llq, sqs, W); wq[m] = wq_c[m]
+        wc_o = window_logodds(llc, oth, W); wc_c = window_logodds(llc, sqs, W)
+        so = _segments(oth, H)
+        poolW = sorted([float(wc_o[sg].max()) for sg in so]); poolC = sorted(_seg_chain_max(llc, so))
+        def kq(lst):
+            N = len(lst); k = int(np.ceil((1 - alpha) * (N + 1)))
+            return max(lst[k - 1], 0.0) if 0 < k <= N else np.inf
+        for sq in sqs:                                              # sessions' sequences in recording order (time)
+            for i0 in range(0, len(sq), H):
+                blk = sq[i0:i0 + H]; kW[blk] = kq(poolW); kC[blk] = kq(poolC)
+                if len(blk) == H:                                   # the segment has ended: its counterfactual joins the pool
+                    bisect.insort(poolW, float(wc_c[blk].max())); bisect.insort(poolC, _seg_chain_max(llc, [blk])[0])
+    return wq, kW, logodds(llq_all, seqs), kC
+
+
+def rules_online(z, b, st, alpha=0.05):
+    """[online] versions of the main rules (HMM place, shape stop, agreement gate)"""
+    r = online_parts(z, b, st, alpha)
+    if r is None: return {}
+    wq, kW, lo, kC = r; MP, seqs, excl = b["MP"], b["seqs"], b["excl"]; hz = list(z["hz"])
+    jj = np.maximum(st["j"], 0); xt = MP[jj]; okj = st["j"] >= 0; xc = MP[b["est_c"]]
+    agree = okj & (np.linalg.norm(xc - xt, axis=1) <= excl); sh_c = CG.shape_ok(xc, z["o_q"], seqs, excl, 3.0, 0.5, hz=hz)
+    F = {}
+    for tg, ok in (("H+SH", sh_c), ("H+SH+G", sh_c & agree)):
+        F[f"CMS-CPCW/{tg}[online]"] = (np.where(ok, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, ok, seqs))
+        F[f"CMS-CPC/{tg}[online]"] = (np.where(ok, lo - kC, -np.inf), xc, 0.0, CG.hyst_ok(lo > kC, lo > 0, ok, seqs))
+    return F

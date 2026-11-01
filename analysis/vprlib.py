@@ -136,6 +136,25 @@ def load_4seasons(dump, desc="salad", scene="office_loop", ref=None):
     return ep
 
 
+def load_4s_cross(dump, desc="salad", pair="office_loop+old_town"):
+    """NATURAL off-map benchmark (Entry 30): map = reference recording of 4Seasons scene A; queries = the other recordings of
+    A (on-map, no synthetic hole) followed by EVERY recording of scene B (a different part of the city: entirely off the map,
+    real images and real VIO). B positions are shifted by 1e6 m so that they are off-map by construction (the per-scene ENU
+    frames are unrelated anyway); conditions / recordings of B are prefixed "X:"."""
+    a, b = pair.split("+"); A = load_4seasons(dump, desc, a)
+    recs = sorted(f[3 + len(b) + 1:-4] for f in os.listdir(os.path.join(dump, "meta")) if f.startswith(f"4s_{b}_")
+                  and os.path.isfile(os.path.join(dump, desc, f[:-4] + ".npy")))
+    M = {r: np.load(os.path.join(dump, "meta", f"4s_{b}_{r}.npz"), allow_pickle=True) for r in recs}
+    D = {r: np.load(os.path.join(dump, desc, f"4s_{b}_{r}.npy")) for r in recs}
+    cat = lambda f: np.concatenate([f(r) for r in recs]); off = np.zeros(3); off[:2] = 1e6
+    ep = Episode(f"4sx_{pair}", np.concatenate([A.q, cat(lambda r: D[r])]), A.m, np.concatenate([A.q_pos, cat(lambda r: M[r]["C"]) + off]),
+                 A.m_pos, np.concatenate([np.asarray(A.q_cond).astype(str), cat(lambda r: np.array(["X:" + r] * len(D[r])))]),
+                 np.concatenate([A.q_R, cat(lambda r: M[r]["R"])]), A.m_R)
+    ep.q_vio = np.concatenate([A.q_vio, cat(lambda r: M[r]["vio_C"])]); ep.q_vioR = np.concatenate([A.q_vioR, q2R(cat(lambda r: M[r]["vio_q"]))])
+    ep.q_rec = np.concatenate([np.asarray(A.q_rec).astype(str), cat(lambda r: np.array(["X:" + r] * len(D[r])))]); ep.ref = A.ref
+    return ep
+
+
 BOREAS_Q = ["boreas-2020-12-01-13-26", "boreas-2021-01-15-12-17", "boreas-2021-01-26-11-22", "boreas-2021-02-02-14-07",
             "boreas-2021-03-23-12-43", "boreas-2021-04-15-18-55", "boreas-2021-05-13-16-11", "boreas-2021-06-17-17-52",
             "boreas-2021-07-27-14-43", "boreas-2021-09-07-09-35", "boreas-2021-09-14-20-00", "boreas-2021-10-22-11-36",

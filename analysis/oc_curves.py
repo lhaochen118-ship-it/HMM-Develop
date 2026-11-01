@@ -49,6 +49,8 @@ FAM_PRESETS = {"@E28": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certi
                "@E28H": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certified,max-sim,TAO-SC,CPC-SC+CS,CPC-SC-T+SH,CPC-SC-T0.5+SH,CPC-SC-T0.5+CS,CMS-T,CMS-T+SH,CMS-T/H,CMS-T/H+SH,CMS-F,CMS-F+SH,CMS-F-PAC,CMS-Tc-PAC,CMS-CPC,CMS-CPC+SH,CMS-CPC/H,CMS-CPC/H+SH,CMS-CPC/H+SH+G,CMS-U/H+SH,CMS-T(a=0.01),CMS-T+SH(a=0.01),CMS-T/H(a=0.01),CMS-T/H+SH(a=0.01),CMS-F(a=0.01),CMS-F+SH(a=0.01),CMS-F-PAC(a=0.01),CMS-Tc-PAC(a=0.01),CMS-CPC(a=0.01),CMS-CPC+SH(a=0.01),CMS-CPC/H(a=0.01),CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01),CMS-U/H+SH(a=0.01),CMS-W/H,CMS-W/H+SH,CMS-WU/H+SH,CMS-W/H(a=0.01),CMS-W/H+SH(a=0.01),CMS-WU/H+SH(a=0.01)",
                "@E29": "Xu21,Claxton24,TAO26,SafeVPR,certified,TAO-SC,CPC-SC+CS,CPC-SC+CS(alpha=0.01),CPC-SC-T0.5+SH,CPC-SC-T0.5+CS,CPC-SC-T0.5+SH+NGR,CPC-SC+CS+NGR,CMS-T,CMS-T(a=0.01),CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-T/H+SH+NGR,CMS-T/H+SH(a=0.01)+NGR,CMS-W/H+SH,CMS-W/H+SH(a=0.01),CMS-CPC,CMS-CPC/H+SH,CMS-CPC/H+SH+G,CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01),CMS-CPCW/H+SH,CMS-CPCW/H+SH+G,CMS-CPCW/H+SH(a=0.01),CMS-CPCW/H+SH+G(a=0.01),CMS-CPC/H+SH+NGR,CMS-CPC/H+SH+G+NGR,CMS-CPC/H+SH(a=0.01)+NGR,CMS-CPC/H+SH+G(a=0.01)+NGR,CMS-CPCW/H+SH+NGR,CMS-CPCW/H+SH+G+NGR,CMS-CPCW/H+SH(a=0.01)+NGR,CMS-CPCW/H+SH+G(a=0.01)+NGR,CMS-CPC/H+SH+NG,CMS-CPC/H+SH+DRG,CMS-CPC/H+SH(a=0.01)+NG,CMS-CPC/H+SH(a=0.01)+DRG,CMS-U/H+SH,CMS-CPC/H+SH[loco],CMS-CPC/H+SH[loco](a=0.01),CMS-CPCW/H+SH[loco],CMS-CPCW/H+SH[loco](a=0.01),CMS-CPC/H+SH{r1},CMS-CPC/H+SH{r1}(a=0.01)",
                "@E29H": "Xu21,Claxton24,TAO26,CPC-SC+CS,CPC-SC+CS+NGR,CMS-T,CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-CPC/H+SH,CMS-CPC/H+SH+G,CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01),CMS-CPCW/H+SH,CMS-CPCW/H+SH(a=0.01),CMS-CPC/H+SH+NGR,CMS-CPC/H+SH+G+NGR,CMS-CPC/H+SH(a=0.01)+NGR,CMS-CPC/H+SH+G(a=0.01)+NGR,CMS-CPCW/H+SH+NGR,CMS-CPCW/H+SH(a=0.01)+NGR,CMS-CPC/H+SH+DRG",
+               "@E30": "Xu21,Claxton24,TAO26,CPC-SC+CS,CPC-SC-T0.5+SH,CPC-SC-T0.5+SH+NGR,CMS-CPCW/H+SH,CMS-CPCW/H+SH+NGR,CMS-CPCW/H+SH(a=0.01),CMS-CPCW/H+SH(a=0.01)+NGR,CMS-CPCW/H+SH[loco],CMS-CPCW/H+SH[loco]+NGR,CMS-CPCW/H+SH[loco](a=0.01),CMS-CPCW/H+SH[loco](a=0.01)+NGR,CMS-CPCW/H+SH[online],CMS-CPCW/H+SH[online]+NGR,CMS-CPCW/H+SH[online](a=0.01),CMS-CPCW/H+SH[online](a=0.01)+NGR,CMS-CPCW/H+SH[both],CMS-CPCW/H+SH[both]+NGR,CMS-CPCW/H+SH[both](a=0.01),CMS-CPCW/H+SH[both](a=0.01)+NGR,CMS-CPC/H+SH+G,CMS-CPC/H+SH+G+NGR,CMS-CPC/H+SH+G(a=0.01),CMS-CPC/H+SH+G(a=0.01)+NGR,CMS-CPC/H+SH+G[loco],CMS-CPC/H+SH+G[loco]+NGR,CMS-CPC/H+SH+G[loco](a=0.01),CMS-CPC/H+SH+G[loco](a=0.01)+NGR,CMS-CPC/H+SH+G[online],CMS-CPC/H+SH+G[online]+NGR,CMS-CPC/H+SH+G[online](a=0.01),CMS-CPC/H+SH+G[online](a=0.01)+NGR,CMS-CPC/H+SH+G[both],CMS-CPC/H+SH+G[both]+NGR,CMS-CPC/H+SH+G[both](a=0.01),CMS-CPC/H+SH+G[both](a=0.01)+NGR,CMS-CPC/H+SH+NGR,CMS-CPC/H+SH(a=0.01)+NGR",
+               "@E30F": "Xu21,Claxton24,TAO26,CPC-SC+CS,CPC-SC-T0.5+SH,CPC-SC-T0.5+SH+NGR,CMS-CPCW/H+SH,CMS-CPCW/H+SH+NGR,CMS-CPC/H+SH+G,CMS-CPC/H+SH+G+NGR,CMS-CPC/H+SH+NGR,CMS-CPC/H+SH+NG,CMS-CPC/H+SH+DRG",   # Entry 30 filter robustness
                "@RHO": "CMS-T,CMS-T(a=0.01),CMS-CPC/H+SH,CMS-CPC/H+SH(a=0.01),CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-W/H+SH,CMS-W/H+SH(a=0.01),CMS-U/H+SH"}   # Entry 28 family lists (short job args)
 _fa = sys.argv[sys.argv.index("--fams") + 1] if "--fams" in sys.argv else None
 FAMS = set(FAM_PRESETS.get(_fa, _fa).split(",")) if _fa else None   # evaluate only these families
@@ -159,7 +161,7 @@ def families(z, b):
             from sc_eval import CFG
             key = b["ds_tag"]
             if key not in _MFULL and not have_cn:
-                dsn = key.rsplit("_", 1)[0]; dsn = ("4s:" + dsn[3:]) if dsn.startswith("4s_") else dsn
+                dsn = key.rsplit("_", 1)[0]; dsn = ("4sx:" + dsn[4:]) if dsn.startswith("4sx_") else (("4s:" + dsn[3:]) if dsn.startswith("4s_") else dsn)
                 _MFULL[key] = TKD.load(DUMPD, dsn, key.rsplit("_", 1)[1]).m
             blk = CFG.get(b["ds"], CFG["cmu"])["block"]
             if tcf and os.path.exists(tcf) and "cn" in np.load(tcf).files:
@@ -214,18 +216,28 @@ def families(z, b):
         import cms as CMS
         stc = dict(np.load(cmf))
         for al in CMS_ALPHAS:
+            sfx = "" if al == 0.05 else f"(a={al:g})"
             for grp in CMS_GROUPS:
+                if grp == "online":                              # Entry 30: causal online calibration
+                    CMS.GROUP = "cond"; F.update({k + sfx: v for k, v in CMS.rules_online(z, b, stc, alpha=al).items()}); continue
                 CMS.GROUP = grp; Fc, _ = CMS.rules(z, b, stc, alpha=al)
-                F.update({k + ("" if grp == "cond" else f"[{grp}]") + ("" if al == 0.05 else f"(a={al:g})"): v for k, v in Fc.items()})
+                F.update({k + ("" if grp == "cond" else f"[{grp}]") + sfx: v for k, v in Fc.items()})
+            for n0 in ("CMS-CPCW/H+SH", "CMS-CPCW/H+SH+G", "CMS-CPC/H+SH", "CMS-CPC/H+SH+G"):   # [both]: report only if the session-calibrated
+                a_, b_ = F.get(n0 + sfx), F.get(n0 + "[loco]" + sfx)                         # AND the other-session-calibrated rule report
+                if a_ and b_ and a_[3] is not None and b_[3] is not None:
+                    F[n0 + "[both]" + sfx] = (np.minimum(a_[0], b_[0]), a_[1], 0.0, a_[3] & b_[3])
         CMS.GROUP = "cond"
         if NAVGATE:                                              # Entry 29: counterfactual innovation gate (navrisk.py) + ablations
             import navrisk as NV
             zz = {k: z[k] for k in z.files}; tau = NV.gate_tau(zz, b, stc, 0.05)
-            bases = [n for n in ("CMS-CPC/H+SH", "CMS-CPC/H+SH+G", "CMS-CPCW/H+SH", "CMS-CPCW/H+SH+G", "CMS-T/H+SH", "CPC-SC-T0.5+SH", "CPC-SC+CS")
-                     for n in ([n] + [n + f"(a={al:g})" for al in CMS_ALPHAS if al != 0.05])]
+            CMS.GROUP = "loco"; tau_x = NV.gate_tau(zz, b, stc, 0.05); CMS.GROUP = "cond"   # causal gate radius (other sessions)
+            mains = ("CMS-CPC/H+SH", "CMS-CPC/H+SH+G", "CMS-CPCW/H+SH", "CMS-CPCW/H+SH+G")
+            bases = [n for n in mains + ("CMS-T/H+SH", "CPC-SC-T0.5+SH", "CPC-SC+CS") for n in ([n] + [n + f"(a={al:g})" for al in CMS_ALPHAS if al != 0.05])]
+            bases += [n + tg + sf for n in mains for tg in ("[online]", "[both]", "[loco]") for sf in [""] + [f"(a={al:g})" for al in CMS_ALPHAS if al != 0.05]]
             for n0 in bases:
                 if n0 not in F or F[n0][3] is None: continue
-                sc0, xf0, t0_, a0 = F[n0]; ag = NV.nav_gate(a0, xf0, zz, b, tau, release=True)
+                tau_n = tau_x if any(t in n0 for t in ("[online]", "[both]", "[loco]")) else tau
+                sc0, xf0, t0_, a0 = F[n0]; ag = NV.nav_gate(a0, xf0, zz, b, tau_n, release=True)
                 F[n0 + "+NGR"] = (None if sc0 is None else np.where(a0 & ~ag, -np.inf, sc0), xf0, t0_, ag)
                 if n0.startswith("CMS-CPC/H+SH") and "+G" not in n0:
                     F[n0 + "+NG"] = (None, xf0, None, NV.nav_gate(a0, xf0, zz, b, tau, release=False))
@@ -286,6 +298,14 @@ def point(acc, xf, z, b, cx, nav):
     r["wrong_rate"] = float((acc & (offm | (err_f > b["excl"]))).sum() / len(acc))
     if nav:
         e = N.track(acc, xf, cx["q_pos"], cx["o_q"], cx["real"], cx["q_seqs"], cx["hz"], cx["seed"], cx["head"])
+        if N.NAV_INIT == "top1":             # label-free init: frames before a sequence's first localisable frame (oracle good)
+            win = np.zeros(len(e), bool)     # carry the same wrong-init offset for every rule -> excluded from the error
+            for sq in b["seqs"]:
+                g = np.flatnonzero(z["good"][sq])
+                if len(g): win[sq[g[0]:]] = True
+            r["err_mean_all"] = float(np.nanmean(e)); e = np.where(win, e, np.nan)
+        if b.get("ds") == "4sx":             # natural benchmark: the error of the off-map scene B is arbitrary (unrelated frames)
+            mA = ~np.char.startswith(np.asarray(z["cond"]).astype(str), "X:"); r["err_mean_B"] = float(np.nanmean(e[~mA])); e = e[mA]
         r["err_mean"], r["err_p95"] = float(np.nanmean(e)), float(np.nanpercentile(e, 95))
     return r
 
@@ -293,6 +313,7 @@ def point(acc, xf, z, b, cx, nav):
 def one(args):
     f, ds = args
     z = np.load(f, allow_pickle=True); b = NR.base_parts(z); b["ds"] = ds.split(":")[0]
+    N.INIT_POS = z["MP"][z["top"]]                               # --nav-init top1: first-frame top-1 place (label-free)
     b["ds_tag"] = os.path.basename(f)[len("navcache_"):].rsplit("_s", 1)[0]
     cx = dict(q_pos=z["q_pos"], o_q=z["o_q"], real=bool(z["real"]), q_seqs=b["seqs"], hz=list(z["hz"]), seed=int(z["seed"]),
               head=ds == "nclt")

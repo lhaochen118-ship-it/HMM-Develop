@@ -7,6 +7,49 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 30 (branch `hmm-navigation-5`) — causal online calibration, filter robustness, natural off-map benchmark (2026-11-01)
+
+**Pre-registration (written before the full evaluation; design used Nordland CosPlace s0 and 4sx office loop + old town CosPlace).**
+Motivation: on datasets alone (no robot), the open questions of Entry 29 are (i) the CMS null is calibrated transductively
+per session (the whole session's counterfactual stream, future frames included); (ii) the navigation gate and the error
+metric are tied to one Kalman configuration with a ground-truth initial pose; (iii) every off-map frame except NCLT's comes
+from synthetic block removal; a session that is ENTIRELY off the map has pi = 0 good segments, where the self-contamination
+bound of Theorem 6 is vacuous for the per-session (cond) calibration.
+1. *Causal calibration groups (`analysis/cms.py: online_parts, rules_online`; `oc_curves.py --cms-groups cond,loco,online`).*
+   `[loco]` = other sessions only (Entry 28). `[online]` = other sessions + the current session's counterfactual segments that
+   ENDED before t (insertion per H-block), the e-value transform and Beta-EM a fixed from the other sessions: a strictly
+   causal, sequentially updated quantile. `[both]` = report iff the cond rule AND the [loco] rule report (valid if either
+   null is valid: the intersection of two accept sets has false-onset probability <= min of the two). The +NGR gate radius of
+   the causal variants is calibrated with the [loco] groups. Families: CMS-CPCW/H+SH and CMS-CPC/H+SH+G x {cond, [loco],
+   [online], [both]} x {alpha 0.05, 0.01} x {no gate, +NGR} (preset `@E30`).
+2. *Filter robustness (`nav_demo.py --nav-q --nav-sig --nav-init`).* Three a-priori alternative evaluation filters, applied
+   to the gate AND the error metric of every rule: F1 process noise 0.2 L (4x), F2 = F1 + fix sigma 10 m, F3 label-free
+   initialisation at the first frame's top-1 retrieval with sigma 1 km (`--nav-init top1`; design check: with sigma 25 m
+   a wrong first retrieval, 4 km on Nordland, decays only as 1/n even under oracle fixes, 385 m mean error; the error of F3 is averaged from each sequence's first
+   localisable frame on, since the wrong-init offset before it is the same for every rule). Families `@E30F`.
+3. *Natural off-map benchmark (`analysis/natural_eval.py`, `vprlib.load_4s_cross`).* Map = reference recording of a 4Seasons
+   scene A without holes; queries = the other recordings of A, then every recording of another scene B (all off-map, real
+   images and VIO). 6 ordered pairs of {office loop, old town, countryside} x 6 descriptors = 36 runs, one seed. Label baselines
+   are trained on the most benign A recording plus one LABELLED B recording (favourable to them). Navigation error is
+   reported on scene A only (B coordinates are unrelated to the map frame); second pass with F3 initialisation.
+4. *Hypotheses.* H30a (causal validity): [online] and [both] variants have mean segFAR <= alpha on 7/7 datasets at alpha =
+   0.05 and 0.01. H30b (causal recall): CMS-CPCW/H+SH[both]+NGR has recall above CPC-SC-T(1/2)+SH (round-5 best) on >= 6/7 and
+   navigation error lower on >= 5/7. H30c (filter robustness): under each of F1-F3, CMS-CPC/H+SH+G+NGR and CMS-CPCW/H+SH+NGR
+   have error lower than CPC-SC-T(1/2)+SH on >= 5/7 and the +NGR gate lowers the error of CMS-CPC/H+SH on >= 4/7.
+   H30d (natural off-map): the causal variants ([loco], [online], [both]) keep the scene-B segFAR <= alpha (mean over the 36
+   runs, alpha = 0.05) and their scene-A recall exceeds CPC-SC-T(1/2)+SH on >= 4/6 pairs; the transductive cond variant may
+   violate (pi = 0 sessions) -- reported, not hidden.
+5. *Gate fixes found in the F3 design check (Nordland CosPlace s0), adopted before the evaluation (`analysis/navrisk.py`).*
+   (a) The release re-tested coherence after every accepted fix, which sees the innovation jump caused by the filter's own
+   update: a released streak was accepted only every R-th frame (implementation did not match the Entry 29 description "the
+   gate opens for that streak"); now the gate stays open until the streak ends. (b) Gate radius max(tau, 3 sqrt(P^-)): the
+   prior uncertainty of the filter keeps the gate open while the filter is not localised (inactive when sqrt(P) ~ 0.6 m).
+   With the ground-truth init the s0 results are unchanged (recall / segFAR / error identical for every +NGR family); with F3
+   the +NGR error drops from 58 to 32 m. Every +NGR family of the main evaluation is recomputed with the fixed gate.
+6. *Selection.* Deployment default = the highest-recall calibration group that satisfies H30a and the natural-benchmark
+   validity of H30d; main rule CMS-CPCW/H+SH+NGR (exact onset theorem, Theorem 6'), recall-oriented variant
+   CMS-CPC/H+SH+G+NGR (LODO choice of Entry 29). Paired cluster-bootstrap CIs by seed (`analysis/paired_stats.py`).
+
 ## Entry 29 (branch `hmm-navigation-5`) — navigation-risk calibration and self-audit (2026-11-01)
 
 **Pre-registration (written before the full evaluation; design used 6 runs: Boreas MegaLoc s1, 4S old town CosPlace s0,

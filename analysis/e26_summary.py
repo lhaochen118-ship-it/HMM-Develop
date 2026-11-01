@@ -9,9 +9,12 @@ import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from oc_summary import recall_at, pauc
 
-DS_ORDER = ["boreas", "nclt", "cmu", "nord", "4s:office_loop", "4s:old_town", "4s:countryside"]
+DS_ORDER = ["boreas", "nclt", "cmu", "nord", "4s:office_loop", "4s:old_town", "4s:countryside"] + \
+           [f"4sx:{a}+{b}" for a in ("office_loop", "old_town", "countryside") for b in ("office_loop", "old_town", "countryside") if a != b]
 DS_NAME = {"boreas": "Boreas", "nclt": "NCLT", "cmu": "CMU", "nord": "Nordland", "4s:office_loop": "4S office",
            "4s:old_town": "4S old town", "4s:countryside": "4S countryside"}
+_SN = {"office_loop": "office", "old_town": "old town", "countryside": "countryside"}
+DS_NAME.update({f"4sx:{a}+{b}": f"{_SN[a]} ← {_SN[b]}" for a in _SN for b in _SN if a != b})   # map of A, off-map queries from B
 
 
 def load(d):

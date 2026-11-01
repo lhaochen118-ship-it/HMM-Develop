@@ -34,6 +34,13 @@ if "--rhos" in sys.argv:
 SAFEVPR = None                                 # --safevpr <dir>: safevpr_<ds>_p*.npz (MNN patch scores, safevpr_mnn.py) -> SafeVPR baseline
 if "--safevpr" in sys.argv:
     i = sys.argv.index("--safevpr"); SAFEVPR = sys.argv[i + 1]; del sys.argv[i:i + 2]
+NAV_Q, NAV_SIG, NAV_INIT, INIT_POS = 0.05, None, "gt", None   # Entry 30: navigation-filter configuration (evaluation robustness)
+for _f in ("--nav-q", "--nav-sig", "--nav-init"):                # --nav-q 0.2 (process noise per metre), --nav-sig 10 (fix sigma), --nav-init top1
+    if _f in sys.argv:
+        i = sys.argv.index(_f); _v = sys.argv[i + 1]; del sys.argv[i:i + 2]
+        if _f == "--nav-q": NAV_Q = float(_v)
+        elif _f == "--nav-sig": NAV_SIG = float(_v)
+        else: NAV_INIT = _v
 CACHE = "--cache" in sys.argv                  # --cache: save results/navcache_<ds>_<desc>_s<seed>.npz (reusable inputs of every rule)
 if CACHE: sys.argv.remove("--cache")
 SEED0 = 0                                      # --seed0 k: run seeds k .. k+seeds-1 (results file gets the suffix _s<k>)
@@ -234,13 +241,13 @@ def track_head(acc, xf, q_pos, o_q, q_seqs, sig_th=0.004):
     """EKF with a heading-offset state (x, y, theta): odometry increments are rotated by theta, theta is estimated from
     the accepted fixes (sigma SIG_FIX). For robots whose odometry heading drifts (NCLT Segway: 10-25 deg per session),
     which a position-only filter turns into a steady lag behind the fixes. sig_th: heading random walk, rad / sqrt(m)."""
-    est = np.full_like(q_pos, np.nan); I3 = np.eye(3); Hm = np.eye(2, 3); Rf = SIG_FIX ** 2 * np.eye(2)
+    est = np.full_like(q_pos, np.nan); I3 = np.eye(3); Hm = np.eye(2, 3); Rf = nav_sig() ** 2 * np.eye(2)
     for idx in q_seqs:
-        m = np.r_[q_pos[idx[0]], 0.0]; P = np.diag([1.0, 1.0, np.deg2rad(5) ** 2]); est[idx[0]] = m[:2]
+        x0, p0 = nav_init(q_pos, idx[0]); m = np.r_[x0, 0.0]; P = np.diag([p0, p0, np.deg2rad(5) ** 2]); est[idx[0]] = m[:2]
         for a, b in zip(idx[:-1], idx[1:]):
             u = o_q[b] - o_q[a]; c, s_ = np.cos(m[2]), np.sin(m[2]); Ru = np.array([c * u[0] - s_ * u[1], s_ * u[0] + c * u[1]])
             m[:2] += Ru; F = I3.copy(); F[0, 2], F[1, 2] = -Ru[1], Ru[0]; L = np.linalg.norm(u)
-            P = F @ P @ F.T + np.diag([(0.05 * L) ** 2 + 1e-4, (0.05 * L) ** 2 + 1e-4, sig_th ** 2 * L + 1e-8])
+            P = F @ P @ F.T + np.diag([(NAV_Q * L) ** 2 + 1e-4, (NAV_Q * L) ** 2 + 1e-4, sig_th ** 2 * L + 1e-8])
             if acc[b]:
                 K = P @ Hm.T @ np.linalg.inv(Hm @ P @ Hm.T + Rf); m = m + K @ (xf[b] - m[:2]); P = (I3 - K @ Hm) @ P
             est[b] = m[:2]
@@ -251,9 +258,9 @@ def track(acc, xf, q_pos, o_q, real, q_seqs, hz, seed, head=False):
     """position Kalman filter: odometry (real increments, or simulated: scale error, heading random walk, noise) + accepted
     fixes (sigma SIG_FIX); returns the per-frame position error. head=True: EKF with a heading-offset state (track_head)"""
     if head and real and q_pos.shape[1] == 2: return track_head(acc, xf, q_pos, o_q, q_seqs)
-    r = np.random.default_rng(seed + 7); est = np.full_like(q_pos, np.nan)
+    r = np.random.default_rng(seed + 7); est = np.full_like(q_pos, np.nan); sig = nav_sig()
     for idx in q_seqs:
-        x = q_pos[idx[0]].copy(); P = 1.0; est[idx[0]] = x; thh = 0.0; sc = 1 + r.normal(0, 0.03)
+        x, P = nav_init(q_pos, idx[0]); est[idx[0]] = x; thh = 0.0; sc = 1 + r.normal(0, 0.03)
         for a, b in zip(idx[:-1], idx[1:]):
             if real: u = o_q[b] - o_q[a]                                          # real VIO / wheel+gyro increment
             else:
@@ -261,11 +268,24 @@ def track(acc, xf, q_pos, o_q, real, q_seqs, hz, seed, head=False):
                 if len(hz) == 2:
                     R2 = np.array([[np.cos(thh), -np.sin(thh)], [np.sin(thh), np.cos(thh)]]); u[hz] = R2 @ u[hz]
                 u = u + r.normal(0, 0.02 * np.linalg.norm(d) / np.sqrt(len(d)) + 1e-3, len(d))
-            x = x + u; P = P + (0.05 * np.linalg.norm(u)) ** 2 + 1e-4
+            x = x + u; P = P + (NAV_Q * np.linalg.norm(u)) ** 2 + 1e-4
             if acc[b]:
-                K = P / (P + SIG_FIX ** 2); x = x + K * (xf[b] - x); P = (1 - K) * P
+                K = P / (P + sig ** 2); x = x + K * (xf[b] - x); P = (1 - K) * P
             est[b] = x
     return np.linalg.norm(est - q_pos, axis=1)
+
+
+def nav_sig():
+    return SIG_FIX if NAV_SIG is None else NAV_SIG
+
+
+def nav_init(q_pos, i0):
+    """initial state of the navigation filter: the true pose (default, all earlier rounds) or, with --nav-init top1, the
+    map position of the first frame's top-1 retrieval (label-free global localisation) with sigma = 1 km (uninformative: the
+    first-frame retrieval is often wrong by km, e.g. Nordland 4 km; a confident prior would make even correct fixes decay
+    the error only as 1/n, so the first accepted fix sets the position)"""
+    if NAV_INIT == "top1" and INIT_POS is not None: return INIT_POS[i0].astype(float).copy(), 1000.0 ** 2
+    return q_pos[i0].astype(float).copy(), 1.0
 
 
 def evaluate(rules, xfs, pons, cx, tag):
@@ -305,6 +325,7 @@ def main():
     dump, ds, desc = sys.argv[1], sys.argv[2], sys.argv[3]
     seeds = int(sys.argv[4]) if len(sys.argv) > 4 else 3; H = int(sys.argv[5]) if len(sys.argv) > 5 else 10
     if ds.startswith("4s:"): ep = V.load_4seasons(dump, desc, ds[3:]); c = CFG["cmu"]
+    elif ds.startswith("4sx:"): ep = V.load_4s_cross(dump, desc, ds[4:]); c = CFG["cmu"]      # Entry 30: natural off-map (other scene)
     elif ds == "boreas": ep = V.load_boreas(dump, desc); c = CFG["cmu"]
     else: ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
     q_sid, q_k, m_sid, m_k = V.frame_order(dump, ds, ep, desc)
@@ -314,7 +335,7 @@ def main():
     out = {"ds": ds, "desc": desc, "H": H, "runs": []}
     for seed in range(SEED0, SEED0 + seeds):
         rng = np.random.default_rng(seed); bid0, _ = V.map_cells(ep.m_pos, c["block"]); ub = np.unique(bid0)
-        keep = ~np.isin(bid0, rng.choice(ub, int(round((0.0 if ds == "nclt" else DROP) * len(ub))), replace=False))   # NCLT: natural off-map, no holes
+        keep = ~np.isin(bid0, rng.choice(ub, int(round((0.0 if (ds == "nclt" or ds.startswith("4sx")) else DROP) * len(ub))), replace=False))   # NCLT: natural off-map, no holes
         M, MP = ep.m[keep].astype(np.float32), ep.m_pos[keep]
         d_map, _ = cKDTree(MP).query(ep.q_pos); inm, offm = d_map <= c["in_d"], d_map > c["off_d"]
         nrm = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True); mu = M.mean(0, keepdims=True); Mc = nrm(M - mu); qc = nrm(q - mu)
@@ -345,6 +366,9 @@ def main():
         Rq = np.full(len(q), np.nan)
         for order in q_seqs: Rq[order] = running(p_q, Fr["top"], order, o_q, MP, "ANCH", c["excl"], rho_o, H)
         r1 = {x: good[(cond == x) & inm].mean() for x in conds}; benign = sorted(conds, key=lambda x: -r1[x])[:2]
+        if ds.startswith("4sx:"):        # natural benchmark: no holes -> label baselines get the most benign on-map recording of
+            benign = sorted([x for x in conds if not x.startswith("X:")], key=lambda x: -r1[x])[:1] + sorted(x for x in conds if x.startswith("X:"))[:1]
+            # scene A plus one LABELLED recording of the off-map scene B (favourable to the label baselines)
         cal = np.sort(Fr["maxsim"][offm & np.isin(cond, benign)]); kl = int(np.ceil((len(cal) + 1) * (1 - A)))
         thr_ms = cal[min(len(cal) - 1, kl - 1)] if len(cal) else np.inf
         # HMM with an off-map state (Xu et al. RA-L'21 style): emission exp(s/T), off-map emission exp(s_(k)/T); fixes = MAP

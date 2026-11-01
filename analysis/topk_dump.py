@@ -18,6 +18,7 @@ SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if 
 
 def load(dump, ds, desc):
     if ds.startswith("4s:"): return V.load_4seasons(dump, desc, ds[3:])
+    if ds.startswith("4sx:"): return V.load_4s_cross(dump, desc, ds[4:])
     if ds == "boreas": return V.load_boreas(dump, desc)
     return V.LOADERS[ds](dump, desc)
 
