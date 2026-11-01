@@ -155,6 +155,25 @@ def load_4s_cross(dump, desc="salad", pair="office_loop+old_town"):
     return ep
 
 
+OXFORD_REF = "2014-12-09-13-21-02"      # overcast reference traversal (the RobotCar Seasons reference date)
+
+
+def load_oxford(dump, desc="salad", ref=OXFORD_REF):
+    """Oxford RobotCar, PointNetVLAD / OpenPlaceRecognition split (44 traversals, 2014-05 .. 2015-11, ~10 m frame spacing, front
+    stereo_centre camera, 320 x 224; nhatlong1103/oxford-robotcar-vpr-dump): map = the reference traversal, queries = every
+    other traversal (condition = traversal). Positions: UTM easting / northing (shared frame). No odometry in the split: the
+    evaluation simulates it from the ground truth (as CMU / Nordland)."""
+    seqs = sorted(f[7:-4] for f in os.listdir(os.path.join(dump, "meta")) if f.startswith("oxford_")
+                  and os.path.isfile(os.path.join(dump, desc, f[:-4] + ".npy")))
+    ref = ref if ref in seqs else seqs[0]
+    M = {r: np.load(os.path.join(dump, "meta", f"oxford_{r}.npz"), allow_pickle=True) for r in seqs}
+    D = {r: np.load(os.path.join(dump, desc, f"oxford_{r}.npy")) for r in seqs}; qr = [r for r in seqs if r != ref]
+    cat = lambda f: np.concatenate([f(r) for r in qr])
+    ep = Episode("oxford", cat(lambda r: D[r]), D[ref], cat(lambda r: M[r]["C"][:, :2]), M[ref]["C"][:, :2], cat(lambda r: np.array([r] * len(D[r]))))
+    ep.q_rec, ep.ref = cat(lambda r: np.array([r] * len(D[r]))), ref
+    return ep
+
+
 BOREAS_Q = ["boreas-2020-12-01-13-26", "boreas-2021-01-15-12-17", "boreas-2021-01-26-11-22", "boreas-2021-02-02-14-07",
             "boreas-2021-03-23-12-43", "boreas-2021-04-15-18-55", "boreas-2021-05-13-16-11", "boreas-2021-06-17-17-52",
             "boreas-2021-07-27-14-43", "boreas-2021-09-07-09-35", "boreas-2021-09-14-20-00", "boreas-2021-10-22-11-36",
@@ -246,14 +265,14 @@ def frame_order(dump, ds, ep, desc="salad"):
         n = len(ep.m); qg = np.asarray(ep.q_cond).astype(str)
         return sequences(np.tile(np.arange(n, dtype=float), len(ep.q) // n), qg, 1.5) + \
             sequences(np.arange(n, dtype=float), np.zeros(n, int), 1.5)
-    if ds.startswith("4s") or ds in ("boreas", "nclt") or ds.startswith("nclt:"):
+    if ds.startswith("4s") or ds in ("boreas", "nclt", "oxford") or ds.startswith("nclt:"):
         _, qs = np.unique(ep.q_rec, return_inverse=True); qk = np.empty(len(qs), int)
         for s_ in np.unique(qs): qk[qs == s_] = np.arange((qs == s_).sum())
         return qs, qk, np.zeros(len(ep.m), int), np.arange(len(ep.m))
     raise ValueError("no frame order for " + ds)
 
 
-LOADERS = {"rc": load_robotcar, "cmu": load_cmu_merged, "nord": load_nordland, "msls": load_msls, "nclt": load_nclt,
+LOADERS = {"oxford": load_oxford, "rc": load_robotcar, "cmu": load_cmu_merged, "nord": load_nordland, "msls": load_msls, "nclt": load_nclt,
            "nordw": lambda d, x="salad": load_nordland(d, x, ref="winter")}
 
 

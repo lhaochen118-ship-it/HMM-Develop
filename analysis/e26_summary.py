@@ -16,7 +16,8 @@ DS_NAME = {"boreas": "Boreas", "nclt": "NCLT", "cmu": "CMU", "nord": "Nordland",
 _SN = {"office_loop": "office", "old_town": "old town", "countryside": "countryside"}
 DS_NAME.update({f"4sx:{a}+{b}": f"{_SN[a]} ← {_SN[b]}" for a in _SN for b in _SN if a != b})   # map of A, off-map queries from B
 NCLT_REFS = ["2012-01-08", "2012-02-04", "2012-03-31", "2012-05-26", "2012-08-04", "2012-10-28", "2012-11-16", "2013-02-23", "2013-04-05"]
-DS_ORDER += [f"nclt:{r}" for r in NCLT_REFS]                    # Entry 32: NCLT with every session as the map (natural near off-map)
+DS_ORDER += [f"nclt:{r}" for r in NCLT_REFS] + ["oxford"]
+DS_NAME["oxford"] = "Oxford RobotCar"                    # Entry 32: NCLT with every session as the map (natural near off-map)
 DS_NAME.update({f"nclt:{r}": f"NCLT map {r}" for r in NCLT_REFS})
 
 

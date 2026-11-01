@@ -77,3 +77,24 @@ Claxton). Bài viết nên đặt đóng góp là **(1)–(3)**, phần còn l�
 **Việc còn thiếu trước khi nộp:** đọc toàn văn SafeVPR, E-detectors, Vovk 2006.02329, Lee & Pollefeys 2014, arXiv 2604.26479
 (e-value monitor cho particle filter — cần so sánh trực tiếp), Zheng & Proutière 2024; quét danh mục RA-L
 2024–2026 và RSS 2025–2026 với từ khoá "self-calibrat*", "label-free", "integrity"; kiểm Bian et al. 2024 (Markovian CP).
+
+## 7. Đối thủ SOTA — đọc toàn văn (Entry 33, 2026-11-01)
+
+*Đọc PDF (trích bằng `pdftotext` khi PDF > 10 MB) hoặc bản HTML của arXiv; không đọc code. Mục đích: còn phương pháp nào cạnh
+tranh trực tiếp với phương pháp đề xuất (quyết định báo fix theo từng frame, không nhãn, bản đồ có lỗ, có odometry)?*
+
+| Công trình | Đọc gì | Quyết định | Nhãn | Bảo đảm | Off-map | Chuỗi / odometry | Dataset | Kết luận cho ta |
+|---|---|---|---|---|---|---|---|---|
+| **SafeVPR**, arXiv 2605.28048 (05/2026) | HTML đến §V-B + tóm tắt | nhận/loại top-1 của **mỗi chuỗi 10 frame** | **Có** (điều kiện khác, Mondrian LTT, B = 5 bin) | FDR ≤ α với xác suất 1 − δ **khi hoán đổi được**; tác giả: "không tuyên bố bảo đảm dưới lệch điều kiện" | Không | chuỗi (khớp chéo), không odometry | Oxford RobotCar (4 traversal), NCLT (3), St Lucia (1 cặp) | Đã là baseline (SafeVPR'26). Số của họ: α = 0.10, 23/23 setup hợp lệ, TPR 0.75 |
+| **Through the Lens of Doubt** (Miller et al.), arXiv 2510.13464 (10/2025) | HTML đầy đủ | điểm bất định (RS = TB s_i/s_1, SD = s_median/s_1, SU = ½(RS + SD)) | Không (điểm); **không có ngưỡng** | Không | Không | ảnh đơn | Pitts250k, St Lucia, Nordland, AmsterTime, Eynsham, Tokyo 24/7 | **Thống kê mạnh nhất trong nhóm rẻ** (AUC-PR 0.92 so với SUE 0.71, L2 0.83; GV SuperPoint 0.95 nhưng 84 ms). Thêm làm baseline (ngưỡng hiệu chuẩn có nhãn) **và** thử làm thống kê bên trong CMS |
+| **SUE** (Zaffar et al., CVPR 2024) | PDF CVF đầy đủ | độ phân tán không gian của top-10 vị trí, trọng số e^{−λd} | Không (λ chỉnh trên Pittsburgh) | Không (AUC-PR, không ngưỡng) | Không | ảnh đơn | Pitts, SF, St Lucia, Eynsham, MSLS, Nordland | Thống kê; AUC-PR TB 0.77 (Nordland 0.26). Thêm làm baseline thống kê |
+| **To Match or Not to Match** (Sferrazza et al.), arXiv 2504.06116 | HTML §1–4.2 + bảng 3 | −số inlier RANSAC với top-1 | Không (logistic hiệu chuẩn trên MSLS Val) | Không | Không | ảnh đơn | 10 bộ (MSLS, Pitts30k, SF-XL, SVOX, Tokyo…) | Cần ảnh + matcher; hơn L2 chỉ ≈ 1.6 AUPRC — không ưu tiên |
+| **Carson, Ford, Milford, ICRA 2023** (arXiv 2307.01464) | HTML | nhận match khi \|argmax gradient − argmin khoảng cách\| ≤ 1 (theo thứ tự tuyến của bản đồ) | **Không**, không chỉnh | Không | Không | chuỗi có trọng số, không odometry | Gardens Point, Nordland, 4Seasons office, Oxford RobotCar | **Luật không nhãn**, thêm làm baseline (cần vector khoảng cách đầy đủ theo thứ tự bản đồ) |
+| **SMR** (Hussaini, Fischer, Milford, IROS 2025) | HTML | MLP 4 lớp: khớp chuỗi có giúp không | Có, mỗi dataset | Không | Không | chuỗi (SeqSLAM), không odometry | Nordland, Oxford RobotCar, SFU Mountain | Có nhãn và huấn luyện lại mỗi dataset; không xét off-map — không thêm |
+| **Valentin 2026** "Recipes for calibration checks", arXiv 2604.26479 | PDF (pdftotext) | kiểm độ hiệu chuẩn của particle filter (e-value một phía, Ville) | **Cần ground truth** | type-I (anytime) cho kiểm hiệu chuẩn | Không | mô phỏng 2-D có beacon | — | Không phải đối thủ: kiểm độ tin của bộ lọc bằng nhãn |
+
+**Kết luận.** Không có phương pháp nào trong nhóm đọc được giải đúng bài toán của ta (quyết định từng frame, không nhãn, bản đồ có
+lỗ / off-map, có bảo đảm). Đối thủ cần đưa thêm vào thí nghiệm: **SU'25** và **SUE'24** (thống kê mạnh, ngưỡng hiệu chuẩn có nhãn
+theo cùng giao thức các baseline có nhãn), **Carson'23** (luật không nhãn). Hướng cải tiến rút ra: CMS hiệu chuẩn được **bất kỳ**
+thống kê nào ⇒ thử SU làm thành phần thứ ba của e-value (không nhãn, có bảo đảm). Dataset uy tín dùng chung với SafeVPR:
+Oxford RobotCar, NCLT (đã có), St Lucia.

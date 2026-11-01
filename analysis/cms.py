@@ -47,7 +47,7 @@ import sys as _sys
 SENS = dict(kv.split("=") for kv in _sys.argv[_sys.argv.index("--sens") + 1].split(",")) if "--sens" in _sys.argv else {}
 SENS = {k: float(v) for k, v in SENS.items()}
 P_TR = SENS.get("p", 0.01)
-OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}
+OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "oxford": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}
 
 
 def _lookup(ks, ss, key, tol, K, valid=None):

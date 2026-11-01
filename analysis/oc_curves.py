@@ -36,7 +36,7 @@ GEO = "--geo" in sys.argv                         # Entry 26 families: shape-con
 ONLY_GEO = "--only-geo" in sys.argv               # only the Entry 26 families + references (fast)
 CS_SENS = "--cs-sens" in sys.argv                 # one-at-a-time sensitivity of the CS constants (span, threshold) for CPC-HMM+CS
 JOBS = int(sys.argv[sys.argv.index("--jobs") + 1]) if "--jobs" in sys.argv else 4
-OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}   # map coverage radius (sc_eval CFG off_d)
+OFF_D = {"boreas": 40.0, "oxford": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}   # map coverage radius (sc_eval CFG off_d)
 TOPK = sys.argv[sys.argv.index("--topk") + 1] if "--topk" in sys.argv else None   # dir of topk_<ds>_<desc>_s<seed>.npz (topk_dump.py) -> TAO26 family
 TRAILD = sys.argv[sys.argv.index("--trail") + 1] if "--trail" in sys.argv else None   # dir of trail_<ds>_megaloc_s<seed>.npz (trail.py) -> TRAIL26 family
 DUMPD = sys.argv[sys.argv.index("--mapdump") + 1] if "--mapdump" in sys.argv else None   # descriptor dumps -> map-null top-K for the label-free TAO-SC family
@@ -56,6 +56,7 @@ FAM_PRESETS = {"@E28": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certi
                "@E31": "Xu21,Claxton24,TAO26,CPC-SC+CS,CPC-SC-T0.5+SH,CPC-SC-T0.5+SH+NGRr,CMS-CPCW/H+SH,CMS-CPCW/H+SH+NGRr,CMS-CPCW/H+SH+NGR,CMS-CPCW/H+SH(a=0.01),CMS-CPCW/H+SH(a=0.01)+NGRr,CMS-CPCW/H+SH(a=0.01)+NGR,CMS-CPCW/H+SH[loco],CMS-CPCW/H+SH[loco]+NGRr,CMS-CPCW/H+SH[loco]+NGR,CMS-CPCW/H+SH[loco](a=0.01),CMS-CPCW/H+SH[loco](a=0.01)+NGRr,CMS-CPCW/H+SH[loco](a=0.01)+NGR,CMS-CPCW/H+SH[online],CMS-CPCW/H+SH[online]+NGRr,CMS-CPCW/H+SH[online]+NGR,CMS-CPCW/H+SH[online](a=0.01),CMS-CPCW/H+SH[online](a=0.01)+NGRr,CMS-CPCW/H+SH[online](a=0.01)+NGR,CMS-CPCW/H+SH[both],CMS-CPCW/H+SH[both]+NGRr,CMS-CPCW/H+SH[both]+NGR,CMS-CPCW/H+SH[both](a=0.01),CMS-CPCW/H+SH[both](a=0.01)+NGRr,CMS-CPCW/H+SH[both](a=0.01)+NGR,CMS-CPCW/J+SH,CMS-CPCW/J+SH+NGRr,CMS-CPCW/J+SH+NGR,CMS-CPCW/J+SH(a=0.01),CMS-CPCW/J+SH(a=0.01)+NGRr,CMS-CPCW/J+SH(a=0.01)+NGR,CMS-CPCW/J+SH[loco],CMS-CPCW/J+SH[loco]+NGRr,CMS-CPCW/J+SH[loco]+NGR,CMS-CPCW/J+SH[loco](a=0.01),CMS-CPCW/J+SH[loco](a=0.01)+NGRr,CMS-CPCW/J+SH[loco](a=0.01)+NGR,CMS-CPCW/J+SH[online],CMS-CPCW/J+SH[online]+NGRr,CMS-CPCW/J+SH[online]+NGR,CMS-CPCW/J+SH[online](a=0.01),CMS-CPCW/J+SH[online](a=0.01)+NGRr,CMS-CPCW/J+SH[online](a=0.01)+NGR,CMS-CPCW/J+SH[both],CMS-CPCW/J+SH[both]+NGRr,CMS-CPCW/J+SH[both]+NGR,CMS-CPCW/J+SH[both](a=0.01),CMS-CPCW/J+SH[both](a=0.01)+NGRr,CMS-CPCW/J+SH[both](a=0.01)+NGR,CMS-CPCW/H+SH+G,CMS-CPCW/H+SH+G+NGRr,CMS-CPCW/H+SH+G+NGR,CMS-CPCW/H+SH+G(a=0.01),CMS-CPCW/H+SH+G(a=0.01)+NGRr,CMS-CPCW/H+SH+G(a=0.01)+NGR,CMS-CPCW/H+SH+G[loco],CMS-CPCW/H+SH+G[loco]+NGRr,CMS-CPCW/H+SH+G[loco]+NGR,CMS-CPCW/H+SH+G[loco](a=0.01),CMS-CPCW/H+SH+G[loco](a=0.01)+NGRr,CMS-CPCW/H+SH+G[loco](a=0.01)+NGR,CMS-CPCW/H+SH+G[online],CMS-CPCW/H+SH+G[online]+NGRr,CMS-CPCW/H+SH+G[online]+NGR,CMS-CPCW/H+SH+G[online](a=0.01),CMS-CPCW/H+SH+G[online](a=0.01)+NGRr,CMS-CPCW/H+SH+G[online](a=0.01)+NGR,CMS-CPCW/H+SH+G[both],CMS-CPCW/H+SH+G[both]+NGRr,CMS-CPCW/H+SH+G[both]+NGR,CMS-CPCW/H+SH+G[both](a=0.01),CMS-CPCW/H+SH+G[both](a=0.01)+NGRr,CMS-CPCW/H+SH+G[both](a=0.01)+NGR,CMS-CPCW/J+SH+G,CMS-CPCW/J+SH+G+NGRr,CMS-CPCW/J+SH+G+NGR,CMS-CPCW/J+SH+G(a=0.01),CMS-CPCW/J+SH+G(a=0.01)+NGRr,CMS-CPCW/J+SH+G(a=0.01)+NGR,CMS-CPCW/J+SH+G[loco],CMS-CPCW/J+SH+G[loco]+NGRr,CMS-CPCW/J+SH+G[loco]+NGR,CMS-CPCW/J+SH+G[loco](a=0.01),CMS-CPCW/J+SH+G[loco](a=0.01)+NGRr,CMS-CPCW/J+SH+G[loco](a=0.01)+NGR,CMS-CPCW/J+SH+G[online],CMS-CPCW/J+SH+G[online]+NGRr,CMS-CPCW/J+SH+G[online]+NGR,CMS-CPCW/J+SH+G[online](a=0.01),CMS-CPCW/J+SH+G[online](a=0.01)+NGRr,CMS-CPCW/J+SH+G[online](a=0.01)+NGR,CMS-CPCW/J+SH+G[both],CMS-CPCW/J+SH+G[both]+NGRr,CMS-CPCW/J+SH+G[both]+NGR,CMS-CPCW/J+SH+G[both](a=0.01),CMS-CPCW/J+SH+G[both](a=0.01)+NGRr,CMS-CPCW/J+SH+G[both](a=0.01)+NGR,CMS-CPC/H+SH+G,CMS-CPC/H+SH+G+NGRr,CMS-CPC/H+SH+G+NGR,CMS-CPC/H+SH+G(a=0.01),CMS-CPC/H+SH+G(a=0.01)+NGRr,CMS-CPC/H+SH+G(a=0.01)+NGR,CMS-CPC/H+SH+G[loco],CMS-CPC/H+SH+G[loco]+NGRr,CMS-CPC/H+SH+G[loco]+NGR,CMS-CPC/H+SH+G[loco](a=0.01),CMS-CPC/H+SH+G[loco](a=0.01)+NGRr,CMS-CPC/H+SH+G[loco](a=0.01)+NGR,CMS-CPC/H+SH+G[online],CMS-CPC/H+SH+G[online]+NGRr,CMS-CPC/H+SH+G[online]+NGR,CMS-CPC/H+SH+G[online](a=0.01),CMS-CPC/H+SH+G[online](a=0.01)+NGRr,CMS-CPC/H+SH+G[online](a=0.01)+NGR,CMS-CPC/H+SH+G[both],CMS-CPC/H+SH+G[both]+NGRr,CMS-CPC/H+SH+G[both]+NGR,CMS-CPC/H+SH+G[both](a=0.01),CMS-CPC/H+SH+G[both](a=0.01)+NGRr,CMS-CPC/H+SH+G[both](a=0.01)+NGR,CMS-CPC/J+SH+G,CMS-CPC/J+SH+G+NGRr,CMS-CPC/J+SH+G+NGR,CMS-CPC/J+SH+G(a=0.01),CMS-CPC/J+SH+G(a=0.01)+NGRr,CMS-CPC/J+SH+G(a=0.01)+NGR,CMS-CPC/J+SH+G[loco],CMS-CPC/J+SH+G[loco]+NGRr,CMS-CPC/J+SH+G[loco]+NGR,CMS-CPC/J+SH+G[loco](a=0.01),CMS-CPC/J+SH+G[loco](a=0.01)+NGRr,CMS-CPC/J+SH+G[loco](a=0.01)+NGR,CMS-CPC/J+SH+G[online],CMS-CPC/J+SH+G[online]+NGRr,CMS-CPC/J+SH+G[online]+NGR,CMS-CPC/J+SH+G[online](a=0.01),CMS-CPC/J+SH+G[online](a=0.01)+NGRr,CMS-CPC/J+SH+G[online](a=0.01)+NGR,CMS-CPC/J+SH+G[both],CMS-CPC/J+SH+G[both]+NGRr,CMS-CPC/J+SH+G[both]+NGR,CMS-CPC/J+SH+G[both](a=0.01),CMS-CPC/J+SH+G[both](a=0.01)+NGRr,CMS-CPC/J+SH+G[both](a=0.01)+NGR,CMS-CPC/H+SH,CMS-CPC/H+SH+NGRr,CMS-CPC/H+SH+NGR,CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH(a=0.01)+NGRr,CMS-CPC/H+SH(a=0.01)+NGR,CMS-CPC/H+SH[loco],CMS-CPC/H+SH[loco]+NGRr,CMS-CPC/H+SH[loco]+NGR,CMS-CPC/H+SH[loco](a=0.01),CMS-CPC/H+SH[loco](a=0.01)+NGRr,CMS-CPC/H+SH[loco](a=0.01)+NGR,CMS-CPC/H+SH[online],CMS-CPC/H+SH[online]+NGRr,CMS-CPC/H+SH[online]+NGR,CMS-CPC/H+SH[online](a=0.01),CMS-CPC/H+SH[online](a=0.01)+NGRr,CMS-CPC/H+SH[online](a=0.01)+NGR,CMS-CPC/H+SH[both],CMS-CPC/H+SH[both]+NGRr,CMS-CPC/H+SH[both]+NGR,CMS-CPC/H+SH[both](a=0.01),CMS-CPC/H+SH[both](a=0.01)+NGRr,CMS-CPC/H+SH[both](a=0.01)+NGR,CMS-CPC/J+SH,CMS-CPC/J+SH+NGRr,CMS-CPC/J+SH+NGR,CMS-CPC/J+SH(a=0.01),CMS-CPC/J+SH(a=0.01)+NGRr,CMS-CPC/J+SH(a=0.01)+NGR,CMS-CPC/J+SH[loco],CMS-CPC/J+SH[loco]+NGRr,CMS-CPC/J+SH[loco]+NGR,CMS-CPC/J+SH[loco](a=0.01),CMS-CPC/J+SH[loco](a=0.01)+NGRr,CMS-CPC/J+SH[loco](a=0.01)+NGR,CMS-CPC/J+SH[online],CMS-CPC/J+SH[online]+NGRr,CMS-CPC/J+SH[online]+NGR,CMS-CPC/J+SH[online](a=0.01),CMS-CPC/J+SH[online](a=0.01)+NGRr,CMS-CPC/J+SH[online](a=0.01)+NGR,CMS-CPC/J+SH[both],CMS-CPC/J+SH[both]+NGRr,CMS-CPC/J+SH[both]+NGR,CMS-CPC/J+SH[both](a=0.01),CMS-CPC/J+SH[both](a=0.01)+NGRr,CMS-CPC/J+SH[both](a=0.01)+NGR,CMS-CPCW/R+SH,CMS-CPCW/R+SH+NGRr,CMS-CPCW/R+SH(a=0.01),CMS-CPCW/R+SH(a=0.01)+NGRr,CMS-CPC/R+SH+G,CMS-CPC/R+SH+G+NGRr,CMS-CPC/R+SH+G(a=0.01),CMS-CPC/R+SH+G(a=0.01)+NGRr",   # Entry 31: joint place-presence HMM (/J) vs place chain (/H), control /R
                "@E31J": "CPC-SC-T0.5+SH,CPC-SC-T0.5+SH+NGRr,CPC-SC+CS,CMS-CPCW/H+SH,CMS-CPCW/H+SH+NGRr,CMS-CPCW/H+SH(a=0.01),CMS-CPCW/H+SH(a=0.01)+NGRr,CMS-CPCW/H+SH[both],CMS-CPCW/H+SH[both]+NGRr,CMS-CPCW/H+SH[both](a=0.01),CMS-CPCW/H+SH[both](a=0.01)+NGRr,CMS-CPCW/H+SH[online],CMS-CPCW/H+SH[online]+NGRr,CMS-CPCW/H+SH[online](a=0.01),CMS-CPCW/H+SH[online](a=0.01)+NGRr,CMS-CPCW/J+SH,CMS-CPCW/J+SH+NGRr,CMS-CPCW/J+SH(a=0.01),CMS-CPCW/J+SH(a=0.01)+NGRr,CMS-CPCW/J+SH[both],CMS-CPCW/J+SH[both]+NGRr,CMS-CPCW/J+SH[both](a=0.01),CMS-CPCW/J+SH[both](a=0.01)+NGRr,CMS-CPCW/J+SH[online],CMS-CPCW/J+SH[online]+NGRr,CMS-CPCW/J+SH[online](a=0.01),CMS-CPCW/J+SH[online](a=0.01)+NGRr,CMS-CPC/H+SH+G,CMS-CPC/H+SH+G+NGRr,CMS-CPC/H+SH+G(a=0.01),CMS-CPC/H+SH+G(a=0.01)+NGRr,CMS-CPC/H+SH+G[both],CMS-CPC/H+SH+G[both]+NGRr,CMS-CPC/H+SH+G[both](a=0.01),CMS-CPC/H+SH+G[both](a=0.01)+NGRr,CMS-CPC/H+SH+G[online],CMS-CPC/H+SH+G[online]+NGRr,CMS-CPC/H+SH+G[online](a=0.01),CMS-CPC/H+SH+G[online](a=0.01)+NGRr,CMS-CPC/J+SH+G,CMS-CPC/J+SH+G+NGRr,CMS-CPC/J+SH+G(a=0.01),CMS-CPC/J+SH+G(a=0.01)+NGRr,CMS-CPC/J+SH+G[both],CMS-CPC/J+SH+G[both]+NGRr,CMS-CPC/J+SH+G[both](a=0.01),CMS-CPC/J+SH+G[both](a=0.01)+NGRr,CMS-CPC/J+SH+G[online],CMS-CPC/J+SH+G[online]+NGRr,CMS-CPC/J+SH+G[online](a=0.01),CMS-CPC/J+SH+G[online](a=0.01)+NGRr,CMS-CPC/H+SH,CMS-CPC/H+SH+NGRr,CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH(a=0.01)+NGRr,CMS-CPC/H+SH[both],CMS-CPC/H+SH[both]+NGRr,CMS-CPC/H+SH[both](a=0.01),CMS-CPC/H+SH[both](a=0.01)+NGRr,CMS-CPC/H+SH[online],CMS-CPC/H+SH[online]+NGRr,CMS-CPC/H+SH[online](a=0.01),CMS-CPC/H+SH[online](a=0.01)+NGRr,CMS-CPC/J+SH,CMS-CPC/J+SH+NGRr,CMS-CPC/J+SH(a=0.01),CMS-CPC/J+SH(a=0.01)+NGRr,CMS-CPC/J+SH[both],CMS-CPC/J+SH[both]+NGRr,CMS-CPC/J+SH[both](a=0.01),CMS-CPC/J+SH[both](a=0.01)+NGRr,CMS-CPC/J+SH[online],CMS-CPC/J+SH[online]+NGRr,CMS-CPC/J+SH[online](a=0.01),CMS-CPC/J+SH[online](a=0.01)+NGRr,CMS-CPCW/R+SH,CMS-CPCW/R+SH+NGRr,CMS-CPCW/R+SH(a=0.01),CMS-CPCW/R+SH(a=0.01)+NGRr,CMS-CPC/R+SH+G,CMS-CPC/R+SH+G+NGRr,CMS-CPC/R+SH+G(a=0.01),CMS-CPC/R+SH+G(a=0.01)+NGRr",   # Entry 31 evaluation subset
                "@E32S": "CPC-SC-T0.5+SH,CMS-CPC/H+SH+G,CMS-CPCW/H+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPC/H+SH+G(a=0.01),CMS-CPCW/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01)+NGRr,CMS-CPCW/H+SH(a=0.01)+NGRr",   # Entry 32 sensitivity
+               "@E33B": "Xu21,Claxton24,TAO26,max-sim,SU25,SUE24,SU25-seg,SUE24-seg,Carson23,CPC-SC+CS,CPC-SC-T0.5+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPCW/H+SH[both]+NGRr,CMS-CPC/H+SH+G(a=0.01)+NGRr",   # Entry 33 competitors
                "@RHO": "CMS-T,CMS-T(a=0.01),CMS-CPC/H+SH,CMS-CPC/H+SH(a=0.01),CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-W/H+SH,CMS-W/H+SH(a=0.01),CMS-U/H+SH"}   # Entry 28 family lists (short job args)
 FAM_PRESETS["@E32N"] = FAM_PRESETS["@E30"] + "," + FAM_PRESETS["@E30R"]   # Entry 32 NCLT benchmark: both gate variants + baselines
 _fa = sys.argv[sys.argv.index("--fams") + 1] if "--fams" in sys.argv else None
@@ -64,6 +65,7 @@ SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if 
 CMSD = sys.argv[sys.argv.index("--cms") + 1] if "--cms" in sys.argv else None
 CMSX = (sys.argv[sys.argv.index("--cms-extra") + 1], sys.argv[sys.argv.index("--cms-extra-tag") + 1] if "--cms-extra-tag" in sys.argv else "r1") if "--cms-extra" in sys.argv else None   # second CMS set (other rho), families suffixed {tag}   # dir of cms_<ds>_<desc>_s<seed>.npz (cms_dump.py) -> CMS families (Entry 28)
 LIGHT = "--light" in sys.argv
+NEWBASE = "--newbase" in sys.argv                # Entry 33: SU'25, SUE'24, Carson'23 baselines (needs --topk)
 JMODE = sys.argv[sys.argv.index("--joint-mode") + 1] if "--joint-mode" in sys.argv else "temper"   # Entry 31: temper | reset
 JOINT = "--joint" in sys.argv                     # Entry 31: joint place-presence HMM with calibrated OFF state (/J families; needs --topk)
 GATE_RATE = "--gate-rate" in sys.argv             # Entry 30: also the rate-limited-release gate variants (+NGRr)
@@ -154,6 +156,8 @@ def families(z, b):
             for al in (0.01, 0.1):
                 la, ka = sc_evidence(z, b, al); F[f"CPC-SC+CS(alpha={al:g})"] = (None, x_c, None, hyst(la, b["seqs"], ka, 0.0) & cs3)
     tkf = os.path.join(TOPK, f"topk_{b['ds_tag']}_s{int(z['seed'])}.npz") if TOPK else None
+    if NEWBASE and tkf and os.path.exists(tkf):                  # Entry 33: competitor baselines from the top-K list
+        F.update(new_baselines(z, b, np.load(tkf)))
     if tkf and os.path.exists(tkf):                              # TAO'26 (labels: tau_OOD = 3-sigma bound on easy conditions)
         tcf = os.path.join(TAOC, f"tao_{b['ds_tag']}_s{int(z['seed'])}.npz") if TAOC else None
         if tcf and os.path.exists(tcf):
@@ -347,6 +351,39 @@ def point(acc, xf, z, b, cx, nav):
             mA = ~np.char.startswith(np.asarray(z["cond"]).astype(str), "X:"); r["err_mean_B"] = float(np.nanmean(e[~mA])); e = e[mA]
         r["err_mean"], r["err_p95"] = float(np.nanmean(e)), float(np.nanpercentile(e, 95))
     return r
+
+
+def new_baselines(z, b, tk, K=10, lam=350.0):
+    """Entry 33 competitors (read in full, literature/RELATED_WORK_E32.md section 7):
+    SU25  Miller et al. 2025 (arXiv 2510.13464): SU = 1/2 (RS + SD), RS = mean_{i=2..k} s_i / s_1, SD = s_median / s_1 (k = 10),
+          training-free score; the paper sets no threshold -> threshold = conformal (1 - alpha) quantile of the score over the
+          LABELLED off-map frames of the 2 benign conditions (the protocol of every label baseline here, e.g. max-sim)
+    SUE24 Zaffar et al. CVPR 2024: spatial variance of the top-10 reference positions, weights exp(-lambda d_i), lambda = 350
+          (the paper's value), d_i = L2 descriptor distance = sqrt(2 - 2 s_i); same label-calibrated threshold
+    Carson23 Carson, Ford, Milford ICRA 2023: training-free consensus, accept iff |argmax |grad d| - argmin d| <= 1 along the
+          map order (distance vector from the top-100 list, entries outside it at the 100-th distance)"""
+    MP, A_ = b["MP"], N.A; hz = list(z["hz"]); P = MP[:, hz] if (MP.ndim > 1 and MP.shape[1] > 2) else (MP if MP.ndim > 1 else MP[:, None])
+    I, Sm = tk["idx"].astype(np.int64), tk["sim"].astype(np.float64); s1 = np.maximum(Sm[:, 0], 1e-6); S10 = Sm[:, :K]
+    SU = 0.5 * (S10[:, 1:].mean(1) / s1) + 0.5 * (np.median(S10, 1) / s1)
+    d = np.sqrt(np.maximum(2 - 2 * S10, 0)); w = np.exp(-lam * (d - d[:, :1])); Pk = P[I[:, :K]]
+    mu = (w[..., None] * Pk).sum(1) / w.sum(1, keepdims=True); var = (w * ((Pk - mu[:, None]) ** 2).sum(-1)).sum(1) / w.sum(1)
+    xt = MP[I[:, 0]]; cal_m = z["offm"] & z["bsel"]; F = {}
+    H = b["H"]; segs = [sq[i:i + H] for sq in b["seqs"] for i in range(0, len(sq) - H + 1, H)]
+    segs = [g for g in segs if cal_m[g].all()]                   # labelled off-map H-frame segments of the benign conditions
+    for name, conf in (("SU25", -SU), ("SUE24", -var)):
+        cal = np.sort(conf[cal_m]); kq = int(np.ceil((len(cal) + 1) * (1 - A_)))
+        thr = cal[min(len(cal) - 1, kq - 1)] if len(cal) else np.inf
+        F[name] = (conf, xt, float(thr), conf > thr)
+        mx = np.sort([conf[g].max() for g in segs]); kq = int(np.ceil((len(mx) + 1) * (1 - A_)))   # "-seg": segment-level calibration
+        thr_s = mx[min(len(mx) - 1, kq - 1)] if len(mx) else np.inf                              # (the most favourable fair version)
+        F[name + "-seg"] = (conf, xt, float(thr_s), conf > thr_s)
+    n, Nm = len(I), len(MP); dist = np.sqrt(np.maximum(2 - 2 * Sm, 0)); cons = np.zeros(n, bool)
+    for a in range(0, n, 512):
+        Dm = np.repeat(dist[a:a + 512, -1:], Nm, 1)
+        np.put_along_axis(Dm, I[a:a + 512], dist[a:a + 512], 1)
+        ig = np.abs(np.gradient(Dm, axis=1)).argmax(1); cons[a:a + 512] = np.abs(ig - I[a:a + 512, 0]) <= 1
+    F["Carson23"] = (None, xt, None, cons)
+    return F
 
 
 def one(args):
