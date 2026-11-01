@@ -72,6 +72,17 @@ CMS-CPC/H+SHcf+G+NGRr is within 0.01 recall of CMS-CPC/H+SH+G+NGRr on >= 5/7 wit
 tolerance is replaceable by a calibrated one). (c) New dataset: Oxford RobotCar (PointNetVLAD split, 44 traversals), dump
 kernel republishes it as `nhatlong1103/oxford-robotcar-vpr-dump` / `-images`; evaluated with the same protocol (30 % holes).
 
+**Results (366 runs, `@E33B --newbase --shcf`; raw `analysis/results/e33/nb.tgz`, tables `paper/e33_tables.md`).**
+1. *H33a supported (7/7).* Every new competitor either breaks alpha or has much lower recall than the proposed rule
+   CMS-CPC/H+SH+G+NGRr. SU'25 and SUE'24 calibrated on labelled off-map frames: segFAR 0.19-0.36 on every dataset. Carson'23
+   (label-free consensus): segFAR 0.72-0.99. The most favourable fair versions, calibrated on labelled off-map SEGMENTS:
+   SU'25-seg breaks alpha on 4/7 and reaches recall 0.05-0.33 where valid; SUE'24-seg is valid on 7/7 with recall 0.09-0.39
+   against 0.49-0.82 for the proposed rule (Boreas 0.248 vs 0.775, CMU 0.268 vs 0.822, Nordland 0.391 vs 0.765). The older label
+   baselines confirm the picture: Xu'21 0.021-0.227, Claxton'24 0.12-0.26, TAO'26 0.24-0.74, max-sim 0.08-0.19 mean segFAR.
+2. *H33b not supported.* SHcf (tolerance = 1 % quantile of the counterfactual-track residual) keeps validity on 7/7
+   (segFAR 0.000-0.013) but its recall is within 0.01 of the hand-set SH on only 4/7 (NCLT -0.012, 4S countryside -0.024, old town
+   +0.011). The frame-level quantile is not a sufficient replacement; Entry 34 tests the segment-level counterfactual test CST.
+
 **Improvement attempts (design runs only, labels only to diagnose; negative results recorded).**
 1. *SU as a third CMS statistic:* AUROC (correct on-map vs off-map) of the logistic combination route cost + z vs + SU:
    0.949 -> 0.952 (Nordland), unchanged on 4S old town / countryside, Boreas, CMU; SU alone 0.48-0.84 (route cost 0.90-0.98)
