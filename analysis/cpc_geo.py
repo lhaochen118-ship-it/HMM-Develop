@@ -217,3 +217,34 @@ def xnull_rules(z, b, xn, alpha=0.05, q3=None, x3=None, w3=None):
         for tg, ok in (("CS", cs), ("SH", sh)):
             out[f"CPC-SC{tag3}(X)+{tg}"] = (np.where(ok, lo - kap, -np.inf), hyst_ok(lo > kap, lo > 0, np.ones(len(ok), bool), seqs) & ok)
     return out, x_c
+
+
+def hyst_shape(start, keep, gate, x_m, o_q, seqs, excl, W=10, D_x=3.0, eps_x=0.5, step_x=0.2, min_x=1.0, hz=None):
+    """Entry 33 "SHs": Schmitt-trigger reporting with a STREAK-AWARE shape stop. The plain SH (shape_ok) tests the reported
+    track over the last D_x excl of odometry path whatever the reporting state, so after an off-map stretch the onset waits
+    until that window holds no frame of the (wrong) track from before re-entry. Here the window is restricted to the frames
+    of the decision: at an onset candidate t the last W frames (the window of the onset evidence), during a streak the frames
+    since its onset (capped at D_x excl of path). Windows shorter than min_x excl of path pass, as in shape_ok. A streak still
+    ends at the first shape failure, so the stop at a map edge is unchanged; only reports are removed relative to the
+    presence chain (Lemma 7 applies)."""
+    one_d = x_m.ndim == 1 or x_m.shape[1] == 1
+    if not one_d and hz is not None and x_m.shape[1] > 2: x_m, o_q = x_m[:, hz], o_q[:, hz]
+    acc = np.zeros(len(start), bool); D, eps, step = D_x * excl, eps_x * excl, step_x * excl
+    for idx in seqs:
+        m, o = x_m[idx].astype(float), o_q[idx].astype(float)
+        if one_d: m, o = m.reshape(-1, 1), o.reshape(-1, 1)
+        cum = np.r_[0, np.cumsum(np.linalg.norm(np.diff(o, axis=0), axis=1))]
+        rep, t0 = False, 0
+        def fits(i, lo):
+            w = window_points(o, cum, i, D, step); w = w[w >= lo]
+            if len(w) < 3 or cum[i] - cum[w[0]] < min_x * excl: return True
+            if one_d:
+                d = (m[w, 0] - m[w, 0].mean()) - (o[w, 0] - o[w, 0].mean()); return float(np.sqrt((d ** 2).mean())) <= eps
+            return procrustes2(m[w], o[w])[0] <= eps
+        for i, t in enumerate(idx):
+            if rep:
+                rep = bool(keep[t] and gate[t] and fits(i, t0))
+            elif start[t] and gate[t] and fits(i, max(0, i - W + 1)):
+                rep, t0 = True, max(0, i - W + 1)
+            acc[t] = rep
+    return acc

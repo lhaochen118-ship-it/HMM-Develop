@@ -7,6 +7,28 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 33 (branch `hmm-navigation-5`) — competitors read in full, improvement attempts, reputable new datasets (2026-11-01)
+
+**Competitors (read in full; `literature/RELATED_WORK_E32.md` section 7).** SafeVPR'26 (labelled Mondrian LTT, FDR under
+exchangeability only, per 10-frame sequence, Oxford RobotCar / NCLT / St Lucia), Through-the-Lens-of-Doubt'25 (SU score, training
+free, no threshold), SUE (CVPR'24, score), To-Match-or-Not'25 (RANSAC inliers, needs images), Carson'23 (label-free consensus
+rule), SMR'25 (supervised per dataset), Valentin'26 (filter calibration check, needs ground truth). None addresses per-frame,
+label-free fix acceptance with off-map regions and a guarantee. Added as baselines (`oc_curves.py --newbase`, `@E33B`):
+SU25, SUE24 (threshold = conformal quantile of the score on the labelled off-map frames of the benign conditions; "-seg" variants
+calibrated on labelled off-map SEGMENTS, the most favourable fair version), Carson23. Design run Nordland CosPlace s0:
+SU25 0.379 / segFAR 0.354, SU25-seg 0.150 / 0.046, SUE24 0.458 / 0.336, SUE24-seg 0.347 / 0.038, Carson23 0.603 / 0.982,
+proposed 0.826 / 0.000.
+
+**Improvement attempts (design runs only, labels only to diagnose; negative results recorded).**
+1. *SU as a third CMS statistic:* AUROC (correct on-map vs off-map) of the logistic combination route cost + z vs + SU:
+   0.949 -> 0.952 (Nordland), unchanged on 4S old town / countryside, Boreas, CMU; SU alone 0.48-0.84 (route cost 0.90-0.98)
+   -> not added (no information beyond the CMS statistics).
+2. *Where the proposed rule loses recall* (correct HMM place on-map but not reported): the SH shape stop 3.7-10.3 % of the on-map
+   frames, the presence onset 0.4-7 %, +G 0.2-2.2 %.
+3. *Streak-aware SH ("SHs", `cpc_geo.hyst_shape`: shape window = the onset window, then the frames since the onset):* recall
+   +5 to +10 points but segFAR 0.06-0.18 (> alpha) on 4/5 design runs -> rejected. The full-window SH is part of the segment-level
+   validity at excursion boundaries and for re-onsets inside holes (Theorem 6' covers segments deep in an excursion only).
+
 ## Entry 32 (branch `hmm-navigation-5`) — sensitivity, running time, natural near off-map (NCLT, every session as the map), literature (2026-11-01)
 
 **Pre-registration (design: Nordland CosPlace s0, 4S old town CosPlace s0, NCLT map 2013-04-05 CosPlace).**
