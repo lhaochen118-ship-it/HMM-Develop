@@ -33,7 +33,9 @@ def cf_disp(z, st):
 def gate_tau(z, b, st, beta=0.05):
     """gate radius per frame: beta-quantile of the counterfactual displacement of the frame's calibration group"""
     d = cf_disp(z, st); tau = np.full(len(d), np.inf)
-    for sqs, cqs in cms.cal_groups(z, b["seqs"]):
+    keep = cms.ALPHA_MIN[0]; cms.ALPHA_MIN[0] = 0.05          # Mondrian minimum size fixed (not left over from the last rules call)
+    groups = cms.cal_groups(z, b["seqs"]); cms.ALPHA_MIN[0] = keep
+    for sqs, cqs in groups:
         m = np.concatenate(sqs); mc = np.concatenate(cqs); v = d[mc]; v = v[np.isfinite(v)]
         if len(v): tau[m] = float(np.quantile(v, beta))
     return tau

@@ -112,6 +112,13 @@ there (0.042: a false streak that passes the shape stop), the finite-memory CMS-
    (0.01; CMU 0.017), error lower on 4/6; 50 %: recall higher 6/6, CMU above alpha (0.053 / 0.029), error higher on 4/6.
 9. *Pre-registered radius {r1}:* the chain + stop stays valid on average at 0.05, CMU exceeds 0.01 (0.013); the bare test is
    seed-dependent anti-conservative -> rho = off_d confirmed. CMS-CPC without stop violates (0.075-0.196), as predicted.
+**Correction (Entry 29 audit, cluster bootstrap over seeds + sign test, `analysis/paired_stats.py`).** CMS-CPC/H+SH at
+alpha = 0.01 vs CPC-SC-T(1/2)+SH: recall higher with a 95 % CI excluding 0 on 4/7 (Boreas +0.084, Nordland +0.010, old town
++0.060, countryside +0.076; CMU +0.006 and NCLT +0.007 not significant; office -0.005 [-0.10, +0.06]); navigation error lower with
+CI excluding 0 on 2/7 (old town -1.7 m, countryside -6.6 m), no dataset significantly worse. The "6/7 / 5/7" counts above are
+counts of mean differences, not significant wins. The onset statement of CMS-CPC (and of CPC-SC, Entry 25) is only approximate
+(fresh-start calibration does not dominate a non-reporting chain entering with log-odds in (0, kappa]); the exact version is
+CMS-CPCW (Entry 29). The counterfactual of this entry is truncated at top-100 (exact version: `analysis/cms_exact.py`).
 **Verdict.** New mechanism (Gate 12), tight label-free calibration, alpha = 0.01 feasible, recall gains at a 5x stricter
 guarantee with lower navigation error on 5/7, ranking gains 5/7. Open: navigation risk at alpha = 0.05, CMU at small
 conditions, S1 only on average over hole layouts, closed-loop robot. Not claimed A* yet.

@@ -44,15 +44,24 @@ for acc in sorted({slots[k % len(slots)][0] for k in range(nk)}):
     for _ in range(40):
         if subprocess.run(["kaggle", "datasets", "status", f"{acc}/dive-vpr-analysis"], capture_output=True, text=True, env=env).stdout.strip().endswith("ready"): break
         time.sleep(10)
-def make(kd, slug, part, acc, gpu):
-    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + ((["--l4"] if L4 else ["--gpu"]) if gpu else []) + DSARG
+def make(kd, slug, part, acc, gpu, t4=False):
+    flag = (["--t4"] if t4 else (["--l4"] if L4 else ["--gpu"])) if gpu else []
+    ds_ = DSARG
+    if t4 and "--par" in ds_:                                              # 2x T4 session: 4 CPUs / 30 GB -> 3 parallel jobs
+        i = ds_.index("--par"); ds_ = ds_[:i] + ["--par", "3"] + ds_[i + 2:]
+    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + flag + ds_
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
+T4_FALLBACK = set()                                                        # kernels moved from a stuck L4 queue to 2x T4
+
+
 def launch(k):
-    slug = f"{prefix}-{k + 1}"
+    slug = f"{prefix}-{k + 1}"; t4 = k in T4_FALLBACK
+    # user rule (2026-11-01): L4 queued > 5 min -> cancel + re-push, up to 5 times, then 2x T4 (T4: stall 10 min, 4 restarts)
+    stall, restarts = ("600", "4") if t4 else (("300", "5") if L4 else ("300", "4"))
     return subprocess.Popen([sys.executable, os.path.join(ROOT, "automation", "run_kernel.py"), os.path.join(work, slug),
-                             os.path.join(work, slug + "_out"), "300", "4", "43200"], stdout=open(os.path.join(work, slug + ".log"), "w"), stderr=subprocess.STDOUT)
+                             os.path.join(work, slug + "_out"), stall, restarts, "43200"], stdout=open(os.path.join(work, slug + ".log"), "a" if t4 else "w"), stderr=subprocess.STDOUT)
 
 
 procs = {}
@@ -66,6 +75,12 @@ while procs:
         if p.poll() is None: continue
         del procs[k]; slug = f"{prefix}-{k + 1}"; log = open(os.path.join(work, slug + ".log")).read()
         gpu = k < len(slots) and "--cpu" not in sys.argv
+        if L4 and gpu and k not in T4_FALLBACK and ("STALL_GIVEUP" in log or "STATUS=DONE:stall" in log):
+            acc = slots[k % len(slots)][0]; kid = f"{acc}/{slug}"
+            env = dict(os.environ, KAGGLE_API_TOKEN=open(os.path.expanduser(f"~/.kaggle/tok_{acc}")).read().strip())
+            subprocess.run(["kaggle", "kernels", "delete", "-y", kid], capture_output=True, text=True, env=env)   # never leave a queued L4 behind
+            T4_FALLBACK.add(k); make(os.path.join(work, slug), slug, part_of(k), acc, gpu, t4=True); time.sleep(40)
+            print(f"{slug}: L4 queue stuck after 5 restarts -> 2x T4 on {acc}", flush=True); procs[k] = launch(k); continue
         if "STATUS=PUSH_FAILED" in log and len(tried[k]) < len(ACCOUNTS):
             acc = [a for a in ACCOUNTS[k % len(ACCOUNTS):] + ACCOUNTS if a not in tried[k]][0]; tried[k].add(acc)
             make(os.path.join(work, slug), slug, part_of(k), acc, gpu); time.sleep(40)

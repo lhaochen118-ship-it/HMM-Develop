@@ -1,6 +1,6 @@
 # CMS — Phẫu thuật bản đồ phản thực: tự hiệu chuẩn quyết định định vị trên chính luồng triển khai
 
-*Entry 28, branch `hmm-navigation-5`. Code: `analysis/cms.py` (thống kê + luật), `analysis/cms_dump.py` (Kaggle),
+*Entry 28–29, branch `hmm-navigation-5` (§4b: hiệu chỉnh sau tự kiểm toán). Code: `analysis/cms.py` (thống kê + luật), `analysis/cms_dump.py` (Kaggle),
 `analysis/oc_curves.py --cms`. Ký hiệu như `paper/cpc_theory.md` §0.*
 
 ## 1. Vì sao cần một null mới
@@ -90,6 +90,52 @@ mỗi cái hiệu chuẩn ở α/2: tỷ lệ khởi phát sai ≤ α/π (cận 
 Định lý 6 chỉ nói về khởi phát. Như CPC-SC (Bổ đề 7, Mệnh đề 4, Định lý 5): dừng hình dạng SH trên quỹ đạo MAP của HMM chỉ
 loại báo cáo (không làm tăng segFAR/FL) và cắt chuỗi báo ở mép bản đồ dưới giả định NC. CMS-CPC **không** dừng là đối chứng
 chẩn đoán (dự đoán: vi phạm segFAR).
+
+
+## 4b. Hiệu chỉnh sau tự kiểm toán (Entry 29)
+
+**(i) Khởi phát của chuỗi đầy đủ bộ nhớ (lỗ hổng, kế thừa từ CPC-SC vòng 3).** κ được hiệu chuẩn trên các đoạn phản thực với
+chuỗi **khởi động lại ở odds 1** (log-odds 0), với lập luận "odds 1 là mức cao nhất mà một chuỗi chưa báo có thể giữ". Lập luận
+này **sai** khi κ > 0 (thực tế κ ≈ 2.4–4.7): với trễ Schmitt (khởi phát > κ, duy trì > 0), một chuỗi chưa từng khởi phát có thể
+vào đoạn với log-odds bất kỳ trong (0, κ]; bước dự đoán g(ℓ) = logit(σ(ℓ)(1 − p) + (1 − σ(ℓ))p) tăng theo ℓ, nên từ trạng thái
+đó chuỗi vượt κ dễ hơn chuỗi khởi động ở 0 ⇒ phân vị hiệu chuẩn không trội tỷ lệ khởi phát thật. Phát biểu "P(khởi phát trong
+đoạn) ≤ α" của CPC-SC và của CMS-CPC vì vậy **chỉ là xấp xỉ** (thực nghiệm: tỷ lệ thực tế vẫn ≤ α ở 7/7, nhưng không phải định lý).
+
+*Sửa (CMS-CPCW).* Khởi phát bằng log-odds **cửa sổ hữu hạn** w_t (chuỗi khởi động lại ở odds 1 tại t − W + 1, W = H): w_t chỉ phụ
+thuộc W frame cuối, **không phụ thuộc trạng thái lúc vào đoạn**; κ_W = phân vị conformal của max w trên các đoạn phản thực (cùng
+w). Duy trì vẫn bằng chuỗi đầy đủ (ℓ_t > 0) và dừng SH.
+
+**Định lý 6′ (khởi phát cửa sổ hữu hạn).** Dưới S1–S3 (S3 áp cho vector (w_t) của các đoạn H frame nằm sâu ≥ W − 1 frame trong
+chuyến off-map) và với π, n như Định lý 6: P(∃ t ∈ G₀: w_t > κ_W) ≤ α(n+1)/(πn+1), mọi phụ thuộc trong và giữa các đoạn; mọi báo
+cáo off-map của CMS-CPCW thuộc một chuỗi báo có khởi phát trong chuyến off-map (Định lý 5 (a), dưới NC và dừng SH) ⇒ tỷ lệ khởi phát
+sai mỗi đoạn ≤ α/π (tuyến tính của kỳ vọng). *Chứng minh:* như Định lý 6, thay max T bằng max w; w của đoạn không phụ thuộc quá
+khứ trước t − W + 1. ∎
+
+**(ii) Phát biểu chính xác của S3 và của tập "đoạn tốt".** Tập đoạn tốt (niềm tin đúng) là ngẫu nhiên và phụ thuộc dữ liệu. Giả
+định cần là: có ghép X₀ ≤ X′ sao cho (X′, các max của đoạn tốt) hoán đổi được **có điều kiện trên nhãn tốt/xấu** của các đoạn
+phản thực. Định lý 6 không khẳng định gì cho đoạn ở độ sâu < N − 1 (cửa sổ còn chồng lên bản đồ ở đầu chuyến off-map); segFAR
+thực nghiệm tính mọi đoạn.
+
+**(iii) Null phản thực chính xác.** Bản Entry 28 xoá entry trong hành lang khỏi top-100 đã lưu: còn 100 − n_mask giả thuyết và
+giá trị dự phòng là similarity thứ 100 của bản đồ đầy đủ — không đúng thống kê trên M \ B_t. `analysis/cms_exact.py` dùng top-300
+và lấy đúng 100 entry chưa che đầu tiên cho giả thuyết, tra cứu và dự phòng (= top-100 của M \ B_t khi n_mask ≤ 200; không có
+danh sách nào bị thiếu trên dữ liệu thử). Kiểm: chi phí tuyến phản thực đổi ít (trung vị +0.004 trên thang ~1.3, hai chiều), độ
+khác biệt phản thực bản cũ chống-bảo-thủ (trung vị 0.264 so với 0.287).
+
+**(iv) Cổng innovation phản thực (+NGR, `analysis/navrisk.py`) — rủi ro điều hướng.** Bằng chứng hiện diện kiểm soát *có hay
+không* một fix sai, không kiểm soát *tác hại*: một fix sai dịch ước lượng của bộ lọc K·ν (ν = innovation). Winner phản thực j_cf là
+fix sai theo cấu trúc; d_cf = |m(j_cf) − m(j)| là innovation nó gây ra cho một bộ lọc bám đúng niềm tin. Cổng τ = phân vị β của
+d_cf (β = 0.05).
+*Mệnh đề 11.* (a) +NGR chỉ bỏ báo cáo ⇒ mọi cận theo đoạn của luật nền (segFAR, FL, Định lý 6/6′) giữ nguyên (Bổ đề 7).
+(b) (Gần đúng, không phải định lý.) Dưới S1–S3 áp cho d_cf, nếu ước lượng của bộ lọc lệch niềm tin không quá e thì
+|ν − d| ≤ e cho fix sai tương ứng, nên một fix sai ở biên off-map lọt cổng với xác suất ≤ P(d_cf ≤ τ + e) ≈ β/π + P(τ < d_cf ≤ τ + e)
+(d_cf đo so với niềm tin, ν đo so với bộ lọc).
+*Lưu ý (kiểm toán).* Giả thuyết phản thực nằm ngoài hành lang bán kính ρ quanh mọi anchor, nên d_cf ≥ ρ theo cấu trúc và
+τ ≥ ρ = off_d (đo được: 40.5–44 m ở các dataset đô thị, 29–30 frame ở Nordland với ρ = 10): cổng về bản chất là cổng innovation
+bán kính cỡ off_d (đơn vị bài toán), phần phản thực chỉ hiệu chỉnh phần trên ρ theo từng điều kiện. Không tuyên bố novelty cho
+riêng cổng (Gate 13).
+(c) Mở khoá theo chuỗi (R = H báo cáo liên tiếp có innovation đồng nhất, độ phân tán ≤ excl/2) tránh khoá chết khi bộ lọc trôi;
+giá: một chuỗi báo sai trượt song song đều với bộ lọc có thể lọt — đúng loại báo sai mà dừng SH cũng không bắt.
 
 ## 5. Điểm mới so với tài liệu (tóm tắt; Gate 12 trong `LITERATURE_GATE.md`)
 
