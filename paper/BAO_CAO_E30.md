@@ -19,9 +19,10 @@
 5. **Hai phát hiện về cổng** (báo cáo thẳng): code vòng 7 khác mô tả (mở khoá giới hạn tốc độ thay vì mở cả chuỗi); bản sửa "mở cả
    chuỗi" đăng ký trước hoá ra **kém hơn** (Boreas +2.0 đến +2.9 m, CI > 0) ⇒ giữ cả hai, LODO chọn bản giới hạn tốc độ.
 6. **HMM là trung tâm (Entry 31):** HMM liên hợp vị trí–hiện diện với trạng thái OFF có emission hiệu chuẩn phản thực; biên OFF của nó
-   **trùng chính xác** chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13), nên mọi định lý là phát biểu về chính HMM. Trên 3 run thiết kế, ghép nối liên hợp giữ nguyên quyết định (cùng biên OFF) và
-   chữa lock-in của cùng chuỗi vị trí (Nordland: sai số CMS-CPCW 27.3 → 6.0 m, độ đúng vị trí sau lỗ 0.80 → 0.90) nhưng **không tăng
-   recall** so với chuỗi vị trí gốc (−0.01, do emission dựng lại từ top-K); đánh giá 114 run đang chạy (§5).
+   **trùng chính xác** chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13), nên mọi định lý là phát biểu về chính HMM. Đánh giá 114 run: HMM liên hợp có recall trong ±0.01 so với chuỗi vị trí gốc
+   ở 6/7 dataset (Nordland −0.02 đến −0.03, do emission dựng lại từ top-100), sai số giảm ở 4S countryside (−3.5 m, CI < 0); so với
+   cùng chuỗi không có OFF, ghép nối **không** giảm sai số nhất quán (3/7). Kết luận: công thức HMM là chính xác và dùng được để trình
+   bày phương pháp, nhưng bản phân rã (/H) vẫn là cài đặt khuyến nghị; HMM liên hợp vẫn hơn luật cũ 7/7 recall và 7/7 sai số.
 
 ## 1. Câu hỏi của vòng này (không có robot thật, chỉ benchmark trên dataset)
 
@@ -691,6 +692,76 @@ Gộp 36 run: recall cảnh A / segFAR TB / segFAR tệ nhất / tỷ lệ run s
 | CMS-CPCW/ H+SH+NGRr, α = 0.01 | 0.695 / 0.000 / 0.001 / 5.0 | 0.688 / 0.017 / 0.110 / 6.9 | 0.643 / 0.000 / 0.000 / 13.7 | 0.631 / 0.000 / 0.004 / 15.9 | 0.648 / 0.005 / 0.012 / 39.8 | 0.335 / 0.002 / 0.011 / 59.2 |
 | Oracle | 0.89 / – / – / 2.5 | 0.90 / – / – / 3.3 | 0.69 / – / – / 8.0 | 0.91 / – / – / 12.0 | 0.85 / – / – / 31.8 | 0.73 / – / – / 23.6 |
 
+### Bảng 11. HMM liên hợp (Entry 31, seed 0–2, 114 run): /H chuỗi vị trí gốc, /R dựng lại từ top-K không OFF, /J liên hợp có OFF hiệu chuẩn
+
+| Luật | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| CPC-SC-T½+SH | 0.663 / 0.004 / 0.023 / 6.6 | 0.588 / 0.001 / 0.003 / 4.9 | 0.713 / 0.004 / 0.021 / 4.0 | 0.711 / 0.000 / 0.003 / 11.5 | 0.736 / 0.000 / 0.003 / 11.9 | 0.616 / 0.006 / 0.023 / 32.0 | 0.340 / 0.000 / 0.000 / 52.0 |
+| CMS-CPCW/ H+SH (chuỗi vị trí gốc) | 0.770 / 0.005 / 0.028 / 9.4 | 0.611 / 0.005 / 0.029 / 5.1 | 0.768 / 0.007 / 0.029 / 7.3 | 0.758 / 0.002 / 0.018 / 7.3 | 0.793 / 0.001 / 0.015 / 10.3 | 0.695 / 0.007 / 0.023 / 28.9 | 0.502 / 0.001 / 0.006 / 37.1 |
+| CMS-CPCW/R+SH (dựng lại, không OFF) | 0.770 / 0.006 / 0.028 / 12.5 | 0.611 / 0.002 / 0.013 / 5.2 | 0.763 / 0.010 / 0.029 / 7.4 | 0.733 / 0.003 / 0.023 / 9.8 | 0.798 / 0.001 / 0.009 / 10.2 | 0.695 / 0.006 / 0.019 / 28.8 | 0.504 / 0.001 / 0.007 / 39.5 |
+| CMS-CPCW/J+SH (**HMM liên hợp**) | 0.767 / 0.004 / 0.025 / 9.9 | 0.611 / 0.002 / 0.013 / 5.9 | 0.765 / 0.009 / 0.033 / 7.4 | 0.730 / 0.003 / 0.025 / 8.7 | 0.801 / 0.001 / 0.018 / 10.7 | 0.695 / 0.007 / 0.019 / 30.9 | 0.504 / 0.001 / 0.004 / 39.4 |
+| CMS-CPCW/ H+SH+NGRr (chuỗi vị trí gốc) | 0.769 / 0.003 / 0.022 / 6.0 | 0.610 / 0.001 / 0.007 / 4.8 | 0.768 / 0.004 / 0.023 / 4.2 | 0.756 / 0.001 / 0.010 / 6.7 | 0.792 / 0.001 / 0.006 / 10.1 | 0.683 / 0.005 / 0.015 / 27.7 | 0.491 / 0.000 / 0.004 / 39.5 |
+| CMS-CPCW/R+SH+NGRr (dựng lại, không OFF) | 0.769 / 0.004 / 0.022 / 5.3 | 0.610 / 0.000 / 0.000 / 3.7 | 0.763 / 0.005 / 0.023 / 4.2 | 0.729 / 0.002 / 0.018 / 7.9 | 0.797 / 0.000 / 0.000 / 10.0 | 0.682 / 0.005 / 0.015 / 28.2 | 0.493 / 0.000 / 0.004 / 36.4 |
+| CMS-CPCW/J+SH+NGRr (**HMM liên hợp**) | 0.767 / 0.002 / 0.018 / 5.5 | 0.610 / 0.000 / 0.000 / 3.7 | 0.764 / 0.004 / 0.025 / 4.2 | 0.727 / 0.002 / 0.018 / 8.1 | 0.800 / 0.000 / 0.000 / 10.0 | 0.682 / 0.005 / 0.015 / 28.2 | 0.493 / 0.000 / 0.004 / 36.0 |
+| CMS-CPC/ H+SH+G (chuỗi vị trí gốc) | 0.779 / 0.007 / 0.030 / 11.2 | 0.614 / 0.008 / 0.042 / 6.8 | 0.765 / 0.008 / 0.023 / 6.9 | 0.755 / 0.005 / 0.020 / 9.0 | 0.796 / 0.002 / 0.018 / 10.3 | 0.699 / 0.007 / 0.023 / 29.6 | 0.526 / 0.001 / 0.011 / 30.1 |
+| CMS-CPC/R+SH+G (dựng lại, không OFF) | 0.779 / 0.008 / 0.030 / 11.2 | 0.613 / 0.005 / 0.026 / 6.0 | 0.761 / 0.009 / 0.031 / 6.8 | 0.737 / 0.004 / 0.018 / 9.2 | 0.801 / 0.001 / 0.009 / 10.3 | 0.699 / 0.006 / 0.023 / 28.9 | 0.525 / 0.001 / 0.004 / 31.3 |
+| CMS-CPC/J+SH+G (**HMM liên hợp**) | 0.776 / 0.005 / 0.027 / 10.4 | 0.613 / 0.005 / 0.026 / 6.1 | 0.762 / 0.009 / 0.027 / 7.0 | 0.735 / 0.004 / 0.020 / 10.4 | 0.802 / 0.001 / 0.018 / 10.7 | 0.698 / 0.007 / 0.023 / 30.2 | 0.527 / 0.000 / 0.004 / 34.0 |
+| CMS-CPC/ H+SH+G+NGRr (chuỗi vị trí gốc) | 0.779 / 0.004 / 0.022 / 4.5 | 0.612 / 0.002 / 0.007 / 4.3 | 0.764 / 0.003 / 0.014 / 3.9 | 0.752 / 0.000 / 0.000 / 6.9 | 0.795 / 0.000 / 0.006 / 10.1 | 0.687 / 0.003 / 0.010 / 27.5 | 0.513 / 0.001 / 0.006 / 33.9 |
+| CMS-CPC/R+SH+G+NGRr (dựng lại, không OFF) | 0.778 / 0.004 / 0.022 / 4.3 | 0.612 / 0.001 / 0.003 / 3.7 | 0.761 / 0.003 / 0.014 / 3.9 | 0.733 / 0.000 / 0.000 / 7.0 | 0.799 / 0.000 / 0.000 / 10.1 | 0.686 / 0.003 / 0.010 / 27.6 | 0.513 / 0.000 / 0.000 / 33.3 |
+| CMS-CPC/J+SH+G+NGRr (**HMM liên hợp**) | 0.776 / 0.003 / 0.018 / 4.2 | 0.612 / 0.001 / 0.003 / 3.7 | 0.762 / 0.004 / 0.015 / 3.9 | 0.732 / 0.000 / 0.000 / 7.1 | 0.801 / 0.000 / 0.000 / 10.1 | 0.685 / 0.003 / 0.010 / 27.5 | 0.514 / 0.000 / 0.000 / 32.8 |
+| CMS-CPCW/ H+SH[both]+NGRr | 0.739 / 0.003 / 0.021 / 4.7 | 0.599 / 0.000 / 0.000 / 3.7 | 0.754 / 0.003 / 0.014 / 3.9 | 0.702 / 0.000 / 0.000 / 9.3 | 0.761 / 0.000 / 0.000 / 10.5 | 0.663 / 0.005 / 0.015 / 29.3 | 0.430 / 0.000 / 0.002 / 45.3 |
+| CMS-CPCW/J+SH[both]+NGRr | 0.736 / 0.002 / 0.018 / 4.7 | 0.596 / 0.000 / 0.000 / 3.8 | 0.750 / 0.003 / 0.014 / 3.9 | 0.677 / 0.000 / 0.000 / 9.4 | 0.762 / 0.000 / 0.000 / 10.5 | 0.661 / 0.005 / 0.015 / 29.6 | 0.428 / 0.000 / 0.004 / 45.4 |
+| CMS-CPCW/ H+SH[online]+NGRr | 0.735 / 0.003 / 0.021 / 5.2 | 0.604 / 0.000 / 0.000 / 3.7 | 0.761 / 0.004 / 0.015 / 4.0 | 0.679 / 0.000 / 0.003 / 10.9 | 0.748 / 0.000 / 0.000 / 10.7 | 0.663 / 0.006 / 0.015 / 29.3 | 0.472 / 0.001 / 0.014 / 43.4 |
+| CMS-CPCW/J+SH[online]+NGRr | 0.733 / 0.003 / 0.018 / 5.1 | 0.605 / 0.001 / 0.003 / 3.8 | 0.759 / 0.004 / 0.015 / 3.9 | 0.659 / 0.002 / 0.025 / 11.2 | 0.753 / 0.000 / 0.000 / 10.6 | 0.664 / 0.007 / 0.015 / 29.3 | 0.474 / 0.000 / 0.004 / 41.3 |
+
+### Bảng 12. Ghép cặp HMM liên hợp
+
+| A vs B | dataset | runs | Δ recall [95 % CI] (sign p) | Δ error m [95 % CI] (sign p) | Δ segFAR [95 % CI] |
+|---|---|---|---|---|---|
+| CMS-CPCW/J+SH+NGRr vs CMS-CPCW/H+SH+NGRr | Boreas | 18 | -0.003 [-0.007, +0.004] (p=1.0e+00) | -0.5 [-1.7, +1.7] (p=1.0e+00) | -0.001 [-0.002, +0.000] |
+| CMS-CPCW/J+SH+NGRr vs CMS-CPCW/H+SH+NGRr | NCLT | 6 | +0.001 [-0.005, +0.007] (p=1.0e+00) | -1.1 [-3.6, +0.2] (p=1.0e+00) | -0.001 [-0.003, +0.000] |
+| CMS-CPCW/J+SH+NGRr vs CMS-CPCW/H+SH+NGRr | CMU | 18 | -0.003 [-0.005, +0.000] (p=1.0e+00) | -0.0 [-0.1, +0.0] (p=1.0e+00) | +0.000 [+0.000, +0.000] |
+| CMS-CPCW/J+SH+NGRr vs CMS-CPCW/H+SH+NGRr | Nordland | 18 | -0.030 [-0.037, -0.020] (p=2.5e-01) | +1.4 [+0.1, +3.6] (p=2.5e-01) | +0.001 [+0.000, +0.003] |
+| CMS-CPCW/J+SH+NGRr vs CMS-CPCW/H+SH+NGRr | 4S office | 18 | +0.008 [+0.003, +0.013] (p=2.5e-01) | -0.1 [-0.1, -0.0] (p=2.5e-01) | -0.001 [-0.002, +0.000] |
+| CMS-CPCW/J+SH+NGRr vs CMS-CPCW/H+SH+NGRr | 4S old town | 18 | -0.001 [-0.008, +0.005] (p=1.0e+00) | +0.5 [-0.3, +1.3] (p=1.0e+00) | -0.000 [-0.001, +0.001] |
+| CMS-CPCW/J+SH+NGRr vs CMS-CPCW/H+SH+NGRr | 4S countryside | 18 | +0.002 [+0.001, +0.003] (p=2.5e-01) | -3.5 [-6.4, -1.2] (p=2.5e-01) | -0.000 [-0.001, +0.000] |
+| CMS-CPC/J+SH+G+NGRr vs CMS-CPC/H+SH+G+NGRr | Boreas | 18 | -0.003 [-0.007, +0.003] (p=1.0e+00) | -0.3 [-1.1, +0.3] (p=1.0e+00) | -0.001 [-0.003, +0.001] |
+| CMS-CPC/J+SH+G+NGRr vs CMS-CPC/H+SH+G+NGRr | NCLT | 6 | -0.001 [-0.005, +0.005] (p=1.0e+00) | -0.6 [-2.3, +0.3] (p=1.0e+00) | -0.001 [-0.003, +0.000] |
+| CMS-CPC/J+SH+G+NGRr vs CMS-CPC/H+SH+G+NGRr | CMU | 18 | -0.002 [-0.004, +0.000] (p=1.0e+00) | -0.0 [-0.0, -0.0] (p=2.5e-01) | +0.000 [+0.000, +0.000] |
+| CMS-CPC/J+SH+G+NGRr vs CMS-CPC/H+SH+G+NGRr | Nordland | 18 | -0.021 [-0.027, -0.017] (p=2.5e-01) | +0.2 [+0.0, +0.4] (p=2.5e-01) | +0.000 [+0.000, +0.000] |
+| CMS-CPC/J+SH+G+NGRr vs CMS-CPC/H+SH+G+NGRr | 4S office | 18 | +0.006 [+0.003, +0.010] (p=2.5e-01) | -0.1 [-0.1, +0.0] (p=1.0e+00) | -0.000 [-0.001, +0.000] |
+| CMS-CPC/J+SH+G+NGRr vs CMS-CPC/H+SH+G+NGRr | 4S old town | 18 | -0.002 [-0.009, +0.004] (p=1.0e+00) | -0.0 [-0.5, +0.4] (p=1.0e+00) | -0.000 [-0.001, +0.001] |
+| CMS-CPC/J+SH+G+NGRr vs CMS-CPC/H+SH+G+NGRr | 4S countryside | 18 | +0.001 [-0.001, +0.007] (p=1.0e+00) | -1.1 [-1.7, -0.6] (p=2.5e-01) | -0.001 [-0.001, +0.000] |
+| CMS-CPCW/J+SH vs CMS-CPCW/R+SH | Boreas | 18 | -0.003 [-0.005, +0.000] (p=1.0e+00) | -2.6 [-2.8, -2.4] (p=2.5e-01) | -0.002 [-0.003, +0.000] |
+| CMS-CPCW/J+SH vs CMS-CPCW/R+SH | NCLT | 6 | -0.000 [-0.003, +0.002] (p=1.0e+00) | +0.7 [-0.1, +2.0] (p=1.0e+00) | +0.000 [+0.000, +0.000] |
+| CMS-CPCW/J+SH vs CMS-CPCW/R+SH | CMU | 18 | +0.002 [+0.000, +0.003] (p=2.5e-01) | +0.1 [+0.1, +0.1] (p=2.5e-01) | -0.001 [-0.002, +0.001] |
+| CMS-CPCW/J+SH vs CMS-CPCW/R+SH | Nordland | 18 | -0.003 [-0.005, -0.001] (p=2.5e-01) | -1.2 [-3.6, +0.3] (p=1.0e+00) | -0.001 [-0.001, +0.000] |
+| CMS-CPCW/J+SH vs CMS-CPCW/R+SH | 4S office | 18 | +0.003 [-0.002, +0.006] (p=1.0e+00) | +0.5 [+0.0, +0.9] (p=2.5e-01) | +0.000 [-0.001, +0.002] |
+| CMS-CPCW/J+SH vs CMS-CPCW/R+SH | 4S old town | 18 | -0.000 [-0.006, +0.003] (p=1.0e+00) | +2.1 [-0.8, +4.9] (p=1.0e+00) | +0.000 [+0.000, +0.001] |
+| CMS-CPCW/J+SH vs CMS-CPCW/R+SH | 4S countryside | 18 | +0.000 [-0.001, +0.003] (p=1.0e+00) | -0.1 [-1.4, +1.2] (p=1.0e+00) | -0.000 [-0.001, +0.000] |
+| CMS-CPC/J+SH+G vs CMS-CPC/R+SH+G | Boreas | 18 | -0.003 [-0.005, +0.000] (p=1.0e+00) | -0.8 [-2.3, +1.1] (p=1.0e+00) | -0.003 [-0.005, -0.001] |
+| CMS-CPC/J+SH+G vs CMS-CPC/R+SH+G | NCLT | 6 | -0.000 [-0.003, +0.002] (p=1.0e+00) | +0.1 [-0.1, +0.3] (p=1.0e+00) | +0.000 [+0.000, +0.000] |
+| CMS-CPC/J+SH+G vs CMS-CPC/R+SH+G | CMU | 18 | +0.001 [+0.001, +0.002] (p=2.5e-01) | +0.1 [-0.0, +0.4] (p=1.0e+00) | -0.000 [-0.002, +0.002] |
+| CMS-CPC/J+SH+G vs CMS-CPC/R+SH+G | Nordland | 18 | -0.002 [-0.004, -0.001] (p=2.5e-01) | +1.1 [+0.2, +2.2] (p=2.5e-01) | +0.001 [+0.000, +0.001] |
+| CMS-CPC/J+SH+G vs CMS-CPC/R+SH+G | 4S office | 18 | +0.002 [-0.002, +0.004] (p=1.0e+00) | +0.4 [+0.0, +0.9] (p=2.5e-01) | -0.000 [-0.002, +0.002] |
+| CMS-CPC/J+SH+G vs CMS-CPC/R+SH+G | 4S old town | 18 | -0.001 [-0.007, +0.003] (p=1.0e+00) | +1.3 [-0.8, +3.8] (p=1.0e+00) | +0.001 [+0.000, +0.001] |
+| CMS-CPC/J+SH+G vs CMS-CPC/R+SH+G | 4S countryside | 18 | +0.001 [-0.001, +0.004] (p=1.0e+00) | +2.6 [-1.8, +6.2] (p=1.0e+00) | -0.000 [-0.001, +0.000] |
+| CMS-CPCW/J+SH[both]+NGRr vs CMS-CPCW/H+SH[both]+NGRr | Boreas | 18 | -0.003 [-0.005, +0.002] (p=1.0e+00) | -0.0 [-0.2, +0.2] (p=1.0e+00) | -0.001 [-0.002, -0.000] |
+| CMS-CPCW/J+SH[both]+NGRr vs CMS-CPCW/H+SH[both]+NGRr | NCLT | 6 | -0.003 [-0.008, +0.004] (p=1.0e+00) | +0.1 [-0.1, +0.3] (p=1.0e+00) | +0.000 [+0.000, +0.000] |
+| CMS-CPCW/J+SH[both]+NGRr vs CMS-CPCW/H+SH[both]+NGRr | CMU | 18 | -0.004 [-0.006, -0.002] (p=2.5e-01) | -0.0 [-0.0, -0.0] (p=2.5e-01) | +0.000 [+0.000, +0.000] |
+| CMS-CPCW/J+SH[both]+NGRr vs CMS-CPCW/H+SH[both]+NGRr | Nordland | 18 | -0.025 [-0.034, -0.016] (p=2.5e-01) | +0.1 [+0.0, +0.2] (p=2.5e-01) | +0.000 [+0.000, +0.000] |
+| CMS-CPCW/J+SH[both]+NGRr vs CMS-CPCW/H+SH[both]+NGRr | 4S office | 18 | +0.001 [-0.003, +0.006] (p=1.0e+00) | -0.1 [-0.1, -0.0] (p=2.5e-01) | +0.000 [+0.000, +0.000] |
+| CMS-CPCW/J+SH[both]+NGRr vs CMS-CPCW/H+SH[both]+NGRr | 4S old town | 18 | -0.002 [-0.005, +0.001] (p=1.0e+00) | +0.3 [+0.0, +1.0] (p=2.5e-01) | +0.000 [-0.001, +0.001] |
+| CMS-CPCW/J+SH[both]+NGRr vs CMS-CPCW/H+SH[both]+NGRr | 4S countryside | 18 | -0.002 [-0.004, +0.000] (p=1.0e+00) | +0.1 [-1.5, +2.4] (p=1.0e+00) | +0.000 [-0.000, +0.001] |
+| CMS-CPC/J+SH+G+NGRr vs CPC-SC-T0.5+SH | Boreas | 18 | +0.113 [+0.085, +0.139] (p=2.5e-01) | -2.5 [-4.8, -1.1] (p=2.5e-01) | -0.002 [-0.003, +0.000] |
+| CMS-CPC/J+SH+G+NGRr vs CPC-SC-T0.5+SH | NCLT | 6 | +0.023 [-0.006, +0.057] (p=1.0e+00) | -1.3 [-3.0, +0.1] (p=1.0e+00) | +0.000 [-0.002, +0.002] |
+| CMS-CPC/J+SH+G+NGRr vs CPC-SC-T0.5+SH | CMU | 18 | +0.049 [+0.031, +0.059] (p=2.5e-01) | -0.1 [-0.2, +0.1] (p=1.0e+00) | -0.000 [-0.004, +0.004] |
+| CMS-CPC/J+SH+G+NGRr vs CPC-SC-T0.5+SH | Nordland | 18 | +0.020 [+0.002, +0.032] (p=2.5e-01) | -4.4 [-10.2, -0.3] (p=2.5e-01) | -0.000 [-0.000, +0.000] |
+| CMS-CPC/J+SH+G+NGRr vs CPC-SC-T0.5+SH | 4S office | 18 | +0.065 [+0.046, +0.088] (p=2.5e-01) | -1.8 [-2.7, -1.2] (p=2.5e-01) | -0.000 [-0.001, +0.000] |
+| CMS-CPC/J+SH+G+NGRr vs CPC-SC-T0.5+SH | 4S old town | 18 | +0.068 [+0.040, +0.092] (p=2.5e-01) | -4.5 [-6.1, -3.3] (p=2.5e-01) | -0.003 [-0.006, -0.001] |
+| CMS-CPC/J+SH+G+NGRr vs CPC-SC-T0.5+SH | 4S countryside | 18 | +0.174 [+0.130, +0.219] (p=2.5e-01) | -19.3 [-21.0, -16.4] (p=2.5e-01) | +0.000 [+0.000, +0.000] |
+
+
 ### Bảng 9a. LODO, α = 0.05
 
 datasets ['4s:countryside', '4s:office_loop', '4s:old_town', 'boreas', 'cmu', 'nclt', 'nord']
@@ -749,8 +820,13 @@ của Mệnh đề 8), các bản nhân quả không run nào. Recall cảnh A: 
 một bản ghi có nhãn của cảnh B): Claxton'24 recall cao hơn ở hai cặp countryside nhưng vượt α ở 14 % run; Xu'21 28 %; TAO'26 11 %.
 ⇒ **Khuyến nghị triển khai:** `[online]` hoặc `[both]` (không bao giờ vượt α ở đây), mất ≈ 0.01–0.05 recall so với bản chuyển đạo.
 
-**HMM liên hợp (Entry 31, §2 lý thuyết §4d).** Kết quả thiết kế (3 run): xem `RESEARCH_LOG.md` Entry 31. Đánh giá 114 run (seed 0–2,
-7 dataset × 6 descriptor) đang chạy trên 20 phiên L4; bảng E31 sẽ được thêm vào báo cáo này khi xong.
+**HMM liên hợp (Entry 31; lý thuyết §4d; Bảng 11–12).** Ba nhận xét. (i) **Quyết định không đổi**: biên OFF của HMM liên hợp trùng
+chính xác chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13), nên segFAR/FL và mọi định lý giữ nguyên — đây là lý do lý thuyết để gọi phương
+pháp là "HMM có trạng thái off-map hiệu chuẩn phản thực". (ii) **Ghép nối chỉ đổi vị trí báo cáo**: cập nhật "tôi" ngăn frame off-map
+kéo niềm tin vị trí về nơi giống ảnh, nhưng trên dữ liệu thật chuỗi vị trí gốc hiếm khi bị khoá (độ đúng vị trí on-map 0.95), và SH +
+cổng đồng thuận đã loại phần lớn fix sai do khoá ⇒ lợi ích nhỏ và không nhất quán (Boreas −2.6 m, old town / countryside +1.3 đến
++2.8 m so với /R). (iii) Khoảng cách /R–/H (≈ 0.02 ở Nordland) là do emission dựng lại từ top-100 thay vì toàn bộ ma trận similarity;
+cài đặt liên hợp với emission đầy đủ cần chạy lại bước dựng cache trên GPU (chưa làm).
 
 ## 6. Hạn chế và việc tiếp theo
 
@@ -760,5 +836,7 @@ một bản ghi có nhãn của cảnh B): Claxton'24 recall cao hơn ở hai c�
 - Cổng +NGRr giả định bộ lọc đã định vị (F3); chọn giữa hai biến thể mở khoá dựa trên LODO, không có định lý về tác hại.
 - `[online]` cần các phiên trước có phần on-map; với robot ở phiên đầu tiên (chưa có phiên nào khác) chỉ còn bản chuyển đạo hoặc null
   bản đồ.
+- HMM liên hợp (/J) dùng emission dựng lại từ top-100 (mất ≈ 0.02 recall ở Nordland so với chuỗi gốc); bản đầy đủ cần ma trận
+  similarity của từng run (chạy lại `nav_demo` trên GPU).
 - Việc tiếp theo: dữ liệu MarsLab (khi có máy RTX ghi rosbag) cho off-map tự nhiên kiểu "đi ra ngoài vùng bản đồ" và vòng kín
   điều khiển.

@@ -29,6 +29,17 @@ Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Com
 4. *Evaluation.* Seeds 0-2 of all 7 datasets x 6 descriptors (126 runs), defaults, alpha 0.05 / 0.01, groups cond, [online],
    [both], +NGRr (`oc_curves.py --joint --fams @E31J`).
 
+**Results (114 runs, seeds 0-2; raw `analysis/results/e31/`, report `paper/BAO_CAO_E30.pdf` Tables 11-12).**
+1. *H31a supported:* /J within 0.01 recall of /H on 6/7 datasets (CMS-CPCW+NGRr and CMS-CPC+G+NGRr); exception Nordland -0.021 to
+   -0.030 (CI < 0), the same gap as the re-implemented chain /R (emission from the top-100 list, not the coupling). Error: 4S
+   countryside -3.5 / -1.1 m (CI < 0), Nordland +1.4 m (CMS-CPCW, CI > 0), others within 1.1 m.
+2. *H31b not supported:* coupling vs the same chain without OFF (/J vs /R): recall within 0.003 on 7/7, error lower on 3/7 (CMS-CPCW;
+   Boreas -2.6 m, CI < 0) and 1/7 (CMS-CPC+G); old town / countryside +1.3 to +2.8 m (not significant).
+3. *H31c not supported:* /J does not beat /H. /J still beats CPC-SC-T(1/2)+SH on recall 7/7 and error 7/7 (CI 5/7).
+**Verdict.** The HMM-centric formulation is exact (Prop 13: the OFF marginal of the joint HMM IS the calibrated presence chain), so
+the method can be presented as one HMM with a counterfactually calibrated off-map state; the exact coupled place update brings no
+consistent gain over the factorised implementation (/H), which stays the evaluated and recommended form.
+
 ## Entry 30 (branch `hmm-navigation-5`) — causal online calibration, filter robustness, natural off-map benchmark (2026-11-01)
 
 **Pre-registration (written before the full evaluation; design used Nordland CosPlace s0 and 4sx office loop + old town CosPlace).**

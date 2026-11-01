@@ -19,8 +19,9 @@ ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables
 4. **Off-map tự nhiên (phiên toàn off-map, π = 0):** mọi biến thể CMS hợp lệ ở α = 0.05 (0/36 run vượt), recall cảnh A 0.70–0.72 so với
    0.59 (6/6 cặp); bản chuyển đạo vượt α = 0.01 ở 1–2/36 run (đúng Mệnh đề 8), bản nhân quả không. Baseline có nhãn vượt α ở 11–28 % run.
 5. **HMM liên hợp (Entry 31):** biên OFF của HMM = chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13, kiểm số học) ⇒ có thể trình bày phương
-   pháp như một HMM có trạng thái off-map hiệu chuẩn; ghép nối chữa lock-in của cùng chuỗi vị trí nhưng trên 3 run thiết kế không tăng
-   recall so với chuỗi vị trí gốc. Đánh giá 114 run đang chạy.
+   pháp như một HMM có trạng thái off-map hiệu chuẩn; 114 run: recall trong ±0.01 so với chuỗi vị trí gốc ở 6/7 (Nordland −0.02 đến
+   −0.03 do emission dựng lại từ top-100), ghép nối không giảm sai số nhất quán so với cùng chuỗi không OFF (3/7) ⇒ trình bày phương
+   pháp như một HMM có trạng thái off-map hiệu chuẩn, cài đặt khuyến nghị vẫn là bản phân rã /H.
 
 ## N0000. Vòng 7 (2026-11-01, branch `hmm-navigation-5`) — đọc trước §N000
 

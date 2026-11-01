@@ -19,9 +19,10 @@
 5. **Hai phát hiện về cổng** (báo cáo thẳng): code vòng 7 khác mô tả (mở khoá giới hạn tốc độ thay vì mở cả chuỗi); bản sửa "mở cả
    chuỗi" đăng ký trước hoá ra **kém hơn** (Boreas +2.0 đến +2.9 m, CI > 0) ⇒ giữ cả hai, LODO chọn bản giới hạn tốc độ.
 6. **HMM là trung tâm (Entry 31):** HMM liên hợp vị trí–hiện diện với trạng thái OFF có emission hiệu chuẩn phản thực; biên OFF của nó
-   **trùng chính xác** chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13), nên mọi định lý là phát biểu về chính HMM. Trên 3 run thiết kế, ghép nối liên hợp giữ nguyên quyết định (cùng biên OFF) và
-   chữa lock-in của cùng chuỗi vị trí (Nordland: sai số CMS-CPCW 27.3 → 6.0 m, độ đúng vị trí sau lỗ 0.80 → 0.90) nhưng **không tăng
-   recall** so với chuỗi vị trí gốc (−0.01, do emission dựng lại từ top-K); đánh giá 114 run đang chạy (§5).
+   **trùng chính xác** chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13), nên mọi định lý là phát biểu về chính HMM. Đánh giá 114 run: HMM liên hợp có recall trong ±0.01 so với chuỗi vị trí gốc
+   ở 6/7 dataset (Nordland −0.02 đến −0.03, do emission dựng lại từ top-100), sai số giảm ở 4S countryside (−3.5 m, CI < 0); so với
+   cùng chuỗi không có OFF, ghép nối **không** giảm sai số nhất quán (3/7). Kết luận: công thức HMM là chính xác và dùng được để trình
+   bày phương pháp, nhưng bản phân rã (/H) vẫn là cài đặt khuyến nghị; HMM liên hợp vẫn hơn luật cũ 7/7 recall và 7/7 sai số.
 
 ## 1. Câu hỏi của vòng này (không có robot thật, chỉ benchmark trên dataset)
 
@@ -95,8 +96,13 @@ của Mệnh đề 8), các bản nhân quả không run nào. Recall cảnh A: 
 một bản ghi có nhãn của cảnh B): Claxton'24 recall cao hơn ở hai cặp countryside nhưng vượt α ở 14 % run; Xu'21 28 %; TAO'26 11 %.
 ⇒ **Khuyến nghị triển khai:** `[online]` hoặc `[both]` (không bao giờ vượt α ở đây), mất ≈ 0.01–0.05 recall so với bản chuyển đạo.
 
-**HMM liên hợp (Entry 31, §2 lý thuyết §4d).** Kết quả thiết kế (3 run): xem `RESEARCH_LOG.md` Entry 31. Đánh giá 114 run (seed 0–2,
-7 dataset × 6 descriptor) đang chạy trên 20 phiên L4; bảng E31 sẽ được thêm vào báo cáo này khi xong.
+**HMM liên hợp (Entry 31; lý thuyết §4d; Bảng 11–12).** Ba nhận xét. (i) **Quyết định không đổi**: biên OFF của HMM liên hợp trùng
+chính xác chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13), nên segFAR/FL và mọi định lý giữ nguyên — đây là lý do lý thuyết để gọi phương
+pháp là "HMM có trạng thái off-map hiệu chuẩn phản thực". (ii) **Ghép nối chỉ đổi vị trí báo cáo**: cập nhật "tôi" ngăn frame off-map
+kéo niềm tin vị trí về nơi giống ảnh, nhưng trên dữ liệu thật chuỗi vị trí gốc hiếm khi bị khoá (độ đúng vị trí on-map 0.95), và SH +
+cổng đồng thuận đã loại phần lớn fix sai do khoá ⇒ lợi ích nhỏ và không nhất quán (Boreas −2.6 m, old town / countryside +1.3 đến
++2.8 m so với /R). (iii) Khoảng cách /R–/H (≈ 0.02 ở Nordland) là do emission dựng lại từ top-100 thay vì toàn bộ ma trận similarity;
+cài đặt liên hợp với emission đầy đủ cần chạy lại bước dựng cache trên GPU (chưa làm).
 
 ## 6. Hạn chế và việc tiếp theo
 
@@ -106,5 +112,7 @@ một bản ghi có nhãn của cảnh B): Claxton'24 recall cao hơn ở hai c�
 - Cổng +NGRr giả định bộ lọc đã định vị (F3); chọn giữa hai biến thể mở khoá dựa trên LODO, không có định lý về tác hại.
 - `[online]` cần các phiên trước có phần on-map; với robot ở phiên đầu tiên (chưa có phiên nào khác) chỉ còn bản chuyển đạo hoặc null
   bản đồ.
+- HMM liên hợp (/J) dùng emission dựng lại từ top-100 (mất ≈ 0.02 recall ở Nordland so với chuỗi gốc); bản đầy đủ cần ma trận
+  similarity của từng run (chạy lại `nav_demo` trên GPU).
 - Việc tiếp theo: dữ liệu MarsLab (khi có máy RTX ghi rosbag) cho off-map tự nhiên kiểu "đi ra ngoài vùng bản đồ" và vòng kín
   điều khiển.

@@ -10,9 +10,9 @@
   nhiên 4Seasons chéo cảnh (`analysis/natural_eval.py`, 36 run); hai biến thể cổng (`+NGR` mở cả chuỗi, `+NGRr` giới hạn tốc độ = code
   vòng 7) + sàn bất định 3√P⁻; báo cáo `paper/BAO_CAO_E30.pdf`; kết quả `analysis/results/e30/`.
 - **Đề xuất hiện tại:** **CMS-CPC/H+SH+G+NGRr** (LODO 7/7); bản triển khai nhân quả **CMS-CPCW/H+SH[both]+NGRr** (hoặc `[online]`).
-- **Đang chạy (Entry 31):** HMM liên hợp vị trí–hiện diện có trạng thái OFF hiệu chuẩn (`analysis/cms_hmm.py`, họ `/J`, preset `@E31J`),
-  114 run seed 0–2 trên 20 phiên L4 (`<scratchpad>/runs/e31g`, kernel `e31g-1..20`); kéo kết quả: `automation/resume.py <runs>`
-  hoặc `pull_kernels.py`; gom: `<scratchpad>/collect_e30.sh` (thêm mẫu `_j_s`).
+- **Làm xong (Entry 31):** HMM liên hợp vị trí–hiện diện có trạng thái OFF hiệu chuẩn (`analysis/cms_hmm.py`, họ `/J`, `--joint`,
+  preset `@E31J`), 114 run: chính xác về lý thuyết (biên OFF = chuỗi hiện diện, Mệnh đề 13), recall ±0.01 so với /H ở 6/7, không có lợi
+  nhất quán ⇒ giữ /H. Kết quả `analysis/results/e31/`. Không còn kernel nào chạy.
 - **Dataset mới:** `nhatlong1103/hmm-holes-cms-exact`, `nhatlong1103/hmm-natural-cache` (Kaggle **bỏ dấu "+" khỏi tên file**:
   `natural_regate.py` tự xử lý).
 - **Việc tiếp theo:** kết quả E31 vào báo cáo; MarsLab (Isaac Sim 5.1 + ROS 2 Jazzy, cần máy RTX) để có off-map "đi ra ngoài bản đồ"
