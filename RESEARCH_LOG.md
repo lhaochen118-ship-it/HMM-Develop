@@ -44,6 +44,11 @@ surgery for the boundary segments.
 and SH x 2; recall within 0.01 and error within 1 m of SH alone on >= 5/6 holed datasets). H35d: on Oxford RobotCar (60 runs,
 statistics from the E33 jobs, top-100 recomputed from the local dump), SH AND CST is valid with recall within 0.01 of SH alone.
 
+**H35d result (Oxford, 60 runs; local reproduction of the Kaggle run exact to 4 decimals): NOT supported.** SH AND CST is valid in
+every run (mean segFAR 0.002, 0 % of runs > alpha; error 21.9 m vs 21.7 m), but its recall is 0.691 vs 0.719 for SH alone (-0.029;
+CPCW -0.033). On Oxford the counterfactual track test is stricter than the hand-set stop. The guarantee still comes at a recall
+cost there, so "no cost" is shown on the 7 main datasets only.
+
 ## Entry 34 (branch `hmm-navigation-5`) — counterfactual segment shape test: the surgery also calibrates the EXIT (2026-11-01)
 
 **Step 1 (core limitation, diagnosed with labels on CMU / 4S countryside CosPlace s0-1).** Theorems 6 / 6' / 6'' bound the ONSET
