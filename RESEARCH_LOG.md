@@ -125,6 +125,21 @@ kernel republishes it as `nhatlong1103/oxford-robotcar-vpr-dump` / `-images`; ev
    attempt 3). Its label-free calibration from the counterfactual track (SHcf) is the Entry 33 hypothesis H33b.
 3. *alpha = 0.01:* every variant except SH x 2 keeps segFAR <= 0.01 on 7/7 (CMU 0.007 at the default).
 
+**Results, part 2: counterfactual construction, running time, natural near off-map (all kernels done; raw `analysis/results/e32/`).**
+1. *Counterfactual construction (seed 0, 42 runs per variant): H32a supported.* N in {10, 20, 40} and rho in {0.75, 1, 1.25} off_d
+   keep mean segFAR <= 0.05 on 7/7 and recall above CPC-SC-T(1/2)+SH on 7/7 for CMS-CPC/H+SH+G+NGRr and CMS-CPCW/H+SH+NGRr.
+   A LONGER belief window helps: N = 40 vs 20 gives recall +0.015 (Boreas), +0.015 (CMU), +0.027 (4S countryside), validity
+   unchanged. N = 10 costs 0.01-0.03. rho moves recall by <= 0.008.
+2. *Running time: H32b not supported as pre-registered, real time holds.* Median per frame on a Kaggle L4 session (top-300 on
+   the GPU, the rest on one CPU core): top-300 0.01-0.05 ms, counterfactual statistics 10.3-17.5 ms (pre-registered < 10 ms),
+   decision layer 1.7-2.8 ms (pre-registered < 1 ms; it includes process start-up and the evaluation of 9 rule families). Total
+   ~20 ms per frame, i.e. real time at 10 Hz (and ~50 Hz) on one core. The counterfactual statistics are a pure-Python loop over
+   frames (vectorisation is the obvious next speed-up).
+3. *NCLT, every session as the map (48 runs, 9 maps; natural near off-map): H32c supported.* Pooled over the 9 maps:
+   CMS-CPC/H+SH+G+NGRr recall 0.599 / mean segFAR 0.007 / worst 0.033 / 0 % of runs > alpha / error 3.8 m, recall above
+   CPC-SC-T(1/2)+SH (0.575 / 0.010 / 0.053 / 4 % / 4.6 m) on 9/9 maps; the causal [both] and [online] variants also 9/9 with
+   segFAR 0.006. Label baselines: Xu'21 0.500 / 0.036 / 26 % of runs > alpha, Claxton'24 81 %, TAO'26 100 %.
+
 ## Entry 31 (branch `hmm-navigation-5`) — HMM-centric CMS: joint place-presence HMM with a calibrated OFF state (2026-11-01)
 
 **Pre-registration (design runs: Nordland CosPlace s0, 4S countryside MegaLoc s0, 4S old town CosPlace s0).**
