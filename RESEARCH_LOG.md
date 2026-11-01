@@ -44,6 +44,12 @@ surgery for the boundary segments.
 and SH x 2; recall within 0.01 and error within 1 m of SH alone on >= 5/6 holed datasets). H35d: on Oxford RobotCar (60 runs,
 statistics from the E33 jobs, top-100 recomputed from the local dump), SH AND CST is valid with recall within 0.01 of SH alone.
 
+**H35c result (held-out seeds 3-9, 252 runs x 2 SH settings): supported.** Default SH: SH AND CST is valid on 6/6 holed datasets
+(max mean segFAR 0.008). Recall vs SH alone: 0.000 (Boreas), -0.003 (CMU), 0.000 (Nordland), -0.004 (4S office), -0.001 (old
+town), -0.014 (countryside): within 0.01 on 5/6. Error is within 1 m on 6/6 (countryside +0.7 m). SH x 2: SH alone breaks alpha
+again (CMU 0.087, 4S office 0.052, countryside 0.100; CPCW CMU 0.096, office 0.079, countryside 0.125). SH x 2 AND CST is valid
+on 6/6 (max 0.023; CPCW 0.029). The seed 0-2 result replicates on held-out seeds.
+
 **H35d result (Oxford, 60 runs; local reproduction of the Kaggle run exact to 4 decimals): NOT supported.** SH AND CST is valid in
 every run (mean segFAR 0.002, 0 % of runs > alpha; error 21.9 m vs 21.7 m), but its recall is 0.691 vs 0.719 for SH alone (-0.029;
 CPCW -0.033). On Oxford the counterfactual track test is stricter than the hand-set stop. The guarantee still comes at a recall

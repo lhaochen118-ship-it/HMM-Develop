@@ -18,7 +18,9 @@
   Dung sai SH hiệu chuẩn theo phân vị frame (SHcf) hợp lệ 7/7 nhưng recall chỉ sát SH trên 4/7: H33b không đạt.
 - **Cơ chế mới (E34) — phẫu thuật cũng hiệu chuẩn lối THOÁT:** chẩn đoán cho thấy lỗi còn lại của phương pháp không nằm ở khởi phát
   (đã có Định lý 6) mà ở **duy trì** chuỗi báo khi robot rời bản đồ. Phép thử hình dạng phản thực theo đoạn (CST, Mệnh đề 14,
-  Hệ quả 15) cho bảo đảm đầu-cuối theo đoạn mà không còn hằng số dung sai. Kết quả 366 run: CST hợp lệ 7/7, recall trong ±0.02 so với SH chọn tay trên 7/7 (cao hơn trên 6/7, +0.003 đến +0.022), bản nhân quả hợp lệ 7/7; nhân đôi mức a_sh **vẫn hợp lệ 7/7** trong khi nhân đôi dung sai SH làm vỡ α ở 2/7. Cái giá: 6 % run vượt α (SH: 0.5 %) — CST dùng đúng ngân sách α thay vì bảo thủ thừa.
+  Hệ quả 15) cho bảo đảm đầu-cuối theo đoạn mà không còn hằng số dung sai. Kết quả 366 run: CST hợp lệ 7/7, recall trong ±0.02 so với SH chọn tay trên 7/7 (cao hơn trên 6/7, +0.003 đến +0.022), bản nhân quả hợp lệ 7/7; nhân đôi mức a_sh **vẫn hợp lệ 7/7** trong khi nhân đôi dung sai SH làm vỡ α ở 2/7. Cái giá: 6 % run vượt α (SH: 0.5 %) và — kiểm định cặp — sai số điều hướng **tăng** có ý nghĩa ở Boreas (+9.0 m) và 4S old town (+13.6 m): CST cho lọt vài fix sai ở mép chuyến off-map (ngoài Mệnh đề 14) mà SH chặn. **Entry 35 — SH ∧ CST (luật khuyến nghị mới):** báo cáo chỉ khi cả SH và CST qua; mọi báo cáo phải qua CST nên Mệnh đề 14 giữ với
+  **mọi** dung sai SH. 228 run (seed 0–2): hợp lệ 7/7 với SH mặc định **và** SH × 2 (SH × 2 một mình vỡ α), recall trong 0.01 so với SH
+  trên 6/7, sai số trong 1 m trên 7/7. Oxford: hợp lệ mọi run nhưng recall −0.029 (H35d không đạt). **Xác nhận trên seed 3–9 giữ ra (252 run × 2): H35c đạt** — hợp lệ 6/6 với SH mặc định và SH × 2 (SH × 2 một mình lại vỡ α ở CMU 0.087, office 0.052, countryside 0.100), recall trong 0.01 so với SH 5/6 (countryside −0.014), sai số trong 1 m 6/6.
 - **Dataset uy tín mới: Oxford RobotCar** (PointNetVLAD split, 43 lượt chạy, 34 039 frame, 6 descriptor, 30 % lỗ bản đồ). Baseline null-bản-đồ (CPC-SC) **suy biến ở 36/60 run** (bản đồ ~670 frame sau khi khoét lỗ không đủ đoạn null để có phân vị α hữu hạn — đúng Hệ quả 9); CMS hiệu chuẩn được ở **mọi** run (null từ luồng truy vấn): recall 0.719 / segFAR 0.003 / 0 % run vượt α (CPCW: 0.753 / 0.006). Trên 24 run null bản đồ còn chạy được, CMS-CPCW ngang recall (+0.008) với sai số thấp hơn ở 19/24; mọi baseline có nhãn vượt α (Xu'21 100 % run, TAO'26 93 %, Claxton'24 72 %).
 
 ## 1. Câu hỏi của vòng này
@@ -297,6 +299,32 @@ Tỷ lệ run có segFAR > α / segFAR tệ nhất (mọi dataset):
 | 0.5 α = 0.025 | 0.781 / 0.008 | 0.577 / 0.001 | 0.753 / 0.003 | 0.749 / 0.000 | 0.783 / 0.004 | 0.697 / 0.008 | 0.483 / 0.001 | 7/7 |
 | 2 α = 0.10 | 0.799 / 0.041 | 0.636 / 0.009 | 0.777 / 0.018 | 0.776 / 0.005 | 0.820 / 0.030 | 0.732 / 0.024 | 0.532 / 0.015 | 7/7 |
 
+### Entry 35 — SH ∧ CST, dung sai SH mặc định (seed 0–2, 114 run): recall / segFAR TB / tệ nhất / sai số (m)
+
+| Luật | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| CPC-SC-T½+SH | 0.663 / 0.004 / 0.023 / 6.6 | 0.588 / 0.001 / 0.003 / 4.9 | 0.713 / 0.004 / 0.021 / 4.0 | 0.711 / 0.000 / 0.003 / 11.5 | 0.736 / 0.000 / 0.003 / 11.9 | 0.616 / 0.006 / 0.023 / 32.0 | 0.340 / 0.000 / 0.000 / 52.0 |
+| CMS-CPC/ H+SH+G+NGRr (SH) | 0.779 / 0.004 / 0.022 / 4.5 | 0.612 / 0.002 / 0.007 / 4.3 | 0.764 / 0.003 / 0.014 / 3.9 | 0.752 / 0.000 / 0.000 / 6.9 | 0.795 / 0.000 / 0.006 / 10.1 | 0.687 / 0.003 / 0.010 / 27.5 | 0.513 / 0.001 / 0.006 / 33.9 |
+| **CMS-CPC/ H+SH+CST+G+NGRr (SH ∧ CST)** | 0.778 / 0.004 / 0.022 / 4.5 | 0.608 / 0.002 / 0.007 / 4.3 | 0.762 / 0.003 / 0.014 / 3.9 | 0.752 / 0.000 / 0.000 / 6.9 | 0.792 / 0.000 / 0.006 / 10.2 | 0.686 / 0.003 / 0.010 / 27.5 | 0.499 / 0.000 / 0.000 / 34.8 |
+| CMS-CPC/ H+CST+G+NGRr (CST) | 0.787 / 0.018 / 0.058 / 14.9 | 0.617 / 0.002 / 0.010 / 4.9 | 0.769 / 0.008 / 0.041 / 4.0 | 0.764 / 0.001 / 0.005 / 6.9 | 0.805 / 0.013 / 0.072 / 10.5 | 0.715 / 0.017 / 0.057 / 41.5 | 0.510 / 0.002 / 0.033 / 32.5 |
+| CMS-CPCW/ H+SH+NGRr | 0.769 / 0.003 / 0.022 / 6.0 | 0.610 / 0.001 / 0.007 / 4.8 | 0.768 / 0.004 / 0.023 / 4.2 | 0.756 / 0.001 / 0.010 / 6.7 | 0.792 / 0.001 / 0.006 / 10.1 | 0.683 / 0.005 / 0.015 / 27.7 | 0.491 / 0.000 / 0.004 / 39.5 |
+| CMS-CPCW/ H+SH+CST+NGRr | 0.769 / 0.003 / 0.022 / 6.0 | 0.605 / 0.001 / 0.007 / 4.9 | 0.765 / 0.003 / 0.021 / 4.2 | 0.756 / 0.001 / 0.010 / 6.7 | 0.789 / 0.001 / 0.006 / 10.2 | 0.683 / 0.005 / 0.015 / 27.7 | 0.476 / 0.000 / 0.004 / 40.5 |
+
+segFAR ≤ α: SH ∧ CST 7/7, CPCW SH ∧ CST 7/7, SH một mình 7/7.
+
+### Entry 35 — SH ∧ CST, dung sai SH × 2 (seed 0–2, 114 run): recall / segFAR TB / tệ nhất / sai số (m)
+
+| Luật | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| CPC-SC-T½+SH | 0.663 / 0.004 / 0.023 / 6.6 | 0.588 / 0.001 / 0.003 / 4.9 | 0.713 / 0.004 / 0.021 / 4.0 | 0.711 / 0.000 / 0.003 / 11.5 | 0.736 / 0.000 / 0.003 / 11.9 | 0.616 / 0.006 / 0.023 / 32.0 | 0.340 / 0.000 / 0.000 / 52.0 |
+| CMS-CPC/ H+SH+G+NGRr (SH) | 0.794 / 0.042 / 0.081 / 16.9 | 0.642 / 0.008 / 0.026 / 5.1 | 0.777 / 0.033 / 0.098 / 4.3 | 0.773 / 0.005 / 0.013 / 6.9 | 0.822 / 0.043 / 0.149 / 12.5 | 0.727 / 0.026 / 0.060 / 43.5 | 0.573 / 0.100 / 0.222 / 32.1 |
+| **CMS-CPC/ H+SH+CST+G+NGRr (SH ∧ CST)** | 0.786 / 0.017 / 0.057 / 14.7 | 0.617 / 0.002 / 0.010 / 4.9 | 0.769 / 0.008 / 0.041 / 4.0 | 0.764 / 0.000 / 0.003 / 6.9 | 0.804 / 0.013 / 0.072 / 10.5 | 0.711 / 0.016 / 0.057 / 39.6 | 0.510 / 0.002 / 0.033 / 32.5 |
+| CMS-CPC/ H+CST+G+NGRr (CST) | 0.787 / 0.018 / 0.058 / 14.9 | 0.617 / 0.002 / 0.010 / 4.9 | 0.769 / 0.008 / 0.041 / 4.0 | 0.764 / 0.001 / 0.005 / 6.9 | 0.805 / 0.013 / 0.072 / 10.5 | 0.715 / 0.017 / 0.057 / 41.5 | 0.510 / 0.002 / 0.033 / 32.5 |
+| CMS-CPCW/ H+SH+NGRr | 0.786 / 0.049 / 0.095 / 19.9 | 0.640 / 0.027 / 0.059 / 9.3 | 0.781 / 0.034 / 0.104 / 4.6 | 0.785 / 0.024 / 0.078 / 6.9 | 0.821 / 0.066 / 0.226 / 13.0 | 0.722 / 0.037 / 0.106 / 61.6 | 0.557 / 0.108 / 0.233 / 45.9 |
+| CMS-CPCW/ H+SH+CST+NGRr | 0.777 / 0.018 / 0.065 / 15.5 | 0.616 / 0.007 / 0.036 / 6.8 | 0.772 / 0.009 / 0.044 / 4.3 | 0.774 / 0.005 / 0.016 / 6.5 | 0.801 / 0.014 / 0.059 / 10.5 | 0.708 / 0.023 / 0.079 / 52.9 | 0.489 / 0.003 / 0.054 / 36.5 |
+
+segFAR ≤ α: SH ∧ CST 7/7, CPCW SH ∧ CST 7/7, SH một mình 6/7.
+
 ### Oxford RobotCar (PointNetVLAD split, 43 lượt chạy, bản đồ 2014-12-09, 30 % lỗ, 60 run): recall / segFAR TB / tệ nhất / sai số (m)
 
 | Luật | Oxford RobotCar |
@@ -349,9 +377,14 @@ Theo descriptor: recall / segFAR TB
    pháp là *duy trì* chuỗi báo sau khi rời bản đồ, không phải khởi phát. Quỹ đạo phản thực MP[j_cf] sai theo cấu trúc, tức là null
    của "quỹ đạo ma" sau khi thoát. Phân vị conformal dưới của residual hình dạng tối thiểu theo đoạn cho một phép dừng có bảo đảm
    (Mệnh đề 14, Hệ quả 15). Báo sai cần **cả** chuỗi báo **và** qua CST (giao biến cố), nên tỷ lệ báo sai theo đoạn sâu ≤ a_sh/π.
-   Kết quả 366 run xác nhận: hợp lệ 7/7, recall giữ nguyên hoặc tăng nhẹ, và mức a_sh hành xử như một *mức* (×2 vẫn hợp lệ) chứ
-   không như một *dung sai* (×2 vỡ). Như vậy mọi ngưỡng ảnh hưởng tới tính hợp lệ của phương pháp nay đều được hiệu chuẩn từ chính
-   phép phẫu thuật.
+   Kết quả 366 run xác nhận: hợp lệ 7/7, recall giữ nguyên hoặc tăng nhẹ (CI > 0 trên 5/7), và mức a_sh hành xử như một *mức*
+   (×2 vẫn hợp lệ) chứ không như một *dung sai* (×2 vỡ). **Nhưng** CST làm tăng sai số điều hướng ở Boreas (+9.0 m) và old town
+   (+13.6 m): bảo đảm theo đoạn (segFAR) không đồng nghĩa với an toàn điều hướng — vài fix sai ở mép chuyến off-map đủ làm lệch bộ
+   lọc. Vì vậy CST một mình **không** thay được SH trong luật khuyến nghị.
+7. **Entry 35: SH ∧ CST giải quyết cả hai.** CST mang bảo đảm, SH chỉ bỏ báo cáo nên không thể làm hỏng cận dù dung sai là bao nhiêu,
+   và SH tiếp tục chặn fix sai ở mép chuyến off-map. Kết quả: hợp lệ 7/7 kể cả khi nhân đôi dung sai SH; recall và sai số như luật SH
+   trên 7 dataset chính; trên Oxford mất 0.029 recall. **Luật khuyến nghị: CMS-CPC/H+SH+CST+G+NGRr** — tính hợp lệ chỉ còn dựa vào
+   phép phẫu thuật phản thực.
 5. **Oxford RobotCar minh hoạ đúng luận điểm cốt lõi của bài.** Null lấy từ bản đồ cần bản đồ đủ lớn; với bản đồ nhỏ nó suy biến
    (36/60 run không báo gì). Null phản thực lấy từ luồng triển khai nên luôn đủ mẫu. Khi null bản đồ còn chạy được, ưu thế recall
    của CMS trên Oxford nhỏ (+0.008 cho CPCW, −0.026 cho luật có +G). Ưu thế thật là độ bền và sai số thấp hơn.
