@@ -14,6 +14,8 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 - 20 phiên L4 chạy đồng thời (thống kê chính xác 10 + lỗ 10) cộng 50 phiên CPU dự phòng; L4 xong trước (~30 phút) → lô CPU xoá.
   Hai phiên CPU bị từ chối "Maximum batch CPU session count of 5" (acc đã đủ 5) — fanout tự thử acc khác.
 - Đánh giá cuối 366 run × ~70 họ luật (kể cả cổng): 10 phiên L4, ~15 phút.
+- Lỗ 10/50 % với null chính xác: 23 job/phiên L4 làm một job Boreas SALAD (8448 chiều) bị OOM (rc = −9) và hai phiên chạy ~90 phút;
+  chạy lại ở 12 job/phiên. Quy tắc: job Boreas 8448 chiều ≤ 12 job/phiên L4 (197 GB RAM).
 
 ## 000. Vòng 6 (2026-11-01, branch `hmm-navigation-5`): bài học mới (đọc trước §00)
 

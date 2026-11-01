@@ -46,7 +46,7 @@ Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Com
    error 7/7 (onset rate 0.03-0.09 alpha).
 5. *Exact vs truncated counterfactual:* results differ by <= 0.005 recall (Entry 28 numbers stand); Theorem 6 check with the exact null:
    realized / alpha 0.46-1.18, below the bound on 7/7.
-6. *Hole ratio (exact, gate; 215/216 runs, one d50 Boreas SALAD run OOM-killed and re-run):* 10 %: recall > CPC-SC+CS 6/6, segFAR <=
+6. *Hole ratio (exact, gate; 216/216 runs, one d50 Boreas SALAD run OOM-killed at 23 jobs/session and re-run at 12):* 10 %: recall > CPC-SC+CS 6/6, segFAR <=
    0.017, error lower 4/6; 50 %: recall higher 6/6, the gate brings CMU from 0.051 to 0.027, error lower 4/6.
 **Verdict.** Proposed method: CMS-CPC/H+SH+G+NGR (LODO-selected) with CMS-CPCW/H+SH+NGR as the variant with the exact onset theorem.
 
