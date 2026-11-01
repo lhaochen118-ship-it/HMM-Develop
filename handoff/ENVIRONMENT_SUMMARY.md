@@ -193,7 +193,9 @@ chạy xong, không đẩy kernel mới**. Việc mới dùng: **phatle1578, muc
 ở `~/.kaggle/tok_<acc>`). Dataset dùng chung vẫn đăng dưới **nhatlong1103** (chỉ gọi API đăng, không chạy compute ở đó).
 **Chính sách (user, 2026-11-01):** (1) dồn mọi luồng lên một acc, hết slot (2 GPU — mỗi phiên L4×4, 96 GB VRAM — và 5 CPU) mới
 sang acc khác; (2) phiên không có đầu ra sau 10 phút (T4) hoặc 8 phút (L4/CPU) thì kiểm tra trạng thái; kẹt hàng đợi thì huỷ và
-tạo phiên mới, tối đa 5 lần (`fanout.py`: T4 600 s / L4, CPU 480 s, 5 lần; `run_kernel.py` hỏi trạng thái mỗi `RK_POLL` ≈ 120 s).
+tạo phiên mới, tối đa 5 lần (`fanout.py`: T4 600 s / L4, CPU 480 s, 5 lần; `run_kernel.py` hỏi trạng thái mỗi `RK_POLL` ≈ 120 s);
+L4 vẫn kẹt sau 5 lần ⇒ kiểm tra lỗi code / logic trong log (fanout in `NEEDS_FIX` nếu có Traceback / trạng thái error: sửa rồi chạy
+lại bằng tay); không có lỗi ⇒ chuyển sang 2 × GPU T4 (fanout tự làm). Kernel xong mà có job rc ≠ 0 cũng được đánh dấu `NEEDS_FIX`.
 
 **Vòng 6 (2026-11-01, branch `hmm-navigation-5`):** user cấp 10 acc: `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`,
 `nguyenhoa99`, `yuan1103`, `synchan5704`, `anderson1202`, `loinguyentran`, `yeshenhi` (token ở `~/.kaggle/tokens_raw`,

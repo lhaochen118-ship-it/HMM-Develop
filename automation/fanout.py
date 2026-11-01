@@ -76,6 +76,11 @@ while procs:
         if p.poll() is None: continue
         del procs[k]; slug = f"{prefix}-{k + 1}"; log = open(os.path.join(work, slug + ".log")).read()
         gpu = k < len(slots) and "--cpu" not in sys.argv
+        # user rule (2026-11-01, updated): L4 stuck in the queue after 5 restarts -> first check for a code / logic error (a crash in
+        # any attempt's log): if there is one it must be fixed and re-run by hand (NEEDS_FIX); otherwise move the kernel to 2x T4
+        if L4 and gpu and k not in T4_FALLBACK and ("STALL_GIVEUP" in log or "STATUS=DONE:stall" in log) and \
+                ("Traceback" in log or "STATUS=DONE:error" in log or "KernelWorkerStatus.ERROR" in log):
+            print(f"{slug}: NEEDS_FIX (L4 stuck AND an error in its log) -- not moved to T4", flush=True); continue
         if L4 and gpu and k not in T4_FALLBACK and ("STALL_GIVEUP" in log or "STATUS=DONE:stall" in log):
             acc = slots[k % len(slots)][0]; kid = f"{acc}/{slug}"
             env = dict(os.environ, KAGGLE_API_TOKEN=open(os.path.expanduser(f"~/.kaggle/tok_{acc}")).read().strip())
@@ -89,5 +94,7 @@ while procs:
         res = glob.glob(os.path.join(work, slug + "_out", "results", "*.json"))
         if "--nocopy" not in sys.argv:                                     # --nocopy: keep results in <work>/<slug>_out only
             for f in res: shutil.copy(f, os.path.join(ROOT, "analysis", "results"))
-        print(f"{slug}: {'OK' if 'STATUS=DONE:complete' in log else 'FAILED'} {len(res)} results, rc!=0: {log.count('rc=') - log.count('rc=0')}", flush=True)
+        nbad = log.count('rc=') - log.count('rc=0')
+        print(f"{slug}: {'OK' if 'STATUS=DONE:complete' in log else 'FAILED'} {len(res)} results, rc!=0: {nbad}"
+              + (" NEEDS_FIX (job errors: read <slug>_out/logs)" if nbad or "STATUS=DONE:error" in log else ""), flush=True)
     time.sleep(15)
