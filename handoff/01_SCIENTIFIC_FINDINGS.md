@@ -1,10 +1,24 @@
 # 01 — Scientific Findings (hướng HMM-navigation)
 
-*Cập nhật 2026-11-01 (branch `hmm-navigation-5`, §N000 mới nhất). Tài liệu chỉ nói về **kết quả khoa học**: đóng góp, ý nghĩa, kết quả
+*Cập nhật 2026-11-01 (branch `hmm-navigation-5`, §N0000 mới nhất). Tài liệu chỉ nói về **kết quả khoa học**: đóng góp, ý nghĩa, kết quả
 tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứng. Vận hành ở `02`, trạng thái và việc tiếp theo ở `03`.
 **Đọc §N trước** (trạng thái khoa học mới nhất, 2026-10-30/31); §0–§5 là nền tảng từ 2026-10-29, vẫn đúng, trừ chỗ §N
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
+
+## N0000. Vòng 7 (2026-11-01, branch `hmm-navigation-5`) — đọc trước §N000
+
+**Báo cáo:** `paper/BAO_CAO_E29.pdf`; kiểm toán `paper/AUDIT_E29.md`; lý thuyết `paper/cms_theory.md` §4b; nhật ký Entry 29.
+
+1. **Phương pháp đề xuất cuối: CMS-CPC/H+SH+G+NGR** (LODO chọn 7/7 fold ở α = 0.05 và bản α = 0.01 của nó 7/7 ở α = 0.01). Thành phần
+   mới: **cổng innovation phản thực +NGR** (`analysis/navrisk.py`): bán kính τ = phân vị 0.05 của độ dời của winner phản thực, mở khoá
+   khi H báo cáo liên tiếp có innovation đồng nhất; chỉ bỏ báo cáo. Bản bảo đảm chặt: **CMS-CPCW/H+SH+NGR** (Định lý 6′).
+2. **Kết quả (366 run, null chính xác):** so với CPC-SC-T½+SH, luật đề xuất có recall cao hơn 7/7 và sai số thấp hơn 7/7 (CI bootstrap
+   cụm: 6/7 và 6/7 có ý nghĩa, không dataset nào kém hơn), segFAR ≤ 0.009; ví dụ countryside 0.491 / 34.3 m so với 0.334 / 51.3 m.
+   Cổng giảm sai số của CMS 6/7 (Boreas −5.8 m, Nordland −7.3 m) với mất recall ≤ 0.011. Ablation: không mở khoá / cổng dead-reckoning
+   cổ điển khoá chết trên VIO và NCLT. Lỗ 10/50 %: recall cao hơn 6/6.
+3. **Kiểm toán:** không rò nhãn; định lý cũ kiểm lại đúng; sửa (i) ngưỡng khởi phát của chuỗi đầy đủ bộ nhớ (→ CMS-CPCW, Định lý 6′),
+   (ii) null phản thực cắt cụt (→ `cms_exact.py`; kết quả chênh ≤ 0.005); bổ sung CI bootstrap cụm (`paired_stats.py`).
 
 ## N000. Vòng 6 (2026-11-01, branch `hmm-navigation-5`) — đọc trước §N00
 

@@ -2,7 +2,11 @@
 
 *2026-11-01, cập nhật từ branch `hmm-navigation-5` (vòng 6). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
 
-**Vòng 6 (đọc trước tiên):** `paper/BAO_CAO_E28.pdf` (báo cáo ngắn), `paper/cms_theory.md` (lý thuyết CMS: Định lý 6, Mệnh đề 8,
+**Vòng 7 (đọc trước tiên):** `paper/BAO_CAO_E29.pdf`, `paper/AUDIT_E29.md`, `RESEARCH_LOG.md` Entry 29. Phương pháp đề xuất:
+**CMS-CPC/H+SH+G+NGR** (`analysis/cms.py` + `analysis/navrisk.py`, `oc_curves.py --cms <hmm-cms-cache-exact> --navgate --fams @E29`);
+null chính xác: `analysis/cms_exact.py` (dataset `nhatlong1103/hmm-cms-cache-exact`); thống kê: `analysis/paired_stats.py`.
+
+**Vòng 6:** `paper/BAO_CAO_E28.pdf` (báo cáo ngắn), `paper/cms_theory.md` (lý thuyết CMS: Định lý 6, Mệnh đề 8,
 Hệ quả 9), `RESEARCH_LOG.md` Entry 28 (đăng ký trước + **sai lệch về bán kính ρ** đã ghi trước khi đánh giá), `LITERATURE_GATE.md`
 Gate 12, `handoff/02_ENGINEERING_OPS_NOTES.md` §000. **Phương pháp mới: CMS (Counterfactual Map Surgery)** — null hiệu chuẩn
 sinh từ chính luồng query bằng cách cắt bỏ hành lang bán kính ρ = off_d quanh niềm tin của hệ thống (`analysis/cms.py`); luật

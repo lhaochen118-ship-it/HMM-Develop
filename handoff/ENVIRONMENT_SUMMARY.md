@@ -157,6 +157,8 @@ Publish bằng `automation/publish_dataset.py <dir> <slug> "<title>" "<subtitle>
 | `nhatlong1103/hmm-image-baselines` (vòng 5) | Điểm MNN SafeVPR (NCLT, 4S ×3) và phán quyết Qwen2.5-VL-7B (Boreas, NCLT, 4S; MegaLoc + NetVLAD, mỗi 5 frame) | `safevpr_mnn.py`, `vlm_audit.py` |
 
 | `nhatlong1103/hmm-cms-cache` (vòng 6, public) | Thống kê CMS (phẫu thuật bản đồ phản thực, ρ = off_d): chi phí tuyến và độ khác biệt, thật và phản thực, mỗi frame, 366 run (`cms_<ds>_<desc>_s<seed>.npz`, 155 MB); `oc_curves.py --cms` | `analysis/cms_dump.py` (CPU) |
+| `nhatlong1103/hmm-cms-cache-exact` (vòng 7, public) | Thống kê CMS với null phản thực **chính xác** (top-300, ρ = off_d), 366 run — dùng cho phương pháp đề xuất | `analysis/cms_exact.py` (L4) |
+| `nhatlong1103/hmm-e29-results` (vòng 7, public) | Mọi `oc_*_s*.json` của Entry 29 (kể cả cổng +NGR, CMS-CPCW) | `oc_curves.py --navgate` |
 | `nhatlong1103/hmm-e28-results` (vòng 6, public) | Mọi `oc_<ds>_<desc>_s<seed>.json` của Entry 28 (đường cong + điểm mặc định của 64 họ luật, 366 run) | `oc_curves.py` trên 8 phiên L4 |
 | `nhatlong1103/hmm-cms-cache-r1` (vòng 6, public) | Như trên với ρ = off_d + excl (bán kính đăng ký trước), tiền tố `cmsr1_`; `oc_curves.py --cms-extra DIR --cms-extra-tag r1` | `cms_dump.py --rho-add 1` |
 

@@ -7,7 +7,7 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
-## Entry 29 (in progress, branch `hmm-navigation-5`) — navigation-risk calibration and self-audit (2026-11-01)
+## Entry 29 (branch `hmm-navigation-5`) — navigation-risk calibration and self-audit (2026-11-01)
 
 **Pre-registration (written before the full evaluation; design used 6 runs: Boreas MegaLoc s1, 4S old town CosPlace s0,
 4S countryside MegaLoc s0, CMU CosPlace s7, Nordland CosPlace s0, NCLT MegaLoc s0).**
@@ -32,6 +32,23 @@ Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Com
    on >= 5/7 and recall higher on >= 6/7; H29c: +NG and +DRG lock out on at least one VIO dataset (recall drop > 0.1);
    H29d: CMS-CPCW is valid (mean segFAR <= alpha on 7/7 at both alphas).
 5. *Selection.* LODO (Entry 25 criterion) over all label-free rules, at alpha = 0.05 and 0.01.
+
+**Results (366 runs, exact counterfactual `nhatlong1103/hmm-cms-cache-exact`; report `paper/BAO_CAO_E29.pdf`; raw
+`analysis/results/e29/`, `nhatlong1103/hmm-e29-results`; audit `paper/AUDIT_E29.md`).**
+1. *H29a (gate effect) supported:* CMS-CPC/H+SH+NGR vs CMS-CPC/H+SH: error lower with a cluster-bootstrap CI below 0 on 6/7
+   (Boreas -5.8, NCLT -3.2, CMU -2.7, Nordland -7.3, office -0.2, old town -1.4 m), segFAR lower 7/7, recall loss <= 0.011.
+2. *H29b supported:* CMS-CPC/H+SH+NGR (alpha 0.05) vs CPC-SC-T(1/2)+SH: recall higher 7/7 (CI > 0 on 7/7), error lower on 6/7
+   means (CI < 0 on 4/7, none worse). LODO picks **CMS-CPC/H+SH+G+NGR** in 7/7 folds (alpha 0.05, regret 0-2.5 m) and its
+   alpha = 0.01 version in 7/7 folds (regret 0-2.4 m): recall higher than CPC-SC-T(1/2)+SH 7/7 and error lower 7/7 (CI: 6/7 and 6/7).
+   Curves: recall at FL <= 0.01 of CMS-CPC/H+SH+NGR above CPC-SC-T(1/2)+SH 7/7, above Claxton'24 / TAO'26 (labels) 6/7.
+3. *H29c supported:* +NG locks out on VIO (old town 0.485 / 73.8 m, countryside 0.313 / 72.7 m); +DRG on NCLT (56.3 m), old town (68.9 m).
+4. *H29d supported:* CMS-CPCW mean segFAR <= alpha on 7/7 at both alphas; CMS-CPCW/H+SH+NGR beats CPC-SC-T(1/2)+SH on recall 7/7 and
+   error 7/7 (onset rate 0.03-0.09 alpha).
+5. *Exact vs truncated counterfactual:* results differ by <= 0.005 recall (Entry 28 numbers stand); Theorem 6 check with the exact null:
+   realized / alpha 0.46-1.18, below the bound on 7/7.
+6. *Hole ratio (exact, gate):* 10 %: recall > CPC-SC+CS 6/6, segFAR <= 0.009, error lower 4/6; 50 %: recall higher 6/6, the gate brings CMU
+   from 0.052 to 0.027.
+**Verdict.** Proposed method: CMS-CPC/H+SH+G+NGR (LODO-selected) with CMS-CPCW/H+SH+NGR as the variant with the exact onset theorem.
 
 ## Entry 28 (branch `hmm-navigation-5`) — Counterfactual Map Surgery (CMS): self-calibration on the deployment stream (2026-11-01)
 

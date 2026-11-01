@@ -4,6 +4,15 @@
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
+## 0000. Vòng 7 (2026-11-01, branch `hmm-navigation-5`) — trạng thái
+
+- **Làm xong:** cổng rủi ro điều hướng +NGR, null phản thực chính xác (366 + 216 run), CMS-CPCW (khởi phát chặt), tự kiểm toán toàn bộ
+  (`paper/AUDIT_E29.md`), thống kê ghép cặp, LODO; báo cáo `paper/BAO_CAO_E29.pdf`.
+- **Đề xuất hiện tại:** **CMS-CPC/H+SH+G+NGR** (α = 0.05; LODO 7/7) — hoặc **CMS-CPCW/H+SH+NGR** khi cần định lý chặt.
+- **Kaggle:** không còn kernel nào chạy. Chính sách L4 (user, 2026-11-01): QUEUED > 5 phút → huỷ + đẩy lại, tối đa 5 lần, rồi 2×T4
+  (`fanout.py` tự làm).
+- **Việc tiếp theo:** robot thật vòng kín; benchmark off-map tự nhiên ngoài NCLT; viết bài (novelty: Gate 12–13).
+
 ## 000. Vòng 6 (2026-11-01, branch `hmm-navigation-5`) — trạng thái
 
 - **Làm xong:** phương pháp mới CMS (phẫu thuật bản đồ phản thực, `analysis/cms.py`), lý thuyết `paper/cms_theory.md`

@@ -5,6 +5,16 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 0000. Vòng 7 (2026-11-01): vận hành
+
+- Script mới: `analysis/cms_exact.py` (top-300 GPU + null chính xác), `analysis/navrisk.py` (cổng +NGR), `analysis/paired_stats.py`,
+  `paper/build_e29_report.py`; `oc_curves.py --navgate`, preset `@E29`, `@E29H`.
+- **Chính sách L4 (user):** QUEUED quá 5 phút → huỷ + đẩy lại, tối đa 5 lần; vẫn không được → 2×T4 (`fanout.py --l4` tự làm: xoá kernel
+  L4 kẹt, tạo lại `--t4` với `--par 3`, stall 10 phút).
+- 20 phiên L4 chạy đồng thời (thống kê chính xác 10 + lỗ 10) cộng 50 phiên CPU dự phòng; L4 xong trước (~30 phút) → lô CPU xoá.
+  Hai phiên CPU bị từ chối "Maximum batch CPU session count of 5" (acc đã đủ 5) — fanout tự thử acc khác.
+- Đánh giá cuối 366 run × ~70 họ luật (kể cả cổng): 10 phiên L4, ~15 phút.
+
 ## 000. Vòng 6 (2026-11-01, branch `hmm-navigation-5`): bài học mới (đọc trước §00)
 
 ### 000.1 Script mới
