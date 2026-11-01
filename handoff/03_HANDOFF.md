@@ -4,6 +4,20 @@
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
+## 00000. Vòng 8 (2026-11-01, branch `hmm-navigation-5`) — trạng thái
+
+- **Làm xong (Entry 30):** hiệu chuẩn nhân quả `[online]`, `[both]` (Định lý 6″, Mệnh đề 12); độ bền bộ lọc F1–F3; benchmark off-map tự
+  nhiên 4Seasons chéo cảnh (`analysis/natural_eval.py`, 36 run); hai biến thể cổng (`+NGR` mở cả chuỗi, `+NGRr` giới hạn tốc độ = code
+  vòng 7) + sàn bất định 3√P⁻; báo cáo `paper/BAO_CAO_E30.pdf`; kết quả `analysis/results/e30/`.
+- **Đề xuất hiện tại:** **CMS-CPC/H+SH+G+NGRr** (LODO 7/7); bản triển khai nhân quả **CMS-CPCW/H+SH[both]+NGRr** (hoặc `[online]`).
+- **Đang chạy (Entry 31):** HMM liên hợp vị trí–hiện diện có trạng thái OFF hiệu chuẩn (`analysis/cms_hmm.py`, họ `/J`, preset `@E31J`),
+  114 run seed 0–2 trên 20 phiên L4 (`<scratchpad>/runs/e31g`, kernel `e31g-1..20`); kéo kết quả: `automation/resume.py <runs>`
+  hoặc `pull_kernels.py`; gom: `<scratchpad>/collect_e30.sh` (thêm mẫu `_j_s`).
+- **Dataset mới:** `nhatlong1103/hmm-holes-cms-exact`, `nhatlong1103/hmm-natural-cache` (Kaggle **bỏ dấu "+" khỏi tên file**:
+  `natural_regate.py` tự xử lý).
+- **Việc tiếp theo:** kết quả E31 vào báo cáo; MarsLab (Isaac Sim 5.1 + ROS 2 Jazzy, cần máy RTX) để có off-map "đi ra ngoài bản đồ"
+  và vòng kín; viết bài.
+
 ## 0000. Vòng 7 (2026-11-01, branch `hmm-navigation-5`) — trạng thái
 
 - **Làm xong:** cổng rủi ro điều hướng +NGR, null phản thực chính xác (366 + 216 run), CMS-CPCW (khởi phát chặt), tự kiểm toán toàn bộ

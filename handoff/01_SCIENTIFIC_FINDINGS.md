@@ -6,6 +6,22 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
+## N00000. Vòng 8 (2026-11-01, branch `hmm-navigation-5`) — đọc trước §N0000
+
+**Báo cáo:** `paper/BAO_CAO_E30.pdf`; lý thuyết `paper/cms_theory.md` §4c–4d; nhật ký Entry 30–31; novelty Gate 14.
+
+1. **Đề xuất giữ nguyên: CMS-CPC/H+SH+G+NGRr** (cổng mở khoá giới hạn tốc độ = code vòng 7). LODO 7/7 trên mọi luật không nhãn của
+   vòng này. Bản "mở cả chuỗi" (+NGR, đăng ký trước) kém hơn ở Boreas (+2.0 đến +2.9 m) và CMU, chỉ hơn ở 4S countryside.
+2. **Nhân quả:** `[both]` (giao luật hiệu chuẩn theo phiên và theo phiên khác) hơn CPC-SC-T½+SH recall 7/7 và sai số 7/7, hợp lệ 7/7 ở
+   α = 0.05 và 0.01; `[online]` (phiên khác + phần đã qua) hợp lệ nhưng mất recall ở Nordland.
+3. **Độ bền bộ lọc:** F1 (nhiễu ×4), F2 (+σ fix 10 m), F3 (khởi tạo không nhãn): đề xuất hơn luật cũ 7/7 recall và 7/7 sai số ở cả ba;
+   cổng không có ích dưới F3 (giả định bộ lọc đã định vị).
+4. **Off-map tự nhiên (phiên toàn off-map, π = 0):** mọi biến thể CMS hợp lệ ở α = 0.05 (0/36 run vượt), recall cảnh A 0.70–0.72 so với
+   0.59 (6/6 cặp); bản chuyển đạo vượt α = 0.01 ở 1–2/36 run (đúng Mệnh đề 8), bản nhân quả không. Baseline có nhãn vượt α ở 11–28 % run.
+5. **HMM liên hợp (Entry 31):** biên OFF của HMM = chuỗi hiện diện đã hiệu chuẩn (Mệnh đề 13, kiểm số học) ⇒ có thể trình bày phương
+   pháp như một HMM có trạng thái off-map hiệu chuẩn; ghép nối chữa lock-in của cùng chuỗi vị trí nhưng trên 3 run thiết kế không tăng
+   recall so với chuỗi vị trí gốc. Đánh giá 114 run đang chạy.
+
 ## N0000. Vòng 7 (2026-11-01, branch `hmm-navigation-5`) — đọc trước §N000
 
 **Báo cáo:** `paper/BAO_CAO_E29.pdf`; kiểm toán `paper/AUDIT_E29.md`; lý thuyết `paper/cms_theory.md` §4b; nhật ký Entry 29.

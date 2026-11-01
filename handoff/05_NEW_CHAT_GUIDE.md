@@ -2,7 +2,13 @@
 
 *2026-11-01, cập nhật từ branch `hmm-navigation-5` (vòng 6). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
 
-**Vòng 7 (đọc trước tiên):** `paper/BAO_CAO_E29.pdf`, `paper/AUDIT_E29.md`, `RESEARCH_LOG.md` Entry 29. Phương pháp đề xuất:
+**Vòng 8 (đọc trước tiên):** `paper/BAO_CAO_E30.pdf`, `RESEARCH_LOG.md` Entry 30–31, `paper/cms_theory.md` §4c–4d, `handoff/03_HANDOFF.md`
+§00000. Đề xuất: **CMS-CPC/H+SH+G+NGRr** (`oc_curves.py --cms <hmm-cms-cache-exact> --navgate --gate-rate --fams @E30R`); nhân quả
+`[both]`/`[online]` (`--cms-groups cond,loco,online`); bộ lọc thay thế `--nav-q`, `--nav-sig`, `--nav-init top1`; off-map tự nhiên
+`analysis/natural_eval.py` (cache: `nhatlong1103/hmm-natural-cache`, `natural_regate.py`); HMM liên hợp `analysis/cms_hmm.py`
+(`--joint`, preset `@E31J`).
+
+**Vòng 7:** `paper/BAO_CAO_E29.pdf`, `paper/AUDIT_E29.md`, `RESEARCH_LOG.md` Entry 29. Phương pháp đề xuất:
 **CMS-CPC/H+SH+G+NGR** (`analysis/cms.py` + `analysis/navrisk.py`, `oc_curves.py --cms <hmm-cms-cache-exact> --navgate --fams @E29`);
 null chính xác: `analysis/cms_exact.py` (dataset `nhatlong1103/hmm-cms-cache-exact`); thống kê: `analysis/paired_stats.py`.
 
