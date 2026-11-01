@@ -24,12 +24,14 @@ p → e và a của Beta-EM cố định từ các phiên khác. Định lý 6�
 có trước đoạn đó — một phiên hoàn toàn off-map vẫn được bảo đảm nhờ phần on-map của các phiên khác. `[both]`: báo khi luật theo phiên
 **và** luật theo phiên khác cùng báo; Mệnh đề 12: segFAR ≤ min của hai luật (hợp lệ nếu một trong hai null hợp lệ).
 
-**Hai lỗi thật của cổng +NGR, tìm ra khi thiết kế F3 (Nordland CosPlace s0), sửa trước đánh giá.**
-(a) Mở khoá kiểm lại độ đồng nhất của innovation sau mỗi fix được nhận — nhưng chính bước cập nhật của bộ lọc làm innovation nhảy ⇒
-chuỗi đã mở khoá chỉ được nhận **mỗi R = 10 frame một lần** (không đúng mô tả "mở cho cả chuỗi" của vòng 7). Sửa: mở đến hết chuỗi.
-(b) Bán kính cổng max(τ, 3√P⁻): khi bộ lọc chưa định vị (P⁻ lớn), fix đúng có innovation cỡ √P⁻. Với khởi tạo ở pose thật cả hai sửa
-**không đổi** kết quả (kiểm trên 13 luật, Nordland s0: giống hệt); với F3, sai số của +NGR giảm 58 → 32 m. Mọi họ +NGR của vòng này,
-kể cả bản đồ khuyết 10/50 %, được tính lại với cổng đã sửa.
+**Cổng +NGR: một chỗ code khác mô tả, một sửa, hai biến thể (tìm ra khi thiết kế F3, Nordland CosPlace s0).**
+(a) Mở khoá kiểm lại độ đồng nhất của innovation sau mỗi fix được nhận — chính bước cập nhật của bộ lọc làm innovation nhảy ⇒ chuỗi
+đã mở chỉ được nhận **một fix mỗi R = 10 frame** (khác mô tả "mở cho cả chuỗi" của vòng 7). Đăng ký trước: sửa thành mở đến hết chuỗi
+(`+NGR`). Giữa đánh giá (202/366 run, ghi nhật ký trước mọi phân tích khác) thấy sửa này **lẫn lộn** với khởi tạo pose thật: Boreas
++1.3 đến +2.6 m (một chuỗi báo sai đồng nhất lọt hết khi đã mở), CMU +0.5 m, còn Nordland / 4S thấp hơn. Hành vi vòng 7 hoá ra là một
+thiết kế hợp lệ — **mở giới hạn tốc độ**, chặn tác hại của chuỗi báo sai đồng nhất — nên giữ cả hai (`+NGRr` = vòng 7 + sàn bất định),
+tính lại mọi run cho `+NGRr`, và để LODO chọn. (b) Bán kính cổng max(τ, 3√P⁻): khi bộ lọc chưa định vị (P⁻ lớn), fix đúng có
+innovation cỡ √P⁻; với khởi tạo pose thật sàn này không hoạt động (`+NGRr` trùng khớp tuyệt đối với +NGR của vòng 7 trên mọi run kiểm).
 
 **Benchmark off-map tự nhiên (`analysis/natural_eval.py`).** 6 cặp có thứ tự của {office loop, old town, countryside} × 6 descriptor =
 36 run. Bản đồ = bản ghi tham chiếu của A (không lỗ); truy vấn = các bản ghi còn lại của A rồi mọi bản ghi của B. Recall tính trên A,

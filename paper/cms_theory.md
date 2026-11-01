@@ -160,9 +160,12 @@ Hệ quả: tỷ lệ khởi phát sai ≤ α/π với π của **các phiên kh
 nên segFAR kỳ vọng của `[both]` ≤ min của hai luật: `[both]` hợp lệ nếu **một trong hai** null hợp lệ (π của phiên hoặc π của
 các phiên khác lớn). Giá: recall ≤ min của hai luật. *Chứng minh:* tập báo của `[both]` là giao hai tập báo. ∎
 
-**Cổng +NGR — hai sửa (Entry 30).** (a) Mở khoá giữ cổng mở **đến hết chuỗi** báo cáo của luật nền (đúng mô tả Entry 29; bản
-code Entry 29 kiểm lại độ đồng nhất sau mỗi fix được nhận, thấy bước nhảy innovation do chính cập nhật của bộ lọc ⇒ chỉ mở lại
-mỗi R frame). (b) Bán kính max(τ, 3√P⁻): khi bộ lọc chưa định vị (P⁻ lớn, ví dụ khởi tạo không nhãn), innovation của fix đúng
+**Cổng +NGR — hai biến thể mở khoá và một sửa (Entry 30).** (a) Code Entry 29 kiểm lại độ đồng nhất sau mỗi fix được nhận; bước
+nhảy innovation do chính cập nhật của bộ lọc làm chuỗi "mất đồng nhất" ⇒ chuỗi đã mở chỉ được nhận **một fix mỗi R frame** (khác mô
+tả "mở cho cả chuỗi"). Hai biến thể được giữ: `+NGR` (vòng 8) mở **đến hết chuỗi**; `+NGRr` mở **giới hạn tốc độ** (= code vòng 7):
+một chuỗi báo sai trượt song song đều với bộ lọc — đúng loại mà mở khoá không phân biệt được với trôi — chỉ kéo bộ lọc tối đa
+K·ν mỗi R frame, nên tác hại của nó bị chặn theo tốc độ; đổi lại, phục hồi sau trôi lớn chậm hơn R lần. LODO chọn giữa hai biến
+thể (không chọn theo bảng). (b) Bán kính max(τ, 3√P⁻): khi bộ lọc chưa định vị (P⁻ lớn, ví dụ khởi tạo không nhãn), innovation của fix đúng
 có thể lớn cỡ √P⁻; khi bộ lọc đã định vị (√P ≈ 0.6 m ≪ τ) sàn này không hoạt động. Cả hai chỉ bỏ báo cáo ít hơn, vẫn là
 "chỉ bỏ báo cáo" so với luật nền ⇒ Mệnh đề 11 (a) giữ nguyên.
 

@@ -9,6 +9,7 @@ import sys, os, subprocess
 HERE = os.path.dirname(os.path.abspath(__file__))
 SEEDS = sys.argv[sys.argv.index("--seeds") + 1].split(",") if "--seeds" in sys.argv else ["0", "1", "2"]
 FAMS = sys.argv[sys.argv.index("--fams") + 1] if "--fams" in sys.argv else "@E30H"
+RATE = "--gate-rate" in sys.argv                  # rate-limited gate variants (+NGRr), output suffix _d<ratio>gr
 
 
 def find(root, name, prefix):
@@ -24,8 +25,8 @@ def main():
     if not cdir or not sdir: print("missing inputs", cdir, sdir); sys.exit(1)
     for s in SEEDS:
         cmd = [sys.executable, os.path.join(HERE, "oc_curves.py"), cdir, ds, desc, "--seeds", s, "--jobs", "1", "--defaults-only",
-               "--out-suffix", f"_d{ratio}g_s{s}", "--taocache", sdir, "--cms", sdir, "--variants", "--light", "--cms-alpha", "0.05,0.01",
-               "--navgate", "--fams", FAMS]
+               "--out-suffix", f"_d{ratio}g{'r' if RATE else ''}_s{s}", "--taocache", sdir, "--cms", sdir, "--variants", "--light", "--cms-alpha", "0.05,0.01",
+               "--navgate", "--fams", FAMS] + (["--gate-rate"] if RATE else [])
         r = subprocess.run(cmd, capture_output=True, text=True); print(f"d{ratio} {ds}/{desc} s{s} rc={r.returncode}", r.stdout[-200:], r.stderr[-800:] if r.returncode else "", flush=True)
 
 

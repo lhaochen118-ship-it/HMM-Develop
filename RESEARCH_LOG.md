@@ -7,6 +7,28 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 31 (branch `hmm-navigation-5`) — HMM-centric CMS: joint place-presence HMM with a calibrated OFF state (2026-11-01)
+
+**Pre-registration (design runs: Nordland CosPlace s0, 4S countryside MegaLoc s0, 4S old town CosPlace s0).**
+1. *Model (`analysis/cms_hmm.py`).* State space {map places} U {OFF}; place transitions = the odometry kernel of the place chain;
+   presence transitions p_in = p_out = 0.01. The OFF emission is set so that the posterior odds ON:OFF are multiplied by
+   exp(l_t), l_t = the CMS-calibrated presence log LR (`cms.chain_parts`) => the OFF marginal of the HMM IS the calibrated CMS
+   presence chain (checked numerically: identical log-odds to 1e-6), so Theorems 6 / 6' / 6'' are statements about the HMM.
+   Place update "temper" (exact for a model where the place keeps evolving while OFF and an OFF frame carries no place
+   information): b+ ~ b- (q_t L_t / <b-, L_t> + 1 - q_t), q_t = P(on at t). Design alternative "reset" (uniform OFF -> ON
+   re-entry) was rejected on the design runs (recall -0.01 to -0.02 on 4S: a dip of P(on) inside the map erased a correct
+   place belief). Emissions from the exact top-K list (outside entries at the K-th value), scale tau chosen label-free by
+   agreement with the stored place chain (98 % agreement on on-map frames, Nordland s0).
+2. *Design results (labels only to evaluate).* Place accuracy in the first 30 on-map frames after an off-map stretch:
+   0.80 -> 0.90 (Nordland, reset mode, vs the same re-implemented chain without OFF). Default points, /J (temper) vs /R
+   (same emissions, no OFF): recall +0.002 / ±0.003 / -0.009 (countryside / old town / Nordland), Nordland CMS-CPCW error
+   27.3 -> 6.0 m and segFAR 0.008 -> 0.003; vs the stored full-similarity chain /H both /R and /J are ~0.01 lower in recall
+   (emission re-implementation, not the coupling).
+3. *Hypotheses.* H31a: /J matches /H within 0.01 recall on >= 5/7 datasets (the coupling is not harmful); H31b: /J has lower
+   mean error than /R on >= 4/7 (the coupling cures lock-in of the same chain); H31c (exploratory): /J beats /H.
+4. *Evaluation.* Seeds 0-2 of all 7 datasets x 6 descriptors (126 runs), defaults, alpha 0.05 / 0.01, groups cond, [online],
+   [both], +NGRr (`oc_curves.py --joint --fams @E31J`).
+
 ## Entry 30 (branch `hmm-navigation-5`) — causal online calibration, filter robustness, natural off-map benchmark (2026-11-01)
 
 **Pre-registration (written before the full evaluation; design used Nordland CosPlace s0 and 4sx office loop + old town CosPlace).**
@@ -48,6 +70,13 @@ bound of Theorem 6 is vacuous for the per-session (cond) calibration.
    the +NGR error drops from 58 to 32 m. Every +NGR family of the main evaluation is recomputed with the fixed gate.
    *Deviation noted at launch (before any result):* the `@E30F` output list does not contain the ungated CMS-CPC/H+SH, so the
    gate effect of H30c is measured on the pairs CMS-CPCW/H+SH(+NGR) and CMS-CPC/H+SH+G(+NGR) of the same runs.
+   *Mid-evaluation note (written after 202/366 main runs, before any other analysis).* Ungated families reproduce Entry 29
+   exactly run by run (202/202). The pre-registered streak-open release (a) is MIXED with the ground-truth init: Boreas
+   +1.3 to +2.6 m mean error (one run +36 m: a coherent FALSE streak passes once released), CMU +0.5 m, Nordland / 4S old town /
+   countryside lower. The Entry 29 code is therefore a legitimate design, not only a bug: a RATE-LIMITED release (one fix per R
+   frames while a coherent streak stays outside the gate) bounds the harm of a coherent false streak. Both are kept: "+NGR" =
+   streak-open (pre-registered), "+NGRr" = rate-limited (Entry 29 behaviour) with the uncertainty floor (b); every run is
+   recomputed with +NGRr (`oc_curves.py --gate-rate`, preset `@E30R`) and LODO chooses among both, no choice from the tables.
 6. *Selection.* Deployment default = the highest-recall calibration group that satisfies H30a and the natural-benchmark
    validity of H30d; main rule CMS-CPCW/H+SH+NGR (exact onset theorem, Theorem 6'), recall-oriented variant
    CMS-CPC/H+SH+G+NGR (LODO choice of Entry 29). Paired cluster-bootstrap CIs by seed (`analysis/paired_stats.py`).

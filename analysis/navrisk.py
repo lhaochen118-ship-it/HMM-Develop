@@ -43,8 +43,10 @@ def gate_tau(z, b, st, beta=0.05):
     return tau
 
 
-def nav_gate(acc, xf, z, b, tau, release=True, R=None, head=None):
-    """online filter (identical to nav_demo.track / track_head) with the counterfactual innovation gate"""
+def nav_gate(acc, xf, z, b, tau, release=True, R=None, head=None, mode="open"):
+    """online filter (identical to nav_demo.track / track_head) with the counterfactual innovation gate. mode = "open": a released
+    streak stays open until it ends (Entry 30); "rate": rate-limited release, one fix per R frames while the innovations of a
+    coherent streak stay outside the gate (the Entry 29 code: bounds the harm of a coherent FALSE streak to K nu per R frames)"""
     q_pos, o_q, seqs, hz, seed, real = z["q_pos"], z["o_q"], b["seqs"], list(z["hz"]), int(z["seed"]), bool(z["real"])
     excl = b["excl"]; R = R or b["H"]; out = np.zeros(len(acc), bool)
     head = (b.get("ds") == "nclt") if head is None else head
@@ -56,7 +58,7 @@ def nav_gate(acc, xf, z, b, tau, release=True, R=None, head=None):
                 u = o_q[bb] - o_q[a]; c, s_ = np.cos(m[2]), np.sin(m[2]); Ru = np.array([c * u[0] - s_ * u[1], s_ * u[0] + c * u[1]])
                 m[:2] += Ru; F = I3.copy(); F[0, 2], F[1, 2] = -Ru[1], Ru[0]; L = np.linalg.norm(u)
                 P = F @ P @ F.T + np.diag([(N.NAV_Q * L) ** 2 + 1e-4, (N.NAV_Q * L) ** 2 + 1e-4, 0.004 ** 2 * L + 1e-8])
-                ok = _decide(acc[bb], xf[bb] - m[:2], max(tau[bb], 3.0 * np.sqrt(max(P[0, 0], P[1, 1]))), buf, release, R, excl)
+                ok = _decide(acc[bb], xf[bb] - m[:2], max(tau[bb], 3.0 * np.sqrt(max(P[0, 0], P[1, 1]))), buf, release, R, excl, mode)
                 if ok:
                     K = P @ Hm.T @ np.linalg.inv(Hm @ P @ Hm.T + Rf); m = m + K @ (xf[bb] - m[:2]); P = (I3 - K @ Hm) @ P
                 out[bb] = ok
@@ -72,14 +74,14 @@ def nav_gate(acc, xf, z, b, tau, release=True, R=None, head=None):
                     R2 = np.array([[np.cos(thh), -np.sin(thh)], [np.sin(thh), np.cos(thh)]]); u[hz] = R2 @ u[hz]
                 u = u + r.normal(0, 0.02 * np.linalg.norm(d) / np.sqrt(len(d)) + 1e-3, len(d))
             x = x + u; P = P + (N.NAV_Q * np.linalg.norm(u)) ** 2 + 1e-4
-            ok = _decide(acc[bb], np.atleast_1d(xf[bb] - x)[:len(np.atleast_1d(x))], max(tau[bb], 3.0 * np.sqrt(np.max(P))), buf, release, R, excl)
+            ok = _decide(acc[bb], np.atleast_1d(xf[bb] - x)[:len(np.atleast_1d(x))], max(tau[bb], 3.0 * np.sqrt(np.max(P))), buf, release, R, excl, mode)
             if ok:
                 K = P / (P + N.nav_sig() ** 2); x = x + K * (xf[bb] - x); P = (1 - K) * P
             out[bb] = ok
     return out
 
 
-def _decide(base, nu_vec, tau, buf, release, R, excl):
+def _decide(base, nu_vec, tau, buf, release, R, excl, mode="open"):
     """gate decision for one frame; buf keeps the innovation vectors of the current streak of base reports. Once the release
     fires, the gate stays open until the streak ends (Entry 30 fix: re-testing the coherence after each accepted fix sees
     the innovation jump caused by the filter's own update, so the Entry 29 code reopened only every R-th frame)"""
@@ -91,5 +93,6 @@ def _decide(base, nu_vec, tau, buf, release, R, excl):
     if release and len(buf) >= R:
         V = np.array(buf[-R:]); spread = np.sqrt(((V - V.mean(0)) ** 2).sum(1).mean())
         if spread <= 0.5 * excl:
-            buf.clear(); buf.append(None); return True
+            if mode == "open": buf.clear(); buf.append(None)
+            return True
     return False

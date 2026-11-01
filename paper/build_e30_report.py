@@ -9,22 +9,24 @@ from build_e28_report import tab_def, tab_tight
 
 arg = lambda k: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else None
 LAB = [("Xu21", "Xu'21 (nhãn)"), ("Claxton24", "Claxton'24 (nhãn)"), ("TAO26", "TAO'26 (nhãn)")]
-OLD = [("CPC-SC+CS", "CPC-SC+CS (vòng 3)"), ("CPC-SC-T0.5+SH", "CPC-SC-T½+SH (vòng 5)"), ("CPC-SC-T0.5+SH+NGR", "CPC-SC-T½+SH+NGR")]
+OLD = [("CPC-SC+CS", "CPC-SC+CS (vòng 3)"), ("CPC-SC-T0.5+SH", "CPC-SC-T½+SH (vòng 5)"), ("CPC-SC-T0.5+SH+NGRr", "CPC-SC-T½+SH+NGRr"), ("CPC-SC-T0.5+SH+NGR", "CPC-SC-T½+SH+NGR")]
 GRP = [("", "phiên (chuyển đạo)"), ("[loco]", "phiên khác"), ("[online]", "online nhân quả"), ("[both]", "giao phiên ∧ phiên khác")]
 
 
-def fam(base, g, a01=False, gate=False):
-    return base + g + ("(a=0.01)" if a01 else "") + ("+NGR" if gate else "")
+GATES = ("", "+NGRr", "+NGR")                    # no gate, rate-limited release (Entry 29 code), streak-open release (Entry 30)
+
+
+def fam(base, g, a01=False, gate=""):
+    gate = "+NGR" if gate is True else ("" if gate is False else gate)
+    return base + g + ("(a=0.01)" if a01 else "") + gate
 
 
 def rows(a01=False):
     R = []
     for base, nm in (("CMS-CPCW/H+SH", "CMS-CPCW/H+SH"), ("CMS-CPC/H+SH+G", "CMS-CPC/H+SH+G")):
         for g, gl in GRP:
-            for gate in (False, True):
-                lab = f"{nm}{'+NGR' if gate else ''} [{gl}]"
-                if gate and base == "CMS-CPCW/H+SH" and g in ("", "[both]"): lab = f"**{lab}**"
-                R.append((fam(base, g, a01, gate), lab))
+            for gate in GATES:
+                R.append((fam(base, g, a01, gate), f"{nm}{gate} [{gl}]"))
     return R
 
 
@@ -51,22 +53,23 @@ def main():
         L += tab_def(T, LAB + OLD + rows(), dss, "### Bảng 1. Hiệu chuẩn theo nhóm, α = 0.05: recall / segFAR TB / segFAR run tệ nhất / sai số điều hướng (m), 366 run")
         L += tab_def(T, [("CMS-CPC/H+SH+NGR", "CMS-CPC/H+SH+NGR"), ("CMS-CPC/H+SH(a=0.01)+NGR", "CMS-CPC/H+SH+NGR, α = 0.01")] + rows(True), dss,
                      "### Bảng 2. Như Bảng 1, α = 0.01", oracle=False)
-        L += tab_tight(T, [(fam("CMS-CPCW/H+SH", g, False, True), f"CMS-CPCW/H+SH+NGR [{gl}]", 0.05) for g, gl in GRP] +
-                       [(fam("CMS-CPCW/H+SH", g, True, True), f"CMS-CPCW/H+SH+NGR [{gl}]", 0.01) for g, gl in GRP], dss,
+        L += tab_tight(T, [(fam("CMS-CPCW/H+SH", g, False, "+NGRr"), f"CMS-CPCW/H+SH+NGRr [{gl}]", 0.05) for g, gl in GRP] +
+                       [(fam("CMS-CPCW/H+SH", g, True, "+NGRr"), f"CMS-CPCW/H+SH+NGRr [{gl}]", 0.01) for g, gl in GRP], dss,
                        "### Bảng 3. Độ chặt: tỷ lệ khởi phát sai mỗi đoạn / α và segFAR / α", 0.05)
     if arg("--paired"): L += ["### Bảng 4. So sánh ghép cặp (cùng run): trung bình hiệu [CI 95 % bootstrap cụm theo seed] (p sign test theo seed)", "", open(arg("--paired")).read(), ""]
-    FR = [("CPC-SC+CS", "CPC-SC+CS"), ("CPC-SC-T0.5+SH", "CPC-SC-T½+SH"), ("CPC-SC-T0.5+SH+NGR", "CPC-SC-T½+SH+NGR"), ("CMS-CPCW/H+SH", "CMS-CPCW/H+SH"),
-          ("CMS-CPCW/H+SH+NGR", "**CMS-CPCW/H+SH+NGR**"), ("CMS-CPC/H+SH+G", "CMS-CPC/H+SH+G"), ("CMS-CPC/H+SH+G+NGR", "**CMS-CPC/H+SH+G+NGR**"),
-          ("CMS-CPC/H+SH+NGR", "CMS-CPC/H+SH+NGR"), ("CMS-CPC/H+SH+NG", "ablation +NG"), ("CMS-CPC/H+SH+DRG", "ablation +DRG"),
+    FR = [("CPC-SC+CS", "CPC-SC+CS"), ("CPC-SC-T0.5+SH", "CPC-SC-T½+SH"), ("CPC-SC-T0.5+SH+NGRr", "CPC-SC-T½+SH+NGRr"), ("CPC-SC-T0.5+SH+NGR", "CPC-SC-T½+SH+NGR"),
+          ("CMS-CPCW/H+SH", "CMS-CPCW/H+SH"), ("CMS-CPCW/H+SH+NGRr", "CMS-CPCW/H+SH+NGRr"), ("CMS-CPCW/H+SH+NGR", "CMS-CPCW/H+SH+NGR"),
+          ("CMS-CPC/H+SH+G", "CMS-CPC/H+SH+G"), ("CMS-CPC/H+SH+G+NGRr", "CMS-CPC/H+SH+G+NGRr"), ("CMS-CPC/H+SH+G+NGR", "CMS-CPC/H+SH+G+NGR"),
+          ("CMS-CPC/H+SH", "CMS-CPC/H+SH"), ("CMS-CPC/H+SH+NGRr", "CMS-CPC/H+SH+NGRr"), ("CMS-CPC/H+SH+NGR", "CMS-CPC/H+SH+NGR"), ("CMS-CPC/H+SH+NG", "ablation +NG"), ("CMS-CPC/H+SH+DRG", "ablation +DRG"),
           ("Xu21", "Xu'21 (nhãn)"), ("Claxton24", "Claxton'24 (nhãn)"), ("TAO26", "TAO'26 (nhãn)")]
     for k, lab in (("--f1", "F1: nhiễu quá trình 0.2·L (×4)"), ("--f2", "F2: F1 + σ fix 10 m"), ("--f3", "F3: khởi tạo không nhãn (top-1 frame đầu, σ 1 km)")):
         if arg(k):
             TF = E.defaults(E.load(arg(k))); dF = [d for d in E.DS_ORDER if d in TF and not d.startswith("4sx")]
             L += tab_def(TF, FR, dF, f"### Bảng 5{'abc'[int(k[-1]) - 1]}. Độ bền bộ lọc — {lab}, α = 0.05", oracle=False)
     if arg("--paired-f"): L += ["### Bảng 6. Ghép cặp dưới F1–F3", "", open(arg("--paired-f")).read(), ""]
-    NR = LAB + OLD + [(fam("CMS-CPCW/H+SH", g, a, gt), f"CMS-CPCW/H+SH{'+NGR' if gt else ''} [{gl}]{', α = 0.01' if a else ''}")
-                      for a in (False, True) for g, gl in GRP for gt in (False, True)] + \
-         [(fam("CMS-CPC/H+SH+G", g, False, True), f"CMS-CPC/H+SH+G+NGR [{gl}]") for g, gl in GRP]
+    NR = LAB + OLD + [(fam("CMS-CPCW/H+SH", g, a, gt), f"CMS-CPCW/H+SH{gt} [{gl}]{', α = 0.01' if a else ''}")
+                      for a in (False, True) for g, gl in GRP for gt in GATES] + \
+         [(fam("CMS-CPC/H+SH+G", g, False, gt), f"CMS-CPC/H+SH+G{gt} [{gl}]") for g, gl in GRP for gt in GATES]
     if arg("--nat"): L += tab_nat(E.defaults(E.load(arg("--nat"))), NR, "### Bảng 7. Off-map tự nhiên (4Seasons chéo cảnh, bản đồ A ← truy vấn B): recall cảnh A / segFAR TB / tệ nhất / sai số cảnh A (m)")
     if arg("--nat1"): L += tab_nat(E.defaults(E.load(arg("--nat1"))), NR, "### Bảng 8. Off-map tự nhiên, khởi tạo không nhãn (F3)")
     for k, lab in (("--lodo05", "### Bảng 9a. LODO, α = 0.05"), ("--lodo01", "### Bảng 9b. LODO, α = 0.01")):
