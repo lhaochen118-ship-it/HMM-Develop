@@ -83,6 +83,17 @@ def main():
             if not os.path.isdir(d): continue
             TH = E.defaults(E.load(d)); dh = [x for x in E.DS_ORDER if x in TH]
             L += tab_def(TH, HR, dh, f"### Bảng 10{sub}. Bản đồ khuyết {ratio} % (3 seed × 6 descriptor, cổng sửa/giới hạn tốc độ)")
+    if arg("--e31"):
+        TJ = E.defaults(E.load(arg("--e31"))); dj = [d for d in E.DS_ORDER if d in TJ]
+        JR = [("CPC-SC-T0.5+SH", "CPC-SC-T½+SH")]
+        for base in ("CMS-CPCW/{}+SH", "CMS-CPC/{}+SH+G"):
+            for gt in ("", "+NGRr"):
+                for pl, pn in (("H", "chuỗi vị trí gốc"), ("R", "dựng lại, không OFF"), ("J", "**HMM liên hợp**")):
+                    JR.append((base.format(pl) + gt, f"{base.format(pl)}{gt} ({pn})"))
+        for g in ("[both]", "[online]"):
+            for pl in ("H", "J"): JR.append((f"CMS-CPCW/{pl}+SH{g}+NGRr", f"CMS-CPCW/{pl}+SH{g}+NGRr"))
+        L += tab_def(TJ, JR, dj, "### Bảng 11. HMM liên hợp (Entry 31, seed 0–2, 114 run): /H chuỗi vị trí gốc, /R dựng lại từ top-K không OFF, /J liên hợp có OFF hiệu chuẩn", oracle=False)
+        if arg("--paired-j"): L += ["### Bảng 12. Ghép cặp HMM liên hợp", "", open(arg("--paired-j")).read(), ""]
     for k, lab in (("--lodo05", "### Bảng 9a. LODO, α = 0.05"), ("--lodo01", "### Bảng 9b. LODO, α = 0.01")):
         if arg(k): L += [lab, "", open(arg(k)).read(), ""]
     tables = "\n".join(L) + "\n"
