@@ -57,6 +57,19 @@ kernel republishes it as `nhatlong1103/oxford-robotcar-vpr-dump` / `-images`; ev
    counterfactual statistics < 10 ms per frame (real-time at 10 Hz on one CPU core); H32c: on the 9 NCLT maps the causal CMS rules
    keep segFAR <= alpha (pooled) and beat CPC-SC-T(1/2)+SH in recall on >= 6/9 maps.
 
+**Results, part 1: decision-layer sensitivity (all 366 runs x 14 variants; raw `analysis/results/e32/sens.tgz`).**
+1. *H32a supported for 12 of the 14 constants.* Varying W, the route weight, the presence transitions, the +G radius, the gate
+   quantile or the release length moves the recall of CMS-CPC/H+SH+G+NGRr by at most 0.03 on any dataset (default
+   0.775 / 0.612 / 0.822 / 0.765 / 0.800 / 0.703 / 0.491 on Boreas / NCLT / CMU / Nordland / 4S office / old town / countryside).
+   Every one of those variants keeps mean segFAR <= 0.05 on 7/7 and recall above CPC-SC-T(1/2)+SH on 7/7. The same holds for
+   CMS-CPCW/H+SH+NGRr. W does not enter CMS-CPC/H+SH+G (identical rows, as expected).
+2. *H32a not supported for the SH shape tolerance* (pre-registered as one of the constants). x 2 breaks validity:
+   segFAR 0.071 (CMU) and 0.100 (4S countryside) for the proposed rule (5/7 valid), 4/7 for CMS-CPCW. x 0.5 stays valid
+   but loses recall (NCLT 0.612 -> 0.511, old town 0.703 -> 0.627; above CPC-SC-T(1/2)+SH on 5/7 only). The SH tolerance is the one
+   a-priori constant the guarantee depends on: SH is part of the segment-level validity at excursion boundaries (Entry 33,
+   attempt 3). Its label-free calibration from the counterfactual track (SHcf) is the Entry 33 hypothesis H33b.
+3. *alpha = 0.01:* every variant except SH x 2 keeps segFAR <= 0.01 on 7/7 (CMU 0.007 at the default).
+
 ## Entry 31 (branch `hmm-navigation-5`) — HMM-centric CMS: joint place-presence HMM with a calibrated OFF state (2026-11-01)
 
 **Pre-registration (design runs: Nordland CosPlace s0, 4S countryside MegaLoc s0, 4S old town CosPlace s0).**
