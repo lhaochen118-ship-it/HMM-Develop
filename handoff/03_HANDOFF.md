@@ -8,7 +8,7 @@
 
 - **Làm xong:** E32 (độ nhạy, thời gian, NCLT mỗi phiên làm bản đồ), E33 (đối thủ mới, SHcf, Oxford RobotCar 60 run), E34 (CST, 366
   run + độ nhạy mức), E35 (SH ∧ CST). Báo cáo `paper/BAO_CAO_E32.pdf`, bản nháp bài báo `paper/cms_paper_draft.md`.
-- **Đề xuất hiện tại:** {{E35REC}}
+- **Đề xuất hiện tại:** **CMS-CPC/H+SH+CST+G+NGRr** (`oc_curves.py --cst`, họ `CMS-CPC/H+SH+CST+G+NGRr`): tính hợp lệ từ CST (Mệnh đề 14) với mọi dung sai SH, hiệu năng = luật SH chọn tay; bản nhân quả = cùng luật với hiệu chuẩn `[both]`. Luật cũ CMS-CPC/H+SH+G+NGRr vẫn là đối chứng.
 - **Kaggle:** luật hiện hành ở `ENVIRONMENT_SUMMARY.md` (tối đa 8 acc cùng lúc, dồn đủ 2 GPU + 5 CPU mỗi acc, bớt 1 acc mỗi lần bị
   chặn API, một tiến trình theo dõi duy nhất `automation/central_monitor.py`). Không còn kernel nào chạy.
 - **Kết quả thô:** `analysis/results/e32/`, `e33/` (nb.tgz, oxford.tgz), `e34/e34.tgz`, `e35/`.

@@ -24,7 +24,7 @@ ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables
    thực là null của "quỹ đạo ma" ⇒ phép thử hình dạng phản thực theo đoạn CST (Mệnh đề 14: báo sai theo đoạn sâu ≤ a_sh/π, giao biến
    cố). 366 run: hợp lệ 7/7, recall ≥ SH 6/7, a_sh × 2 vẫn hợp lệ. **Nhưng** sai số điều hướng tăng ở Boreas (+9 m) và old town
    (+13.6 m): fix sai ở mép chuyến off-map (ngoài mệnh đề) ⇒ CST một mình không thay SH.
-6. **E35 (SH ∧ CST):** {{E35H}}
+6. **E35 (SH ∧ CST):** báo cáo chỉ khi **cả** SH **và** CST qua. CST mang bảo đảm (mọi báo cáo phải qua nó), SH chỉ bỏ báo cáo nên cận giữ với **mọi** dung sai SH. 228 run (seed 0–2): hợp lệ 7/7 với SH mặc định **và** SH × 2 (SH × 2 một mình vỡ α: countryside 0.100, CPCW office 0.066); ở SH mặc định recall trong 0.01 so với SH trên 6/7 (countryside −0.014), sai số trong 1 m trên 7/7 ⇒ **luật khuyến nghị mới: CMS-CPC/H+SH+CST+G+NGRr** (tính hợp lệ chỉ dựa vào phẫu thuật phản thực). Xác nhận trên seed 3–9 và Oxford: xem RESEARCH_LOG Entry 35.
 7. **Lỗi quy trình đã sửa:** cache thống kê phản thực local là bản xấp xỉ cũ ⇒ E34 lần đầu và các run thiết kế vô hiệu; đã chạy lại
    trên cache chính xác (tái lập Kaggle tới 4 chữ số). Cache local hiện tại: `$S/cmscache → cmsx` (= `nhatlong1103/hmm-cms-cache-exact`).
 
