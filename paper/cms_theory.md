@@ -230,6 +230,11 @@ trong điều kiện hợp lệ**. CST2 (α/2 + α/2) chỉ bảo thủ hơn. +G
 lượng khác nhau, nên (S3-T) là một xấp xỉ. Biến thể CSTt kiểm chính tuyến thắng thật MP[j] (cùng bộ ước lượng với null), thoả (S3-T)
 tự nhiên hơn nhưng kém mạnh (tuyến nhiễu hơn).
 
+**Kết quả (Entry 34, 366 run, cache chính xác).** CST hợp lệ 7/7 (segFAR TB 0.001–0.022), recall ≥ SH trên 6/7; mức a_sh × 2 vẫn
+hợp lệ 7/7 (dung sai SH × 2 thì vỡ 2/7). Nhưng sai số điều hướng tăng ở Boreas (+9.0 m) và old town (+13.6 m): các fix sai còn lọt
+nằm ở mép chuyến off-map, đúng vùng ngoài Mệnh đề 14. Entry 35 thử SH ∧ CST (bảo đảm từ CST, bảo vệ từ SH; vì SH chỉ bỏ báo cáo,
+cận giữ với mọi dung sai SH).
+
 **Phạm vi.** Như Định lý 6′, đoạn ở độ sâu < N − 1 frame (cửa sổ còn chồng lên bản đồ) nằm ngoài phát biểu: ở mép, quỹ đạo
 thật còn một phần đúng nên residual nhỏ hơn quỹ đạo ma phản thực (phẫu thuật toàn cửa sổ). Phẫu thuật "tiến" (chỉ xoá anchor sau
 một thời điểm thoát ảo) là cách đóng nốt khoảng trống này (việc tiếp theo).
