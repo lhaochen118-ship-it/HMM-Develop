@@ -63,6 +63,26 @@ evaluation since Entry 29 uses `nhatlong1103/hmm-cms-cache-exact`. Consequences:
 - The evaluation was restarted on the exact cache, with the hypotheses and the main rule unchanged: Boreas (60 runs) plus the
   Boreas part of the a_sh sensitivity on 20 Kaggle CPU kernels, the other 306 runs locally.
 
+**Results (366 runs, exact cache; raw `analysis/results/e34/`, tables `paper/e34_tables.md`).**
+1. *H34a supported (7/7).* CMS-CPC/H+CST+G+NGRr mean segFAR 0.001-0.022 (Boreas 0.018, CMU 0.016, 4S office 0.016, old town
+   0.022); CMS-CPCW/H+CST+NGRr 0.004-0.028. Every one is <= 0.05.
+2. *H34b supported.* Recall of CST vs the hand-set SH rule: +0.008 (Boreas), +0.005 (NCLT), +0.003 (CMU), +0.010 (Nordland),
+   +0.008 (4S office), +0.022 (old town), -0.005 (countryside): within 0.02 on 7/7 and higher on 6/7. CPCW+CST is within 0.02 on
+   6/7 (countryside -0.028). Both are above CPC-SC-T(1/2)+SH on 7/7.
+3. *H34c supported (7/7).* The causal [both] variants are valid on 7/7 (CPC+G: 0.000-0.016) with only 3.6 % of runs above alpha.
+4. *Price (diagnostic).* CST spends the alpha budget instead of being over-conservative: 6.0 % of runs have segFAR > alpha
+   (worst 0.109), against 0.5 % for the hand-set SH (worst 0.051). The guarantee is on the expected segment rate, not per run.
+5. *Level sensitivity (seeds 0-2, 114 runs per variant): the calibrated level degrades gracefully, unlike the tolerance.*
+   a_sh = 0.5 alpha: valid 7/7, recall -0.01 to -0.04. a_sh = 2 alpha: STILL valid on 7/7 (worst mean segFAR 0.041, Boreas),
+   recall +0.01 to +0.05. Compare the SH tolerance x 2 of Entry 32, which broke alpha on 2/7 (CMU 0.071, countryside 0.100).
+6. *Alternatives.* CST2 (a/2 + a/2): valid 7/7, recall -0.01 to -0.05 vs CST. CSTt (same-estimator route track): valid 7/7,
+   recall lower than CST on 6/7 (Nordland -0.07, CMU -0.05).
+**Verdict.** The counterfactual surgery calibrates the exit of a report chain as well as its onset. The one a-priori constant
+that validity depended on (Entry 32) is replaced by a level a_sh with a statement (Proposition 14). Recall is preserved, and the
+behaviour under mis-specification of the level is graceful. The proposed rule can be presented as CMS-CPC/H+CST+G+NGRr (fully
+calibrated) with the hand-set SH as the conservative variant. Open: segments within N frames of the excursion start are outside
+Proposition 14; forward surgery would close this gap.
+
 ## Entry 33 (branch `hmm-navigation-5`) — competitors read in full, improvement attempts, reputable new datasets (2026-11-01)
 
 **Competitors (read in full; `literature/RELATED_WORK_E32.md` section 7).** SafeVPR'26 (labelled Mondrian LTT, FDR under
