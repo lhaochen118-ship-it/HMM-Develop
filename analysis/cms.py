@@ -47,6 +47,7 @@ import sys as _sys
 SENS = dict(kv.split("=") for kv in _sys.argv[_sys.argv.index("--sens") + 1].split(",")) if "--sens" in _sys.argv else {}
 SENS = {k: float(v) for k, v in SENS.items()}
 P_TR = SENS.get("p", 0.01)
+SHCF = "--shcf" in _sys.argv          # Entry 33: SH tolerance calibrated on the counterfactual track (beta = SENS shcfb, 0.01)
 OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "oxford": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}
 
 
@@ -334,6 +335,16 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
     # chain (log-odds > 0) and the shape stop
     for tg, ok in (("H+SH", sh_c), ("H+SH+G", sh_c & agree)):
         F[f"CMS-CPCW/{tg}"] = (np.where(ok, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, ok, seqs))
+    if SHCF:                                   # counterfactual-calibrated shape tolerance: eps = beta-quantile of the shape residual
+        r = CG.shape_resid(xc, z["o_q"], seqs, excl, hz=hz)             # of the counterfactual (false-by-construction) track
+        jc = np.where(st["j_cf"] >= 0, st["j_cf"], jj); r_cf = CG.shape_resid(MP[jc], z["o_q"], seqs, excl, hz=hz)
+        eps = np.full(len(r), np.inf); bsh = SENS.get("shcfb", 0.01)
+        for sqs, cqs in cal_groups(z, seqs):
+            m = np.concatenate(sqs); v = r_cf[np.concatenate(cqs)]; v = v[np.isfinite(v)]
+            if len(v): eps[m] = np.quantile(v, bsh)
+        shf = ~(r > eps)                                                 # short windows (NaN) pass, as in shape_ok
+        F["CMS-CPC/H+SHcf+G"] = (np.where(shf & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & shf & agree)
+        F["CMS-CPCW/H+SHcf"] = (np.where(shf, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, shf, seqs))
     ALPHA_MIN[0] = alpha / 2
     wq2, kW2 = windowed_parts(z, b, st, alpha / 2)
     onWU = (sc_t > -kT2) | (wq2 > kW2)

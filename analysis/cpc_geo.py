@@ -248,3 +248,23 @@ def hyst_shape(start, keep, gate, x_m, o_q, seqs, excl, W=10, D_x=3.0, eps_x=0.5
                 rep, t0 = True, max(0, i - W + 1)
             acc[t] = rep
     return acc
+
+
+def shape_resid(x_m, o_q, seqs, excl, D_x=3.0, step_x=0.2, min_x=1.0, hz=None):
+    """per-frame rigid-fit RMS residual of the track x_m vs the odometry over the last D_x excl of path (NaN when the window
+    is shorter than min_x excl, where shape_ok passes): the statistic of the SH shape stop"""
+    one_d = x_m.ndim == 1 or x_m.shape[1] == 1
+    if not one_d and hz is not None and x_m.shape[1] > 2: x_m, o_q = x_m[:, hz], o_q[:, hz]
+    r = np.full(len(x_m), np.nan); D, step = D_x * excl, step_x * excl
+    for idx in seqs:
+        m, o = x_m[idx].astype(float), o_q[idx].astype(float)
+        if one_d: m, o = m.reshape(-1, 1), o.reshape(-1, 1)
+        cum = np.r_[0, np.cumsum(np.linalg.norm(np.diff(o, axis=0), axis=1))]
+        for i in range(len(idx)):
+            w = window_points(o, cum, i, D, step)
+            if len(w) < 3 or cum[i] - cum[w[0]] < min_x * excl: continue
+            if one_d:
+                d = (m[w, 0] - m[w, 0].mean()) - (o[w, 0] - o[w, 0].mean()); r[idx[i]] = float(np.sqrt((d ** 2).mean()))
+            else:
+                r[idx[i]] = procrustes2(m[w], o[w])[0]
+    return r
