@@ -16,7 +16,10 @@ What happens to each kernel:
 
 State (push time, restarts, done) is kept in <state.json>, so the monitor can be stopped and restarted at any time;
 kernels that are already done are skipped.
-Usage: central_monitor.py <state.json> [--gap 15] [--run-poll 600] [--nocopy] <kernel_dir> [...]"""
+--backoff s : pause after a rate-limit answer (default 600; user 2026-11-01 "only 1-2 streams": 1800).
+--pull-first REGEX : kernels whose slug matches are expected to be finished: their outputs are pulled first (one call instead of
+    status + output); a kernel whose pull brings no results.tar falls back to status polling.
+Usage: central_monitor.py <state.json> [--gap 15] [--run-poll 600] [--backoff 600] [--pull-first REGEX] [--nocopy] <kernel_dir> [...]"""
 import sys, os, re, json, glob, time, shutil, subprocess, random
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -29,7 +32,8 @@ def opt(k, d):
     return d
 
 
-GAP_MIN = float(opt("--gap", "15")); RUN_POLL = float(opt("--run-poll", "600"))
+GAP_MIN = float(opt("--gap", "15")); RUN_POLL = float(opt("--run-poll", "600")); BACKOFF = float(opt("--backoff", "600"))
+PULL_FIRST = re.compile(opt("--pull-first", "^$"))
 NOCOPY = "--nocopy" in args
 args = [a for a in args if a != "--nocopy"]
 SF, KDIRS = args[0], [a.rstrip("/") for a in args[1:]]
@@ -61,7 +65,7 @@ def api(kid, *a):
         o = (r.stdout + r.stderr).strip()
         if "rate limit" in o.lower() or "429" in o:
             gap = min(gap * 1.5, 120.0); ok_calls = 0
-            say(f"rate limit -> pause 600 s, gap {gap:.0f} s"); time.sleep(600 + random.uniform(0, 60)); continue
+            say(f"rate limit -> pause {BACKOFF:.0f} s, gap {gap:.0f} s"); time.sleep(BACKOFF + random.uniform(0, 60)); continue
         ok_calls += 1
         if ok_calls % 30 == 0: gap = max(gap * 0.9, GAP_MIN)
         return o
@@ -91,6 +95,22 @@ def pull(kd, s, state):
     say(f"{slug}: DONE {state} {len(res)} results, rc!=0: {nbad}{flag}")
 
 
+def pull_done(kd, s):
+    """outputs already pulled (pull-first): unpack, log, copy, state read from the kernel stdout ('complete' if it has EVAL_DONE)"""
+    out = kd + "_out"; subprocess.run(["tar", "-xf", os.path.join(out, "results.tar"), "-C", out]); txt = ""
+    for f in sorted(glob.glob(out + "/*.log")):
+        try: txt += "".join(r.get("data", "") for r in json.load(open(f, errors="ignore")) if r.get("stream_name") == "stdout")[-20000:]
+        except Exception as e: txt += f"decode failed: {e}\n"
+    state = "complete" if "EVAL_DONE" in txt else "partial"
+    res = glob.glob(os.path.join(out, "results", "*.json"))
+    if not NOCOPY:
+        for f in res: shutil.copy(f, os.path.join(ROOT, "analysis", "results"))
+    nbad = txt.count("rc=") - txt.count("rc=0")
+    with open(kd + ".log", "a") as fh:
+        fh.write(f"=== PULL-FIRST ({state}) -> {out} (central monitor) ===\n========== STDOUT ==========\n{txt}\nSTATUS=DONE:{state}\n")
+    say(f"{os.path.basename(kd)}: DONE {state} (pull-first) {len(res)} results, rc!=0: {nbad}{' NEEDS_FIX' if nbad or state != 'complete' else ''}")
+
+
 for kd in KDIRS:
     slug = os.path.basename(kd)
     if slug in ST and ST[slug].get("done"): continue
@@ -105,6 +125,12 @@ while pend:
     slug = min(pend, key=lambda k: ST[k]["next"]); s = ST[slug]
     w = s["next"] - time.time()
     if w > 0: time.sleep(min(w, 60)); continue
+    if PULL_FIRST.search(slug) and not s.get("pull_tried"):
+        s["pull_tried"] = True; out = s["kdir"] + "_out"; os.makedirs(out, exist_ok=True)
+        api(s["kid"], "kernels", "output", s["kid"], "-p", out, "-o")
+        if os.path.isfile(os.path.join(out, "results.tar")):
+            pull_done(s["kdir"], s); s["done"] = True; pend.remove(slug); save(); continue
+        say(f"{slug}: no results.tar yet -> status polling"); save()
     o = api(s["kid"], "kernels", "status", s["kid"]); now = time.time()
     m = re.search(r"KernelWorkerStatus\.(\w+)", o)
     if not m:

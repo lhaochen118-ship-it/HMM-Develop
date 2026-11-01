@@ -197,6 +197,19 @@ tạo phiên mới, tối đa 5 lần (`fanout.py`: T4 600 s / L4, CPU 480 s, 5 
 L4 vẫn kẹt sau 5 lần ⇒ kiểm tra lỗi code / logic trong log (fanout in `NEEDS_FIX` nếu có Traceback / trạng thái error: sửa rồi chạy
 lại bằng tay); không có lỗi ⇒ chuyển sang 2 × GPU T4 (fanout tự làm). Kernel xong mà có job rc ≠ 0 cũng được đánh dấu `NEEDS_FIX`.
 
+**Giới hạn tần suất API (2026-11-01, 13:00):** giới hạn tính theo **IP của máy chạy**, không theo acc: ~80 tiến trình
+`run_kernel.py` (mỗi kernel một tiến trình, hỏi trạng thái 2–4 phút một lần) làm mọi acc, kể cả acc mới, nhận "You have been rate
+limited". Từ đó **không chạy `run_kernel.py` / `reattach.py` cho từng kernel nữa**. Cách làm: `fanout.py ... --push-only` (đẩy lần
+lượt rồi thoát), sau đó **một** tiến trình `automation/central_monitor.py <state.json> <kernel_dir> ...` theo dõi tất cả qua một
+hàng đợi API (khoảng cách ≥ 15 s, tự giãn khi bị giới hạn, nghỉ 10 phút). Nó áp dụng đúng chính sách trên (QUEUED quá 8/10 phút ⇒
+xoá + đẩy lại, tối đa 5 lần, sau đó `STALL_GIVEUP` để người vận hành kiểm tra lỗi code rồi chuyển 2 × T4), kéo đầu ra, ghi
+`STATUS=DONE:<state>` vào `<slug>.log` và chép `results/*.json`. Trạng thái lưu trong `state.json` nên dừng / chạy lại bất cứ lúc
+nào; thêm kernel mới = chạy lại với danh sách mới (kernel đã xong được bỏ qua).
+**User 2026-11-01 13:30: "tạm thời giảm số luồng, chỉ chạy 1–2 luồng kẻo bị Kaggle ban".** Từ đó: một tiến trình theo dõi duy nhất
+(`--gap 60 --run-poll 1800 --backoff 1800`, tức ≤ 1 lệnh API mỗi phút, nghỉ 30 phút khi bị giới hạn; `--pull-first` cho kernel chắc
+chắn đã xong: một lệnh `output` thay vì `status` + `output`); **không đẩy kernel mới khi API còn bị giới hạn**; việc mới gộp vào
+1–2 kernel và chạy song song bên trong phiên (`--par`), không rải ra nhiều kernel.
+
 **Vòng 6 (2026-11-01, branch `hmm-navigation-5`):** user cấp 10 acc: `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`,
 `nguyenhoa99`, `yuan1103`, `synchan5704`, `anderson1202`, `loinguyentran`, `yeshenhi` (token ở `~/.kaggle/tokens_raw`,
 `tok_<acc>`; không vào git). L4×4 được cấp nhanh trên `nhatlong1103`, `anderson1202`, `caotienminh1`, `loinguyentran`,
