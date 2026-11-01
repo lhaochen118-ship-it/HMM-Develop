@@ -13,7 +13,7 @@ if "--skip" in args:
 procs = {}
 for kd in args:
     kd = kd.rstrip("/")
-    procs[kd] = subprocess.Popen([sys.executable, os.path.join(ROOT, "automation", "run_kernel.py"), kd, kd + "_out", "600", "4", "43200",
+    procs[kd] = subprocess.Popen([sys.executable, os.path.join(ROOT, "automation", "run_kernel.py"), kd, kd + "_out", "480", "5", "43200",
                                   "--attach"], stdout=open(kd + ".attach.log", "w"), stderr=subprocess.STDOUT)
     time.sleep(2)
 print(f"attached {len(procs)} kernels", flush=True)

@@ -187,6 +187,14 @@ BoQ vẫn chưa có trọng số (GitHub bị chặn, không có mirror).
 
 ## 3. Tài khoản Kaggle (18 acc; tối đa 2 phiên GPU + 5 phiên CPU mỗi acc)
 
+**Cập nhật 2026-11-01 (user):** 10 acc của vòng 7–9 (nhatlong1103, anderson1202, caotienminh1, nguyenhoa99, quynhle07, quynhtran35,
+synchan5704, yuan1103, cùng loinguyentran / yeshenhi) bị Kaggle giới hạn tần suất API vì chạy quá nhiều — **chỉ để kernel đang
+chạy xong, không đẩy kernel mới**. Việc mới dùng: **phatle1578, mucnokieu, huyenco, nguynduylm, loinguyentran, yeshenhi** (token mới
+ở `~/.kaggle/tok_<acc>`). Dataset dùng chung vẫn đăng dưới **nhatlong1103** (chỉ gọi API đăng, không chạy compute ở đó).
+**Chính sách (user, 2026-11-01):** (1) dồn mọi luồng lên một acc, hết slot (2 GPU — mỗi phiên L4×4, 96 GB VRAM — và 5 CPU) mới
+sang acc khác; (2) phiên không có đầu ra sau 10 phút (T4) hoặc 8 phút (L4/CPU) thì kiểm tra trạng thái; kẹt hàng đợi thì huỷ và
+tạo phiên mới, tối đa 5 lần (`fanout.py`: T4 600 s / L4, CPU 480 s, 5 lần; `run_kernel.py` hỏi trạng thái mỗi `RK_POLL` ≈ 120 s).
+
 **Vòng 6 (2026-11-01, branch `hmm-navigation-5`):** user cấp 10 acc: `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`,
 `nguyenhoa99`, `yuan1103`, `synchan5704`, `anderson1202`, `loinguyentran`, `yeshenhi` (token ở `~/.kaggle/tokens_raw`,
 `tok_<acc>`; không vào git). L4×4 được cấp nhanh trên `nhatlong1103`, `anderson1202`, `caotienminh1`, `loinguyentran`,

@@ -58,8 +58,9 @@ T4_FALLBACK = set()                                                        # ker
 
 def launch(k):
     slug = f"{prefix}-{k + 1}"; t4 = k in T4_FALLBACK
-    # user rule (2026-11-01): L4 queued > 5 min -> cancel + re-push, up to 5 times, then 2x T4 (T4: stall 10 min, 4 restarts)
-    stall, restarts = ("600", "4") if t4 else (("300", "5") if L4 else ("300", "4"))
+    # user rule (2026-11-01, updated): no output after 10 min on T4 / 8 min on L4 or CPU -> check; stuck in the queue -> cancel and
+    # create a new session, at most 5 times
+    stall, restarts = ("600", "5") if t4 else ("480", "5")
     return subprocess.Popen([sys.executable, os.path.join(ROOT, "automation", "run_kernel.py"), os.path.join(work, slug),
                              os.path.join(work, slug + "_out"), stall, restarts, "43200"], stdout=open(os.path.join(work, slug + ".log"), "a" if t4 else "w"), stderr=subprocess.STDOUT)
 
