@@ -209,6 +209,10 @@ nào; thêm kernel mới = chạy lại với danh sách mới (kernel đã xong
 (`--gap 60 --run-poll 1800 --backoff 1800`, tức ≤ 1 lệnh API mỗi phút, nghỉ 30 phút khi bị giới hạn; `--pull-first` cho kernel chắc
 chắn đã xong: một lệnh `output` thay vì `status` + `output`); **không đẩy kernel mới khi API còn bị giới hạn**; việc mới gộp vào
 1–2 kernel và chạy song song bên trong phiên (`--par`), không rải ra nhiều kernel.
+**User 2026-11-01 14:30: "giảm số tiến trình GPU và CPU xuống ko là Kaggle ban acc đó".** Từ đó **tối đa 2 phiên đang chạy
+(GPU + CPU cộng lại) trên mỗi acc**: `central_monitor.py --cap 2 --keep '^(oxd|e32r)-'`. Kernel thấy RUNNING / QUEUED vượt quá 2
+phiên ưu tiên nhất của acc bị xoá và "PARKED"; khi acc còn < 2 phiên thì kernel parked được đẩy lại (chạy lại từ đầu). Không còn
+dồn 2 GPU + 5 CPU lên một acc như chính sách trước.
 
 **Vòng 6 (2026-11-01, branch `hmm-navigation-5`):** user cấp 10 acc: `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`,
 `nguyenhoa99`, `yuan1103`, `synchan5704`, `anderson1202`, `loinguyentran`, `yeshenhi` (token ở `~/.kaggle/tokens_raw`,

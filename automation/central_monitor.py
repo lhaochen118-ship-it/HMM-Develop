@@ -19,7 +19,12 @@ kernels that are already done are skipped.
 --backoff s : pause after a rate-limit answer (default 600; user 2026-11-01 "only 1-2 streams": 1800).
 --pull-first REGEX : kernels whose slug matches are expected to be finished: their outputs are pulled first (one call instead of
     status + output); a kernel whose pull brings no results.tar falls back to status polling.
-Usage: central_monitor.py <state.json> [--gap 15] [--run-poll 600] [--backoff 600] [--pull-first REGEX] [--nocopy] <kernel_dir> [...]"""
+--cap N [--keep REGEX] : at most N active sessions per Kaggle account (user 2026-11-01: "giảm số tiến trình GPU và CPU xuống ko
+    là Kaggle ban acc đó"). A kernel found RUNNING / QUEUED beyond its account's N highest-priority active kernels (priority:
+    slug matches --keep, then order on the command line; kernels of unknown status count as active) is deleted and PARKED; a
+    parked kernel is re-pushed (from scratch) as soon as its account has fewer than N active kernels.
+Usage: central_monitor.py <state.json> [--gap 15] [--run-poll 600] [--backoff 600] [--pull-first REGEX] [--cap N] [--keep REGEX]
+       [--nocopy] <kernel_dir> [...]"""
 import sys, os, re, json, glob, time, shutil, subprocess, random
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -33,7 +38,8 @@ def opt(k, d):
 
 
 GAP_MIN = float(opt("--gap", "15")); RUN_POLL = float(opt("--run-poll", "600")); BACKOFF = float(opt("--backoff", "600"))
-PULL_FIRST = re.compile(opt("--pull-first", "^$"))
+PULL_FIRST = re.compile(opt("--pull-first", "^$")); CAP = int(opt("--cap", "0")); KEEP = re.compile(opt("--keep", "^$"))
+NEVER = 1e18
 NOCOPY = "--nocopy" in args
 args = [a for a in args if a != "--nocopy"]
 SF, KDIRS = args[0], [a.rstrip("/") for a in args[1:]]
@@ -121,7 +127,16 @@ for kd in KDIRS:
 save()
 pend = [k for k, s in ST.items() if not s["done"] and s["kdir"] in KDIRS]
 say(f"monitoring {len(pend)} kernels, gap {gap:.0f} s, run poll {RUN_POLL:.0f} s")
+acct = lambda k: ST[k]["kid"].split("/")[0]
+prio = lambda k: (not KEEP.search(k), KDIRS.index(ST[k]["kdir"]) if ST[k]["kdir"] in KDIRS else 1 << 30)
+active = lambda a: sorted([k for k in pend if acct(k) == a and not ST[k].get("parked")], key=prio)
 while pend:
+    if CAP:                                                            # re-push one parked kernel of an account below the cap
+        for k in sorted([k for k in pend if ST[k].get("parked")], key=prio):
+            if len(active(acct(k))) < CAP:
+                s = ST[k]; p = api(s["kid"], "kernels", "push", "-p", s["kdir"])
+                say(f"{k}: UNPARK -> PUSH {p.splitlines()[-1][:100] if p else ''}")
+                s.update(parked=False, queued_since=time.time(), last=None, next=time.time() + 120); save(); break
     slug = min(pend, key=lambda k: ST[k]["next"]); s = ST[slug]
     w = s["next"] - time.time()
     if w > 0: time.sleep(min(w, 60)); continue
@@ -140,6 +155,10 @@ while pend:
     if any(x in low for x in ("complete", "error", "cancel")):
         state = "complete" if "complete" in low else ("error" if "error" in low else "cancel")
         pull(s["kdir"], s, state); s["done"] = True; pend.remove(slug); save(); continue
+    if CAP and slug not in active(acct(slug))[:CAP]:                   # over the per-account cap: stop it, re-run later
+        api(s["kid"], "kernels", "delete", "-y", s["kid"])
+        say(f"{slug}: PARKED (account {acct(slug)} over the cap of {CAP} sessions; deleted, re-pushed later)")
+        s.update(parked=True, next=NEVER, queued_since=None, last=None); save(); continue
     if "queued" in low:
         s["queued_since"] = s["queued_since"] or now
         if now - s["queued_since"] > s["stall"]:
