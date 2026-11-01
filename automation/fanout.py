@@ -54,6 +54,20 @@ def make(kd, slug, part, acc, gpu, t4=False):
 
 
 T4_FALLBACK = set()                                                        # kernels moved from a stuck L4 queue to 2x T4
+if "--push-only" in sys.argv:
+    # --push-only (2026-11-01): push every kernel one after another and exit; automation/central_monitor.py then watches all of
+    # them through ONE rate-limited API queue (one run_kernel.py per kernel exceeded the Kaggle API rate limit of this IP)
+    for k in range(nk):
+        slug = f"{prefix}-{k + 1}"; acc = slots[k % len(slots)][0]
+        env = dict(os.environ, KAGGLE_API_TOKEN=open(os.path.expanduser(f"~/.kaggle/tok_{acc}")).read().strip())
+        for _ in range(6):
+            r = subprocess.run(["kaggle", "kernels", "push", "-p", os.path.join(work, slug)], capture_output=True, text=True, env=env)
+            o = (r.stdout + r.stderr).strip()
+            if "rate limit" not in o.lower(): break
+            time.sleep(600)
+        open(os.path.join(work, slug + ".log"), "w").write(time.strftime("%H:%M:%S") + " PUSH: " + (o.splitlines()[-1] if o else "") + "\n")
+        print(f"{slug}: PUSH {(o.splitlines()[-1] if o else '')[:100]}", flush=True); time.sleep(20)
+    print(f"pushed {nk} kernels", flush=True); sys.exit(0)
 
 
 def launch(k):
