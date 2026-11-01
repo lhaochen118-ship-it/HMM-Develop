@@ -371,6 +371,12 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
             return ~(r_c > eps)                                          # short windows (NaN) pass, as in shape_ok
         a_sh = SENS.get("csta", 1.0) * alpha
         ok1, ok2 = cst_ok(a_sh), cst_ok(alpha / 2)
+        # CSTt: the tested track is the REAL route winner MP[j] (the same estimator as the null track MP[j_cf], with vs without
+        # surgery) -> (S3-T) compares like with like; +G ties the reported HMM place to that track. A false fix in a deep off-map
+        # segment needs the route track to pass at least once there -> segment false-fix rate <= a_sh/pi (intersection, not union)
+        r_c_keep = r_c; r_c = CG.shape_resid(xt, z["o_q"], seqs, excl, hz=hz); okt = cst_ok(a_sh); r_c = r_c_keep
+        F["CMS-CPC/H+CSTt+G"] = (np.where(okt & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & okt & agree)
+        F["CMS-CPCW/H+CSTt+G"] = (np.where(okt & agree, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, okt & agree, seqs))
         F["CMS-CPC/H+CST+G"] = (np.where(ok1 & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & ok1 & agree)
         F["CMS-CPCW/H+CST"] = (np.where(ok1, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, ok1, seqs))
         F["CMS-CPC/H+CST2+G"] = (np.where(ok2 & agree, lo2 - kap2, -np.inf), xc, 0.0, CG.hyst_ok(lo2 > kap2, lo2 > 0, one, seqs) & ok2 & agree)

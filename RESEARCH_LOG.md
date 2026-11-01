@@ -40,6 +40,17 @@ groups cond + loco, alpha 0.05).** H34a (end-to-end validity): CMS-CPC/H+CST2+G+
 (CMS-CPC/H+SH+G+NGRr) on >= 5/7 and above CPC-SC-T(1/2)+SH on >= 6/7. H34c (causal): the [both] variants of CST2 are valid on
 7/7. Diagnostic: the fraction of datasets where CST (a + a) exceeds a, and its maximum (expected <= 2a).
 
+**Amendment (written while proving Proposition 14, BEFORE any full-evaluation result; the first full run was stopped after 5 min,
+nothing of it was read).** (1) *Theory correction:* a false fix needs the chain to report AND the frame to pass CST. That is an
+intersection, so P <= min(...), not a sum: CST with a_sh = a alone bounds the segment false-fix rate by a/pi (Corollary 15
+rewritten). CST2 (a/2 + a/2) is only more conservative. (2) *Same-estimator variant CSTt:* the tested track is the real route
+winner MP[j], the same estimator as the null track MP[j_cf], so (S3-T) compares like with like. CST tests the HMM MAP track
+against route ghosts, which is an approximation of (S3-T). Design check (same 8 runs): CSTt+G+NGRr has much lower recall (CMU 0.745 vs
+SH 0.820, Nordland 0.751 vs 0.825, countryside 0.596 vs 0.673; the route track is noisier, so correct tracks fail too); Boreas
+s0 segFAR CST 0.058, CSTt 0.048, SH 0.018. **Main rule of H34a / H34b is therefore CST (MAP track, a_sh = a = 0.05)**:
+CMS-CPC/H+CST+G+NGRr and CMS-CPCW/H+CST+NGRr; CST2 and CSTt are reported as pre-specified alternatives. H34c applies to
+CST[both]. Preset `@E34` (updated), groups cond + loco, alpha 0.05, 366 runs, local CPU.
+
 ## Entry 33 (branch `hmm-navigation-5`) — competitors read in full, improvement attempts, reputable new datasets (2026-11-01)
 
 **Competitors (read in full; `literature/RELATED_WORK_E32.md` section 7).** SafeVPR'26 (labelled Mondrian LTT, FDR under

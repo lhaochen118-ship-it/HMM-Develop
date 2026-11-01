@@ -197,6 +197,43 @@ b⁺_j ∝ b⁻_j (q_t L_tj / ⟨b⁻, L_t⟩ + 1 − q_t), q_t = P(on tại t).
 CMS-CPC/H (chuỗi vị trí + chuỗi hiện diện tách rời) là xấp xỉ phân rã của HMM liên hợp với cùng biên OFF. Lợi ích của ghép nối lên
 độ chính xác vị trí là câu hỏi thực nghiệm (Entry 31).
 
+## 4e. Phẫu thuật cũng hiệu chuẩn lối THOÁT: phép thử hình dạng phản thực theo đoạn (Entry 34)
+
+**Khoảng trống.** Định lý 6 / 6′ / 6″ chặn **khởi phát** sai trong một chuyến off-map. Chúng không nói gì về **duy trì**: một chuỗi
+báo đang ON khi robot rời bản đồ được giữ chừng nào log-odds > 0. Log-odds của chuỗi hiện diện bị chặn trên gần
+log((1 − p)/p) ≈ 4.6, còn bằng chứng off-map yếu, nên chuỗi mang sang sống ~20 frame. Chẩn đoán có nhãn (Entry 34): không có dừng
+hình dạng SH, 13–62 % báo sai off-map nằm trong chuỗi bắt đầu trên bản đồ, 74–87 % ở độ sâu ≥ 20 frame. SH (dung sai chọn tay)
+là cơ chế duy nhất chặn lỗi duy trì, và E32 cho thấy dung sai × 2 làm vỡ tính hợp lệ.
+
+**Quan sát.** Phẫu thuật tạo null không chỉ cho thống kê hiện diện mà cho cả **quỹ đạo**: tuyến phản thực MP[j_cf] sai theo cấu
+trúc (vùng thật đã bị xoá), tức đúng là "quỹ đạo ma" mà một chuỗi bám theo sau khi robot thật sự rời bản đồ, với chính odometry,
+ảnh và điều kiện của luồng.
+
+**Phép thử (CST).** Gọi r_t là residual hình dạng của quỹ đạo MAP (`cpc_geo.shape_resid`, cửa sổ 3 excl) và r^cf_t là residual của
+quỹ đạo phản thực. Trong mỗi nhóm hiệu chuẩn có n đoạn H frame, đặt m_G = min_{t∈G} r^cf_t và
+ε = phần tử nhỏ thứ k = ⌊a_sh (n + 1)⌋ của {m_G} (ε = −∞ nếu k = 0). Frame t qua phép thử iff r_t ≤ ε.
+
+**(S3-T)** Giống S3 nhưng cho vector residual: trên một đoạn H frame nằm sâu trong chuyến off-map thật, vector (r_t)_{t∈G₀} của
+quỹ đạo ma hoán đổi được với vector residual của một đoạn phản thực "tốt" (niềm tin đúng) cùng nhóm.
+
+**Mệnh đề 14 (chặn lỗi duy trì).** Dưới (S3-T), với π, n như Định lý 6:
+P(∃ t ∈ G₀ : r_t ≤ ε) ≤ a_sh (n + 1)/(π n + 1), bất kể trạng thái chuỗi khi vào G₀. *Chứng minh:* đúng như Định lý 6 với thống kê
+−min r (lớn = giống bản đồ). Nhiễm: đoạn phản thực từ frame on-map có niềm tin sai có thể tìm lại nơi thật ⇒ residual nhỏ ⇒ ε nhỏ
+hơn ⇒ bảo thủ; đoạn từ frame off-map là quỹ đạo ma khác ⇒ không thiên lệch theo (S3-T). ∎
+
+**Hệ quả 15 (bảo đảm đầu-cuối theo đoạn).** Mọi báo cáo phải qua CST tại chính frame đó, nên một báo sai trong G₀ (dù do khởi
+phát trong G₀ hay do chuỗi mang vào) kéo theo ∃ t ∈ G₀ qua CST. Đây là **giao** của hai biến cố (chuỗi báo VÀ qua CST), nên xác
+suất ≤ min của hai cận, không phải tổng: tỷ lệ báo sai theo đoạn sâu ≤ a_sh (n + 1)/(π n + 1) chỉ nhờ CST, và
+≤ min(a_on, a_sh)(n + 1)/(π n + 1) khi đoạn không có chuỗi mang vào. Với a_sh = α (CST) ta có ≤ α/π, **không hằng số dung sai nào
+trong điều kiện hợp lệ**. CST2 (α/2 + α/2) chỉ bảo thủ hơn. +G và +NGRr chỉ bỏ báo cáo nên giữ nguyên cận (Bổ đề 7, Mệnh đề 11).
+*Lưu ý về (S3-T):* CST kiểm quỹ đạo MAP của chuỗi vị trí với null là quỹ đạo ma của **tuyến** (TAO) sau phẫu thuật — hai bộ ước
+lượng khác nhau, nên (S3-T) là một xấp xỉ. Biến thể CSTt kiểm chính tuyến thắng thật MP[j] (cùng bộ ước lượng với null), thoả (S3-T)
+tự nhiên hơn nhưng kém mạnh (tuyến nhiễu hơn).
+
+**Phạm vi.** Như Định lý 6′, đoạn ở độ sâu < N − 1 frame (cửa sổ còn chồng lên bản đồ) nằm ngoài phát biểu: ở mép, quỹ đạo
+thật còn một phần đúng nên residual nhỏ hơn quỹ đạo ma phản thực (phẫu thuật toàn cửa sổ). Phẫu thuật "tiến" (chỉ xoá anchor sau
+một thời điểm thoát ảo) là cách đóng nốt khoảng trống này (việc tiếp theo).
+
 ## 5. Điểm mới so với tài liệu (tóm tắt; Gate 12 trong `LITERATURE_GATE.md`)
 
 - Null bản đồ (SelfCal, certified, CPC-SC; SAFEVPR'26 và Quantile Transfer dùng nhãn trên traversal hiệu chuẩn): null đến
