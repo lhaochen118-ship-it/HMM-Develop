@@ -46,6 +46,8 @@ bound of Theorem 6 is vacuous for the per-session (cond) calibration.
    prior uncertainty of the filter keeps the gate open while the filter is not localised (inactive when sqrt(P) ~ 0.6 m).
    With the ground-truth init the s0 results are unchanged (recall / segFAR / error identical for every +NGR family); with F3
    the +NGR error drops from 58 to 32 m. Every +NGR family of the main evaluation is recomputed with the fixed gate.
+   *Deviation noted at launch (before any result):* the `@E30F` output list does not contain the ungated CMS-CPC/H+SH, so the
+   gate effect of H30c is measured on the pairs CMS-CPCW/H+SH(+NGR) and CMS-CPC/H+SH+G(+NGR) of the same runs.
 6. *Selection.* Deployment default = the highest-recall calibration group that satisfies H30a and the natural-benchmark
    validity of H30d; main rule CMS-CPCW/H+SH+NGR (exact onset theorem, Theorem 6'), recall-oriented variant
    CMS-CPC/H+SH+G+NGR (LODO choice of Entry 29). Paired cluster-bootstrap CIs by seed (`analysis/paired_stats.py`).

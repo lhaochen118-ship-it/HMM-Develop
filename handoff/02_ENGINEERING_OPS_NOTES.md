@@ -5,6 +5,21 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 00000. Vòng 8 (2026-11-01): vận hành
+
+- Script mới: `analysis/natural_eval.py` (benchmark off-map tự nhiên 4Seasons chéo cảnh, cả pipeline trong một job: nav_demo
+  `--cache-only` → top-300 → null chính xác → route cache → oc_curves; ~20 phút một job trên 4 nhân CPU), `analysis/holes_regate.py`
+  (chạy lại điểm mặc định của các run lỗ 10/50 % từ thống kê đã lưu, dataset `nhatlong1103/hmm-holes-cms-exact`),
+  `paper/build_e30_report.py`; `vprlib.load_4s_cross`; cờ `--nav-q`, `--nav-sig`, `--nav-init top1` (đọc ở import `nav_demo`);
+  `oc_curves.py --cms-groups cond,loco,online`, preset `@E30`, `@E30F`, `@E30H`; `cms_jobs.py --all-defaults --tag t`.
+- **Lại gặp:** sửa `analysis/*.py` trong lúc fanout đang tạo kernel → mỗi acc upload lại code (~1 phút/kernel, 70 kernel ≈ 50 phút
+  tạo). Viết hết script của đợt 2 **trước** khi chạy fanout đợt 1, hoặc đặt ở thư mục khác rồi copy vào sau khi tạo kernel xong.
+- Hạn mức phiên GPU (2/acc) dùng chung cho L4 và T4 ⇒ không thể chạy thêm một đợt GPU khi 20 phiên L4 đang chạy; đợt 2 (36 job
+  tự nhiên, 72 job lỗ) chạy trên CPU sau khi đợt CPU đầu xong.
+- `os.walk` không theo symlink: script tự tìm thư mục input phải dùng `followlinks=True` (thử local bằng symlink).
+- Thống kê CMS lưu float32 (`results/cms_*.npz`): luật α = 0.01 nhạy với làm tròn ở biên (CMS-CPCW α = 0.01 lệch tới 0.013 recall
+  so với bản float64 trong kernel) — mọi so sánh trong một bảng phải dùng cùng một nguồn.
+
 ## 0000. Vòng 7 (2026-11-01): vận hành
 
 - Script mới: `analysis/cms_exact.py` (top-300 GPU + null chính xác), `analysis/navrisk.py` (cổng +NGR), `analysis/paired_stats.py`,

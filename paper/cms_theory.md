@@ -137,6 +137,39 @@ riêng cổng (Gate 13).
 (c) Mở khoá theo chuỗi (R = H báo cáo liên tiếp có innovation đồng nhất, độ phân tán ≤ excl/2) tránh khoá chết khi bộ lọc trôi;
 giá: một chuỗi báo sai trượt song song đều với bộ lọc có thể lọt — đúng loại báo sai mà dừng SH cũng không bắt.
 
+## 4c. Hiệu chuẩn nhân quả và cổng điều hướng (Entry 30)
+
+**Vấn đề.** Nhóm hiệu chuẩn `cond` dùng toàn bộ luồng phản thực của chính phiên (kể cả frame tương lai) — chuyển đạo. Nặng hơn:
+một phiên **hoàn toàn off-map** (robot ở vùng chưa có bản đồ suốt phiên) có π = 0 trong nhóm của nó ⇒ cận α(n+1)/(πn+1) của
+Định lý 6 vô nghĩa, và theo Mệnh đề 8 (ii) nhiễm của frame off-map là phía không bảo thủ.
+
+**Ba nhóm nhân quả** (cùng thống kê, cùng luật CMS-CPCW / CMS-CPC+G, chỉ khác tập hiệu chuẩn của κ và của phép biến đổi e-value):
+- `[loco]`: chỉ các phiên khác (phiên trước của robot). π = tỷ lệ đoạn tốt trong các phiên khác.
+- `[online]`: các phiên khác cộng các đoạn H frame **đã kết thúc** của phiên hiện tại (cập nhật cuối mỗi khối H); phép biến đổi
+  p → e và a của Beta-EM cố định từ các phiên khác. Ngưỡng dùng trong một đoạn G₀ chỉ phụ thuộc dữ liệu trước G₀.
+- `[both]`: báo iff luật `cond` **và** luật `[loco]` cùng báo.
+
+**Định lý 6″ (hiệu chuẩn tuần tự).** Với `[online]`, gọi P(G₀) là tập đoạn phản thực có trước G₀ (n đoạn, tỷ lệ tốt π). Dưới
+S1–S3 áp cho G₀ và các đoạn tốt của P(G₀) (hoán đổi có điều kiện trên nhãn tốt/xấu), với G₀ thẳng hàng với lưới khối H:
+P(∃ t ∈ G₀: w_t > κ_W(P(G₀))) ≤ α(n+1)/(πn+1). *Chứng minh:* có điều kiện trên P(G₀), ngưỡng cố định trên G₀; lập luận hạng
+của Định lý 6′ áp nguyên. Với G₀ không thẳng hàng, ngưỡng đổi tối đa một lần trong G₀ ⇒ cận hợp cho hệ số ≤ 2. ∎
+Hệ quả: tỷ lệ khởi phát sai ≤ α/π với π của **các phiên khác cộng phần đã qua**, không còn π = 0 cho phiên toàn off-map
+(miễn là các phiên khác có phần on-map — đúng với mọi robot đã từng chạy trên bản đồ của nó).
+
+**Mệnh đề 12 (giao hai luật).** Với mọi đoạn off-map G₀: P([both] báo trong G₀) ≤ min(P(cond báo trong G₀), P(loco báo trong G₀)),
+nên segFAR kỳ vọng của `[both]` ≤ min của hai luật: `[both]` hợp lệ nếu **một trong hai** null hợp lệ (π của phiên hoặc π của
+các phiên khác lớn). Giá: recall ≤ min của hai luật. *Chứng minh:* tập báo của `[both]` là giao hai tập báo. ∎
+
+**Cổng +NGR — hai sửa (Entry 30).** (a) Mở khoá giữ cổng mở **đến hết chuỗi** báo cáo của luật nền (đúng mô tả Entry 29; bản
+code Entry 29 kiểm lại độ đồng nhất sau mỗi fix được nhận, thấy bước nhảy innovation do chính cập nhật của bộ lọc ⇒ chỉ mở lại
+mỗi R frame). (b) Bán kính max(τ, 3√P⁻): khi bộ lọc chưa định vị (P⁻ lớn, ví dụ khởi tạo không nhãn), innovation của fix đúng
+có thể lớn cỡ √P⁻; khi bộ lọc đã định vị (√P ≈ 0.6 m ≪ τ) sàn này không hoạt động. Cả hai chỉ bỏ báo cáo ít hơn, vẫn là
+"chỉ bỏ báo cáo" so với luật nền ⇒ Mệnh đề 11 (a) giữ nguyên.
+
+**Benchmark off-map tự nhiên (4sx).** Bản đồ = bản ghi tham chiếu của cảnh 4Seasons A (không có lỗ), truy vấn = các bản ghi khác
+của A rồi **mọi** bản ghi của cảnh B (thành phố khác: mọi frame off-map, ảnh và VIO thật). Đây là trường hợp π = 0 cho `cond` ở
+mọi phiên B, nơi Định lý 6″ / Mệnh đề 12 là bảo đảm còn lại.
+
 ## 5. Điểm mới so với tài liệu (tóm tắt; Gate 12 trong `LITERATURE_GATE.md`)
 
 - Null bản đồ (SelfCal, certified, CPC-SC; SAFEVPR'26 và Quantile Transfer dùng nhãn trên traversal hiệu chuẩn): null đến
