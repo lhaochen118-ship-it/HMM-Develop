@@ -7,6 +7,24 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 35 (branch `hmm-navigation-5`) — SH AND CST: the guarantee from the surgery, the protection from the hand-set stop (2026-11-01)
+
+**Step 5 analysis of Entry 34 (paired cluster bootstrap, 366 runs).** CST vs the hand-set SH: recall +0.003 to +0.022 with CI > 0
+on 5/7 datasets, but navigation error is significantly HIGHER on Boreas (+9.0 m [7.1, 10.8]) and 4S old town (+13.6 m [10.1, 16.9]),
+with segFAR +0.014 / +0.016. CST admits a few false fixes that SH rejects, and they damage the Kalman filter. They lie mostly at
+excursion boundaries (Entry 34 diagnosis: 94 of 126 within 20 frames), where Proposition 14 does not apply. A lower level does
+not remove the cost (a_sh = 0.5 alpha: still +7.1 m Boreas, +7.5 m old town).
+
+**Hypothesis / mechanism.** Report only if BOTH SH and CST pass. Every report must pass CST, so Proposition 14 / Corollary 15
+bound the segment false-fix rate whatever SH does. SH can only remove reports (Lemma 7), so the bound holds for ANY SH tolerance.
+SH keeps its practical protection at the boundaries. Prediction: the fragility of Entry 32 disappears (SH x 2 can no longer break
+validity), at almost no cost against SH alone.
+
+**Pre-registration (before any run of it; seeds 0-2, 114 runs, local CPU, exact cache, `--cst --fams @E35`, group cond, alpha
+0.05; default SH and `--sens shd=2`).** H35a: CMS-CPC/H+SH+CST+G+NGRr has mean segFAR <= 0.05 on 7/7 with the default SH AND with
+SH x 2 (where SH alone broke alpha on CMU and 4S countryside, Entry 32). H35b: at the default SH, its recall is within 0.01 of
+CMS-CPC/H+SH+G+NGRr and its navigation error within 1 m on >= 6/7.
+
 ## Entry 34 (branch `hmm-navigation-5`) — counterfactual segment shape test: the surgery also calibrates the EXIT (2026-11-01)
 
 **Step 1 (core limitation, diagnosed with labels on CMU / 4S countryside CosPlace s0-1).** Theorems 6 / 6' / 6'' bound the ONSET

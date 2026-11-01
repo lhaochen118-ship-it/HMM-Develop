@@ -379,6 +379,10 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
         F["CMS-CPCW/H+CSTt+G"] = (np.where(okt & agree, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, okt & agree, seqs))
         F["CMS-CPC/H+CST+G"] = (np.where(ok1 & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & ok1 & agree)
         F["CMS-CPCW/H+CST"] = (np.where(ok1, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, ok1, seqs))
+        # Entry 35: SH AND CST. CST carries the guarantee (every report must pass it, Proposition 14); the hand-set SH can only REMOVE
+        # reports (Lemma 7), so the bound holds for ANY SH tolerance, while SH keeps its practical protection at excursion boundaries
+        F["CMS-CPC/H+SH+CST+G"] = (np.where(sh_c & ok1 & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & ok1 & agree)
+        F["CMS-CPCW/H+SH+CST"] = (np.where(sh_c & ok1, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, sh_c & ok1, seqs))
         F["CMS-CPC/H+CST2+G"] = (np.where(ok2 & agree, lo2 - kap2, -np.inf), xc, 0.0, CG.hyst_ok(lo2 > kap2, lo2 > 0, one, seqs) & ok2 & agree)
         F["CMS-CPCW/H+CST2"] = (np.where(ok2, wq2 - kW2, -np.inf), xc, 0.0, CG.hyst_ok(wq2 > kW2, lo2 > 0, ok2, seqs))
     onWU = (sc_t > -kT2) | (wq2 > kW2)
