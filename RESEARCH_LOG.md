@@ -93,6 +93,21 @@ kernel republishes it as `nhatlong1103/oxford-robotcar-vpr-dump` / `-images`; ev
    (segFAR 0.000-0.013) but its recall is within 0.01 of the hand-set SH on only 4/7 (NCLT -0.012, 4S countryside -0.024, old town
    +0.011). The frame-level quantile is not a sufficient replacement; Entry 34 tests the segment-level counterfactual test CST.
 
+3. *(c) Oxford RobotCar (new reputable dataset; 60 runs = 6 descriptors x 10 seeds, 30 % holes, map = 2014-12-09, 42 query
+   traversals, 33 236 query frames, map 803 frames before holes; exact counterfactual statistics computed in the job; raw
+   `analysis/results/e33/oxford.tgz`).* The dump is published as `nhatlong1103/oxford-robotcar-vpr-dump`.
+   - *Map-null baselines degenerate.* CPC-SC-T(1/2)+SH and CPC-SC+CS report NOTHING in 36/60 runs: after the holes the map has
+     ~670 frames, too few null segments to reach a finite alpha-quantile. This is exactly the n ~ 10 regime of Corollary 9.
+   - *CMS calibrates in every run.* Its null comes from the query stream (thousands of segments). CMS-CPC/H+SH+G+NGRr:
+     recall 0.719, segFAR 0.003, 0 % of runs > alpha, error 21.7 m. CMS-CPCW/H+SH+NGRr: 0.753 / 0.006 / 0 % / 21.0 m.
+     CPC-SC-T(1/2)+SH over all runs: 0.311 / 0.007 / 43.7 m.
+   - *Paired, on the 24 runs where the map null works:* CMS-CPCW has recall +0.008 vs CPC-SC-T(1/2)+SH (higher in 14/24), error
+     -1.9 m (lower in 19/24) and segFAR 0.008 vs 0.018. The main rule (with +G) has recall -0.026 there (higher in 7/24).
+     On Oxford the recall advantage of CMS over a WORKING map null is therefore small. The gain is robustness: no degeneracy, lower
+     error, lower segFAR.
+   - *Label baselines break alpha:* Xu'21 segFAR 0.547 (100 % of runs > alpha), TAO'26 0.478 (93 %), Claxton'24 0.156 (72 %),
+     SUE'24-seg 0.066 (40 %), SU'25-seg 0.076 (52 %), Carson'23 0.984 (100 %).
+
 **Improvement attempts (design runs only, labels only to diagnose; negative results recorded).**
 1. *SU as a third CMS statistic:* AUROC (correct on-map vs off-map) of the logistic combination route cost + z vs + SU:
    0.949 -> 0.952 (Nordland), unchanged on 4S old town / countryside, Boreas, CMU; SU alone 0.48-0.84 (route cost 0.90-0.98)
