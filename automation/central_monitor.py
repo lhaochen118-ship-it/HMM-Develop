@@ -19,8 +19,10 @@ kernels that are already done are skipped.
 --backoff s : pause after a rate-limit answer (default 600; user 2026-11-01 "only 1-2 streams": 1800).
 --pull-first REGEX : kernels whose slug matches are expected to be finished: their outputs are pulled first (one call instead of
     status + output); a kernel whose pull brings no results.tar falls back to status polling.
---cap N [--keep REGEX] : at most N active sessions per Kaggle account (user 2026-11-01: "giảm số tiến trình GPU và CPU xuống ko
-    là Kaggle ban acc đó"). A kernel found RUNNING / QUEUED beyond its account's N highest-priority active kernels (priority:
+Calls are grouped by account: a due kernel of the account used by the previous call goes first, so the monitor works through
+the accounts one after another instead of touching all of them every minute (user 2026-11-01: use as few accounts at a time
+as possible; the packing rule 2 GPU + 5 CPU per account, next account only when full, is unchanged).
+--cap N [--keep REGEX] : (optional, not the current policy) at most N active sessions per Kaggle account. A kernel found RUNNING / QUEUED beyond its account's N highest-priority active kernels (priority:
     slug matches --keep, then order on the command line; kernels of unknown status count as active) is deleted and PARKED; a
     parked kernel is re-pushed (from scratch) as soon as its account has fewer than N active kernels.
 Usage: central_monitor.py <state.json> [--gap 15] [--run-poll 600] [--backoff 600] [--pull-first REGEX] [--cap N] [--keep REGEX]
@@ -129,6 +131,7 @@ pend = [k for k, s in ST.items() if not s["done"] and s["kdir"] in KDIRS]
 say(f"monitoring {len(pend)} kernels, gap {gap:.0f} s, run poll {RUN_POLL:.0f} s")
 acct = lambda k: ST[k]["kid"].split("/")[0]
 prio = lambda k: (not KEEP.search(k), KDIRS.index(ST[k]["kdir"]) if ST[k]["kdir"] in KDIRS else 1 << 30)
+last_acct = [None]
 active = lambda a: sorted([k for k in pend if acct(k) == a and not ST[k].get("parked")], key=prio)
 while pend:
     if CAP:                                                            # re-push one parked kernel of an account below the cap
@@ -137,7 +140,9 @@ while pend:
                 s = ST[k]; p = api(s["kid"], "kernels", "push", "-p", s["kdir"])
                 say(f"{k}: UNPARK -> PUSH {p.splitlines()[-1][:100] if p else ''}")
                 s.update(parked=False, queued_since=time.time(), last=None, next=time.time() + 120); save(); break
-    slug = min(pend, key=lambda k: ST[k]["next"]); s = ST[slug]
+    due = [k for k in pend if ST[k]["next"] <= time.time()]
+    same = [k for k in due if acct(k) == last_acct[0]]                 # stay on the account of the previous call while it has work
+    slug = min(same or due or pend, key=lambda k: (ST[k]["next"] if not (same or due) else prio(k))); s = ST[slug]; last_acct[0] = acct(slug)
     w = s["next"] - time.time()
     if w > 0: time.sleep(min(w, 60)); continue
     if PULL_FIRST.search(slug) and not s.get("pull_tried"):

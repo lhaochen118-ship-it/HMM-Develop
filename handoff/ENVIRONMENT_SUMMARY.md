@@ -209,10 +209,12 @@ nào; thêm kernel mới = chạy lại với danh sách mới (kernel đã xong
 (`--gap 60 --run-poll 1800 --backoff 1800`, tức ≤ 1 lệnh API mỗi phút, nghỉ 30 phút khi bị giới hạn; `--pull-first` cho kernel chắc
 chắn đã xong: một lệnh `output` thay vì `status` + `output`); **không đẩy kernel mới khi API còn bị giới hạn**; việc mới gộp vào
 1–2 kernel và chạy song song bên trong phiên (`--par`), không rải ra nhiều kernel.
-**User 2026-11-01 14:30: "giảm số tiến trình GPU và CPU xuống ko là Kaggle ban acc đó".** Từ đó **tối đa 2 phiên đang chạy
-(GPU + CPU cộng lại) trên mỗi acc**: `central_monitor.py --cap 2 --keep '^(oxd|e32r)-'`. Kernel thấy RUNNING / QUEUED vượt quá 2
-phiên ưu tiên nhất của acc bị xoá và "PARKED"; khi acc còn < 2 phiên thì kernel parked được đẩy lại (chạy lại từ đầu). Không còn
-dồn 2 GPU + 5 CPU lên một acc như chính sách trước.
+**User 2026-11-01 14:40 (làm rõ): "ý tôi là giảm số acc đang sử dụng xuống, nhưng vẫn giữ nguyên luật dồn hết tiến trình GPU và
+CPU lên 1 acc".** Tức là: **dùng càng ít acc cùng lúc càng tốt**; luật đóng gói giữ nguyên (đủ 2 GPU + 5 CPU trên một acc rồi mới
+sang acc tiếp theo). Không huỷ kernel đang chạy (mất công tính); acc nào đang chạy thì để chạy xong rồi thôi dùng. Việc mới chỉ
+đặt trên acc đang dùng dở (vd. phatle1578 khi các phiên của nó xong), mở acc mới chỉ khi acc hiện tại đã đầy. Bộ theo dõi gom lệnh
+API theo acc (xong việc của một acc rồi mới sang acc khác). Tuỳ chọn `--cap` của `central_monitor.py` (giới hạn phiên mỗi acc) là
+một cách hiểu sai lúc 14:30, **không dùng**.
 
 **Vòng 6 (2026-11-01, branch `hmm-navigation-5`):** user cấp 10 acc: `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`,
 `nguyenhoa99`, `yuan1103`, `synchan5704`, `anderson1202`, `loinguyentran`, `yeshenhi` (token ở `~/.kaggle/tokens_raw`,
