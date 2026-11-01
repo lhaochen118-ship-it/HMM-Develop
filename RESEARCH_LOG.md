@@ -39,6 +39,11 @@ boundary false fixes that are outside Proposition 14. The fragility found in Ent
 causal deployment variant is the same rule with [both] calibration. Open: confirm on all 10 seeds (366 runs) and on Oxford; forward
 surgery for the boundary segments.
 
+**Pre-registration of the confirmation (21:12, before running it).** H35c: on the held-out seeds 3-9 of the 6 holed datasets
+(252 runs; seeds 0-2 were the E35 evaluation), the H35a and H35b criteria hold (validity 7/7 including NCLT seed 0 for default SH
+and SH x 2; recall within 0.01 and error within 1 m of SH alone on >= 5/6 holed datasets). H35d: on Oxford RobotCar (60 runs,
+statistics from the E33 jobs, top-100 recomputed from the local dump), SH AND CST is valid with recall within 0.01 of SH alone.
+
 ## Entry 34 (branch `hmm-navigation-5`) — counterfactual segment shape test: the surgery also calibrates the EXIT (2026-11-01)
 
 **Step 1 (core limitation, diagnosed with labels on CMU / 4S countryside CosPlace s0-1).** Theorems 6 / 6' / 6'' bound the ONSET
