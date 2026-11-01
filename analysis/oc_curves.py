@@ -47,13 +47,16 @@ TAOC = sys.argv[sys.argv.index("--taocache") + 1] if "--taocache" in sys.argv el
 MODES = sys.argv[sys.argv.index("--modes") + 1].split(",") if "--modes" in sys.argv else []   # route-evidence combinations (min, only)
 FAM_PRESETS = {"@E28": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certified,max-sim,TAO-SC,CPC-SC+CS,CPC-SC-T+SH,CPC-SC-T0.5+SH,CPC-SC-T0.5+CS,CMS-T,CMS-T+SH,CMS-T/H,CMS-T/H+SH,CMS-F,CMS-F+SH,CMS-F-PAC,CMS-Tc-PAC,CMS-CPC,CMS-CPC+SH,CMS-CPC/H,CMS-CPC/H+SH,CMS-CPC/H+SH+G,CMS-U/H+SH,CMS-T(a=0.01),CMS-T+SH(a=0.01),CMS-T/H(a=0.01),CMS-T/H+SH(a=0.01),CMS-F(a=0.01),CMS-F+SH(a=0.01),CMS-F-PAC(a=0.01),CMS-Tc-PAC(a=0.01),CMS-CPC(a=0.01),CMS-CPC+SH(a=0.01),CMS-CPC/H(a=0.01),CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01),CMS-U/H+SH(a=0.01),CMS-T[loco],CMS-T[loco](a=0.01),CMS-CPC/H+SH[loco],CMS-CPC/H+SH[loco](a=0.01),CMS-U/H+SH[loco],CMS-U/H+SH[loco](a=0.01),CMS-W/H,CMS-W/H+SH,CMS-WU/H+SH,CMS-W/H(a=0.01),CMS-W/H+SH(a=0.01),CMS-WU/H+SH(a=0.01),CMS-T{r1},CMS-T/H+SH{r1},CMS-CPC/H+SH{r1},CMS-W/H+SH{r1},CMS-T{r1}(a=0.01),CMS-T/H+SH{r1}(a=0.01),CMS-CPC/H+SH{r1}(a=0.01),CMS-W/H+SH{r1}(a=0.01),CMS-T/H+SH[loco],CMS-T/H+SH[loco](a=0.01),CMS-W/H+SH[loco],CMS-W/H+SH[loco](a=0.01)",
                "@E28H": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certified,max-sim,TAO-SC,CPC-SC+CS,CPC-SC-T+SH,CPC-SC-T0.5+SH,CPC-SC-T0.5+CS,CMS-T,CMS-T+SH,CMS-T/H,CMS-T/H+SH,CMS-F,CMS-F+SH,CMS-F-PAC,CMS-Tc-PAC,CMS-CPC,CMS-CPC+SH,CMS-CPC/H,CMS-CPC/H+SH,CMS-CPC/H+SH+G,CMS-U/H+SH,CMS-T(a=0.01),CMS-T+SH(a=0.01),CMS-T/H(a=0.01),CMS-T/H+SH(a=0.01),CMS-F(a=0.01),CMS-F+SH(a=0.01),CMS-F-PAC(a=0.01),CMS-Tc-PAC(a=0.01),CMS-CPC(a=0.01),CMS-CPC+SH(a=0.01),CMS-CPC/H(a=0.01),CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01),CMS-U/H+SH(a=0.01),CMS-W/H,CMS-W/H+SH,CMS-WU/H+SH,CMS-W/H(a=0.01),CMS-W/H+SH(a=0.01),CMS-WU/H+SH(a=0.01)",
+               "@E29": "Xu21,Claxton24,TAO26,SafeVPR,certified,TAO-SC,CPC-SC+CS,CPC-SC+CS(alpha=0.01),CPC-SC-T0.5+SH,CPC-SC-T0.5+CS,CPC-SC-T0.5+SH+NGR,CPC-SC+CS+NGR,CMS-T,CMS-T(a=0.01),CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-T/H+SH+NGR,CMS-T/H+SH(a=0.01)+NGR,CMS-W/H+SH,CMS-W/H+SH(a=0.01),CMS-CPC,CMS-CPC/H+SH,CMS-CPC/H+SH+G,CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01),CMS-CPCW/H+SH,CMS-CPCW/H+SH+G,CMS-CPCW/H+SH(a=0.01),CMS-CPCW/H+SH+G(a=0.01),CMS-CPC/H+SH+NGR,CMS-CPC/H+SH+G+NGR,CMS-CPC/H+SH(a=0.01)+NGR,CMS-CPC/H+SH+G(a=0.01)+NGR,CMS-CPCW/H+SH+NGR,CMS-CPCW/H+SH+G+NGR,CMS-CPCW/H+SH(a=0.01)+NGR,CMS-CPCW/H+SH+G(a=0.01)+NGR,CMS-CPC/H+SH+NG,CMS-CPC/H+SH+DRG,CMS-CPC/H+SH(a=0.01)+NG,CMS-CPC/H+SH(a=0.01)+DRG,CMS-U/H+SH,CMS-CPC/H+SH[loco],CMS-CPC/H+SH[loco](a=0.01),CMS-CPCW/H+SH[loco],CMS-CPCW/H+SH[loco](a=0.01),CMS-CPC/H+SH{r1},CMS-CPC/H+SH{r1}(a=0.01)",
+               "@E29H": "Xu21,Claxton24,TAO26,CPC-SC+CS,CPC-SC+CS+NGR,CMS-T,CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-CPC/H+SH,CMS-CPC/H+SH+G,CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01),CMS-CPCW/H+SH,CMS-CPCW/H+SH(a=0.01),CMS-CPC/H+SH+NGR,CMS-CPC/H+SH+G+NGR,CMS-CPC/H+SH(a=0.01)+NGR,CMS-CPC/H+SH+G(a=0.01)+NGR,CMS-CPCW/H+SH+NGR,CMS-CPCW/H+SH(a=0.01)+NGR,CMS-CPC/H+SH+DRG",
                "@RHO": "CMS-T,CMS-T(a=0.01),CMS-CPC/H+SH,CMS-CPC/H+SH(a=0.01),CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-W/H+SH,CMS-W/H+SH(a=0.01),CMS-U/H+SH"}   # Entry 28 family lists (short job args)
 _fa = sys.argv[sys.argv.index("--fams") + 1] if "--fams" in sys.argv else None
 FAMS = set(FAM_PRESETS.get(_fa, _fa).split(",")) if _fa else None   # evaluate only these families
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
 CMSD = sys.argv[sys.argv.index("--cms") + 1] if "--cms" in sys.argv else None
 CMSX = (sys.argv[sys.argv.index("--cms-extra") + 1], sys.argv[sys.argv.index("--cms-extra-tag") + 1] if "--cms-extra-tag" in sys.argv else "r1") if "--cms-extra" in sys.argv else None   # second CMS set (other rho), families suffixed {tag}   # dir of cms_<ds>_<desc>_s<seed>.npz (cms_dump.py) -> CMS families (Entry 28)
-LIGHT = "--light" in sys.argv                     # with --variants: only CPC-SC / CPC-SC+CS (skip the other Entry 22-25 variants)
+LIGHT = "--light" in sys.argv
+NAVGATE = "--navgate" in sys.argv                 # Entry 29: +NGR / +NG / +DRG variants of the CMS (and old) rules                     # with --variants: only CPC-SC / CPC-SC+CS (skip the other Entry 22-25 variants)
 CMS_GROUPS = sys.argv[sys.argv.index("--cms-groups") + 1].split(",") if "--cms-groups" in sys.argv else ["cond"]   # calibration units
 CMS_ALPHAS = [float(x) for x in sys.argv[sys.argv.index("--cms-alpha") + 1].split(",")] if "--cms-alpha" in sys.argv else [0.05]
 OUT_SFX = sys.argv[sys.argv.index("--out-suffix") + 1] if "--out-suffix" in sys.argv else ""   # results/oc_<ds>_<desc><sfx>.json
@@ -215,6 +218,18 @@ def families(z, b):
                 CMS.GROUP = grp; Fc, _ = CMS.rules(z, b, stc, alpha=al)
                 F.update({k + ("" if grp == "cond" else f"[{grp}]") + ("" if al == 0.05 else f"(a={al:g})"): v for k, v in Fc.items()})
         CMS.GROUP = "cond"
+        if NAVGATE:                                              # Entry 29: counterfactual innovation gate (navrisk.py) + ablations
+            import navrisk as NV
+            zz = {k: z[k] for k in z.files}; tau = NV.gate_tau(zz, b, stc, 0.05)
+            bases = [n for n in ("CMS-CPC/H+SH", "CMS-CPC/H+SH+G", "CMS-CPCW/H+SH", "CMS-CPCW/H+SH+G", "CMS-T/H+SH", "CPC-SC-T0.5+SH", "CPC-SC+CS")
+                     for n in ([n] + [n + f"(a={al:g})" for al in CMS_ALPHAS if al != 0.05])]
+            for n0 in bases:
+                if n0 not in F or F[n0][3] is None: continue
+                sc0, xf0, t0_, a0 = F[n0]; ag = NV.nav_gate(a0, xf0, zz, b, tau, release=True)
+                F[n0 + "+NGR"] = (None if sc0 is None else np.where(a0 & ~ag, -np.inf, sc0), xf0, t0_, ag)
+                if n0.startswith("CMS-CPC/H+SH") and "+G" not in n0:
+                    F[n0 + "+NG"] = (None, xf0, None, NV.nav_gate(a0, xf0, zz, b, tau, release=False))
+                    F[n0 + "+DRG"] = (None, xf0, None, N.dr_gate(a0, xf0, b["seqs"], z["U"], b["excl"]))
     if CMSX:                                                     # a second CMS statistics set (e.g. the other surgery radius)
         import cms as CMS
         xd, xtag = CMSX; xf = sorted(__import__("glob").glob(os.path.join(xd, f"*_{b['ds_tag']}_s{int(z['seed'])}.npz")))

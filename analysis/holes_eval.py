@@ -8,6 +8,7 @@ import sys, os, glob, subprocess, time
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import cms
+import cms_exact as CE
 import topk_dump as TKD
 
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else [0, 1, 2]
@@ -22,35 +23,20 @@ def main():
     W = os.path.abspath(f"_holes_d{ratio}_{tag}_{desc}"); tkd, cmd_, tcd = (os.path.join(W, x) for x in ("topk", "cms", "taoc"))
     for d in (tkd, cmd_, tcd, "results"): os.makedirs(d, exist_ok=True)
     t0 = time.time(); ep = TKD.load(dump, ds, desc); q, M = ep.q.astype(np.float32), ep.m.astype(np.float32)
-    try:
-        import torch
-        dev = "cuda" if torch.cuda.is_available() else None
-    except Exception:
-        dev, torch = None, None
     for s in SEEDS:
         f = os.path.join(cdir, f"navcache_{tag}_{desc}_s{s}.npz")
         if not os.path.exists(f): print("missing", f); continue
-        z = np.load(f, allow_pickle=True); kidx = z["kidx"]; n = len(q); K = 100
-        I = np.zeros((n, K), np.int32); Sv = np.zeros((n, K), np.float16); mu = np.zeros(n, np.float32); sd = np.zeros(n, np.float32)
-        Mk = M[kidx]
-        if dev: Mt = torch.from_numpy(Mk).to(dev)
-        for a in range(0, n, 4096):
-            if dev:
-                S = torch.from_numpy(q[a:a + 4096]).to(dev) @ Mt.T; v, i = torch.topk(S, K, dim=1)
-                I[a:a + 4096], Sv[a:a + 4096] = i.cpu().numpy(), v.cpu().numpy().astype(np.float16); mu[a:a + 4096], sd[a:a + 4096] = S.mean(1).cpu().numpy(), S.std(1).cpu().numpy()
-            else:
-                S = q[a:a + 4096] @ Mk.T; i = np.argpartition(-S, K - 1, axis=1)[:, :K]; v = np.take_along_axis(S, i, 1)
-                o = np.argsort(-v, 1); I[a:a + 4096], Sv[a:a + 4096] = np.take_along_axis(i, o, 1), np.take_along_axis(v, o, 1).astype(np.float16)
-                mu[a:a + 4096], sd[a:a + 4096] = S.mean(1), S.std(1)
-        tk = dict(idx=I, sim=Sv, mean=mu, std=sd)
+        z = np.load(f, allow_pickle=True); kidx = z["kidx"]
+        IL, SL, sdL = CE.topk_long(q, M[kidx], 300)                      # Entry 29: exact counterfactual (top-300 list)
+        tk = dict(idx=IL[:, :100], sim=SL[:, :100].astype(np.float16), std=sdL)
         np.savez(os.path.join(tkd, f"topk_{tag}_{desc}_s{s}.npz"), **tk)
-        st = cms.cms_stats(z, tk, ds=ds)
+        st = CE.cms_stats_exact(z, dict(idx=IL, sim=SL, std=sdL), ds=ds)
         np.savez_compressed(os.path.join(cmd_, f"cms_{tag}_{desc}_s{s}.npz"), **st)
         np.savez_compressed(f"results/cms_d{ratio}_{tag}_{desc}_s{s}.npz", **{k: (v.astype(np.float32) if isinstance(v, np.ndarray) and v.dtype == np.float64 else v) for k, v in st.items()})
         np.savez_compressed(os.path.join(tcd, f"tao_{tag}_{desc}_s{s}.npz"), cost=st["cost"].astype(np.float32), j=st["j"].astype(np.int32))
         print(f"d{ratio} {ds}/{desc} s{s}: topk + cms {time.time() - t0:.0f}s", flush=True)
         cmd = [sys.executable, os.path.join(HERE, "oc_curves.py"), cdir, ds, desc, "--seeds", str(s), "--jobs", "1", "--out-suffix", f"_d{ratio}_s{s}",
-               "--topk", tkd, "--taocache", tcd, "--cms", cmd_, "--variants", "--light", "--cms-alpha", "0.05,0.01", "--nav-pts", "3"] + (["--fams", FAMS] if FAMS else [])
+               "--topk", tkd, "--taocache", tcd, "--cms", cmd_, "--variants", "--light", "--cms-alpha", "0.05,0.01", "--nav-pts", "3", "--navgate"] + (["--fams", FAMS] if FAMS else [])
         r = subprocess.run(cmd, capture_output=True, text=True); print(r.stdout[-300:], r.stderr[-500:] if r.returncode else "", flush=True)
 
 

@@ -7,6 +7,32 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 29 (in progress, branch `hmm-navigation-5`) — navigation-risk calibration and self-audit (2026-11-01)
+
+**Pre-registration (written before the full evaluation; design used 6 runs: Boreas MegaLoc s1, 4S old town CosPlace s0,
+4S countryside MegaLoc s0, CMU CosPlace s7, Nordland CosPlace s0, NCLT MegaLoc s0).**
+1. *Diagnosis (labels only to classify).* Accepted TRUE fixes have small innovations (median 0.5-8 m, 90th pct 2.6-40 m),
+   the harmful FALSE fixes large ones (90th pct 42-856 m); the evaluation filter's sqrt(P) is ~0.6 m (gain ~0.014), so a
+   chi^2 / dead-reckoning gate locks out after drift (Entry 23 +GG).
+2. *Method +NGR (`analysis/navrisk.py`): counterfactual innovation gate.* The counterfactual winner of CMS is a false fix by
+   construction; its displacement from the belief d_cf is the innovation a false fix would cause. Gate radius tau =
+   beta-quantile of d_cf in the calibration group (beta = 0.05, a priori); report iff the base CMS rule reports and the
+   online innovation <= tau; release for a streak when the base rule reported the last H frames with coherent innovation
+   vectors (spread <= excl/2). Only removes reports (segment guarantees kept). Candidates: CMS-CPC/H+SH(+G), CMS-CPCW/H+SH(+G),
+   CMS-T/H+SH at alpha 0.05 / 0.01 with +NGR; ablations +NG (no release), +DRG (classical dead-reckoning gate), +NGR on the
+   old rules (CPC-SC-T(1/2)+SH, CPC-SC+CS).
+3. *Audit fixes adopted before the evaluation.* (a) CMS-CPCW: onset by the finite-memory window chain (the fresh-start
+   calibration of a full-memory chain does not dominate a non-reporting chain entering a segment with log-odds in (0, kappa];
+   the CPC-SC / CMS-CPC onset statements need this correction); (b) EXACT counterfactual (`analysis/cms_exact.py`, top-300
+   lists, first 100 unmasked entries for hypotheses, look-ups and fallback): the top-100 truncation of Entry 28 was checked to
+   shift the route cost little (median +0.004) but made the distinctiveness null anti-conservative (z_cf median 0.264 vs 0.287).
+   All 366 runs and the hole-ratio runs are recomputed with (b).
+4. *Hypotheses.* H29a: at alpha = 0.05, +NGR lowers the navigation error of CMS-CPC/H+SH on >= 5/7 datasets with recall loss
+   <= 0.01 and no mean-segFAR increase; H29b: CMS-CPC/H+SH+NGR at alpha = 0.05 has error <= CPC-SC-T(1/2)+SH (the previous best)
+   on >= 5/7 and recall higher on >= 6/7; H29c: +NG and +DRG lock out on at least one VIO dataset (recall drop > 0.1);
+   H29d: CMS-CPCW is valid (mean segFAR <= alpha on 7/7 at both alphas).
+5. *Selection.* LODO (Entry 25 criterion) over all label-free rules, at alpha = 0.05 and 0.01.
+
 ## Entry 28 (branch `hmm-navigation-5`) — Counterfactual Map Surgery (CMS): self-calibration on the deployment stream (2026-11-01)
 
 **Motivation (Entries 25-27).** Every label-free rule so far is calibrated on the MAP's self-replay null (map frames with

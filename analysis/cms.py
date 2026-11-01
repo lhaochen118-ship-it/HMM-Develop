@@ -323,6 +323,11 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
     wq, kW = windowed_parts(z, b, st, alpha)
     for tg, ok in (("H", one), ("H+SH", sh_c)):
         F[f"CMS-W/{tg}"] = (np.where(ok, wq - kW, -np.inf), xc, 0.0, (wq > kW) & ok)
+    # CMS-CPCW (Entry 29 audit fix): ONSET by the finite-memory chain (exact: independent of the state at segment entry,
+    # which the fresh-start calibration of CMS-CPC / CPC-SC does not dominate when kappa > 0), PERSISTENCE by the full
+    # chain (log-odds > 0) and the shape stop
+    for tg, ok in (("H+SH", sh_c), ("H+SH+G", sh_c & agree)):
+        F[f"CMS-CPCW/{tg}"] = (np.where(ok, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, ok, seqs))
     ALPHA_MIN[0] = alpha / 2
     wq2, kW2 = windowed_parts(z, b, st, alpha / 2)
     onWU = (sc_t > -kT2) | (wq2 > kW2)
