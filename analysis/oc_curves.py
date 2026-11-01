@@ -61,7 +61,7 @@ FAM_PRESETS = {"@E28": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certi
                "@RHO": "CMS-T,CMS-T(a=0.01),CMS-CPC/H+SH,CMS-CPC/H+SH(a=0.01),CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-W/H+SH,CMS-W/H+SH(a=0.01),CMS-U/H+SH"}   # Entry 28 family lists (short job args)
 FAM_PRESETS["@E32N"] = FAM_PRESETS["@E30"] + "," + FAM_PRESETS["@E30R"]   # Entry 32 NCLT benchmark: both gate variants + baselines
 _fa = sys.argv[sys.argv.index("--fams") + 1] if "--fams" in sys.argv else None
-FAMS = set(FAM_PRESETS.get(_fa, _fa).split(",")) if _fa else None   # evaluate only these families
+FAMS = set(x for it in _fa.split(",") for x in FAM_PRESETS.get(it, it).split(",")) if _fa else None   # evaluate only these families (presets may be combined: @E33B,@E34)
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
 CMSD = sys.argv[sys.argv.index("--cms") + 1] if "--cms" in sys.argv else None
 CMSX = (sys.argv[sys.argv.index("--cms-extra") + 1], sys.argv[sys.argv.index("--cms-extra-tag") + 1] if "--cms-extra-tag" in sys.argv else "r1") if "--cms-extra" in sys.argv else None   # second CMS set (other rho), families suffixed {tag}   # dir of cms_<ds>_<desc>_s<seed>.npz (cms_dump.py) -> CMS families (Entry 28)

@@ -32,7 +32,7 @@ def run(cmd):
 
 
 def main():
-    dump, pair, desc = sys.argv[1], sys.argv[2], sys.argv[3]; ds = pair if ":" in pair else "4sx:" + pair; tag = ds.replace(":", "_")   # Entry 32: any ds (nclt:<ref>)
+    dump, pair, desc = sys.argv[1], sys.argv[2], sys.argv[3]; ds = pair if (":" in pair or "+" not in pair) else "4sx:" + pair; tag = ds.replace(":", "_")   # Entry 32: any ds (nclt:<ref>)
     W = os.path.abspath(f"_nat_{tag}_{desc}"); ncd, tkd, cmd_, tcd = (os.path.join(W, x) for x in ("nav", "topk", "cms", "taoc"))
     for d in (ncd, tkd, cmd_, tcd, "results"): os.makedirs(d, exist_ok=True)
     t0 = time.time(); seeds = list(range(SEED0, SEED0 + SEEDS))
