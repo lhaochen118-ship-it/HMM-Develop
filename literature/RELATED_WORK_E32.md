@@ -1,6 +1,6 @@
 # Related work và định vị novelty (Entry 32, 2026-11-01)
 
-*Tìm có hệ thống theo 6 nhánh (17 truy vấn web, chế độ standard/extended; danh sách truy vấn ở `LITERATURE_GATE.md` Gate 15).
+*Tìm có hệ thống theo 6 nhánh (20 truy vấn web, chế độ standard/extended; danh sách truy vấn ở `LITERATURE_GATE.md` Gate 15).
 Mỗi dòng: công trình — nó làm gì — cần nhãn? — bảo đảm? — xử lý phụ thuộc thời gian / off-map? — quan hệ với phương pháp của ta.
 Đây là tìm qua máy tìm kiếm, **chưa** thay được việc đọc kỹ proceedings ICRA/IROS/RSS/RA-L/T-RO 2024–2026 trước khi nộp.*
 
@@ -37,6 +37,10 @@ Mỗi dòng: công trình — nó làm gì — cần nhãn? — bảo đảm? �
 | Shin, Ramdas, Rinaldo, "E-detectors" (arXiv 2203.03532, NEJSDS 2023) | Phát hiện thay đổi phi tham số từ tổng e-process, cận ARL không tiệm cận; tổng quát hoá Shiryaev–Roberts / CUSUM | Nền của chuỗi hiện diện (Định lý 1: chặn Shiryaev–Roberts). **Cần lớp trước/sau thay đổi định trước**, ta thay bằng null sinh từ luồng |
 | Vovk, conformal e-prediction cho change detection (arXiv 2006.02329) | Conformal Shiryaev–Roberts / CUSUM phát hiện vi phạm IID | Gần về hình thức; null là hoán đổi của chính dữ liệu, không phải null "off-map" được tạo ra |
 | Multi-stream e-detectors (arXiv 2501.04130) | Nhiều luồng | Có thể dùng cho nhiều robot |
+| E-value monitor cho định vị particle filter (arXiv 2604.26479, 2026) | Martingale kiểm tra tự tin quá mức theo hướng trôi, báo khi vượt 1/α | **Gần nhất về e-process cho định vị robot**; kiểm hiệu chuẩn của bộ lọc, không kiểm "đang trên bản đồ" và không có null không nhãn |
+| E-process cho lỗi bám đối tượng (arXiv 2602.12983) | Phát hiện tracker trôi sang mục tiêu sai | Tương tự ở mức hình thức |
+| Duenas Arana et al. 2019 (recursive integrity monitoring, landmark EKF) | Kiểm χ² tuần tự trên innovation | Baseline cổ điển cho cổng +DRG / +NGR |
+| Kim et al. 2018 (Sensors, self-diagnosis of localization status) | Phân loại thành công/thất bại định vị LiDAR | Có nhãn |
 | Game-theoretic / anytime-valid inference (arXiv 2210.01948) | Khung e-process | Nền lý thuyết |
 
 ## 4. Conformal dưới phụ thuộc thời gian
@@ -47,6 +51,8 @@ Mỗi dòng: công trình — nó làm gì — cần nhãn? — bảo đảm? �
 | Block / guard-band conformal (arXiv 2606.30500; Bian et al. 2024 Markovian CP) | Tách khối hiệu chuẩn bằng khoảng đệm | Gần ý tưởng đoạn; ta thêm null sinh ra (không phải dữ liệu đã có nhãn) |
 | Adaptive conformal anomaly detection cho chuỗi thời gian (ICLR 2026; RESS 2026 sliding calibration) | Giữ FAR khi dữ liệu trôi | Gần `[online]`; không có null off-map sinh ra |
 | Adaptive conformal với particle filter dưới HMM (arXiv 2411.01558); conformalized Kalman filter (arXiv 2609.27506); online localized CP (arXiv 2605.05497) | Coverage cho trạng thái ẩn | Coverage vị trí, không phải phát hiện off-map với cận khởi phát sai |
+| Zheng & Proutière, ICML 2024 "Conformal predictions under Markovian data" (arXiv 2407.15277) | Khoảng cách coverage ~ √(t_mix ln n / n); K-split CP (tỉa tập hiệu chuẩn) | Ta hiệu chuẩn trên **max theo đoạn**, không cần t_mix; nên so sánh trong bài |
+| Nettasinghe et al. 2024 (PNNL) — conformal cho HMM qua định lý de Finetti cho chuỗi Markov | Khối hoán đổi được trong HMM | Gần về "hoán đổi theo khối"; không có null off-map sinh ra |
 
 ## 5. Ngưỡng / hiệu chuẩn VPR không nhãn khác
 
@@ -68,5 +74,6 @@ Mỗi dòng: công trình — nó làm gì — cần nhãn? — bảo đảm? �
 Shiryaev–Roberts (Shin et al.); cổng innovation / protection level (GNSS RAIM, Gupta & Gao); dự đoán integrity có nhãn (Carson,
 Claxton). Bài viết nên đặt đóng góp là **(1)–(3)**, phần còn lại là thành phần đã biết.
 
-**Việc còn thiếu trước khi nộp:** đọc toàn văn SafeVPR, E-detectors, Vovk 2006.02329, Lee & Pollefeys 2014; quét danh mục RA-L
+**Việc còn thiếu trước khi nộp:** đọc toàn văn SafeVPR, E-detectors, Vovk 2006.02329, Lee & Pollefeys 2014, arXiv 2604.26479
+(e-value monitor cho particle filter — cần so sánh trực tiếp), Zheng & Proutière 2024; quét danh mục RA-L
 2024–2026 và RSS 2025–2026 với từ khoá "self-calibrat*", "label-free", "integrity"; kiểm Bian et al. 2024 (Markovian CP).

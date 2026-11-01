@@ -5,12 +5,15 @@ relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-
 
 ## Gate 15 (Entry 32, 2026-11-01) — systematic search before writing the paper
 
-**Queries (17, web):** VPR integrity monitoring false-positive guarantee sequential navigation; e-detectors / Shiryaev-Roberts /
+**Queries (20, web):** VPR integrity monitoring false-positive guarantee sequential navigation; e-detectors / Shiryaev-Roberts /
 conformal test martingale change detection; open-set place recognition unknown-place calibrated threshold; visual localization
 protection level integrity risk conformal; synthetic null by removing the true match / leave-out calibration / loop-closure
 verification without labels; conformal prediction VPR 2025-2026 sequence guarantee; place recognition out-of-map / unmapped HMM;
 conformal under temporal dependence (blocks, Markov, mixing, time-series anomaly); Carson-Ford-Milford integrity; sequence-matching
-receptiveness (IROS 2025); counterfactual null calibration retrieval removing database neighbourhood; plus Gates 12-14.
+receptiveness (IROS 2025); counterfactual null calibration retrieval removing database neighbourhood; label-free self-calibrating localization failure
+detection; anytime-valid / e-process robot localization; Markovian conformal prediction; plus Gates 12-14. New closest items:
+an e-value monitor for particle-filter localization (arXiv 2604.26479: tests filter over-confidence, not presence on the map, no
+generated null) and Zheng-Proutiere ICML 2024 (split CP under Markov data, coverage gap ~ sqrt(t_mix ln n / n)).
 **Closest work and the gap (details, table: `literature/RELATED_WORK_E32.md`).** SafeVPR'26 (conformal, labelled calibration,
 breaks under condition shift); Lee & Pollefeys ICRA'14 (label-free mixture threshold, degenerates without loop closures, no
 guarantee); Xu'21 (HMM off-map state, tuned); E-detectors (Shin-Ramdas-Rinaldo; need prespecified pre/post classes); Vovk conformal
