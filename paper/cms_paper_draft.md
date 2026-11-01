@@ -89,9 +89,9 @@ keep validity on 7/7 and the recall advantage on 7/7. The exception is the shape
 14. Filters F1–F3 (process noise ×4, fix σ 10 m, label-free global init) leave the conclusions unchanged (Entry 30).
 Cost: ~20 ms per frame on one CPU core (top-300 on GPU).
 
-**Counterfactual exit calibration (Entry 34).** {{E34PAPER}}
+**Counterfactual exit calibration (Entry 34).** Without the shape stop, 18–65 % of the off-map false fixes are chains carried from the map and 39–73 % lie ≥ 20 frames deep: persistence, not onset, is the residual failure. CST (Proposition 14) on 366 runs: valid on 7/7 datasets (mean segFAR 0.001–0.022), recall within ±0.02 of the hand-set shape stop on 7/7 and higher on 6/7, causal variant valid on 7/7. Doubling the level a_sh keeps validity on 7/7, whereas doubling the hand-set tolerance broke it on 2/7. Price: 6 % of runs exceed α (0.5 % for the hand-set stop), as expected from a test that spends its budget.
 
-**Oxford RobotCar** (PointNetVLAD split, 43 traversals, reference 2014-12-09). {{OXPAPER}}
+**Oxford RobotCar** (PointNetVLAD split, 43 traversals, reference 2014-12-09). 60 runs (6 descriptors × 10 seeds, 30 % holes). Map-null rules (CPC-SC) cannot calibrate in 36/60 runs (the holed map has ~670 frames; Corollary 9) and report nothing; CMS calibrates in every run (recall 0.719–0.753, segFAR 0.003–0.006, 0 % of runs above α). On the 24 runs where the map null works, CMS-W matches its recall (+0.008) with lower navigation error in 19/24. All label-calibrated baselines violate α (Xu'21 in 100 % of runs, TAO'26 93 %, Claxton'24 72 %, SUE'24-seg 40 %).
 
 ## 6. Related work (positioning; `literature/RELATED_WORK_E32.md`)
 
@@ -106,8 +106,8 @@ stream's dependence exactly.
 
 - S1–S3 are assumptions about how the stream sees the map; they are supported empirically (validity on all tested runs, two
   natural benchmarks), not proved. π is not observable; the bound degrades as 1/π.
-- Segments at excursion boundaries (depth < N) are outside the theorems; forward surgery (remove only anchors after a virtual
-  exit) is the planned fix.
+- Segments at excursion boundaries (depth < N) are outside the theorems (CMU s0: 94 of CST's 126 remaining off-map fixes lie in the
+  first 20 frames of an excursion); forward surgery (remove only anchors after a virtual exit) is the planned fix.
 - Off-map regions are synthetic holes on 5 of 7 datasets (natural on NCLT and the cross-scene benchmark); odometry is
   simulated where the dataset has none (CMU, Nordland, Oxford).
 - The counterfactual statistics are a Python loop (10–17 ms per frame); vectorisation is straightforward but not done.

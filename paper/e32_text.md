@@ -18,8 +18,8 @@
   Dung sai SH hiệu chuẩn theo phân vị frame (SHcf) hợp lệ 7/7 nhưng recall chỉ sát SH trên 4/7: H33b không đạt.
 - **Cơ chế mới (E34) — phẫu thuật cũng hiệu chuẩn lối THOÁT:** chẩn đoán cho thấy lỗi còn lại của phương pháp không nằm ở khởi phát
   (đã có Định lý 6) mà ở **duy trì** chuỗi báo khi robot rời bản đồ. Phép thử hình dạng phản thực theo đoạn (CST, Mệnh đề 14,
-  Hệ quả 15) cho bảo đảm đầu-cuối theo đoạn mà không còn hằng số dung sai. {{E34SUM}}
-- **Dataset uy tín mới: Oxford RobotCar** (PointNetVLAD split, 43 lượt chạy, 34 039 frame, 6 descriptor, 30 % lỗ bản đồ). {{OXSUM}}
+  Hệ quả 15) cho bảo đảm đầu-cuối theo đoạn mà không còn hằng số dung sai. Kết quả 366 run: CST hợp lệ 7/7, recall trong ±0.02 so với SH chọn tay trên 7/7 (cao hơn trên 6/7, +0.003 đến +0.022), bản nhân quả hợp lệ 7/7; nhân đôi mức a_sh **vẫn hợp lệ 7/7** trong khi nhân đôi dung sai SH làm vỡ α ở 2/7. Cái giá: 6 % run vượt α (SH: 0.5 %) — CST dùng đúng ngân sách α thay vì bảo thủ thừa.
+- **Dataset uy tín mới: Oxford RobotCar** (PointNetVLAD split, 43 lượt chạy, 34 039 frame, 6 descriptor, 30 % lỗ bản đồ). Baseline null-bản-đồ (CPC-SC) **suy biến ở 36/60 run** (bản đồ ~670 frame sau khi khoét lỗ không đủ đoạn null để có phân vị α hữu hạn — đúng Hệ quả 9); CMS hiệu chuẩn được ở **mọi** run (null từ luồng truy vấn): recall 0.719 / segFAR 0.003 / 0 % run vượt α (CPCW: 0.753 / 0.006). Trên 24 run null bản đồ còn chạy được, CMS-CPCW ngang recall (+0.008) với sai số thấp hơn ở 19/24; mọi baseline có nhãn vượt α (Xu'21 100 % run, TAO'26 93 %, Claxton'24 72 %).
 
 ## 1. Câu hỏi của vòng này
 
@@ -67,6 +67,10 @@ proceedings RA-L / RSS / ICRA / IROS 2024–2026.
 
 ## 4. Bảng kết quả
 
+![Validity vs recall](fig_validity_recall.png)
+
+*Hình 1. Mặt phẳng hợp lệ–recall (trung bình theo dataset). Vùng xanh: segFAR ≤ α. CMS (xanh dương) hợp lệ và có recall cao nhất trong các luật hợp lệ trên cả 8 dataset; baseline có nhãn (cam) vượt α hoặc mất 40–70 % recall; null bản đồ (xanh lá) suy biến trên Oxford.*
+
 {{TABLES}}
 
 ### Đối thủ mới (Entry 33, 366 run)
@@ -87,8 +91,27 @@ proceedings RA-L / RSS / ICRA / IROS 2024–2026.
    luật đề xuất là luật duy nhất vừa hợp lệ vừa có recall cao nhất trong các luật hợp lệ; mọi baseline có nhãn mới đọc (SU'25,
    SUE'24, Carson'23) hoặc vi phạm α hoặc mất 40–70 % recall.
 3. **Điều chưa đạt.** H32b (ngưỡng thời gian đặt trước) và H33b (SHcf) không đạt; cả hai được ghi như kết quả âm.
-{{E34READ}}
+4. **Novelty vòng này: phẫu thuật bản đồ hiệu chuẩn cả lối thoát.** Chẩn đoán (cache chính xác) cho thấy lỗi còn lại của phương
+   pháp là *duy trì* chuỗi báo sau khi rời bản đồ, không phải khởi phát. Quỹ đạo phản thực MP[j_cf] sai theo cấu trúc, tức là null
+   của "quỹ đạo ma" sau khi thoát. Phân vị conformal dưới của residual hình dạng tối thiểu theo đoạn cho một phép dừng có bảo đảm
+   (Mệnh đề 14, Hệ quả 15). Báo sai cần **cả** chuỗi báo **và** qua CST (giao biến cố), nên tỷ lệ báo sai theo đoạn sâu ≤ a_sh/π.
+   Kết quả 366 run xác nhận: hợp lệ 7/7, recall giữ nguyên hoặc tăng nhẹ, và mức a_sh hành xử như một *mức* (×2 vẫn hợp lệ) chứ
+   không như một *dung sai* (×2 vỡ). Như vậy mọi ngưỡng ảnh hưởng tới tính hợp lệ của phương pháp nay đều được hiệu chuẩn từ chính
+   phép phẫu thuật.
+5. **Oxford RobotCar minh hoạ đúng luận điểm cốt lõi của bài.** Null lấy từ bản đồ cần bản đồ đủ lớn; với bản đồ nhỏ nó suy biến
+   (36/60 run không báo gì). Null phản thực lấy từ luồng triển khai nên luôn đủ mẫu. Khi null bản đồ còn chạy được, ưu thế recall
+   của CMS trên Oxford nhỏ (+0.008 cho CPCW, −0.026 cho luật có +G). Ưu thế thật là độ bền và sai số thấp hơn.
+6. **Một lỗi quy trình đã được bắt và sửa.** Lần chạy E34 đầu tiên trên máy local dùng nhầm cache thống kê phản thực xấp xỉ (Entry 28).
+   Lỗi được phát hiện vì luật SH cho số khác Kaggle. Toàn bộ E34 đã chạy lại trên cache chính xác, và cache này tái lập kết quả
+   Kaggle tới 4 chữ số. Kết quả trên cache sai không được dùng.
 
 ## 6. Việc tiếp theo
 
-{{E34NEXT}}
+1. **Phẫu thuật "tiến" cho đoạn ở mép chuyến off-map** (độ sâu < N): chỉ xoá anchor sau một thời điểm thoát ảo t₀ để có null cho
+   cửa sổ chồng một phần lên bản đồ ⇒ đóng khoảng trống cuối của Mệnh đề 14 (CMU s0: 94/126 báo sai còn lại của CST nằm trong 20
+   frame đầu chuyến off-map). Cần top-300 (Kaggle GPU) và ~1× chi phí thống kê hiện tại.
+2. **Cửa sổ niềm tin N = 40** tăng recall 0.015–0.027 trên seed 0 mà không đổi tính hợp lệ (E32): kiểm xác nhận trên seed 1–9
+   (giữ ra, không dùng để chọn) trước khi đổi mặc định.
+3. **Vector hoá thống kê phản thực** (vòng lặp Python, 10–17 ms/frame) ⇒ < 1 ms/frame; điều kiện để chạy phẫu thuật tiến ở quy mô 366 run.
+4. **Bài báo:** bản nháp `paper/cms_paper_draft.md` (tiếng Anh) đã có cấu trúc, định lý, bảng chính, hình `paper/fig_validity_recall.png`;
+   còn thiếu: chứng minh đầy đủ ở phụ lục, so sánh trực tiếp với SafeVPR'26 trên cùng split (họ dùng Oxford/NCLT/St Lucia), St Lucia.

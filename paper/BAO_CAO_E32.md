@@ -18,8 +18,8 @@
   Dung sai SH hiệu chuẩn theo phân vị frame (SHcf) hợp lệ 7/7 nhưng recall chỉ sát SH trên 4/7: H33b không đạt.
 - **Cơ chế mới (E34) — phẫu thuật cũng hiệu chuẩn lối THOÁT:** chẩn đoán cho thấy lỗi còn lại của phương pháp không nằm ở khởi phát
   (đã có Định lý 6) mà ở **duy trì** chuỗi báo khi robot rời bản đồ. Phép thử hình dạng phản thực theo đoạn (CST, Mệnh đề 14,
-  Hệ quả 15) cho bảo đảm đầu-cuối theo đoạn mà không còn hằng số dung sai. {{E34SUM}}
-- **Dataset uy tín mới: Oxford RobotCar** (PointNetVLAD split, 43 lượt chạy, 34 039 frame, 6 descriptor, 30 % lỗ bản đồ). {{OXSUM}}
+  Hệ quả 15) cho bảo đảm đầu-cuối theo đoạn mà không còn hằng số dung sai. Kết quả 366 run: CST hợp lệ 7/7, recall trong ±0.02 so với SH chọn tay trên 7/7 (cao hơn trên 6/7, +0.003 đến +0.022), bản nhân quả hợp lệ 7/7; nhân đôi mức a_sh **vẫn hợp lệ 7/7** trong khi nhân đôi dung sai SH làm vỡ α ở 2/7. Cái giá: 6 % run vượt α (SH: 0.5 %) — CST dùng đúng ngân sách α thay vì bảo thủ thừa.
+- **Dataset uy tín mới: Oxford RobotCar** (PointNetVLAD split, 43 lượt chạy, 34 039 frame, 6 descriptor, 30 % lỗ bản đồ). Baseline null-bản-đồ (CPC-SC) **suy biến ở 36/60 run** (bản đồ ~670 frame sau khi khoét lỗ không đủ đoạn null để có phân vị α hữu hạn — đúng Hệ quả 9); CMS hiệu chuẩn được ở **mọi** run (null từ luồng truy vấn): recall 0.719 / segFAR 0.003 / 0 % run vượt α (CPCW: 0.753 / 0.006). Trên 24 run null bản đồ còn chạy được, CMS-CPCW ngang recall (+0.008) với sai số thấp hơn ở 19/24; mọi baseline có nhãn vượt α (Xu'21 100 % run, TAO'26 93 %, Claxton'24 72 %).
 
 ## 1. Câu hỏi của vòng này
 
@@ -66,6 +66,10 @@ proceedings RA-L / RSS / ICRA / IROS 2024–2026.
 - **Bài học:** tải đầu ra kernel có hàng nghìn file (ảnh) tốn một request mỗi file và gây chặn API — đầu ra lớn phải đóng gói tar.
 
 ## 4. Bảng kết quả
+
+![Validity vs recall](fig_validity_recall.png)
+
+*Hình 1. Mặt phẳng hợp lệ–recall (trung bình theo dataset). Vùng xanh: segFAR ≤ α. CMS (xanh dương) hợp lệ và có recall cao nhất trong các luật hợp lệ trên cả 8 dataset; baseline có nhãn (cam) vượt α hoặc mất 40–70 % recall; null bản đồ (xanh lá) suy biến trên Oxford.*
 
 ### Độ nhạy — lớp quyết định: CMS-CPC/H+SH+G+NGRr (recall / segFAR TB / sai số m), α = 0.05
 
@@ -253,7 +257,83 @@ H33a đạt trên 7/7 dataset (ngưỡng đăng ký: ≥ 6/7).
 
 ### Phép thử hình dạng phản thực CST và Oxford RobotCar (Entry 34)
 
-*(chưa có kết quả)*
+### Phép thử hình dạng phản thực CST (366 run, α = 0.05): recall / segFAR TB / tệ nhất / sai số (m)
+
+| Luật | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| CPC-SC-T½+SH | 0.666 / 0.002 / 0.023 / 5.7 | 0.588 / 0.001 / 0.003 / 4.9 | 0.789 / 0.018 / 0.188 / 5.2 | 0.713 / 0.001 / 0.010 / 9.5 | 0.738 / 0.000 / 0.003 / 11.4 | 0.640 / 0.007 / 0.034 / 29.8 | 0.334 / 0.000 / 0.015 / 51.3 |
+| **CMS-CPC/ H+SH+G+NGRr** (SH chọn tay) | 0.775 / 0.003 / 0.022 / 4.5 | 0.612 / 0.002 / 0.007 / 4.3 | 0.822 / 0.009 / 0.050 / 4.0 | 0.765 / 0.000 / 0.000 / 5.6 | 0.800 / 0.000 / 0.006 / 9.7 | 0.703 / 0.006 / 0.051 / 26.1 | 0.491 / 0.001 / 0.010 / 34.3 |
+| CMS-CPCW/ H+SH+NGRr | 0.766 / 0.002 / 0.022 / 5.5 | 0.610 / 0.001 / 0.007 / 4.8 | 0.826 / 0.009 / 0.054 / 4.1 | 0.772 / 0.000 / 0.010 / 5.8 | 0.798 / 0.000 / 0.006 / 9.7 | 0.700 / 0.007 / 0.040 / 26.3 | 0.468 / 0.000 / 0.007 / 37.3 |
+| **CMS-CPC/ H+CST+G+NGRr** (CST, a_sh = α) | 0.784 / 0.016 / 0.070 / 13.5 | 0.617 / 0.002 / 0.010 / 4.9 | 0.826 / 0.016 / 0.080 / 4.2 | 0.776 / 0.001 / 0.013 / 5.6 | 0.808 / 0.016 / 0.109 / 10.2 | 0.725 / 0.022 / 0.108 / 39.6 | 0.485 / 0.003 / 0.033 / 33.1 |
+| CMS-CPCW/ H+CST+NGRr | 0.775 / 0.019 / 0.089 / 15.6 | 0.616 / 0.007 / 0.036 / 6.8 | 0.830 / 0.015 / 0.097 / 4.4 | 0.788 / 0.005 / 0.028 / 6.2 | 0.807 / 0.017 / 0.106 / 10.2 | 0.722 / 0.028 / 0.091 / 50.6 | 0.462 / 0.004 / 0.054 / 35.0 |
+| CMS-CPC/ H+CST+G[both]+NGRr (nhân quả) | 0.756 / 0.010 / 0.062 / 9.0 | 0.605 / 0.001 / 0.007 / 5.0 | 0.813 / 0.009 / 0.052 / 3.8 | 0.742 / 0.000 / 0.008 / 6.3 | 0.776 / 0.008 / 0.101 / 10.3 | 0.707 / 0.016 / 0.057 / 30.5 | 0.442 / 0.002 / 0.026 / 37.9 |
+| CMS-CPCW/ H+CST[both]+NGRr (nhân quả) | 0.738 / 0.011 / 0.056 / 10.0 | 0.600 / 0.003 / 0.013 / 5.5 | 0.816 / 0.008 / 0.050 / 3.9 | 0.734 / 0.002 / 0.021 / 7.1 | 0.767 / 0.007 / 0.098 / 10.4 | 0.697 / 0.019 / 0.067 / 32.9 | 0.408 / 0.002 / 0.030 / 42.1 |
+| CST2 (α/2 + α/2) | 0.767 / 0.006 / 0.046 / 9.8 | 0.567 / 0.001 / 0.003 / 4.0 | 0.794 / 0.005 / 0.034 / 3.6 | 0.746 / 0.000 / 0.000 / 6.1 | 0.787 / 0.005 / 0.039 / 10.7 | 0.703 / 0.010 / 0.074 / 34.4 | 0.435 / 0.001 / 0.025 / 37.3 |
+| CSTt (tuyến thật, cùng bộ ước lượng) | 0.769 / 0.013 / 0.064 / 9.5 | 0.589 / 0.001 / 0.003 / 4.3 | 0.773 / 0.014 / 0.070 / 4.0 | 0.706 / 0.001 / 0.013 / 6.5 | 0.806 / 0.007 / 0.081 / 9.9 | 0.711 / 0.017 / 0.074 / 38.5 | 0.447 / 0.001 / 0.025 / 36.2 |
+| CMS-CPC/ H+CST+G (không cổng) | 0.785 / 0.031 / 0.131 / 23.6 | 0.620 / 0.020 / 0.101 / 10.7 | 0.826 / 0.026 / 0.175 / 7.0 | 0.777 / 0.009 / 0.044 / 12.4 | 0.810 / 0.024 / 0.145 / 11.4 | 0.736 / 0.035 / 0.125 / 67.1 | 0.498 / 0.008 / 0.080 / 34.8 |
+| Oracle | 0.88 / – / – / 2.1 | 0.72 / – / – / 2.2 | 0.94 / – / – / 3.0 | 0.67 / – / – / 4.8 | 0.91 / – / – / 8.3 | 0.84 / – / – / 19.4 | 0.73 / – / – / 16.5 |
+
+**Kiểm giả thuyết (đăng ký trước, Entry 34):**
+
+- CMS-CPC/H+CST+G+NGRr: segFAR ≤ 0.05 trên 7/7 (H34a); recall ≥ SH − 0.02 trên 7/7 (H34b, cần ≥ 5/7); > CPC-SC-T½+SH trên 7/7 (cần ≥ 6/7); Δrecall vs SH: Boreas +0.008, NCLT +0.005, CMU +0.003, Nordland +0.010, 4S office +0.008, 4S old town +0.022, 4S countryside -0.005
+- CMS-CPCW/H+CST+NGRr: segFAR ≤ 0.05 trên 7/7 (H34a); recall ≥ SH − 0.02 trên 6/7 (H34b, cần ≥ 5/7); > CPC-SC-T½+SH trên 7/7 (cần ≥ 6/7); Δrecall vs SH: Boreas -0.001, NCLT +0.004, CMU +0.007, Nordland +0.022, 4S office +0.007, 4S old town +0.019, 4S countryside -0.028
+- CMS-CPC/H+CST+G[both]+NGRr: segFAR ≤ 0.05 trên 7/7 (H34c)
+- CMS-CPCW/H+CST[both]+NGRr: segFAR ≤ 0.05 trên 7/7 (H34c)
+
+Tỷ lệ run có segFAR > α / segFAR tệ nhất (mọi dataset):
+
+| Luật | run > α | tệ nhất | số run |
+|---|---|---|---|
+| **CMS-CPC/H+SH+G+NGRr** (SH chọn tay) | 0.005 | 0.051 | 366 |
+| CMS-CPCW/H+SH+NGRr | 0.003 | 0.054 | 366 |
+| **CMS-CPC/H+CST+G+NGRr** (CST, a_sh = α) | 0.060 | 0.109 | 366 |
+| CMS-CPCW/H+CST+NGRr | 0.085 | 0.106 | 366 |
+| CMS-CPC/H+CST+G[both]+NGRr (nhân quả) | 0.036 | 0.101 | 366 |
+
+### Độ nhạy của mức a_sh của CST (seed 0–2): recall / segFAR TB
+
+| a_sh | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside | segFAR ≤ α |
+|---|---|---|---|---|---|---|---|---|
+| 0.5 α = 0.025 | 0.781 / 0.008 | 0.577 / 0.001 | 0.753 / 0.003 | 0.749 / 0.000 | 0.783 / 0.004 | 0.697 / 0.008 | 0.483 / 0.001 | 7/7 |
+| 2 α = 0.10 | 0.799 / 0.041 | 0.636 / 0.009 | 0.777 / 0.018 | 0.776 / 0.005 | 0.820 / 0.030 | 0.732 / 0.024 | 0.532 / 0.015 | 7/7 |
+
+### Oxford RobotCar (PointNetVLAD split, 43 lượt chạy, bản đồ 2014-12-09, 30 % lỗ, 60 run): recall / segFAR TB / tệ nhất / sai số (m)
+
+| Luật | Oxford RobotCar |
+|---|---|
+| Xu'21 (nhãn) | 0.858 / 0.547 / 1.000 / 98.7 |
+| Claxton'24 (nhãn) | 0.773 / 0.156 / 0.868 / 47.2 |
+| TAO'26 (nhãn) | 0.770 / 0.478 / 0.991 / 122.7 |
+| max-sim (nhãn) | 0.729 / 0.241 / 0.511 / 61.6 |
+| SU'25, nhãn đoạn | 0.409 / 0.076 / 0.316 / 49.8 |
+| SUE'24, nhãn đoạn | 0.442 / 0.066 / 0.390 / 37.4 |
+| Carson'23 | 0.542 / 0.984 / 1.000 / 158.6 |
+| CPC-SC+CS | 0.305 / 0.002 / 0.012 / 43.3 |
+| CPC-SC-T½+SH | 0.311 / 0.007 / 0.042 / 43.7 |
+| **CMS-CPC/ H+SH+G+NGRr** | 0.719 / 0.003 / 0.011 / 21.7 |
+| CMS-CPCW/ H+SH+NGRr | 0.753 / 0.006 / 0.026 / 21.0 |
+| CMS-CPCW/ H+SH[both]+NGRr | 0.736 / 0.006 / 0.026 / 22.2 |
+| CMS-CPC/ H+CST+G+NGRr | 0.697 / 0.011 / 0.051 / 21.9 |
+| CMS-CPCW/ H+CST+NGRr | 0.729 / 0.049 / 0.180 / 22.6 |
+| CMS-CPC/ H+SHcf+G+NGRr | 0.707 / 0.015 / 0.051 / 21.9 |
+| Oracle | 0.90 / – / – / 15.9 |
+
+Theo descriptor: recall / segFAR TB
+
+| Descriptor | CMS-CPC/H+SH+G+NGRr | CMS-CPCW/H+SH+NGRr | CPC-SC-T½+SH | CST | SUE'24-seg | Xu'21 |
+|---|---|---|---|---|---|---|
+| cosplace | 0.721 / 0.002 | 0.754 / 0.005 | 0.307 / 0.006 | 0.682 / 0.003 | 0.318 / 0.049 | 0.867 / 0.551 |
+| dinov2 | 0.573 / 0.005 | 0.566 / 0.007 | 0.234 / 0.014 | 0.519 / 0.002 | 0.119 / 0.053 | 0.643 / 0.491 |
+| megaloc | 0.798 / 0.003 | 0.851 / 0.006 | 0.358 / 0.005 | 0.804 / 0.029 | 0.565 / 0.055 | 0.957 / 0.496 |
+| mixvpr | 0.768 / 0.003 | 0.815 / 0.005 | 0.338 / 0.005 | 0.761 / 0.011 | 0.662 / 0.104 | 0.925 / 0.511 |
+| netvlad | 0.673 / 0.003 | 0.704 / 0.005 | 0.280 / 0.005 | 0.688 / 0.017 | 0.404 / 0.038 | 0.790 / 0.337 |
+| salad | 0.782 / 0.005 | 0.831 / 0.008 | 0.345 / 0.007 | 0.726 / 0.005 | 0.587 / 0.098 | 0.964 / 0.895 |
+
+- đề xuất: tỷ lệ run segFAR > α = 0.00, tệ nhất 0.011 (60 run)
+- CPC-SC-T½+SH: tỷ lệ run segFAR > α = 0.00, tệ nhất 0.042 (60 run)
+- Xu'21: tỷ lệ run segFAR > α = 1.00, tệ nhất 1.000 (60 run)
+
+
 
 ## 5. Đọc kết quả
 
@@ -265,8 +345,27 @@ H33a đạt trên 7/7 dataset (ngưỡng đăng ký: ≥ 6/7).
    luật đề xuất là luật duy nhất vừa hợp lệ vừa có recall cao nhất trong các luật hợp lệ; mọi baseline có nhãn mới đọc (SU'25,
    SUE'24, Carson'23) hoặc vi phạm α hoặc mất 40–70 % recall.
 3. **Điều chưa đạt.** H32b (ngưỡng thời gian đặt trước) và H33b (SHcf) không đạt; cả hai được ghi như kết quả âm.
-{{E34READ}}
+4. **Novelty vòng này: phẫu thuật bản đồ hiệu chuẩn cả lối thoát.** Chẩn đoán (cache chính xác) cho thấy lỗi còn lại của phương
+   pháp là *duy trì* chuỗi báo sau khi rời bản đồ, không phải khởi phát. Quỹ đạo phản thực MP[j_cf] sai theo cấu trúc, tức là null
+   của "quỹ đạo ma" sau khi thoát. Phân vị conformal dưới của residual hình dạng tối thiểu theo đoạn cho một phép dừng có bảo đảm
+   (Mệnh đề 14, Hệ quả 15). Báo sai cần **cả** chuỗi báo **và** qua CST (giao biến cố), nên tỷ lệ báo sai theo đoạn sâu ≤ a_sh/π.
+   Kết quả 366 run xác nhận: hợp lệ 7/7, recall giữ nguyên hoặc tăng nhẹ, và mức a_sh hành xử như một *mức* (×2 vẫn hợp lệ) chứ
+   không như một *dung sai* (×2 vỡ). Như vậy mọi ngưỡng ảnh hưởng tới tính hợp lệ của phương pháp nay đều được hiệu chuẩn từ chính
+   phép phẫu thuật.
+5. **Oxford RobotCar minh hoạ đúng luận điểm cốt lõi của bài.** Null lấy từ bản đồ cần bản đồ đủ lớn; với bản đồ nhỏ nó suy biến
+   (36/60 run không báo gì). Null phản thực lấy từ luồng triển khai nên luôn đủ mẫu. Khi null bản đồ còn chạy được, ưu thế recall
+   của CMS trên Oxford nhỏ (+0.008 cho CPCW, −0.026 cho luật có +G). Ưu thế thật là độ bền và sai số thấp hơn.
+6. **Một lỗi quy trình đã được bắt và sửa.** Lần chạy E34 đầu tiên trên máy local dùng nhầm cache thống kê phản thực xấp xỉ (Entry 28).
+   Lỗi được phát hiện vì luật SH cho số khác Kaggle. Toàn bộ E34 đã chạy lại trên cache chính xác, và cache này tái lập kết quả
+   Kaggle tới 4 chữ số. Kết quả trên cache sai không được dùng.
 
 ## 6. Việc tiếp theo
 
-{{E34NEXT}}
+1. **Phẫu thuật "tiến" cho đoạn ở mép chuyến off-map** (độ sâu < N): chỉ xoá anchor sau một thời điểm thoát ảo t₀ để có null cho
+   cửa sổ chồng một phần lên bản đồ ⇒ đóng khoảng trống cuối của Mệnh đề 14 (CMU s0: 94/126 báo sai còn lại của CST nằm trong 20
+   frame đầu chuyến off-map). Cần top-300 (Kaggle GPU) và ~1× chi phí thống kê hiện tại.
+2. **Cửa sổ niềm tin N = 40** tăng recall 0.015–0.027 trên seed 0 mà không đổi tính hợp lệ (E32): kiểm xác nhận trên seed 1–9
+   (giữ ra, không dùng để chọn) trước khi đổi mặc định.
+3. **Vector hoá thống kê phản thực** (vòng lặp Python, 10–17 ms/frame) ⇒ < 1 ms/frame; điều kiện để chạy phẫu thuật tiến ở quy mô 366 run.
+4. **Bài báo:** bản nháp `paper/cms_paper_draft.md` (tiếng Anh) đã có cấu trúc, định lý, bảng chính, hình `paper/fig_validity_recall.png`;
+   còn thiếu: chứng minh đầy đủ ở phụ lục, so sánh trực tiếp với SafeVPR'26 trên cùng split (họ dùng Oxford/NCLT/St Lucia), St Lucia.
