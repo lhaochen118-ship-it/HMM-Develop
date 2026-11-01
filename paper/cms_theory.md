@@ -173,6 +173,30 @@ có thể lớn cỡ √P⁻; khi bộ lọc đã định vị (√P ≈ 0.6 m �
 của A rồi **mọi** bản ghi của cảnh B (thành phố khác: mọi frame off-map, ảnh và VIO thật). Đây là trường hợp π = 0 cho `cond` ở
 mọi phiên B, nơi Định lý 6″ / Mệnh đề 12 là bảo đảm còn lại.
 
+## 4d. HMM liên hợp vị trí–hiện diện với trạng thái OFF hiệu chuẩn phản thực (Entry 31)
+
+**Mô hình.** Không gian trạng thái {các nơi trên bản đồ} ∪ {OFF}. Chuyển trạng thái vị trí = nhân odometry của chuỗi vị trí;
+chuyển trạng thái hiện diện p_in = p_out = 0.01. Emission của OFF được đặt bằng
+
+> log e_OFF(t) = log Σ_j b⁻_j e^{E_tj} / Σ_j b⁻_j − ℓ_t ,
+
+với ℓ_t là log-LR hiện diện của CMS (e-value hiệu chuẩn trên luồng phản thực).
+
+**Mệnh đề 13 (biên OFF = chuỗi hiện diện đã hiệu chuẩn).** Với emission trên, odds hậu nghiệm ON:OFF của HMM liên hợp được nhân
+với e^{ℓ_t} ở mỗi bước, nên log-odds hiện diện của HMM trùng **chính xác** với chuỗi `cpc_sc.logodds(ℓ)`. *Chứng minh:* tổng khối
+ON sau cập nhật là Σ_j b⁻_j e^{E_tj}; khối OFF là b_OFF⁻ · Σ_j b⁻_j e^{E_tj} / Σ_j b⁻_j · e^{−ℓ_t}; tỷ số là (Σ_j b⁻_j / b_OFF⁻) e^{ℓ_t}. ∎
+(Kiểm số học: trùng tới 10⁻⁶.) **Hệ quả:** Định lý 6/6′/6″ là phát biểu về chính HMM — quyết định "đang trên bản đồ" của HMM có
+bảo đảm khởi phát sai ≤ α/π mà không cần nhãn.
+
+**Cập nhật vị trí ("tôi" — chính xác cho mô hình mà vị trí tiếp tục tiến hoá khi OFF và frame OFF không mang thông tin về vị trí).**
+b⁺_j ∝ b⁻_j (q_t L_tj / ⟨b⁻, L_t⟩ + 1 − q_t), q_t = P(on tại t). Frame off-map (q_t nhỏ) không kéo niềm tin vị trí về nơi giống
+ảnh (cơ chế lock-in của chuỗi vị trí thuần, `hmm_diag` D3), còn niềm tin không bị xoá. Biến thể "reset" (vào lại đồng đều) bị loại
+ở giai đoạn thiết kế: một lần P(on) tụt bên trong bản đồ xoá mất niềm tin vị trí đúng.
+
+**Phạm vi tuyên bố.** Mệnh đề 13 cho phép trình bày phương pháp như **một HMM** với trạng thái off-map được hiệu chuẩn; luật
+CMS-CPC/H (chuỗi vị trí + chuỗi hiện diện tách rời) là xấp xỉ phân rã của HMM liên hợp với cùng biên OFF. Lợi ích của ghép nối lên
+độ chính xác vị trí là câu hỏi thực nghiệm (Entry 31).
+
 ## 5. Điểm mới so với tài liệu (tóm tắt; Gate 12 trong `LITERATURE_GATE.md`)
 
 - Null bản đồ (SelfCal, certified, CPC-SC; SAFEVPR'26 và Quantile Transfer dùng nhãn trên traversal hiệu chuẩn): null đến

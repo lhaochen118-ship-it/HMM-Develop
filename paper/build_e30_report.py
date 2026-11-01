@@ -72,6 +72,17 @@ def main():
          [(fam("CMS-CPC/H+SH+G", g, False, gt), f"CMS-CPC/H+SH+G{gt} [{gl}]") for g, gl in GRP for gt in GATES]
     if arg("--nat"): L += tab_nat(E.defaults(E.load(arg("--nat"))), NR, "### Bảng 7. Off-map tự nhiên (4Seasons chéo cảnh, bản đồ A ← truy vấn B): recall cảnh A / segFAR TB / tệ nhất / sai số cảnh A (m)")
     if arg("--nat1"): L += tab_nat(E.defaults(E.load(arg("--nat1"))), NR, "### Bảng 8. Off-map tự nhiên, khởi tạo không nhãn (F3)")
+    if arg("--holes"):
+        HR = [("Xu21", "Xu'21 (nhãn)"), ("Claxton24", "Claxton'24 (nhãn)"), ("CPC-SC+CS", "CPC-SC+CS"), ("CPC-SC+CS+NGRr", "CPC-SC+CS+NGRr"),
+              ("CMS-CPC/H+SH", "CMS-CPC/H+SH"), ("CMS-CPC/H+SH+NGRr", "CMS-CPC/H+SH+NGRr"), ("CMS-CPC/H+SH+NGR", "CMS-CPC/H+SH+NGR"),
+              ("CMS-CPC/H+SH+G+NGRr", "**CMS-CPC/H+SH+G+NGRr**"), ("CMS-CPC/H+SH+G+NGR", "CMS-CPC/H+SH+G+NGR"),
+              ("CMS-CPCW/H+SH+NGRr", "**CMS-CPCW/H+SH+NGRr**"), ("CMS-CPCW/H+SH+NGR", "CMS-CPCW/H+SH+NGR"),
+              ("CMS-CPC/H+SH(a=0.01)+NGRr", "CMS-CPC/H+SH+NGRr, α = 0.01"), ("CMS-CPCW/H+SH(a=0.01)+NGRr", "CMS-CPCW/H+SH+NGRr, α = 0.01")]
+        for ratio, sub in (("10", "a"), ("50", "b")):
+            d = os.path.join(arg("--holes"), f"d{ratio}")
+            if not os.path.isdir(d): continue
+            TH = E.defaults(E.load(d)); dh = [x for x in E.DS_ORDER if x in TH]
+            L += tab_def(TH, HR, dh, f"### Bảng 10{sub}. Bản đồ khuyết {ratio} % (3 seed × 6 descriptor, cổng sửa/giới hạn tốc độ)")
     for k, lab in (("--lodo05", "### Bảng 9a. LODO, α = 0.05"), ("--lodo01", "### Bảng 9b. LODO, α = 0.01")):
         if arg(k): L += [lab, "", open(arg(k)).read(), ""]
     tables = "\n".join(L) + "\n"
