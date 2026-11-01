@@ -9,7 +9,7 @@ import e26_summary as E
 from build_e28_report import tab_def
 
 arg = lambda k: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else None
-MAIN = [d for d in E.DS_ORDER if not d.startswith(("4sx", "nclt:"))]
+MAIN = ["boreas", "nclt", "cmu", "nord", "4s:office_loop", "4s:old_town", "4s:countryside"]
 SV = [("W5", "W = 5"), ("W20", "W = 20"), ("wr25", "w_route = 0.25"), ("wr100", "w_route = 1"), ("p005", "p = 0.005"), ("p02", "p = 0.02"),
       ("g05", "bán kính +G = 0.5 excl"), ("g2", "bán kính +G = 2 excl"), ("shd05", "dung sai SH × 0.5"), ("shd2", "dung sai SH × 2"),
       ("b01", "β cổng = 0.01"), ("b10", "β cổng = 0.10"), ("R5", "R mở khoá = 5"), ("R20", "R mở khoá = 20")]
@@ -19,6 +19,15 @@ CF = [("base", "N = 20, ρ = off_d (tính lại)"), ("N10", "N = 10"), ("N40", "
 def mean_cell(T, d, n, k):
     v = np.array(T.get(d, {}).get(n, []), float)
     return v[:, k].mean() if len(v) else np.nan
+
+
+def restrict(R, keys):
+    """the runs of R whose (ds, desc, run) key is in keys"""
+    return {ds: {de: {rk: run for rk, run in rs.items() if (ds, de, rk) in keys} for de, rs in bd.items()} for ds, bd in R.items()}
+
+
+def keys_of(R):
+    return {(ds, de, rk) for ds, bd in R.items() for de, rs in bd.items() for rk in rs}
 
 
 def sens_table(Ts, labels, rule, ref_T, title, alpha):
@@ -40,13 +49,17 @@ def sens_table(Ts, labels, rule, ref_T, title, alpha):
 
 def main():
     L = []
-    TB = E.defaults(E.load(arg("--base"))) if arg("--base") else {}
+    RB = E.load(arg("--base")) if arg("--base") else {}; TB = E.defaults(RB)
     for flag, labels, nm in (("--sens", SV, "lớp quyết định"), ("--cf", CF, "dựng null phản thực (seed 0, 42 run)")):
         if not arg(flag): continue
-        Ts = {k: E.defaults(E.load(os.path.join(arg(flag), k))) for k, _ in labels if os.path.isdir(os.path.join(arg(flag), k))}
-        if flag == "--sens": Ts = {"default": TB, **Ts}; labels = [("default", "**mặc định (vòng 8)**")] + labels
+        Rs = {k: E.load(os.path.join(arg(flag), k)) for k, _ in labels if os.path.isdir(os.path.join(arg(flag), k))}
+        if not Rs: continue
+        common = set.intersection(*[keys_of(R) for R in Rs.values()])          # the runs every variant has (paired rows)
+        Ts = {k: E.defaults(restrict(R, common)) for k, R in Rs.items()}
+        Tref = E.defaults(restrict(RB, common))                               # CPC-SC-T(1/2)+SH on the same runs
+        if flag == "--sens": Ts = {"default": Tref, **Ts}; labels = [("default", f"**mặc định** ({len(common)} run)")] + labels
         for rule, al in (("CMS-CPC/H+SH+G+NGRr", 0.05), ("CMS-CPCW/H+SH+NGRr", 0.05), ("CMS-CPC/H+SH+G(a=0.01)+NGRr", 0.01)):
-            L += sens_table(Ts, labels, rule, TB, f"### Độ nhạy — {nm}: {rule} (recall / segFAR TB / sai số m), α = {al}", al)
+            L += sens_table(Ts, labels, rule, Tref, f"### Độ nhạy — {nm}: {rule} (recall / segFAR TB / sai số m), α = {al}", al)
     if arg("--time"):
         rows = {}
         for f in glob.glob(os.path.join(arg("--time"), "**", "time_*.json"), recursive=True):
