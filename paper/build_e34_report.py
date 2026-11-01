@@ -64,6 +64,17 @@ def main():
                 T = E.defaults(Rs[v]); cells = [f"{m(T, d, CSTM, 0):.3f} / {m(T, d, CSTM, 1):.3f}" for d in MAIN]
                 L.append(f"| {lab} | " + " | ".join(cells) + f" | {sum(m(T, d, CSTM, 1) <= 0.05 for d in MAIN)}/7 |")
             L.append("")
+    if arg("--e35"):                     # Entry 35: SH AND CST, seeds 0-2, default SH (d/) and SH tolerance x 2 (x2/)
+        R35 = [("CPC-SC-T0.5+SH", "CPC-SC-T½+SH"), (SH, "CMS-CPC/H+SH+G+NGRr (SH)"), ("CMS-CPC/H+SH+CST+G+NGRr", "**CMS-CPC/H+SH+CST+G+NGRr (SH ∧ CST)**"),
+               (CSTM, "CMS-CPC/H+CST+G+NGRr (CST)"), ("CMS-CPCW/H+SH+NGRr", "CMS-CPCW/H+SH+NGRr"), ("CMS-CPCW/H+SH+CST+NGRr", "CMS-CPCW/H+SH+CST+NGRr")]
+        for v, lab in (("d", "dung sai SH mặc định"), ("x2", "dung sai SH × 2")):
+            dd = os.path.join(arg("--e35"), v)
+            if not os.path.isdir(dd): continue
+            T = E.defaults(E.load(dd))
+            L += tab_def(T, R35, [d for d in MAIN if d in T], f"### Entry 35 — SH ∧ CST, {lab} (seed 0–2, 114 run): recall / segFAR TB / tệ nhất / sai số (m)", oracle=False)
+            ok = sum(m(T, d, "CMS-CPC/H+SH+CST+G+NGRr", 1) <= 0.05 for d in MAIN); okw = sum(m(T, d, "CMS-CPCW/H+SH+CST+NGRr", 1) <= 0.05 for d in MAIN)
+            oks = sum(m(T, d, SH, 1) <= 0.05 for d in MAIN)
+            L += [f"segFAR ≤ α: SH ∧ CST {ok}/7, CPCW SH ∧ CST {okw}/7, SH một mình {oks}/7.", ""]
     if arg("--oxford"):
         R = E.load(arg("--oxford")); T = E.defaults(R); nr = sum(len(v) for v in R.get("oxford", {}).values())
         OX = [("Xu21", "Xu'21 (nhãn)"), ("Claxton24", "Claxton'24 (nhãn)"), ("TAO26", "TAO'26 (nhãn)"), ("max-sim", "max-sim (nhãn)"),

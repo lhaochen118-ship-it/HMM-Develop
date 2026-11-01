@@ -25,6 +25,20 @@ validity), at almost no cost against SH alone.
 SH x 2 (where SH alone broke alpha on CMU and 4S countryside, Entry 32). H35b: at the default SH, its recall is within 0.01 of
 CMS-CPC/H+SH+G+NGRr and its navigation error within 1 m on >= 6/7.
 
+**Results (228 runs; raw `analysis/results/e35/e35.tgz`, tables in `paper/e34_tables.md`).**
+1. *H35a supported.* SH AND CST has mean segFAR <= 0.05 on 7/7 with the default SH (max 0.004) AND with SH x 2 (max 0.017;
+   CPCW variant max 0.023). SH x 2 alone on the same runs: CMS-CPC 4S countryside 0.100; CMS-CPCW 4S office 0.066 and countryside
+   0.108. The tolerance can no longer break validity.
+2. *H35b supported (6/7 for recall, 7/7 for error).* At the default SH, recall vs SH alone: -0.001 (Boreas), -0.004 (NCLT), -0.002
+   (CMU), 0.000 (Nordland), -0.003 (4S office), -0.001 (old town), -0.014 (countryside). Navigation error is within 1 m on 7/7
+   (countryside +0.9 m, the others <= 0.1 m). SH x 2 AND CST behaves like CST alone (the loose SH removes nothing), with its
+   navigation cost (Boreas 14.7 m).
+**Verdict and recommended rule: CMS-CPC/H+SH+CST+G+NGRr.** Its validity rests on the counterfactual surgery alone (Theorems 6/6',
+Proposition 14), for any SH tolerance. Its navigation performance equals the hand-set rule's, because SH keeps rejecting the
+boundary false fixes that are outside Proposition 14. The fragility found in Entry 32 is removed at a cost of <= 0.014 recall. The
+causal deployment variant is the same rule with [both] calibration. Open: confirm on all 10 seeds (366 runs) and on Oxford; forward
+surgery for the boundary segments.
+
 ## Entry 34 (branch `hmm-navigation-5`) — counterfactual segment shape test: the surgery also calibrates the EXIT (2026-11-01)
 
 **Step 1 (core limitation, diagnosed with labels on CMU / 4S countryside CosPlace s0-1).** Theorems 6 / 6' / 6'' bound the ONSET
