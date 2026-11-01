@@ -74,8 +74,9 @@ các đoạn phản thực của cùng chuỗi cửa sổ); duy trì bằng chu�
    CMU 0.783 so với 0.744, Nordland 0.815 so với 0.794, countryside 0.605 so với 0.528), hơn Claxton'24 / TAO'26 (có nhãn) 6/7.
 6. **Null chính xác (Bảng 6).** Kết quả của bản cắt cụt và bản chính xác chênh ≤ 0.005 recall: số liệu vòng 6 vẫn đúng; Định lý 6 kiểm
    lại với null chính xác: tỷ lệ thực tế / α = 0.46–1.18, dưới cận 7/7 (Bảng 9).
-7. **Độ bền tỷ lệ lỗ (Bảng 8).** Khuyết 10 %: recall của CMS-CPC/H+SH+NGR cao hơn CPC-SC+CS 6/6, segFAR ≤ 0.009, sai số thấp hơn 4/6
-   (countryside 28.3 so với 49.4 m); khuyết 50 %: recall cao hơn 6/6, cổng đưa CMU từ 0.052 về 0.027 (< α), sai số thấp hơn 4/6.
+7. **Độ bền tỷ lệ lỗ (Bảng 8).** Khuyết 10 %: recall của CMS-CPC/H+SH+NGR cao hơn CPC-SC+CS 6/6, segFAR ≤ 0.017, sai số thấp hơn 4/6
+   (countryside 29.0 so với 50.4 m, Nordland 4.3 so với 10.7); khuyết 50 %: recall cao hơn 6/6, cổng đưa CMU từ 0.051 về 0.027 (< α),
+   sai số thấp hơn 4/6.
 
 ## 6. Hạn chế và việc tiếp theo
 
