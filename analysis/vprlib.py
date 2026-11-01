@@ -246,7 +246,7 @@ def frame_order(dump, ds, ep, desc="salad"):
         n = len(ep.m); qg = np.asarray(ep.q_cond).astype(str)
         return sequences(np.tile(np.arange(n, dtype=float), len(ep.q) // n), qg, 1.5) + \
             sequences(np.arange(n, dtype=float), np.zeros(n, int), 1.5)
-    if ds.startswith("4s") or ds in ("boreas", "nclt"):
+    if ds.startswith("4s") or ds in ("boreas", "nclt") or ds.startswith("nclt:"):
         _, qs = np.unique(ep.q_rec, return_inverse=True); qk = np.empty(len(qs), int)
         for s_ in np.unique(qs): qk[qs == s_] = np.arange((qs == s_).sum())
         return qs, qk, np.zeros(len(ep.m), int), np.arange(len(ep.m))

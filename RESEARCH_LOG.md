@@ -7,6 +7,25 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 32 (branch `hmm-navigation-5`) — sensitivity, running time, natural near off-map (NCLT, every session as the map), literature (2026-11-01)
+
+**Pre-registration (design: Nordland CosPlace s0, 4S old town CosPlace s0, NCLT map 2013-04-05 CosPlace).**
+1. *Decision-layer sensitivity (`analysis/sens_eval.py`, `cms.SENS`, `oc_curves.py --sens`; 366 runs).* One constant at a time:
+   onset window W in {5, 20} (default H = 10), route weight of the e-value mixture wr in {0.25, 1.0} (0.5), presence transitions
+   p in {0.005, 0.02} (0.01), agreement radius of +G g in {0.5, 2} x excl (1), SH tolerance shd in {0.5, 2} x default, gate quantile
+   beta in {0.01, 0.10} (0.05), release length R in {5, 20} (H). Defaults reproduce Entry 30 exactly (checked, max |diff| 1e-16).
+   Rules: CMS-CPC/H+SH+G(+NGRr), CMS-CPCW/H+SH(+NGRr) at alpha 0.05 / 0.01 (`@E32S`).
+2. *Counterfactual construction (`analysis/sens_cf.py`; seed 0, 42 runs).* Belief window N in {10, 40} (20) and corridor radius
+   rho in {0.75, 1.25} x off_d, recomputing the exact top-300 and the statistics; "base" (N = 20, rho = off_d) recomputed in the
+   same job for the timing reference. Wall time of every stage (top-300 on the GPU, counterfactual statistics, decision layer).
+3. *Natural near off-map (`natural_eval.py nclt:<ref>`).* NCLT with each of the 8 other sessions as the map (no hole, real wheel+FOG
+   odometry; 6-13 % of the query frames naturally > 20 m from the map, 26-93 excursions >= 10 frames per map; MSLS val and 4Seasons
+   within-scene were checked and have <= 1.2 % / 0 % natural off-map, unusable), 48 runs, both inits.
+4. *Hypotheses.* H32a: for every variant of 1-2 the proposed rule keeps mean segFAR <= alpha on 7/7 and its recall stays above
+   CPC-SC-T(1/2)+SH on >= 6/7 (robust to the a-priori constants); H32b: the decision layer costs < 1 ms per frame and the
+   counterfactual statistics < 10 ms per frame (real-time at 10 Hz on one CPU core); H32c: on the 9 NCLT maps the causal CMS rules
+   keep segFAR <= alpha (pooled) and beat CPC-SC-T(1/2)+SH in recall on >= 6/9 maps.
+
 ## Entry 31 (branch `hmm-navigation-5`) — HMM-centric CMS: joint place-presence HMM with a calibrated OFF state (2026-11-01)
 
 **Pre-registration (design runs: Nordland CosPlace s0, 4S countryside MegaLoc s0, 4S old town CosPlace s0).**

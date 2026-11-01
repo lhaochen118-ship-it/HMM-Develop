@@ -41,6 +41,12 @@ from cpc_sc import logodds, consistency_ok
 import cpc_geo as CG
 import tao as TAO
 
+import sys as _sys
+# Entry 32 sensitivity: --sens k=v,k=v (W window, wr route weight, p presence transitions, g agreement radius / excl,
+# shd SH tolerance / default, beta gate quantile, R release length); empty = the a-priori defaults of Entries 28-31
+SENS = dict(kv.split("=") for kv in _sys.argv[_sys.argv.index("--sens") + 1].split(",")) if "--sens" in _sys.argv else {}
+SENS = {k: float(v) for k, v in SENS.items()}
+P_TR = SENS.get("p", 0.01)
 OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}
 
 
@@ -197,9 +203,9 @@ def rank_p(pool, x, lower_is_on):
     return (1 + np.searchsorted(srt, v, side="right")) / (1 + len(srt))
 
 
-def chain_parts(z, b, st, w_route=0.5, alpha=0.05, use=("z", "cost")):
+def chain_parts(z, b, st, w_route=None, alpha=0.05, use=("z", "cost")):
     """per-condition CMS presence chain: query log LR, counterfactual log LR, kappa per frame, n segments per frame"""
-    H, seqs = b["H"], b["seqs"]; n = len(z["cond"])
+    H, seqs = b["H"], b["seqs"]; n = len(z["cond"]); w_route = SENS.get("wr", 0.5) if w_route is None else w_route
     llq, llc, kap, nseg = np.zeros(n), np.zeros(n), np.full(n, np.inf), np.zeros(n, int)
     for sqs, cqs in cal_groups(z, seqs):
         m = np.concatenate(sqs); mc = np.concatenate(cqs); comps_q, comps_c = [], []
@@ -216,17 +222,17 @@ def chain_parts(z, b, st, w_route=0.5, alpha=0.05, use=("z", "cost")):
             comps_q.append((a * pq ** (a - 1)) ** pw); comps_c.append(ec)
         llq[m] = np.log(np.mean(comps_q, 0)); llc_g = np.zeros(n); llc_g[mc] = np.log(np.mean(comps_c, 0))
         if mc is m or np.array_equal(mc, m): llc[m] = llc_g[m]
-        segs = _segments(cqs, H); k, ns = kappa_max_chain(llc_g, segs, alpha); kap[m] = k; nseg[m] = ns
+        segs = _segments(cqs, H); k, ns = kappa_max_chain(llc_g, segs, alpha, P_TR, P_TR); kap[m] = k; nseg[m] = ns
     return llq, llc, kap, nseg
 
 
-def windowed_parts(z, b, st, alpha=0.05, W=None, w_route=0.5):
+def windowed_parts(z, b, st, alpha=0.05, W=None, w_route=None):
     """CMS-W: FINITE-MEMORY presence evidence -- the CMS presence chain restarted at odds 1 at t - W + 1 (W = H), so every
     report (not only an onset) depends on the last W frames: Theorem 6 covers every reported frame, any dependence.
     Returns the real windowed log-odds and kappa_W (conformal (1 - alpha) quantile of the max windowed counterfactual
     log-odds over H-frame segments of the calibration stream)."""
     from cpc_sc import window_logodds
-    H, seqs = b["H"], b["seqs"]; W = W or H; n = len(z["cond"])
+    H, seqs = b["H"], b["seqs"]; W = W or int(SENS.get("W", H)); n = len(z["cond"]); w_route = SENS.get("wr", 0.5) if w_route is None else w_route
     wq, kap = np.full(n, -np.inf), np.full(n, np.inf)
     for sqs, cqs in cal_groups(z, seqs):
         m = np.concatenate(sqs); mc = np.concatenate(cqs); cq, cc = [], []
@@ -239,7 +245,7 @@ def windowed_parts(z, b, st, alpha=0.05, W=None, w_route=0.5):
             ec = (a * pc ** (a - 1)) ** pw; ec[~fin] = 1.0
             cq.append((a * pq ** (a - 1)) ** pw); cc.append(ec)
         llq = np.zeros(n); llq[m] = np.log(np.mean(cq, 0)); llc = np.zeros(n); llc[mc] = np.log(np.mean(cc, 0))
-        wq[m] = window_logodds(llq, sqs, W)[m]; wc = window_logodds(llc, cqs, W)
+        wq[m] = window_logodds(llq, sqs, W, P_TR, P_TR)[m]; wc = window_logodds(llc, cqs, W, P_TR, P_TR)
         mx = np.sort([wc[sg].max() for sg in _segments(cqs, H)]); k = int(np.ceil((1 - alpha) * (len(mx) + 1)))
         kap[m] = mx[k - 1] if 0 < k <= len(mx) else np.inf
     return wq, kap
@@ -297,13 +303,13 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
             F[nm + tg] = (sF - kF, xt, 0.0, sF > kF)
             if tg == "": F[nm + "+SH"] = (np.where(sh_t, sF - kF, -np.inf), xt, 0.0, (sF > kF) & sh_t)
     lo_parts = chain_parts(z, b, st, alpha=alpha)
-    llq, _, kap, _ = lo_parts; lo = logodds(llq, seqs)
+    llq, _, kap, _ = lo_parts; lo = logodds(llq, seqs, P_TR, P_TR)
     F["CMS-CPC"] = (lo - kap, xt, 0.0, CG.hyst_ok(lo > kap, lo > 0, np.ones(len(lo), bool), seqs) & okj)
     F["CMS-CPC+SH"] = (np.where(sh_t, lo - kap, -np.inf), xt, 0.0, CG.hyst_ok(lo > kap, lo > 0, np.ones(len(lo), bool), seqs) & sh_t)
     # reported place = the HMM place-chain MAP (smooth track; the paper's HMM decision), shape stop on that track and the
     # agreement gate |TAO winner - MAP| <= excl (both the route evidence and the place chain point at the same place)
-    xc = MP[b["est_c"]]; agree = okj & (np.linalg.norm(xc - xt, axis=1) <= excl)
-    sh_c = CG.shape_ok(xc, z["o_q"], seqs, excl, 3.0, 0.5, hz=hz)
+    xc = MP[b["est_c"]]; agree = okj & (np.linalg.norm(xc - xt, axis=1) <= excl * SENS.get("g", 1.0))
+    sh_c = CG.shape_ok(xc, z["o_q"], seqs, excl, 3.0, 0.5 * SENS.get("shd", 1.0), hz=hz)
     one = np.ones(len(lo), bool)
     for tg, ok in (("H", one), ("H+SH", sh_c), ("H+SH+G", sh_c & agree), ("H+G", agree)):
         F[f"CMS-CPC/{tg}"] = (np.where(ok, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & ok)

@@ -27,7 +27,7 @@ def run(cmd):
 
 
 def main():
-    dump, pair, desc = sys.argv[1], sys.argv[2], sys.argv[3]; ds = "4sx:" + pair; tag = ds.replace(":", "_")
+    dump, pair, desc = sys.argv[1], sys.argv[2], sys.argv[3]; ds = pair if ":" in pair else "4sx:" + pair; tag = ds.replace(":", "_")   # Entry 32: any ds (nclt:<ref>)
     W = os.path.abspath(f"_nat_{tag}_{desc}"); ncd, tkd, cmd_, tcd = (os.path.join(W, x) for x in ("nav", "topk", "cms", "taoc"))
     for d in (ncd, tkd, cmd_, tcd, "results"): os.makedirs(d, exist_ok=True)
     t0 = time.time(); nf = f"results/navcache_{tag}_{desc}_s0.npz"
@@ -44,7 +44,7 @@ def main():
     print(f"{ds}/{desc}: cache + top-300 + cms {time.time() - t0:.0f}s, q {q.shape}, map {M[z['kidx']].shape}", flush=True)
     base = [sys.executable, os.path.join(HERE, "oc_curves.py"), ncd, ds, desc, "--seeds", "0", "--jobs", "1", "--topk", tkd, "--taocache", tcd,
             "--cms", cmd_, "--mapdump", dump, "--tw", "0.5", "--variants", "--light", "--cms-alpha", "0.05,0.01", "--cms-groups", "cond,loco,online",
-            "--navgate", "--nav-pts", "3", "--fams", FAMS]
+            "--navgate", "--nav-pts", "3", "--fams", FAMS] + (["--gate-rate"] if "--gate-rate" in sys.argv else [])
     run(base + ["--out-suffix", "_s0"])
     if TOP1: run(base + ["--out-suffix", "_top1_s0", "--defaults-only", "--nav-init", "top1"])
     print(f"done {time.time() - t0:.0f}s", flush=True)

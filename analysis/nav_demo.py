@@ -326,6 +326,7 @@ def main():
     seeds = int(sys.argv[4]) if len(sys.argv) > 4 else 3; H = int(sys.argv[5]) if len(sys.argv) > 5 else 10
     if ds.startswith("4s:"): ep = V.load_4seasons(dump, desc, ds[3:]); c = CFG["cmu"]
     elif ds.startswith("4sx:"): ep = V.load_4s_cross(dump, desc, ds[4:]); c = CFG["cmu"]      # Entry 30: natural off-map (other scene)
+    elif ds.startswith("nclt:"): ep = V.load_nclt(dump, desc, ref=ds[5:]); c = CFG["nclt"]   # Entry 32: NCLT with another reference session
     elif ds == "boreas": ep = V.load_boreas(dump, desc); c = CFG["cmu"]
     else: ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
     q_sid, q_k, m_sid, m_k = V.frame_order(dump, ds, ep, desc)
@@ -335,7 +336,7 @@ def main():
     out = {"ds": ds, "desc": desc, "H": H, "runs": []}
     for seed in range(SEED0, SEED0 + seeds):
         rng = np.random.default_rng(seed); bid0, _ = V.map_cells(ep.m_pos, c["block"]); ub = np.unique(bid0)
-        keep = ~np.isin(bid0, rng.choice(ub, int(round((0.0 if (ds == "nclt" or ds.startswith("4sx")) else DROP) * len(ub))), replace=False))   # NCLT: natural off-map, no holes
+        keep = ~np.isin(bid0, rng.choice(ub, int(round((0.0 if (ds.startswith("nclt") or ds.startswith("4sx")) else DROP) * len(ub))), replace=False))   # NCLT: natural off-map, no holes
         M, MP = ep.m[keep].astype(np.float32), ep.m_pos[keep]
         d_map, _ = cKDTree(MP).query(ep.q_pos); inm, offm = d_map <= c["in_d"], d_map > c["off_d"]
         nrm = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True); mu = M.mean(0, keepdims=True); Mc = nrm(M - mu); qc = nrm(q - mu)
@@ -510,7 +511,7 @@ def main():
         xfs = {n: (x_hmm if n.startswith("HMM") else joint[n][1] if n in joint else (x_cpc if n.startswith("CPC") else x_fix)) for n in rules}
         pons = {"CPC-HMM (ours)": pon, **{k: v[2] for k, v in joint.items()}}
         cx = dict(q_pos=ep.q_pos, o_q=o_q, real=real, q_seqs=q_seqs, hz=hz, seed=seed, excl=c["excl"], inm=inm, offm=offm, H=H,
-                  head=ds == "nclt")                                 # NCLT: heading-offset EKF (Segway heading drifts)
+                  head=ds.split(":")[0] == "nclt")                                 # NCLT: heading-offset EKF (Segway heading drifts)
         if CACHE:                                                  # everything a new presence rule needs (nav_rules.py), no recompute
             os.makedirs("results", exist_ok=True)
             fl = np.concatenate(nchunks) if nchunks else np.zeros(0, int)

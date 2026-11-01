@@ -3,6 +3,25 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 15 (Entry 32, 2026-11-01) — systematic search before writing the paper
+
+**Queries (17, web):** VPR integrity monitoring false-positive guarantee sequential navigation; e-detectors / Shiryaev-Roberts /
+conformal test martingale change detection; open-set place recognition unknown-place calibrated threshold; visual localization
+protection level integrity risk conformal; synthetic null by removing the true match / leave-out calibration / loop-closure
+verification without labels; conformal prediction VPR 2025-2026 sequence guarantee; place recognition out-of-map / unmapped HMM;
+conformal under temporal dependence (blocks, Markov, mixing, time-series anomaly); Carson-Ford-Milford integrity; sequence-matching
+receptiveness (IROS 2025); counterfactual null calibration retrieval removing database neighbourhood; plus Gates 12-14.
+**Closest work and the gap (details, table: `literature/RELATED_WORK_E32.md`).** SafeVPR'26 (conformal, labelled calibration,
+breaks under condition shift); Lee & Pollefeys ICRA'14 (label-free mixture threshold, degenerates without loop closures, no
+guarantee); Xu'21 (HMM off-map state, tuned); E-detectors (Shin-Ramdas-Rinaldo; need prespecified pre/post classes); Vovk conformal
+change detection (exchangeability null of the data itself); conformal under beta-mixing / block conformal (mixing assumption);
+integrity predictors Carson'22/'23, Claxton'24, SMR'25 (supervised, no guarantee); protection levels for camera localization
+(error models).
+**Verdict.** The three contributions (counterfactual map-surgery null on the deployment stream; label-free per-segment false-onset
+bound with quantified self-contamination; an HMM off-map state calibrated by it) were NOT found in the queries performed. Prior art
+for every component taken alone is listed and will be cited. Full-text reading of SafeVPR, E-detectors, Vovk 2020, Lee-Pollefeys
+2014 and a proceedings sweep (RA-L / RSS / ICRA / IROS 2024-2026) remain before submission.
+
 ## Gate 14 (Entry 31, 2026-11-01) — HMM with a counterfactually calibrated off-map state
 
 **Claim checked.** A joint place-presence HMM whose OFF-map state emission is set from a counterfactual null (map surgery around
