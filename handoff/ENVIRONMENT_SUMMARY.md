@@ -208,13 +208,22 @@ nào; thêm kernel mới = chạy lại với danh sách mới (kernel đã xong
 **User 2026-11-01 13:30: "tạm thời giảm số luồng, chỉ chạy 1–2 luồng kẻo bị Kaggle ban".** Từ đó: một tiến trình theo dõi duy nhất
 (`--gap 60 --run-poll 1800 --backoff 1800`, tức ≤ 1 lệnh API mỗi phút, nghỉ 30 phút khi bị giới hạn; `--pull-first` cho kernel chắc
 chắn đã xong: một lệnh `output` thay vì `status` + `output`); **không đẩy kernel mới khi API còn bị giới hạn**; việc mới gộp vào
-1–2 kernel và chạy song song bên trong phiên (`--par`), không rải ra nhiều kernel.
-**User 2026-11-01 14:40 (làm rõ): "ý tôi là giảm số acc đang sử dụng xuống, nhưng vẫn giữ nguyên luật dồn hết tiến trình GPU và
-CPU lên 1 acc".** Tức là: **dùng càng ít acc cùng lúc càng tốt**; luật đóng gói giữ nguyên (đủ 2 GPU + 5 CPU trên một acc rồi mới
-sang acc tiếp theo). Không huỷ kernel đang chạy (mất công tính); acc nào đang chạy thì để chạy xong rồi thôi dùng. Việc mới chỉ
-đặt trên acc đang dùng dở (vd. phatle1578 khi các phiên của nó xong), mở acc mới chỉ khi acc hiện tại đã đầy. Bộ theo dõi gom lệnh
-API theo acc (xong việc của một acc rồi mới sang acc khác). Tuỳ chọn `--cap` của `central_monitor.py` (giới hạn phiên mỗi acc) là
-một cách hiểu sai lúc 14:30, **không dùng**.
+1–2 kernel và chạy song song bên trong phiên (`--par`), không rải ra nhiều kernel (thay bằng luật 14:45 bên dưới).
+**LUẬT HIỆN HÀNH cho kernel mới (user 2026-11-01 14:45): "Kernel đang chạy rồi thì cứ chạy đi. Nhưng từ giờ kernel mới tạo ra
+thì: dồn hết tiến trình GPU và CPU lên 1 acc, hết rồi mới đổ sang acc khác; chỉ dùng tối đa 4 acc cùng lúc; những quy định khác về
+tối ưu, reset nếu đợi lâu vẫn giữ nguyên."**
+- Acc nhận kernel mới: `automation/active_accounts.txt` (tối đa 4; hiện phatle1578, mucnokieu, huyenco, nguynduylm — đúng 4 acc đang
+  chạy E33, nên không mở acc thứ 5). `fanout.py` mặc định dùng danh sách này và từ chối > 4 acc.
+- Quy trình: `fanout.py <work> <prefix> <jobs> ... --build-only` (dựng thư mục kernel, cập nhật code dataset của cả 4 acc, KHÔNG
+  đẩy) → chạy lại `central_monitor.py` với danh sách cũ + thư mục mới. Bộ theo dõi đẩy mỗi kernel mới lên **acc đầu tiên trong
+  danh sách còn slot trống đúng loại** (2 GPU / 5 CPU mỗi acc; đếm cả kernel đang chạy nó theo dõi) — tức đầy acc 1 mới sang acc 2;
+  không còn slot thì kernel chờ. Một lần đẩy mỗi vòng lặp; nhịp API giữ nguyên (≥ 60–90 s, nghỉ 30 phút khi bị giới hạn).
+- Reset giữ nguyên: QUEUED quá 8 phút (L4/CPU) / 10 phút (T4) ⇒ xoá + đẩy lại, tối đa 5 lần; L4 vẫn kẹt ⇒ log có lỗi code
+  (Traceback / ERROR) thì `STALL_GIVEUP … NEEDS_FIX` (sửa rồi chạy lại), không có lỗi thì **tự chuyển sang 2 × T4** (bỏ
+  `machine_shape`, 3 job song song, ngưỡng 10 phút) và chờ slot GPU. Đã kiểm bằng mô phỏng (CLI `kaggle` giả): đóng gói đúng thứ
+  tự, chuyển acc khi đầy, nhánh T4 và nhánh NEEDS_FIX.
+- Kernel đang chạy trên các acc cũ: để chạy xong, chỉ kéo kết quả, không đẩy gì mới lên đó.
+- Hai cách hiểu sai đã bỏ: giới hạn 2 phiên mỗi acc (14:30) và "chỉ 1–2 kernel" (13:30, nay là: tối đa 4 acc, mỗi acc đầy đủ slot).
 
 **Vòng 6 (2026-11-01, branch `hmm-navigation-5`):** user cấp 10 acc: `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`,
 `nguyenhoa99`, `yuan1103`, `synchan5704`, `anderson1202`, `loinguyentran`, `yeshenhi` (token ở `~/.kaggle/tokens_raw`,

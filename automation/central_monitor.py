@@ -8,8 +8,12 @@ Every API call goes through one queue with a minimum gap between calls. The gap 
 What happens to each kernel:
   - Its status is polled: every 2 min while QUEUED, every --run-poll seconds (default 600) while RUNNING.
   - QUEUED for longer than the stall limit (8 min L4/CPU, 10 min T4; user rule) -> delete + re-push, at most 5 times.
-    After that the kernel is marked STALL_GIVEUP and left to the operator, who first checks its log for a code error and
-    otherwise moves it to 2x T4.
+    After that (user rule): an L4 kernel with no code error in its log (Traceback / ERROR status) is moved to 2x T4 (3 parallel
+    jobs) and queued again; otherwise STALL_GIVEUP (NEEDS_FIX if its log has an error).
+  - NEW kernels (dir built by `fanout.py --build-only`, no PUSH line in <slug>.log yet) wait for a slot: each is pushed to the
+    FIRST account of automation/active_accounts.txt (at most 4 accounts) that has a free session of its type (2 GPU / 5 CPU per
+    account), so one account is filled before the next (user rule 2026-11-01 14:45); the kernel is moved to that account
+    (metadata id + the account's code dataset) if it was built for another one.
   - COMPLETE / ERROR / CANCEL -> outputs are pulled into <slug>_out and results.tar is unpacked. The kernel stdout and
     STATUS=DONE:<state> are appended to <slug>.log, and results/*.json are copied to analysis/results/ (unless --nocopy).
     A kernel whose jobs returned rc != 0 is flagged NEEDS_FIX.
@@ -20,13 +24,8 @@ kernels that are already done are skipped.
 --pull-first REGEX : kernels whose slug matches are expected to be finished: their outputs are pulled first (one call instead of
     status + output); a kernel whose pull brings no results.tar falls back to status polling.
 Calls are grouped by account: a due kernel of the account used by the previous call goes first, so the monitor works through
-the accounts one after another instead of touching all of them every minute (user 2026-11-01: use as few accounts at a time
-as possible; the packing rule 2 GPU + 5 CPU per account, next account only when full, is unchanged).
---cap N [--keep REGEX] : (optional, not the current policy) at most N active sessions per Kaggle account. A kernel found RUNNING / QUEUED beyond its account's N highest-priority active kernels (priority:
-    slug matches --keep, then order on the command line; kernels of unknown status count as active) is deleted and PARKED; a
-    parked kernel is re-pushed (from scratch) as soon as its account has fewer than N active kernels.
-Usage: central_monitor.py <state.json> [--gap 15] [--run-poll 600] [--backoff 600] [--pull-first REGEX] [--cap N] [--keep REGEX]
-       [--nocopy] <kernel_dir> [...]"""
+the accounts one after another instead of touching all of them every minute.
+Usage: central_monitor.py <state.json> [--gap 15] [--run-poll 600] [--backoff 600] [--pull-first REGEX] [--nocopy] <kernel_dir> [...]"""
 import sys, os, re, json, glob, time, shutil, subprocess, random
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -40,7 +39,7 @@ def opt(k, d):
 
 
 GAP_MIN = float(opt("--gap", "15")); RUN_POLL = float(opt("--run-poll", "600")); BACKOFF = float(opt("--backoff", "600"))
-PULL_FIRST = re.compile(opt("--pull-first", "^$")); CAP = int(opt("--cap", "0")); KEEP = re.compile(opt("--keep", "^$"))
+PULL_FIRST = re.compile(opt("--pull-first", "^$"))
 NEVER = 1e18
 NOCOPY = "--nocopy" in args
 args = [a for a in args if a != "--nocopy"]
@@ -119,27 +118,64 @@ def pull_done(kd, s):
     say(f"{os.path.basename(kd)}: DONE {state} (pull-first) {len(res)} results, rc!=0: {nbad}{' NEEDS_FIX' if nbad or state != 'complete' else ''}")
 
 
+_act = os.path.join(ROOT, "automation", "active_accounts.txt")
+ACTIVE_ACC = [l.strip() for l in open(_act) if l.strip() and not l.startswith("#")] if os.path.isfile(_act) else []
+LIMIT = {"gpu": 2, "cpu": 5}                                           # Kaggle sessions per account
+
+
+def retarget(kd, s, acc):
+    """move a not-yet-pushed kernel to account acc (metadata id + that account's code dataset; fanout --build-only refreshed it)"""
+    f = os.path.join(kd, "kernel-metadata.json"); md = json.load(open(f)); old = md["id"].split("/")[0]
+    md["id"] = f"{acc}/{os.path.basename(kd)}"
+    md["dataset_sources"] = [d.replace(f"{old}/dive-vpr-analysis", f"{acc}/dive-vpr-analysis") for d in md["dataset_sources"]]
+    json.dump(md, open(f, "w"), indent=2); s["kid"] = md["id"]
+
+
+def to_t4(kd, s):
+    """L4 still queued after 5 restarts and no code error in its log -> 2x T4 (user rule): drop the L4 machine shape, 3 parallel
+    jobs (4 CPUs / 30 GB), stall limit 10 min, restart counter reset; the kernel is queued for a free GPU slot again"""
+    f = os.path.join(kd, "kernel-metadata.json"); md = json.load(open(f)); md.pop("machine_shape", None); md["competition_sources"] = []
+    json.dump(md, open(f, "w"), indent=2)
+    r = os.path.join(kd, md["code_file"]); src = open(r).read()
+    src = re.sub(r"if (\d+): NW = min\(len\(JOBS\), (\d+)\)", lambda m: "if 3: NW = min(len(JOBS), 3)" if int(m.group(1)) else m.group(0), src)
+    open(r, "w").write(src); s.update(stall=600, restarts=0, t4=True, unpushed=True, next=NEVER, queued_since=None, last=None)
+
+
 for kd in KDIRS:
     slug = os.path.basename(kd)
     if slug in ST and ST[slug].get("done"): continue
     md = json.load(open(os.path.join(kd, "kernel-metadata.json")))
     t4 = "T4" in str(md.get("machine_shape", "")) or (md.get("enable_gpu") and not md.get("machine_shape"))
-    ST.setdefault(slug, dict(kid=md["id"], kdir=kd, stall=600 if t4 else 480, restarts=0, queued_since=None, last=None, done=False))
-    ST[slug]["next"] = 0.0
+    pushed = os.path.isfile(kd + ".log") and "PUSH" in open(kd + ".log").read()
+    ST.setdefault(slug, dict(kid=md["id"], kdir=kd, stall=600 if t4 else 480, restarts=0, queued_since=None, last=None, done=False,
+                             gpu=bool(md.get("enable_gpu")), unpushed=not pushed))
+    ST[slug]["gpu"] = bool(md.get("enable_gpu"))                       # session type (2 GPU / 5 CPU slots per account)
+    if "unpushed" not in ST[slug]: ST[slug]["unpushed"] = not pushed
+    ST[slug]["next"] = NEVER if ST[slug]["unpushed"] else 0.0
 save()
 pend = [k for k, s in ST.items() if not s["done"] and s["kdir"] in KDIRS]
-say(f"monitoring {len(pend)} kernels, gap {gap:.0f} s, run poll {RUN_POLL:.0f} s")
+say(f"monitoring {len(pend)} kernels ({sum(bool(ST[k].get('unpushed')) for k in pend)} waiting for a slot), gap {gap:.0f} s, "
+    f"run poll {RUN_POLL:.0f} s, new kernels on {ACTIVE_ACC}")
 acct = lambda k: ST[k]["kid"].split("/")[0]
-prio = lambda k: (not KEEP.search(k), KDIRS.index(ST[k]["kdir"]) if ST[k]["kdir"] in KDIRS else 1 << 30)
+ktype = lambda k: "gpu" if ST[k].get("gpu") else "cpu"
+prio = lambda k: KDIRS.index(ST[k]["kdir"]) if ST[k]["kdir"] in KDIRS else 1 << 30
+busy = lambda a, t: [k for k in pend if acct(k) == a and ktype(k) == t and not ST[k].get("unpushed")]
 last_acct = [None]
-active = lambda a: sorted([k for k in pend if acct(k) == a and not ST[k].get("parked")], key=prio)
 while pend:
-    if CAP:                                                            # re-push one parked kernel of an account below the cap
-        for k in sorted([k for k in pend if ST[k].get("parked")], key=prio):
-            if len(active(acct(k))) < CAP:
-                s = ST[k]; p = api(s["kid"], "kernels", "push", "-p", s["kdir"])
-                say(f"{k}: UNPARK -> PUSH {p.splitlines()[-1][:100] if p else ''}")
-                s.update(parked=False, queued_since=time.time(), last=None, next=time.time() + 120); save(); break
+    # user rule 2026-11-01 14:45: a new kernel goes to the FIRST account of active_accounts.txt (at most 4) with a free slot of its
+    # type (2 GPU / 5 CPU sessions), i.e. one account is filled before the next; no free slot -> it waits. One push per iteration.
+    for k in sorted([k for k in pend if ST[k].get("unpushed") and ST[k].get("retry", 0) <= time.time()], key=prio):
+        a = next((a for a in ACTIVE_ACC if len(busy(a, ktype(k))) < LIMIT[ktype(k)]), None)
+        if a is None: continue
+        s = ST[k]
+        if acct(k) != a: retarget(s["kdir"], s, a)
+        p = api(s["kid"], "kernels", "push", "-p", s["kdir"]); line = p.splitlines()[-1][:120] if p else ""
+        with open(s["kdir"] + ".log", "a") as fh: fh.write(f"{ts()} PUSH: {line}\n")
+        if "successfully pushed" in p.lower() or "kernel version" in p.lower():
+            s.update(unpushed=False, queued_since=time.time(), last=None, next=time.time() + 120); say(f"{k}: PUSH -> {a} ({ktype(k)})")
+        else:
+            s["retry"] = time.time() + 600; say(f"{k}: PUSH_FAILED on {a}: {line}")
+        save(); break
     due = [k for k in pend if ST[k]["next"] <= time.time()]
     same = [k for k in due if acct(k) == last_acct[0]]                 # stay on the account of the previous call while it has work
     slug = min(same or due or pend, key=lambda k: (ST[k]["next"] if not (same or due) else prio(k))); s = ST[slug]; last_acct[0] = acct(slug)
@@ -160,15 +196,17 @@ while pend:
     if any(x in low for x in ("complete", "error", "cancel")):
         state = "complete" if "complete" in low else ("error" if "error" in low else "cancel")
         pull(s["kdir"], s, state); s["done"] = True; pend.remove(slug); save(); continue
-    if CAP and slug not in active(acct(slug))[:CAP]:                   # over the per-account cap: stop it, re-run later
-        api(s["kid"], "kernels", "delete", "-y", s["kid"])
-        say(f"{slug}: PARKED (account {acct(slug)} over the cap of {CAP} sessions; deleted, re-pushed later)")
-        s.update(parked=True, next=NEVER, queued_since=None, last=None); save(); continue
     if "queued" in low:
         s["queued_since"] = s["queued_since"] or now
         if now - s["queued_since"] > s["stall"]:
             if s["restarts"] >= 5:
-                say(f"{slug}: STALL_GIVEUP (queued {int(now - s['queued_since'])} s after 5 restarts) -- check log for code errors, else 2x T4")
+                api(s["kid"], "kernels", "delete", "-y", s["kid"])     # never leave a queued session behind
+                log = open(s["kdir"] + ".log").read()
+                err = "Traceback" in log or "STATUS=DONE:error" in log or "KernelWorkerStatus.ERROR" in log
+                if s["gpu"] and not s.get("t4") and not err:
+                    to_t4(s["kdir"], s); say(f"{slug}: L4 queue stuck after 5 restarts, no code error in its log -> 2x T4 (waits for a GPU slot)")
+                    save(); continue
+                say(f"{slug}: STALL_GIVEUP (queued after 5 restarts{', code error in its log: NEEDS_FIX' if err else ''})")
                 with open(s["kdir"] + ".log", "a") as fh: fh.write("STATUS=STALL_GIVEUP\nSTATUS=DONE:stall\n")
                 s["done"] = True; pend.remove(slug); save(); continue
             s["restarts"] += 1; say(f"{slug}: STUCK (queued {int(now - s['queued_since'])} s) -> delete + re-push {s['restarts']}/5")

@@ -21,6 +21,12 @@ L4 = "--l4" in sys.argv                                                   # 4x L
 _val = {i + 1 for i, a in enumerate(sys.argv) if a in ("--ds", "--par", "--accounts", "--machine", "--models")}  # positions of option values
 args = [a for i, a in enumerate(sys.argv) if i > 0 and i not in _val and not a.startswith("--")]
 if "--accounts" in sys.argv: ACCOUNTS = sys.argv[sys.argv.index("--accounts") + 1].split(",")
+# user rule 2026-11-01 14:45: new kernels only on the accounts of automation/active_accounts.txt (at most 4 at the same time),
+# packed in that order (2 GPU + 5 CPU sessions of one account before the next)
+_act = os.path.join(os.path.dirname(os.path.abspath(__file__)), "active_accounts.txt")
+if "--accounts" not in sys.argv and os.path.isfile(_act):
+    ACCOUNTS = [l.strip() for l in open(_act) if l.strip() and not l.startswith("#")]
+if len(ACCOUNTS) > 4: sys.exit(f"user rule: at most 4 accounts at the same time, got {len(ACCOUNTS)}: {ACCOUNTS}")
 work, prefix, jobs = args[0], args[1], args[2]
 GROUPS = "--groups" in sys.argv                                          # --groups: each line of the jobs file is ONE kernel (jobs ';'-separated)
 if GROUPS:
@@ -54,6 +60,15 @@ def make(kd, slug, part, acc, gpu, t4=False):
 
 
 T4_FALLBACK = set()                                                        # kernels moved from a stuck L4 queue to 2x T4
+if "--build-only" in sys.argv:
+    # --build-only (2026-11-01 14:45): build the kernel dirs and exit WITHOUT pushing; automation/central_monitor.py pushes each one
+    # when its account has a free slot of its type (2 GPU / 5 CPU), so a full account queues instead of spilling to new accounts
+    # the monitor may move a kernel to any account of the list: bring the code dataset of the accounts not used above up to date
+    for acc in [a for a in ACCOUNTS if a not in {slots[k % len(slots)][0] for k in range(nk)}]:
+        r = subprocess.run([sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), os.path.join(work, f"_codesync_{acc}"),
+                            "codesync", "true", "", "--owner", acc], capture_output=True, text=True)
+        print(f"code dataset {acc}: {(r.stdout + r.stderr).strip().splitlines()[:1]}", flush=True)
+    print(f"built {nk} kernels (not pushed): " + " ".join(os.path.join(work, f"{prefix}-{k + 1}") for k in range(nk)), flush=True); sys.exit(0)
 if "--push-only" in sys.argv:
     # --push-only (2026-11-01): push every kernel one after another and exit; automation/central_monitor.py then watches all of
     # them through ONE rate-limited API queue (one run_kernel.py per kernel exceeded the Kaggle API rate limit of this IP)

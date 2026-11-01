@@ -1,0 +1,6 @@
+# Accounts that may receive NEW kernels (user rule 2026-11-01 14:45): at most 4 accounts in use at the same time; pack each one
+# (2 GPU + 5 CPU sessions) before the next; order = packing order. Kernels already running on other accounts are left to finish.
+phatle1578
+mucnokieu
+huyenco
+nguynduylm
