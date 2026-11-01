@@ -17,8 +17,9 @@ ACCOUNTS = [a for a in ACCOUNTS if a not in RESERVED] + [a for a in ACCOUNTS if 
 DSARG = ["--ds", sys.argv[sys.argv.index("--ds") + 1]] if "--ds" in sys.argv else []   # extra dataset sources for every kernel
 DSARG += ["--par", sys.argv[sys.argv.index("--par") + 1]] if "--par" in sys.argv else []   # parallel jobs per session
 DSARG += ["--models", sys.argv[sys.argv.index("--models") + 1]] if "--models" in sys.argv else []   # Kaggle model sources
+KSRC = sys.argv[sys.argv.index("--kernel-sources") + 1] if "--kernel-sources" in sys.argv else ""   # kernel outputs mounted as inputs (e.g. a dump kernel)
 L4 = "--l4" in sys.argv                                                   # 4x L4 sessions (competition grant)
-_val = {i + 1 for i, a in enumerate(sys.argv) if a in ("--ds", "--par", "--accounts", "--machine", "--models")}  # positions of option values
+_val = {i + 1 for i, a in enumerate(sys.argv) if a in ("--ds", "--par", "--accounts", "--machine", "--models", "--kernel-sources")}  # positions of option values
 args = [a for i, a in enumerate(sys.argv) if i > 0 and i not in _val and not a.startswith("--")]
 if "--accounts" in sys.argv: ACCOUNTS = sys.argv[sys.argv.index("--accounts") + 1].split(",")
 # user rule 2026-11-01 14:45 / 15:55: new kernels only on the accounts of automation/active_accounts.txt (at most 8 at the same time),
@@ -41,7 +42,7 @@ os.makedirs(work, exist_ok=True); procs = []
 for k in range(nk):
     part = part_of(k); acc, _ = slots[k % len(slots)]; gpu = k < len(slots) and "--cpu" not in sys.argv
     slug = f"{prefix}-{k + 1}"; kd = os.path.join(work, slug)
-    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + ((["--l4"] if L4 else ["--gpu"]) if gpu else []) + DSARG
+    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), KSRC, "--owner", acc] + ((["--l4"] if L4 else ["--gpu"]) if gpu else []) + DSARG
     r = subprocess.run(cmd, capture_output=True, text=True)
     print(f"{slug}: {acc} {'GPU' if gpu else 'CPU'} {len(part)} jobs | {(r.stdout + r.stderr).strip().splitlines()[-1][:60]}", flush=True)
 time.sleep(30)                                                             # let the code datasets finish versioning
@@ -55,7 +56,7 @@ def make(kd, slug, part, acc, gpu, t4=False):
     ds_ = DSARG
     if t4 and "--par" in ds_:                                              # 2x T4 session: 4 CPUs / 30 GB -> 3 parallel jobs
         i = ds_.index("--par"); ds_ = ds_[:i] + ["--par", "3"] + ds_[i + 2:]
-    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), "", "--owner", acc] + flag + ds_
+    cmd = [sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), kd, slug, ";".join(part), KSRC, "--owner", acc] + flag + ds_
     return subprocess.run(cmd, capture_output=True, text=True)
 
 
