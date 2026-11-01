@@ -47,6 +47,7 @@ import sys as _sys
 SENS = dict(kv.split("=") for kv in _sys.argv[_sys.argv.index("--sens") + 1].split(",")) if "--sens" in _sys.argv else {}
 SENS = {k: float(v) for k, v in SENS.items()}
 P_TR = SENS.get("p", 0.01)
+CST = "--cst" in _sys.argv            # Entry 34: counterfactual SEGMENT shape test (exit / persistence calibrated by the surgery)
 SHCF = "--shcf" in _sys.argv          # Entry 33: SH tolerance calibrated on the counterfactual track (beta = SENS shcfb, 0.01)
 OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "oxford": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}
 
@@ -347,6 +348,33 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
         F["CMS-CPCW/H+SHcf"] = (np.where(shf, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, shf, seqs))
     ALPHA_MIN[0] = alpha / 2
     wq2, kW2 = windowed_parts(z, b, st, alpha / 2)
+    if CST:
+        # Counterfactual Shape Test (Entry 34). The exit / persistence of a report chain is the gap of Theorems 6-6'': a chain that
+        # is ON when the robot leaves the map is kept by log-odds > 0 and only the shape stop cuts it (hand-set tolerance; x2 breaks
+        # validity, Entry 32). The surgery also gives the null of the TRACK: the counterfactual route MP[j_cf] is false by
+        # construction (the true region is removed), i.e. exactly the ghost track a chain follows after a real exit. Per calibration
+        # group, eps = lower conformal quantile (level a_sh) of the per-SEGMENT minimum shape residual of the counterfactual track;
+        # a frame passes iff its own track residual <= eps. Under S1-S3 for the track (exchangeable ghost segments) a real off-map
+        # segment passes at least once with probability <= a_sh (n+1)/(pi n+1), whatever the chain does => segment false-fix rate
+        # <= (a_onset + a_sh)/pi (union bound; CST2 = a/2 + a/2 <= a/pi). No tolerance constant affects validity.
+        r_c = CG.shape_resid(xc, z["o_q"], seqs, excl, hz=hz)
+        jc2 = np.where(st["j_cf"] >= 0, st["j_cf"], jj); r_cf2 = CG.shape_resid(MP[jc2], z["o_q"], seqs, excl, hz=hz)
+        def cst_ok(a_sh):
+            eps = np.full(len(r_c), -np.inf)
+            for sqs, cqs in cal_groups(z, seqs):
+                m = np.concatenate(sqs); mins = []
+                for sg in _segments(cqs, H):
+                    v = r_cf2[sg]; v = v[np.isfinite(v)]
+                    if len(v): mins.append(v.min())
+                mins = np.sort(mins); k = int(np.floor(a_sh * (len(mins) + 1)))
+                eps[m] = mins[k - 1] if k >= 1 else -np.inf
+            return ~(r_c > eps)                                          # short windows (NaN) pass, as in shape_ok
+        a_sh = SENS.get("csta", 1.0) * alpha
+        ok1, ok2 = cst_ok(a_sh), cst_ok(alpha / 2)
+        F["CMS-CPC/H+CST+G"] = (np.where(ok1 & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & ok1 & agree)
+        F["CMS-CPCW/H+CST"] = (np.where(ok1, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, ok1, seqs))
+        F["CMS-CPC/H+CST2+G"] = (np.where(ok2 & agree, lo2 - kap2, -np.inf), xc, 0.0, CG.hyst_ok(lo2 > kap2, lo2 > 0, one, seqs) & ok2 & agree)
+        F["CMS-CPCW/H+CST2"] = (np.where(ok2, wq2 - kW2, -np.inf), xc, 0.0, CG.hyst_ok(wq2 > kW2, lo2 > 0, ok2, seqs))
     onWU = (sc_t > -kT2) | (wq2 > kW2)
     F["CMS-WU/H+SH"] = (np.where(sh_c, np.maximum(sc_t + kT2, wq2 - kW2), -np.inf), xc, 0.0, onWU & sh_c)
     ALPHA_MIN[0] = alpha

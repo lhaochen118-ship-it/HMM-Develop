@@ -7,6 +7,39 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 34 (branch `hmm-navigation-5`) — counterfactual segment shape test: the surgery also calibrates the EXIT (2026-11-01)
+
+**Step 1 (core limitation, diagnosed with labels on CMU / 4S countryside CosPlace s0-1).** Theorems 6 / 6' / 6'' bound the ONSET
+of a report chain inside an excursion. They say nothing about PERSISTENCE: a chain that is ON when the robot leaves the map is
+kept while log-odds > 0. The presence chain's log-odds are capped near log((1-p)/p) = 4.6 and off-map evidence is weak, so a
+carried chain survives ~20 frames. Without the shape stop SH (CMS-CPC/H+G) the off-map false fixes are 528 / 366 / 320 / 206
+frames per run, 62 / 14 / 20 / 13 % of them in streaks that started ON the map, and 74-87 % at depth >= 20 frames into the
+excursion. SH removes almost all of them (0 / 7 / 86 / 7). SH is therefore the only guard against persistence errors, and its
+tolerance is the one hand-set constant that validity depends on (Entry 32: x 2 breaks validity).
+
+**Step 2 (hypothesis and mechanism).** The map surgery gives a null for the TRACK as well as for the presence statistics. The
+counterfactual route MP[j_cf] is false by construction (the true region is removed): it is the ghost track that a chain follows
+after a real exit. *Counterfactual Shape Test (CST):* per calibration group, eps = lower conformal quantile at level a_sh of the
+per-segment (H frames) MINIMUM shape residual of the counterfactual track. A frame passes iff the residual of its own MAP track is
+<= eps. Proposition (to be written in `paper/cms_theory.md` section 4e): under S1-S3 applied to the track (real ghost segments
+exchangeable with counterfactual ghost segments of the same group), a real off-map segment deep in an excursion passes the test
+at least once with probability <= a_sh (n+1)/(pi n+1), whatever the chain state at entry. With onset at a_on, the segment false-fix
+rate is <= (a_on + a_sh)/pi (union bound) and covers persistence too. CST2 = a/2 + a/2 (end-to-end <= a/pi). CST = a + a
+(practical; theory only <= 2a/pi). No tolerance constant enters validity. Boundary segments (depth < N) stay outside the
+statement, as in Theorem 6'.
+
+**Design check (8 runs, CosPlace: CMU s0-1, countryside s0-1, old town, Nordland, Boreas, NCLT s0; labels only to evaluate).**
+Recall / segFAR of the +G+NGRr rule: SH (hand-set) vs CST2. Countryside 0.673/0 vs 0.641/0, 0.583/0 vs 0.560/0; old town
+0.704/0.003 vs 0.706/0.003; Boreas 0.877/0.018 vs 0.882/0.028; CMU 0.820/0.015 vs 0.805/0.010, 0.883/0 vs 0.867/0; NCLT 0.672/0
+vs 0.659/0; Nordland 0.825/0 vs 0.806/0. CST (a + a) has recall above SH by 0.004-0.017, but Boreas s0 reaches segFAR 0.058,
+which is consistent with its 2a bound.
+
+**Pre-registration (366 runs, before the full evaluation; local CPU, cached statistics; `oc_curves.py --cst --fams @E34`,
+groups cond + loco, alpha 0.05).** H34a (end-to-end validity): CMS-CPC/H+CST2+G+NGRr and CMS-CPCW/H+CST2+NGRr have mean segFAR
+<= 0.05 on 7/7 datasets. H34b (price of removing the constant): their recall is within 0.02 of the hand-set SH rule
+(CMS-CPC/H+SH+G+NGRr) on >= 5/7 and above CPC-SC-T(1/2)+SH on >= 6/7. H34c (causal): the [both] variants of CST2 are valid on
+7/7. Diagnostic: the fraction of datasets where CST (a + a) exceeds a, and its maximum (expected <= 2a).
+
 ## Entry 33 (branch `hmm-navigation-5`) — competitors read in full, improvement attempts, reputable new datasets (2026-11-01)
 
 **Competitors (read in full; `literature/RELATED_WORK_E32.md` section 7).** SafeVPR'26 (labelled Mondrian LTT, FDR under
