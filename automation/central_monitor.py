@@ -11,7 +11,8 @@ What happens to each kernel:
     After that (user rule): an L4 kernel with no code error in its log (Traceback / ERROR status) is moved to 2x T4 (3 parallel
     jobs) and queued again; otherwise STALL_GIVEUP (NEEDS_FIX if its log has an error).
   - NEW kernels (dir built by `fanout.py --build-only`, no PUSH line in <slug>.log yet) wait for a slot: each is pushed to the
-    FIRST account of automation/active_accounts.txt (at most 4 accounts) that has a free session of its type (2 GPU / 5 CPU per
+    FIRST account of automation/active_accounts.txt (at most 8 accounts; one fewer after every rate-limit answer, kept once
+    calls pass again; state in <state.json>.nacc) that has a free session of its type (2 GPU / 5 CPU per
     account), so one account is filled before the next (user rule 2026-11-01 14:45); the kernel is moved to that account
     (metadata id + the account's code dataset) if it was built for another one.
   - COMPLETE / ERROR / CANCEL -> outputs are pulled into <slug>_out and results.tar is unpacked. The kernel stdout and
@@ -72,7 +73,12 @@ def api(kid, *a):
         o = (r.stdout + r.stderr).strip()
         if "rate limit" in o.lower() or "429" in o:
             gap = min(gap * 1.5, 120.0); ok_calls = 0
-            say(f"rate limit -> pause {BACKOFF:.0f} s, gap {gap:.0f} s"); time.sleep(BACKOFF + random.uniform(0, 60)); continue
+            # user rule 2026-11-01 15:55: blocked by the API -> one account fewer for NEW kernels (min 1); once calls pass again the
+            # number stays where it is (no further reduction)
+            if N_ACT[0] > 1:
+                N_ACT[0] -= 1; open(SF + ".nacc", "w").write(str(N_ACT[0]))
+            say(f"rate limit -> pause {BACKOFF:.0f} s, gap {gap:.0f} s, accounts for new kernels now {N_ACT[0]}: {ACTIVE_ACC[:N_ACT[0]]}")
+            time.sleep(BACKOFF + random.uniform(0, 60)); continue
         ok_calls += 1
         if ok_calls % 30 == 0: gap = max(gap * 0.9, GAP_MIN)
         return o
@@ -121,6 +127,9 @@ def pull_done(kd, s):
 _act = os.path.join(ROOT, "automation", "active_accounts.txt")
 ACTIVE_ACC = [l.strip() for l in open(_act) if l.strip() and not l.startswith("#")] if os.path.isfile(_act) else []
 LIMIT = {"gpu": 2, "cpu": 5}                                           # Kaggle sessions per account
+MAX_ACC = 8                                                            # user rule 2026-11-01 15:55: at most 8 accounts at the same time
+N_ACT = [min(MAX_ACC, len(ACTIVE_ACC))]
+if os.path.isfile(SF + ".nacc"): N_ACT[0] = max(1, min(N_ACT[0], int(open(SF + ".nacc").read().strip() or N_ACT[0])))
 
 
 def retarget(kd, s, acc):
@@ -155,7 +164,7 @@ for kd in KDIRS:
 save()
 pend = [k for k, s in ST.items() if not s["done"] and s["kdir"] in KDIRS]
 say(f"monitoring {len(pend)} kernels ({sum(bool(ST[k].get('unpushed')) for k in pend)} waiting for a slot), gap {gap:.0f} s, "
-    f"run poll {RUN_POLL:.0f} s, new kernels on {ACTIVE_ACC}")
+    f"run poll {RUN_POLL:.0f} s, new kernels on {ACTIVE_ACC[:N_ACT[0]]}")
 acct = lambda k: ST[k]["kid"].split("/")[0]
 ktype = lambda k: "gpu" if ST[k].get("gpu") else "cpu"
 prio = lambda k: KDIRS.index(ST[k]["kdir"]) if ST[k]["kdir"] in KDIRS else 1 << 30
@@ -165,7 +174,7 @@ while pend:
     # user rule 2026-11-01 14:45: a new kernel goes to the FIRST account of active_accounts.txt (at most 4) with a free slot of its
     # type (2 GPU / 5 CPU sessions), i.e. one account is filled before the next; no free slot -> it waits. One push per iteration.
     for k in sorted([k for k in pend if ST[k].get("unpushed") and ST[k].get("retry", 0) <= time.time()], key=prio):
-        a = next((a for a in ACTIVE_ACC if len(busy(a, ktype(k))) < LIMIT[ktype(k)]), None)
+        a = next((a for a in ACTIVE_ACC[:N_ACT[0]] if len(busy(a, ktype(k))) < LIMIT[ktype(k)]), None)
         if a is None: continue
         s = ST[k]
         if acct(k) != a: retarget(s["kdir"], s, a)

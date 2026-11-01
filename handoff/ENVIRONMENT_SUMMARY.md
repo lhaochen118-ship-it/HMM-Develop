@@ -223,6 +223,11 @@ tối ưu, reset nếu đợi lâu vẫn giữ nguyên."**
   `machine_shape`, 3 job song song, ngưỡng 10 phút) và chờ slot GPU. Đã kiểm bằng mô phỏng (CLI `kaggle` giả): đóng gói đúng thứ
   tự, chuyển acc khi đầy, nhánh T4 và nhánh NEEDS_FIX.
 - Kernel đang chạy trên các acc cũ: để chạy xong, chỉ kéo kết quả, không đẩy gì mới lên đó.
+- **Cập nhật 2026-11-01 15:55 (user):** "Nâng giới hạn này lên 8 acc, nếu bị Kaggle chặn API thì giảm số lượng xuống từng acc 1.
+  Khi nào hết bị ban thì dừng lại." ⇒ `central_monitor.py`: tối đa 8 acc (`MAX_ACC`), mỗi lần API trả "rate limit" bớt 1 acc cho
+  kernel mới (tối thiểu 1), hết bị chặn thì giữ nguyên số hiện tại; số acc lưu ở `<state.json>.nacc`. `fanout.py` từ chối > 8 acc.
+  `active_accounts.txt` hiện có 6 acc được cấp cho việc mới (phatle1578, mucnokieu, huyenco, nguynduylm, loinguyentran, yeshenhi);
+  muốn đủ 8 cần user đồng ý dùng lại 2 acc cũ.
 - Hai cách hiểu sai đã bỏ: giới hạn 2 phiên mỗi acc (14:30) và "chỉ 1–2 kernel" (13:30, nay là: tối đa 4 acc, mỗi acc đầy đủ slot).
 
 **Vòng 6 (2026-11-01, branch `hmm-navigation-5`):** user cấp 10 acc: `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`,
