@@ -1,10 +1,34 @@
 # 01 — Scientific Findings (hướng HMM-navigation)
 
-*Cập nhật 2026-11-01 (branch `hmm-navigation-5`, §N0000 mới nhất). Tài liệu chỉ nói về **kết quả khoa học**: đóng góp, ý nghĩa, kết quả
+*Cập nhật 2026-11-02 (branch `hmm-navigation-5`, §N0000000 mới nhất). Tài liệu chỉ nói về **kết quả khoa học**: đóng góp, ý nghĩa, kết quả
 tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứng. Vận hành ở `02`, trạng thái và việc tiếp theo ở `03`.
 **Đọc §N trước** (trạng thái khoa học mới nhất, 2026-10-30/31); §0–§5 là nền tảng từ 2026-10-29, vẫn đúng, trừ chỗ §N
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
+
+## N0000000. Vòng 10 (2026-11-02, branch `hmm-navigation-5`, Entry 36) — đọc trước §N000000
+
+**Báo cáo:** `paper/BAO_CAO_E36.pdf` (bảng `paper/e36_tables.md`); lý thuyết `paper/cms_theory.md` §4f (Mệnh đề 16–18); nhật ký Entry 36
+(đăng ký trước, sửa đổi, sai lệch, kết quả); kết quả thô `analysis/results/e36/`.
+
+1. **Mệnh đề 14 (CST) bị dữ liệu bác bỏ ở mọi độ sâu.** Kiểm toán trực tiếp (`analysis/cst_audit.py`): đoạn off-map thật qua CST 5–32 %
+   (mục tiêu ≤ 5 %; Oxford 0.321, Nordland 0.302), không chỉ ở mép. Nguyên nhân: null track = chuỗi winner phản thực **từng frame** (không
+   mạch lạc) và cửa sổ hình dạng bị cắt ở đầu chuỗi (43 % frame CMU). Chi phí điều hướng của CST đến từ fix sai **sâu** (Boreas NetVLAD:
+   269/345 ở độ sâu ≥ 80 frame, sai 419 m). Mất recall Oxford (H35d) = CST chặt hơn SH, không phải lọt ở mép.
+2. **Phẫu thuật TIẾN (CST-F, `analysis/cms_fwd.py`):** lối thoát ảo mỗi 1 excl; xoá vùng sau τ (Voronoi, ρ = off_d); chạy **chính chuỗi vị
+   trí của hệ thống** (bản sao chính xác, khớp 99.95–100 %) tiến trên bản đồ đã cắt; khởi đầu ảo cho cửa sổ bị cắt; ngưỡng = min theo bin vị
+   trí. Kết quả (104 run + Oxford 30 + St Lucia 5): tỷ lệ qua thật 0.004–0.047 trên 9/9 nhóm (kể cả mép), segFAR ≤ 0.004, không run nào > α,
+   sai số điều hướng thấp nhất (Boreas 3.8 m vs SH 4.7, CST 16.3). **Giá:** recall −0.011…−0.161 (CMU, đầu chuỗi), Oxford 0.550 vs 0.729.
+3. **CST-J (hiệu chuẩn cả quyết định trên mô phỏng tiến) và SH ∧ CST-J\* (thăm dò):** SH ∧ CST-J\* có recall = SH trên 7/7 và Oxford
+   (0.729 = 0.729; SH ∧ CST 0.694) ⇒ **tiêu chí recall Oxford đạt**; xác nhận giữ ra 6/6. Nhưng CST-J/CST-J\* một mình vượt α trên CMU giữ
+   ra (0.065–0.068): bảo đảm của CST-J chỉ xấp xỉ (bằng chứng hiện diện trong mô phỏng = phẫu thuật đầy đủ).
+4. **N = 40 xác nhận (CosPlace, seed 1–9, 48 run):** hợp lệ 6/6, recall ≥ N = 20 trên 5/6 (countryside +0.069) ⇒ khuyến nghị N = 40.
+5. **Vector hoá:** 3.9 ms/frame (1 lõi), trùng cache Kaggle ⇒ ngưỡng < 10 ms đạt. Null tiến 4–31 ms/frame.
+6. **St Lucia (dataset mới, CosPlace) + SafeVPR'26 so sánh trực tiếp:** 30 % lỗ, 25 điều kiện giữ ra: SafeVPR'26 (nhãn) recall 0.462/0.557
+   (α 0.05/0.10, FDR 0.008/0.020); của ta (không nhãn) 0.590–0.623, FDR ≤ 0.010. Không lỗ: mọi phương pháp bão hoà. Trên St Lucia null bản
+   đồ cũ CPC-SC-T½ có recall cao hơn CMS (0.920 vs 0.820).
+7. **Khuyến nghị:** CMS-CPC/H+CSTF+G+NGRr (N = 40) khi cần chứng nhận; SH ∧ CST-J\* khi ưu tiên recall. Novelty (mô phỏng tiến sự thất bại
+   của chính hệ thống từ lối thoát ảo) chưa qua gate tài liệu (Gate 14 cần làm).
 
 ## N000000. Vòng 9 (2026-11-01 → 02, branch `hmm-navigation-5`, vòng lặp tự động 9 giờ) — đọc trước §N00000
 

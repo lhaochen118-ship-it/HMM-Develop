@@ -4,6 +4,20 @@
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
+## 0000000. Vòng 10 (2026-11-02, branch `hmm-navigation-5`, Entry 36) — trạng thái
+
+- **Làm xong:** (1) phẫu thuật tiến CST-F + hiệu chuẩn đầu-cuối CST-J/CST-J\* (`analysis/cms_fwd.py`, `oc_curves.py --fwd`, preset `@E36`),
+  kiểm toán (S3-T)/(S3-F) (`analysis/cst_audit.py`); (2) N = 40 xác nhận trên CosPlace seed 1–9 (`analysis/n40_run.py`); (3) vector hoá
+  (`analysis/cms_vec.py`, mặc định của `cms_exact.stats`); (4) St Lucia (`automation/make_stlucia.py`, `vprlib.load_stlucia`,
+  `automation/extract_desc_cpu.py`) + SafeVPR'26 tái hiện (`analysis/safevpr26.py`, `safevpr26_eval.py`). Báo cáo `paper/BAO_CAO_E36.pdf`.
+- **Đề xuất hiện tại:** **CMS-CPC/H+CSTF+G+NGRr** với N = 40 (bảo đảm theo đoạn chỉ từ phép thử hình dạng tiến, kiểm toán 9/9; recall
+  thấp hơn SH 0.01–0.18) — hoặc **SH ∧ CST-J\*** (recall = SH trên 7/7 + Oxford; bảo đảm xấp xỉ: CST-J vượt α trên CMU giữ ra).
+- **Không có token Kaggle trong phiên này:** mọi thứ chạy trên 4 lõi CPU ⇒ Boreas 8/18 run, N = 40 chỉ CosPlace, St Lucia chỉ CosPlace.
+  Null tiến (157 MB) và cache St Lucia KHÔNG được đăng Kaggle (cần token); tái tạo bằng `e36_run.py` (tất định).
+- **Việc tiếp theo:** (1) phẫu thuật tiến cả **bằng chứng hiện diện** (phép thử tuyến trên bản đồ tiến cho từng lần chạy ảo) để CST-J thành
+  bảo đảm thật; (2) null chính xác cho đầu chuỗi (CMU); (3) GPU: Boreas đủ 18 run, N = 40 mọi descriptor, St Lucia 6 descriptor + đăng
+  dataset (dump St Lucia, null tiến); (4) Gate 14 (novelty của mô phỏng tiến); (5) hoàn thiện bài báo.
+
 ## 000000. Vòng 9 (2026-11-01 → 02, branch `hmm-navigation-5`) — trạng thái
 
 - **Làm xong:** E32 (độ nhạy, thời gian, NCLT mỗi phiên làm bản đồ), E33 (đối thủ mới, SHcf, Oxford RobotCar 60 run), E34 (CST, 366

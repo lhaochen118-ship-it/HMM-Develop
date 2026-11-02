@@ -1,6 +1,6 @@
 # Datasets & Environment Summary
 
-*Cập nhật 2026-11-01 (branch `hmm-navigation-5`; dataset/acc mới ở §1d, §3). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
+*Cập nhật 2026-11-02 (branch `hmm-navigation-5`; St Lucia ở §1e; dataset/acc mới ở §1d, §3). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
 cách đọc repo và việc tiếp theo ở `handoff/05_NEW_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Kết quả audit dữ liệu (Bước 1): `DATA_AUDIT.md`. Dataset mới
 cho hướng HMM (chuỗi dài + odometry thật): **§1b 4Seasons dump** và **§1c Boreas** bên dưới.*
 
@@ -163,6 +163,16 @@ Publish bằng `automation/publish_dataset.py <dir> <slug> "<title>" "<subtitle>
 | `nhatlong1103/hmm-cms-cache-r1` (vòng 6, public) | Như trên với ρ = off_d + excl (bán kính đăng ký trước), tiền tố `cmsr1_`; `oc_curves.py --cms-extra DIR --cms-extra-tag r1` | `cms_dump.py --rho-add 1` |
 
 Tải dataset public **không cần token**: `python3 automation/anon_download.py <owner/slug> <dir> --jobs 12 [--match regex]`.
+
+## 1e. St Lucia Multiple Times of Day (vòng 10, Entry 36; CHƯA đăng Kaggle)
+
+- Nguồn: Hugging Face `medwa126/UQStLuciaMultipleToD` (mirror của QUT; 10 lượt chạy, video webcam 640 × 480, GPS mỗi frame), tải không cần
+  token: `https://huggingface.co/datasets/medwa126/UQStLuciaMultipleToD/resolve/main/<lượt>/<file>`.
+- `automation/make_stlucia.py <raw> <out>`: nội suy GPS theo frame, lấy mỗi 5 m, ghi `img/<lượt>/<frame>.jpg` + `meta/stlucia_<lượt>.npz`.
+  Bộ dùng trong Entry 36: bản đồ `100909_0845`, truy vấn `180809_1545, 190809_0845, 100909_1210, 210809_1000, 110909_1545`, cả hai lấy
+  mỗi 10 m (bỏ một frame trong hai); chỉ có CosPlace (`automation/extract_desc_cpu.py`, CPU). Loader `vprlib.load_stlucia`, cấu hình
+  `sc_eval.CFG["stlucia"]` (như CMU, in_d = 5 m). Không có odometry: mô phỏng từ GT như CMU/Oxford.
+- Việc cần làm khi có GPU/token: dump 6 descriptor và đăng `nhatlong1103/stlucia-vpr-dump`; đăng null tiến (`fwd_*.npz`).
 
 ## 2. Datasets ảnh gốc và trọng số (chỉ cần khi tạo dump mới)
 

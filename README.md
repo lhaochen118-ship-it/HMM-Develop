@@ -1,6 +1,6 @@
 # HMM-navigation — sequence-based visual localization with a monocular camera (research repo)
 
-**Start here:** `handoff/05_NEW_CHAT_GUIDE.md` (reading order, code map, next steps; index in `handoff/00_READ_ME_FIRST.md`). Latest branch: `hmm-navigation-5`. Current method: **CMS-CPC/H+SH+G+NGR** -- Counterfactual Map Surgery (the decision threshold is calibrated on the deployment stream itself, with the map corridor around the system's own belief removed; exact null `analysis/cms_exact.py`) plus a counterfactual innovation gate for navigation risk (`analysis/navrisk.py`); theory `paper/cms_theory.md`; report `paper/BAO_CAO_E29.pdf`, audit `paper/AUDIT_E29.md` (previous: `paper/BAO_CAO_E28.pdf`).
+**Start here:** `handoff/05_NEW_CHAT_GUIDE.md` (reading order, code map, next steps; index in `handoff/00_READ_ME_FIRST.md`). Latest branch: `hmm-navigation-5`. Latest round (Entry 36): forward counterfactual surgery (`analysis/cms_fwd.py`), report `paper/BAO_CAO_E36.pdf`. Current method: **CMS-CPC/H+SH+G+NGR** -- Counterfactual Map Surgery (the decision threshold is calibrated on the deployment stream itself, with the map corridor around the system's own belief removed; exact null `analysis/cms_exact.py`) plus a counterfactual innovation gate for navigation risk (`analysis/navrisk.py`); theory `paper/cms_theory.md`; report `paper/BAO_CAO_E29.pdf`, audit `paper/AUDIT_E29.md` (previous: `paper/BAO_CAO_E28.pdf`).
 
 | Path | What |
 |---|---|

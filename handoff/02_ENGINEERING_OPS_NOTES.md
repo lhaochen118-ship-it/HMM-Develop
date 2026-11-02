@@ -5,6 +5,24 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 0000000. Vòng 10 (2026-11-02, Entry 36): vận hành
+
+- **Không có token Kaggle trong phiên:** dữ liệu công khai tải bằng `automation/anon_download.py` (navcache-v2, hmm-cms-cache-exact, hmm-topk,
+  hmm-route-cache, các dump descriptor, Oxford dump, trọng số); mọi tính toán chạy trên 4 lõi CPU (15 GB RAM, ~30 GB đĩa của phiên).
+- **Script mới:** `analysis/cms_vec.py` (thống kê phản thực vector hoá; mặc định của `cms_exact.stats`, `CMS_LOOP=1` để dùng vòng lặp cũ),
+  `analysis/cms_fwd.py` (null tiến: lối thoát ảo + khởi đầu ảo; lưu `fwd_<ds>_<desc>_s<seed>.npz`), `analysis/cst_audit.py` (kiểm toán
+  tỷ lệ qua của đoạn off-map thật; `FWD_DIR` cho null tiến), `analysis/e36_run.py` (một run đầu-cuối: top-300 → thống kê → null tiến →
+  luật), `analysis/e36_queue.py` (hàng đợi N worker; đối số sau tên job viết dạng `+--sfx +_conf`), `analysis/n40_run.py`,
+  `analysis/topk_long_dump.py`, `analysis/safevpr26.py` (+ `--holes`), `analysis/safevpr26_eval.py`, `automation/make_stlucia.py`,
+  `automation/extract_desc_cpu.py`, `paper/build_e36_report.py`.
+- **Lỗi đã gặp:** (1) đường CPU của `cms_exact.topk_long` dùng std lệch (N) khác GPU (N − 1) — đã sửa; (2) OOM (15 GB) khi chạy song song
+  nhiều run Boreas 8448 chiều — `cms_fwd` giữ descriptor fp16 và đổi kiểu theo từng chuỗi; tối đa ~3 run Boreas cùng lúc; (3) `pkill -f`
+  / `kill` theo mẫu lại giết nhầm (dừng nhầm vỏ bash) — dùng PID cụ thể; (4) `list.remove(dict)` so sánh mảng ⇒ lỗi, dùng lọc theo `id`;
+  (5) vòng lặp tham chiếu `cms_stats_exact` lỗi khi một frame cửa sổ bị che hết danh sách (N = 40, KL = 100) — bản vector hoá xử lý được;
+  (6) đĩa đầy (30 GB) do patch token SafeVPR — xoá sau khi dùng.
+- **Thời gian (1 lõi, máy dùng chung tải ~5):** thống kê phản thực 3.9 ms/frame; null tiến 4–31 ms/frame (Boreas/NCLT lớn nhất; một run Boreas
+  ~40–60 phút); luật (`oc_curves --fams @E36`, cond + loco) 0.5–6 phút/run.
+
 ## 000000. Vòng 9 (2026-11-01): vận hành
 
 - **Rate limit API Kaggle:** 59 tiến trình `run_kernel.py` hỏi trạng thái 30 s/lần (≈ 2 yêu cầu/s từ một IP) ⇒ mọi lệnh `kaggle`

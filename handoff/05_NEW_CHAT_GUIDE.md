@@ -1,6 +1,12 @@
 # 05 — Hướng dẫn cho khung chat mới: đọc repo thế nào, làm gì tiếp
 
-*2026-11-01, cập nhật từ branch `hmm-navigation-5` (vòng 6). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
+*2026-11-02, cập nhật từ branch `hmm-navigation-5` (vòng 10). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
+
+**Vòng 10 (đọc trước tiên):** `paper/BAO_CAO_E36.pdf`, `RESEARCH_LOG.md` Entry 36, `paper/cms_theory.md` §4f, `handoff/03_HANDOFF.md`
+§0000000. Đề xuất: **CMS-CPC/H+CSTF+G+NGRr** (N = 40) hoặc **SH ∧ CST-J\*** (`analysis/e36_run.py <dump> <navcache> <cms> <topk> <tao>
+<fwd> <ds> <desc> <seed>`: thống kê phản thực vector hoá + null tiến `cms_fwd.py` + `oc_curves.py --cst --fwd --fams @E36`); kiểm toán
+`analysis/cst_audit.py` (biến môi trường `FWD_DIR`); hàng đợi `analysis/e36_queue.py`; N = 40 `analysis/n40_run.py`; St Lucia + SafeVPR'26
+`automation/make_stlucia.py`, `automation/extract_desc_cpu.py`, `analysis/safevpr26.py`, `analysis/safevpr26_eval.py`.
 
 **Vòng 8 (đọc trước tiên):** `paper/BAO_CAO_E30.pdf`, `RESEARCH_LOG.md` Entry 30–31, `paper/cms_theory.md` §4c–4d, `handoff/03_HANDOFF.md`
 §00000. Đề xuất: **CMS-CPC/H+SH+G+NGRr** (`oc_curves.py --cms <hmm-cms-cache-exact> --navgate --gate-rate --fams @E30R`); nhân quả
