@@ -110,8 +110,9 @@ NetVLAD, MegaLoc (45 runs) and Oxford seeds 5-9 x the same 3 descriptors (15 run
 segFAR <= 0.05 on 6/6. The 114 evaluation runs are re-scored with CST-J\* too (labelled exploratory there).
 
 **Deviation (compute; decided before any Boreas or NCLT result existed).** On the local CPU a NCLT run takes ~23 min and a Boreas run
-~40 min (76 k frames, horizon 20 excl). Boreas is evaluated on 10 of its 18 planned runs (seed 0 x 6 descriptors, seeds 1-2 x CosPlace
-and MegaLoc); every other dataset keeps its full pre-registered set. The N = 40 confirmation runs on CosPlace only (54 runs) first.
+~40 min (76 k frames, horizon 20 excl). Boreas is evaluated on 8 of its 18 planned runs (seed 0 x 6 descriptors, seeds 1-2 x CosPlace; a
+Boreas run takes ~47 min with the other queues running); every other dataset keeps its full pre-registered set. The N = 40
+confirmation runs on CosPlace only, Boreas on seeds 1-3 (48 runs instead of 108).
 
 **Pre-registration of the N = 40 confirmation (item 2; before any of its runs).** Entry 32 (seed 0, 42 runs) found the belief window
 N = 40 better than N = 20 (recall +0.015 Boreas, +0.015 CMU, +0.027 countryside, validity unchanged). Confirmation on the held-out
