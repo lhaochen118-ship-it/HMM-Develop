@@ -417,6 +417,7 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
                     gr = SENS.get("g", 1.0); llc_c = lo_parts[1]          # counterfactual log-LR of the same calibration
                     st["_joint"] = (CF.joint_segments(recs, b["H"], lo, kap, llc_c, Hreal, jref, Pl, excl, P_TR, gr, 0),
                                     CF.joint_segments(recs, b["H"], lo, kap, llc_c, Hreal, jref, Pl, excl, P_TR, gr, 1))
+                    st["_jointn"] = CF.joint_segments(recs, b["H"], lo, kap, llc_c, Hreal, jref, Pl, excl, P_TR, gr, 1, nan_pass=True)
                 sj0, sj1 = st["_joint"]
                 ej_x = CF.eps_fwd(z, b, sj0, aF, fmode, groups=grp)
                 ej_s = CF.eps_fwd(z, b, sj1, aF, "pooled", groups=grp) if sj1 else np.full(len(ej_x), -np.inf)
@@ -425,6 +426,15 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
                 st["_epsJ"] = epsJ
                 F["CMS-CPC/H+CSTJ+G"] = (np.where(okJ & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & okJ & agree)
                 F["CMS-CPC/H+SH+CSTJ+G"] = (np.where(sh_c & okJ & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & okJ & agree)
+                # EXPLORATORY (Entry 36, after the CMU evaluation, not pre-registered): CST-J* lets frames whose shape window is < 1 excl
+                # pass, and accounts for it in the same joint simulation (virtual starts with NaN-pass); if the simulated rate cannot
+                # be met even with the tolerance at -inf, NaN frames fall back to "not certified" (CST-J)
+                ejn = CF.eps_fwd(z, b, st["_jointn"], aF, "pooled", groups=grp)
+                nanok = np.isfinite(ejn) | (ejn > -np.inf)
+                epsJn = np.where(full, ej_x, np.minimum(ejn, ej_x))
+                okJn = np.where(np.isnan(r_c_keep), nanok, r_c_keep <= epsJn)
+                F["CMS-CPC/H+CSTJs+G"] = (np.where(okJn & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & okJn & agree)
+                F["CMS-CPC/H+SH+CSTJs+G"] = (np.where(sh_c & okJn & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & okJn & agree)
         F["CMS-CPCW/H+CST2"] = (np.where(ok2, wq2 - kW2, -np.inf), xc, 0.0, CG.hyst_ok(wq2 > kW2, lo2 > 0, ok2, seqs))
     onWU = (sc_t > -kT2) | (wq2 > kW2)
     F["CMS-WU/H+SH"] = (np.where(sh_c, np.maximum(sc_t + kT2, wq2 - kW2), -np.inf), xc, 0.0, onWU & sh_c)

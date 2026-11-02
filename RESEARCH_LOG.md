@@ -98,6 +98,17 @@ the alpha budget and the navigation cost of the spent false fixes returns. CST-J
 added as PRE-SPECIFIED SECONDARY rules; the main rule stays CST-F. Extra hypothesis H36g: CST-J has mean segFAR <= 0.05 on 7/7 and
 recall >= SH on >= 4/7 and on Oxford. The forward nulls are recomputed for every run (ghost places are now stored).
 
+**Exploratory variant found DURING the evaluation (after the CMU results were read) and its held-out confirmation, pre-registered
+before running it.** On CMU (18 runs) every fully calibrated rule loses ~0.15 recall (CST-F 0.603, CST-J 0.644, SH AND CST-J 0.615 vs
+SH 0.764): frames whose shape window is < 1 excl (the first 25 m of each of the 130 short sequences, ~16 % of the correct frames)
+are never certified. *CST-J\** lets them pass and accounts for it in the same joint simulation (virtual starts in which the chain may
+report on a short window count as false reports, residual -inf); if the simulated rate cannot be met, they fall back to "not
+certified". CMU CosPlace s0 (design): SH AND CST-J\* 0.8144 / 0.0135 / 4.37 m vs SH 0.8145 / 0.0135 / 4.38 m; CST-J\* alone 0.816 /
+0.031. Confirmation set (held out, never looked at): seeds 3-5 of Nordland, CMU, 4S office / old town / countryside x CosPlace,
+NetVLAD, MegaLoc (45 runs) and Oxford seeds 5-9 x the same 3 descriptors (15 runs). H36h: SH AND CST-J\* (+G+NGRr) has recall within
+0.01 of SH on >= 5/6 (Oxford included), navigation error within 1 m on >= 5/6 and mean segFAR <= 0.05 on 6/6; CST-J\* alone has mean
+segFAR <= 0.05 on 6/6. The 114 evaluation runs are re-scored with CST-J\* too (labelled exploratory there).
+
 **Pre-registration of the N = 40 confirmation (item 2; before any of its runs).** Entry 32 (seed 0, 42 runs) found the belief window
 N = 40 better than N = 20 (recall +0.015 Boreas, +0.015 CMU, +0.027 countryside, validity unchanged). Confirmation on the held-out
 seeds 1-9 of the 6 holed datasets (NCLT has one run per descriptor, seed 0 only). Compute is local CPU only, so the descriptors are

@@ -194,7 +194,7 @@ def fwd_segments(recs, H, mode=0):
     return out
 
 
-def joint_segments(recs, H, lo, kap, llc, Hreal, jref, P, excl, p_tr=0.01, g_rad=1.0, mode=0):
+def joint_segments(recs, H, lo, kap, llc, Hreal, jref, P, excl, p_tr=0.01, g_rad=1.0, mode=0, nan_pass=False):
     """JOINT forward simulation of the whole decision (Entry 36, CST-J). Along every virtual run the presence chain is continued from
     the REAL state at the exit (log-odds lo and hysteresis state Hreal of the exit frame; a virtual start begins at odds 1, off) with
     the counterfactual log-LR llc of the frames after the exit (the off-map null of the presence evidence, as in Theorems 6-6'),
@@ -214,13 +214,14 @@ def joint_segments(recs, H, lo, kap, llc, Hreal, jref, P, excl, p_tr=0.01, g_rad
             l = float(np.clip((g(l) if l is not None else 0.0) + llc[s_], -50, 50))
             h = (l > 0) if h else (l > kap[s_])
             ag = gi[q_] >= 0 and np.linalg.norm(P[gi[q_]] - P[jref[s_]]) <= excl * g_rad
-            cand[q_] = h and ag and np.isfinite(rr[q_])
+            cand[q_] = h and ag and (np.isfinite(rr[q_]) or nan_pass)
         i = 0
         while i < len(fr) and not voff[i]: i += 1
         j = i
         while j < len(fr) and voff[j]: j += 1
         for p_, k in enumerate(range(i, j - H + 1, H)):
-            c = cand[k:k + H]; out.append((ex, fr[k:k + H], p_, float(rr[k:k + H][c].min()) if c.any() else np.inf))
+            c = cand[k:k + H]; v = np.where(np.isfinite(rr[k:k + H]), rr[k:k + H], -np.inf)   # NaN window (< 1 excl): passes if nan_pass
+            out.append((ex, fr[k:k + H], p_, float(v[c].min()) if c.any() else np.inf))
     return out
 
 
