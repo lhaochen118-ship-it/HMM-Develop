@@ -81,7 +81,7 @@ def audit_one(args):
         import cms_fwd as CF
         recs, _ = CF.load_recs(os.path.join(fd, "fwd_" + tag)); fs = CF.fwd_segments(recs, H, 0); fs1 = CF.fwd_segments(recs, H, 1)
         es = CF.eps_fwd(z, b, fs1, A, "pooled") if fs1 else np.full(len(z["cond"]), -np.inf)
-        for mode in ("pooled", "minbin"):
+        for mode in ("pooled", "minbin", "bins3"):
             ex_ = CF.eps_fwd(z, b, fs, A, mode); epsd["F" + mode[:3]] = np.where(fw, ex_, np.minimum(es, ex_))
         res["n_fseg"] = len(fs); res["n_fseg_start"] = len(fs1)
     for nm, eps in epsd.items():

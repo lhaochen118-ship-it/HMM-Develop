@@ -390,7 +390,9 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
             # eps_F = floor(a (n+1))-th smallest virtual-segment minimum of the spliced-track residual per calibration group
             import cms_fwd as CF
             seg0, seg1 = st["_fwd"]; aF = SENS.get("csta", 1.0) * alpha; grp = cal_groups(z, seqs)
-            eps_x = CF.eps_fwd(z, b, seg0, aF, "minbin", groups=grp)    # virtual exits: min over excursion-position bins
+            if SENS.get("fwdg", 0) == 1 and GROUP != "loco": grp = [(list(seqs), list(seqs))]   # design variant: one group per run
+            fmode = ("minbin", "bins3", "pooled")[int(SENS.get("fwdm", 0))]
+            eps_x = CF.eps_fwd(z, b, seg0, aF, fmode, groups=grp)       # virtual exits: min over excursion-position bins
             eps_s = CF.eps_fwd(z, b, seg1, aF, "pooled", groups=grp) if seg1 else np.full(len(eps_x), -np.inf)   # virtual starts
             oq_ = z["o_q"]; oq_ = (oq_[:, hz] if oq_.ndim > 1 and oq_.shape[1] > 2 else oq_).astype(float); oq_ = oq_ if oq_.ndim > 1 else oq_[:, None]
             full = np.zeros(len(r_c_keep), bool)

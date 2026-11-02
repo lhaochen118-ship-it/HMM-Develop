@@ -59,6 +59,32 @@ under (S3-F), every off-map segment, edge included, passes with probability <= a
 Horizon 20 excl + min over position bins: full-window pass rate CMU s0 0.052 (deep 0.057), Nordland s0 0.044 (deep 0.049), i.e. at
 the nominal a = 0.05; eps_X 10.0 m (CMU, SH tolerance 12.5, CST 15.5) and 1.4 frames (Nordland, SH 2.5, CST 3.1).
 
+*Design runs with the final construction (exits + starts, horizon 20 excl, exits every 1 excl, thresholds = min over position bins
+of >= 2/a segments, cond groups; labels only to evaluate), recall / segFAR / navigation error of the +G+NGRr rules:*
+- CMU CosPlace s0: audit pass rate 0.037 (full windows 0.052, truncated 0.018; CST 0.164). CSTF 0.668 / 0.000 / 2.8 m vs SH 0.814 /
+  0.014 / 4.4 m. The recall price sits at the sequence starts: on full windows CSTF keeps 86.4 % of the correct frames (SH 88.3 %); on
+  truncated windows 48 % (SH 86 %), 37 % of them have a window < 1 excl, which CSTF does not certify.
+- Nordland CosPlace s0: pass 0.043 (CST 0.267); CSTF 0.794 / 0.000 / 0.7 vs SH 0.826 / 0.000 / 0.7 (eps 1.4 frames vs SH 2.5).
+- 4S old town NetVLAD s0 (the worst navigation case of CST): pass 0.046 (CST 0.211); CSTF 0.511 / 0.006 / 36.9 m, SH 0.514 / 0.003 /
+  37.5 m, CST 0.541 / 0.012 / **82.0 m**. CSTF removes the navigation cost of CST at no recall cost here.
+- Threshold variants (fixed 3 position bins; one group per run): recall within 0.01 of the min-over-bins version, audit pass rate
+  0.062-0.067 (vs 0.044-0.052) -> min over bins kept.
+
+**Pre-registration of the Entry 36 evaluation (written before any evaluation run; labels only to evaluate).** Data: seeds 0-2 of the 7
+datasets x 6 descriptors (114 runs, the Entry 35 evaluation set; the design runs above are part of it and are flagged), Oxford
+RobotCar (seeds 0-4, 30 runs; the Entry 35 Oxford numbers are on 60 runs, the same rules are re-evaluated on these 30) and St Lucia
+(new, see below). Rules at alpha = 0.05, groups cond + loco, `e36_run.py` (`oc_curves.py --cst --fwd --fams @E36`).
+Main rule: **CMS-CPC/H+CSTF+G+NGRr** (every report must pass CST-F; validity from Proposition 16 alone). Practical variant
+CMS-CPC/H+SH+CSTF+G+NGRr; causal CMS-CPC/H+CSTF+G[both]+NGRr; references SH, SH AND CST, CST.
+- H36a (audit of S3-F): pass rate of real off-map segments under CST-F (all positions, edge included, full and truncated windows)
+  <= 0.07 on >= 6/7 datasets, and lower than CST's on 7/7.
+- H36b (validity without any hand-set tolerance): mean segFAR of the main rule <= 0.05 on 7/7, Oxford and St Lucia.
+- H36c (navigation): mean navigation error of the main rule within 1 m of the SH rule (CMS-CPC/H+SH+G+NGRr) or lower on >= 6/7
+  (the CST penalty, Boreas +9.0 m and old town +13.6 m in Entry 35, disappears).
+- H36d (price, reported whatever the outcome): recall of the main rule within 0.03 of the SH rule on >= 4/7 datasets; expected loss
+  on CMU (short sequences, truncated windows).
+- H36e (Oxford): main rule valid; recall compared with SH (0.719 on 60 runs) and SH AND CST (0.691) on the same 30 runs.
+
 ## Entry 35 (branch `hmm-navigation-5`) — SH AND CST: the guarantee from the surgery, the protection from the hand-set stop (2026-11-01)
 
 **Step 5 analysis of Entry 34 (paired cluster bootstrap, 366 runs).** CST vs the hand-set SH: recall +0.003 to +0.022 with CI > 0

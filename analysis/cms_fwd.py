@@ -195,6 +195,13 @@ def eps_fwd(z, b, segs, a, mode="pooled", groups=None):
         def q(v):
             v = np.sort(v); k = int(np.floor(a * (len(v) + 1))); return v[k - 1] if k >= 1 else -np.inf
         if mode == "pooled": e = q([s[3] for s in mine])
+        elif mode == "bins3":                                           # three fixed position bins: edge (0), early (1-2), deep (>= 3);
+            nmin = int(np.ceil(2.0 / a)); bins, cur = [], []            # a bin with < 2/a segments is merged into the next one
+            for lo, hi in ((0, 0), (1, 2), (3, 10 ** 9)):
+                cur += [s[3] for s in mine if lo <= s[2] <= hi]
+                if len(cur) >= nmin: bins.append(cur); cur = []
+            if cur: (bins[-1].extend(cur) if bins else bins.append(cur))
+            e = min([q(v) for v in bins] or [-np.inf])
         elif mode == "minbin":                                          # positions merged (in order) until a bin has >= 2/a segments;
             nmin = int(np.ceil(2.0 / a)); bins, cur = [], []            # eps = min over bins (valid at every position, Prop. 16)
             for p in sorted(set(s[2] for s in mine)):
