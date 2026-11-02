@@ -85,6 +85,19 @@ CMS-CPC/H+SH+CSTF+G+NGRr; causal CMS-CPC/H+CSTF+G[both]+NGRr; references SH, SH 
   on CMU (short sequences, truncated windows).
 - H36e (Oxford): main rule valid; recall compared with SH (0.719 on 60 runs) and SH AND CST (0.691) on the same 30 runs.
 
+**Amendment (design runs only, before any evaluation result was read; the queue was stopped after 3 Nordland runs whose results were
+not opened): CST-J, joint forward calibration (Proposition 18, `cms_fwd.joint_segments`).** Motivation: on the Oxford design run
+(cosplace s0) CST-F is valid on its own (audit pass rate 0.050 vs CST 0.180, oracle eps 4.9 m) but its recall is 0.587 vs 0.763 (SH):
+on Oxford the residuals of correct tracks (median 2.5 m, p80 7.5 m) and of real ghosts overlap, so a shape-only guarantee must be
+strict. CST-J simulates the WHOLE decision along every virtual run (presence chain continued from its real state at the exit with
+the counterfactual log-LR, agreement gate on the ghost, shape residual) and calibrates the tolerance so that the simulated report
+rate of virtual off-map segments is <= a at every position bin (eps may be infinite). Design runs (+G+NGRr; recall / segFAR / error):
+Oxford 0.781 / 0.034 / 18.6 (SH 0.763 / 0.004 / 18.6; without the gate CST-J breaks alpha: 0.103), Nordland 0.851 / 0.003 / 0.7
+(SH 0.826), CMU 0.680 / 0.025 / 3.3 (SH 0.815: sequence starts), old town NetVLAD 0.542 / 0.009 / **86.2 m** (SH 37.5 m): CST-J spends
+the alpha budget and the navigation cost of the spent false fixes returns. CST-J (CMS-CPC/H+CSTJ+G+NGRr) and its [both] version are
+added as PRE-SPECIFIED SECONDARY rules; the main rule stays CST-F. Extra hypothesis H36g: CST-J has mean segFAR <= 0.05 on 7/7 and
+recall >= SH on >= 4/7 and on Oxford. The forward nulls are recomputed for every run (ghost places are now stored).
+
 **Pre-registration of the N = 40 confirmation (item 2; before any of its runs).** Entry 32 (seed 0, 42 runs) found the belief window
 N = 40 better than N = 20 (recall +0.015 Boreas, +0.015 CMU, +0.027 countryside, validity unchanged). Confirmation on the held-out
 seeds 1-9 of the 6 holed datasets (NCLT has one run per descriptor, seed 0 only). Compute is local CPU only, so the descriptors are
