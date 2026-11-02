@@ -48,13 +48,17 @@ class Chain:
         self.W = sp.csr_matrix((np.ones(len(self.ii)), (self.ii, self.jj)), shape=(n, n)); self.W.sort_indices()
         assert np.array_equal(self.W.indices, self.jj)
 
-    def predict(self, B, keep, u):
-        """B (n, E) beliefs (0 on removed places), keep (n, E) bool, u odometry increment"""
-        self.W.data = np.exp(-0.5 * ((self.D - u[None]) ** 2).sum(1) / self.sigma ** 2)
-        z = self.W @ keep.astype(float); z[z == 0] = 1.0
-        nb = (self.W.T @ (B / z)) * keep
-        nr = np.maximum(keep.sum(0, keepdims=True), 1)
-        return np.where(keep, (1 - self.eps) * nb + self.eps * nb.sum(0, keepdims=True) / nr, 0.0)
+    def predict(self, B, keep, u, keepf=None, nr=None):
+        """B (n, E) beliefs (0 on removed places), keep (n, E) bool, u odometry increment (keepf / nr: cached float mask and
+        number of remaining places per column; the arithmetic is the same as computing them here)"""
+        d2 = 0.0
+        for k in range(self.D.shape[1]): d2 = d2 + (self.D[:, k] - u[k]) ** 2
+        self.W.data = np.exp(-0.5 * d2 / self.sigma ** 2)
+        keepf = keep.astype(float) if keepf is None else keepf
+        z = self.W @ keepf; z[z == 0] = 1.0
+        nb = (self.W.T @ (B / z)) * keepf
+        nr = np.maximum(keep.sum(0, keepdims=True), 1) if nr is None else nr
+        return ((1 - self.eps) * nb + self.eps * nb.sum(0, keepdims=True) / nr) * keepf
 
 
 class Emission:
@@ -116,7 +120,7 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
             if i > 0 and ((stride_path is None and i % stride == 0) or (stride_path is not None and cum[i] >= last_ex + stride_path)):
                 exits[i] = bel[:, 0].copy(); last_ex = cum[i]
         n_ag[0] += int((rep == est_c[idx]).sum()); n_ag[1] += L
-        act, ex_list, ptr = [], sorted(exits), 0
+        act, ex_list, ptr = [], sorted(exits), 0; cache_ = [None, None, None, None]
         for i in range(L):
             while ptr < len(ex_list) and ex_list[ptr] == i:
                 ie = ex_list[ptr]; ptr += 1
@@ -139,9 +143,14 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
                             Bs = np.where(hs, 0.0, 1.0); act.append(dict(ie=ie, keep=~hs, B=Bs / Bs.sum(), last=ps_[-1], g={ie: None}, mode=1))
             live = [a for a in act if a["ie"] < i <= a["last"] or (a["mode"] == 1 and a["ie"] == i)]
             if live:
-                KP = np.stack([a["keep"] for a in live], 1); BB = np.stack([a["B"] for a in live], 1)
+                key_ = tuple(id(a) for a in live)
+                if key_ != cache_[0]:
+                    KP = np.stack([a["keep"] for a in live], 1); cache_[:] = [key_, KP, KP.astype(float), np.maximum(KP.sum(0, keepdims=True), 1)]
+                KP, KPf, NR_ = cache_[1:]
+                BB = np.stack([a["B"] for a in live], 1)
                 mv = np.array([a["ie"] < i for a in live])               # a virtual start's first frame has no motion step
-                if mv.any(): BB[:, mv] = ch.predict(BB[:, mv], KP[:, mv], U[idx[i]])
+                if mv.all(): BB = ch.predict(BB, KP, U[idx[i]], KPf, NR_)
+                elif mv.any(): BB[:, mv] = ch.predict(BB[:, mv], KP[:, mv], U[idx[i]])
                 E = em(Sq[i], KP)
                 BB = BB * np.exp(E - E.max(0, keepdims=True)); BB = BB / np.maximum(BB.sum(0, keepdims=True), 1e-300)
                 g = BB.argmax(0)

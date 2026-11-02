@@ -85,6 +85,14 @@ CMS-CPC/H+SH+CSTF+G+NGRr; causal CMS-CPC/H+CSTF+G[both]+NGRr; references SH, SH 
   on CMU (short sequences, truncated windows).
 - H36e (Oxford): main rule valid; recall compared with SH (0.719 on 60 runs) and SH AND CST (0.691) on the same 30 runs.
 
+**Pre-registration of the N = 40 confirmation (item 2; before any of its runs).** Entry 32 (seed 0, 42 runs) found the belief window
+N = 40 better than N = 20 (recall +0.015 Boreas, +0.015 CMU, +0.027 countryside, validity unchanged). Confirmation on the held-out
+seeds 1-9 of the 6 holed datasets (NCLT has one run per descriptor, seed 0 only). Compute is local CPU only, so the descriptors are
+restricted to CosPlace and MegaLoc (108 runs; NetVLAD added if time allows, reported separately). Exact top-300 recomputed from the
+dumps, counterfactual statistics with N = 40 (`cms_vec`, checked against the loop), N = 20 = the published exact cache; same rules
+(@E32S: CMS-CPC/H+SH+G+NGRr, CMS-CPCW/H+SH+NGRr), group cond, alpha 0.05. H36f: with N = 40 the main rule keeps mean segFAR <= 0.05
+on 6/6 and its recall is >= the N = 20 recall on >= 5/6. N = 40 becomes the default only if H36f holds.
+
 ## Entry 35 (branch `hmm-navigation-5`) — SH AND CST: the guarantee from the surgery, the protection from the hand-set stop (2026-11-01)
 
 **Step 5 analysis of Entry 34 (paired cluster bootstrap, 366 runs).** CST vs the hand-set SH: recall +0.003 to +0.022 with CI > 0
