@@ -10,7 +10,8 @@ CFG = {"rc": dict(cell=10.0, excl=25.0, k=10, block=300.0, off_d=40.0, in_d=5.0,
        "nordw": dict(cell=3.0, excl=5.0, k=10, block=200.0, off_d=10.0, in_d=0.5, tol=(2.0, None), calib=["spring"]),
        "nclt": dict(cell=5.0, excl=10.0, k=10, block=100.0, off_d=20.0, in_d=3.0, tol=(3.0, 6.0), calib=None),
        "nord": dict(cell=3.0, excl=5.0, k=10, block=200.0, off_d=10.0, in_d=0.5, tol=(2.0, None), calib=["fall"]),
-       "oxford": dict(cell=10.0, excl=25.0, k=10, block=300.0, off_d=40.0, in_d=10.0, tol=(10.0, 25.0), calib=None)}   # Entry 33: frames ~10 m apart
+       "oxford": dict(cell=10.0, excl=25.0, k=10, block=300.0, off_d=40.0, in_d=10.0, tol=(10.0, 25.0), calib=None),   # Entry 33: frames ~10 m apart
+       "stlucia": dict(cell=10.0, excl=25.0, k=10, block=300.0, off_d=40.0, in_d=5.0, tol=(5.0, 10.0), calib=None)}   # Entry 36: frames 5 m apart, as CMU
 STATS = ["T_spacing", "T_level", "z_far", "z_all"]
 
 

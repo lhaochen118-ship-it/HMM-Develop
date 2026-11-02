@@ -44,7 +44,7 @@ def main():
         z = np.load(nf, allow_pickle=True); t1 = time.time()
         IL, SL, sdL = CE.topk_long(q, M[z["kidx"]], 300)
         np.savez(os.path.join(tkd, f"topk_{tag}_{desc}_s{sd}.npz"), idx=IL[:, :100], sim=SL[:, :100].astype(np.float16), std=sdL)
-        st = CE.cms_stats_exact(z, dict(idx=IL, sim=SL, std=sdL), ds=ds)
+        st = CE.stats(z, dict(idx=IL, sim=SL, std=sdL), ds=ds)
         np.savez_compressed(os.path.join(cmd_, f"cms_{tag}_{desc}_s{sd}.npz"), **st)
         np.savez_compressed(f"results/cms_{tag}_{desc}_s{sd}.npz", **{k: (v.astype(np.float32) if isinstance(v, np.ndarray) and v.dtype == np.float64 else v) for k, v in st.items()})
         np.savez_compressed(os.path.join(tcd, f"tao_{tag}_{desc}_s{sd}.npz"), cost=st["cost"].astype(np.float32), j=st["j"].astype(np.int32))

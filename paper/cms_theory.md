@@ -239,6 +239,52 @@ cận giữ với mọi dung sai SH).
 thật còn một phần đúng nên residual nhỏ hơn quỹ đạo ma phản thực (phẫu thuật toàn cửa sổ). Phẫu thuật "tiến" (chỉ xoá anchor sau
 một thời điểm thoát ảo) là cách đóng nốt khoảng trống này (việc tiếp theo).
 
+## 4f. Phẫu thuật TIẾN: null của chính quỹ đạo ma của hệ thống (Entry 36)
+
+**Chẩn đoán (kiểm toán (S3-T), `analysis/cst_audit.py`, nhãn chỉ dùng để đánh giá).** Mệnh đề 14 cần (S3-T): vector residual của
+quỹ đạo báo cáo trên một đoạn off-map thật hoán đổi được với vector residual của quỹ đạo ma phản thực. Đo trực tiếp xác suất mà
+Mệnh đề 14 chặn — P(∃ t ∈ G₀: r_t ≤ ε) trên các đoạn off-map thật — ở seed 0–1 (84 run): 0.06–0.29 theo dataset (Nordland 0.28,
+NCLT 0.19, Boreas 0.17, old town 0.14, office 0.10, CMU 0.07), không phải ≤ a/π ≈ 0.05; ngưỡng CST bằng 1.2–2.3 × ngưỡng "oracle"
+(phân vị a của chính các đoạn off-map thật). Vi phạm có ở **mọi độ sâu**, không chỉ ở mép (Boreas: sâu 0.17, mép 0.34). Hai
+nguyên nhân: (i) null track MP[j_cf] là chuỗi winner của **từng frame**, mỗi frame một phẫu thuật riêng và một bộ ước lượng khác
+(phép thử tuyến), nên kém mạch lạc hơn quỹ đạo ma mà chuỗi vị trí thật sự đi theo sau khi rời bản đồ (di chuyển theo odometry,
+dính mép lỗ, khoá vào một con đường song song); (ii) cửa sổ hình dạng bị cắt ở đầu chuỗi (43 % frame của CMU: chuỗi ngắn, robot
+bắt đầu trong lỗ) được so với ngưỡng của cửa sổ đầy đủ. Các luật CST vẫn hợp lệ thực nghiệm (Entry 34) chỉ vì khởi phát của chuỗi
+hiện diện cũng phải xảy ra — Hệ quả 15 ("chỉ nhờ CST") không đúng trên dữ liệu.
+
+**Phẫu thuật tiến.** Một **lối thoát ảo** tại frame τ (mỗi 1 excl quãng đường): xoá vùng bản đồ mà robot đi qua **sau** τ,
+
+> V_τ = { m : d(m, X⁺_τ) ≤ ρ và d(m, X⁺_τ) < d(m, X⁻_τ) },
+
+X⁺_τ = vị trí tin (MAP của hệ thống) của các frame sau τ trong off_d + h·excl quãng đường (h = 20), X⁻_τ = các frame trước τ trên
+cùng quãng (cắt Voronoi: bản đồ trước điểm thoát còn nguyên, đúng như một lỗ thật được đi vào tại τ), ρ = off_d. Rồi chạy **chính
+chuỗi vị trí của hệ thống** (hmm_diag.DiagFilter, emission (s − s_max)/(τ_e·sd_far) tính lại trên bản đồ đã phẫu thuật; bản sao khớp
+MAP thật 99.95–100 %) **tiến** từ niềm tin của nó tại τ, trên M \ V_τ, với các frame thật. Quỹ đạo MAP sau τ là quỹ đạo ma mà hệ
+thống **sẽ** đi theo nếu bản đồ kết thúc tại τ — cùng ảnh, điều kiện, nhiễu odometry, phụ thuộc thời gian **và động lực của chính
+hệ thống**. Phẫu thuật đầy đủ (§2) là giới hạn khi cả cửa sổ nằm sau lối thoát, làm lại độc lập ở mỗi frame; phẫu thuật tiến là
+**một** can thiệp rồi để hệ thống tự lan truyền. **Khởi đầu ảo** (cho cửa sổ bị cắt): chuỗi khởi động lại từ niềm tin đều tại τ
+trên bản đồ bỏ hành lang ρ quanh 3 excl đường đi kế tiếp, cửa sổ residual cắt tại τ — đúng tình huống chuỗi bắt đầu trong lỗ.
+
+**Phép thử CST-F.** Quỹ đạo ghép (MAP thật đến τ, ma sau τ) cho residual hình dạng (thống kê của SH/CST) ở các frame ảo off-map
+(vị trí tin không còn nơi nào trong bán kính ρ); chuyến off-map ảo được cắt thành đoạn H frame như chuyến thật (`rule_metrics`).
+Với mỗi nhóm hiệu chuẩn: các vị trí đoạn trong chuyến được gộp theo thứ tự thành bin có ≥ 2/a đoạn, ε_X = min theo bin của phần tử
+nhỏ thứ ⌊a(n_b + 1)⌋ của cực tiểu đoạn; ε_S = cùng phân vị trên các đoạn của khởi đầu ảo. Frame t qua iff r_t ≤ ε_X (cửa sổ đầy đủ)
+hoặc r_t ≤ min(ε_S, ε_X) (cửa sổ bị cắt); cửa sổ < 1 excl không được chứng nhận (không qua).
+
+**(S3-F)** Với cùng nhóm, vector residual của quỹ đạo báo cáo trên một đoạn off-map thật ở vị trí p của chuyến (kể cả p = 0, mép)
+hoán đổi được với vector của các đoạn ảo ở bin của p từ các lối thoát ảo có niềm tin đúng (có điều kiện trên nhãn tốt/xấu).
+
+**Mệnh đề 16.** Dưới (S3-F), với mọi đoạn off-map thật G₀ ở bất kỳ vị trí nào (mép hay sâu) và cửa sổ đầy đủ:
+P(∃ t ∈ G₀ : r_t ≤ ε_X) ≤ a(n_b + 1)/(π_b n_b + 1), b = bin của G₀; tương tự cho cửa sổ bị cắt với ε_S. *Chứng minh:* ε_X ≤ ε_b
+(phần tử thứ ⌊a(n_b+1)⌋ của bin b); lập luận hạng của Định lý 6 trong bin b. ∎ Vị trí sâu hơn chân trời h: bin sâu nhất (giả định
+bão hoà — đo được: ngưỡng theo vị trí phẳng từ vị trí 3 đến 10 trên Nordland). **Nhiễm:** lối thoát ảo có niềm tin sai để nơi thật
+còn lại sau phẫu thuật ⇒ chuỗi có thể tìm lại nơi đúng ⇒ residual nhỏ ⇒ ε nhỏ hơn ⇒ bảo thủ; lối thoát ảo từ frame đã off-map ⇒
+quỹ đạo vốn đã là ma ⇒ hệ số 1/π như Định lý 6.
+
+**Hệ quả 17 (bảo đảm đầu-cuối theo đoạn, kể cả mép).** Mọi báo cáo phải qua CST-F tại chính frame đó ⇒ tỷ lệ báo sai theo đoạn ≤
+max_b a(n_b+1)/(π_b n_b+1) ≈ a/π ở **mọi** vị trí trong chuyến, với mọi chuỗi hiện diện, mọi dung sai SH (SH, +G, +NGRr chỉ bỏ báo
+cáo, Bổ đề 7). Khoảng trống của Mệnh đề 14 / Định lý 6′ ở mép (độ sâu < N) đóng lại vì null có chính các đoạn mép ảo.
+
 ## 5. Điểm mới so với tài liệu (tóm tắt; Gate 12 trong `LITERATURE_GATE.md`)
 
 - Null bản đồ (SelfCal, certified, CPC-SC; SAFEVPR'26 và Quantile Transfer dùng nhãn trên traversal hiệu chuẩn): null đến

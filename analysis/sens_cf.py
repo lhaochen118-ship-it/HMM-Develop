@@ -23,7 +23,7 @@ def main():
     ep = TKD.load(dump, ds, desc); q, M = ep.q.astype(np.float32), ep.m.astype(np.float32); Mk = M[z["kidx"]]; tm["load_s"] = time.time() - t
     t = time.time(); IL, SL, sdL = CE.topk_long(q, Mk, 300); tm["topk300_s"] = time.time() - t
     rho = cms.OFF_D.get(ds.split(":")[0].split("_")[0], 40.0) * rm
-    t = time.time(); st = CE.cms_stats_exact(z, dict(idx=IL, sim=SL, std=sdL), rho=rho, ds=ds, N=N); tm["cms_stats_s"] = time.time() - t
+    t = time.time(); st = CE.stats(z, dict(idx=IL, sim=SL, std=sdL), rho=rho, ds=ds, N=N); tm["cms_stats_s"] = time.time() - t
     np.savez_compressed(os.path.join(W, f"cms_{tag}_{desc}_s{seed}.npz"), **st)
     np.savez_compressed(os.path.join(W, f"tao_{tag}_{desc}_s{seed}.npz"), cost=st["cost"].astype(np.float32), j=st["j"].astype(np.int32))
     np.savez(os.path.join(W, f"topk_{tag}_{desc}_s{seed}.npz"), idx=IL[:, :100], sim=SL[:, :100].astype(np.float16), std=sdL)

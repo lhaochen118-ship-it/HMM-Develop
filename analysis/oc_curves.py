@@ -36,7 +36,7 @@ GEO = "--geo" in sys.argv                         # Entry 26 families: shape-con
 ONLY_GEO = "--only-geo" in sys.argv               # only the Entry 26 families + references (fast)
 CS_SENS = "--cs-sens" in sys.argv                 # one-at-a-time sensitivity of the CS constants (span, threshold) for CPC-HMM+CS
 JOBS = int(sys.argv[sys.argv.index("--jobs") + 1]) if "--jobs" in sys.argv else 4
-OFF_D = {"boreas": 40.0, "oxford": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}   # map coverage radius (sc_eval CFG off_d)
+OFF_D = {"boreas": 40.0, "oxford": 40.0, "stlucia": 40.0, "cmu": 40.0, "4s": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}   # map coverage radius (sc_eval CFG off_d)
 TOPK = sys.argv[sys.argv.index("--topk") + 1] if "--topk" in sys.argv else None   # dir of topk_<ds>_<desc>_s<seed>.npz (topk_dump.py) -> TAO26 family
 TRAILD = sys.argv[sys.argv.index("--trail") + 1] if "--trail" in sys.argv else None   # dir of trail_<ds>_megaloc_s<seed>.npz (trail.py) -> TRAIL26 family
 DUMPD = sys.argv[sys.argv.index("--mapdump") + 1] if "--mapdump" in sys.argv else None   # descriptor dumps -> map-null top-K for the label-free TAO-SC family
@@ -57,6 +57,7 @@ FAM_PRESETS = {"@E28": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certi
                "@E31J": "CPC-SC-T0.5+SH,CPC-SC-T0.5+SH+NGRr,CPC-SC+CS,CMS-CPCW/H+SH,CMS-CPCW/H+SH+NGRr,CMS-CPCW/H+SH(a=0.01),CMS-CPCW/H+SH(a=0.01)+NGRr,CMS-CPCW/H+SH[both],CMS-CPCW/H+SH[both]+NGRr,CMS-CPCW/H+SH[both](a=0.01),CMS-CPCW/H+SH[both](a=0.01)+NGRr,CMS-CPCW/H+SH[online],CMS-CPCW/H+SH[online]+NGRr,CMS-CPCW/H+SH[online](a=0.01),CMS-CPCW/H+SH[online](a=0.01)+NGRr,CMS-CPCW/J+SH,CMS-CPCW/J+SH+NGRr,CMS-CPCW/J+SH(a=0.01),CMS-CPCW/J+SH(a=0.01)+NGRr,CMS-CPCW/J+SH[both],CMS-CPCW/J+SH[both]+NGRr,CMS-CPCW/J+SH[both](a=0.01),CMS-CPCW/J+SH[both](a=0.01)+NGRr,CMS-CPCW/J+SH[online],CMS-CPCW/J+SH[online]+NGRr,CMS-CPCW/J+SH[online](a=0.01),CMS-CPCW/J+SH[online](a=0.01)+NGRr,CMS-CPC/H+SH+G,CMS-CPC/H+SH+G+NGRr,CMS-CPC/H+SH+G(a=0.01),CMS-CPC/H+SH+G(a=0.01)+NGRr,CMS-CPC/H+SH+G[both],CMS-CPC/H+SH+G[both]+NGRr,CMS-CPC/H+SH+G[both](a=0.01),CMS-CPC/H+SH+G[both](a=0.01)+NGRr,CMS-CPC/H+SH+G[online],CMS-CPC/H+SH+G[online]+NGRr,CMS-CPC/H+SH+G[online](a=0.01),CMS-CPC/H+SH+G[online](a=0.01)+NGRr,CMS-CPC/J+SH+G,CMS-CPC/J+SH+G+NGRr,CMS-CPC/J+SH+G(a=0.01),CMS-CPC/J+SH+G(a=0.01)+NGRr,CMS-CPC/J+SH+G[both],CMS-CPC/J+SH+G[both]+NGRr,CMS-CPC/J+SH+G[both](a=0.01),CMS-CPC/J+SH+G[both](a=0.01)+NGRr,CMS-CPC/J+SH+G[online],CMS-CPC/J+SH+G[online]+NGRr,CMS-CPC/J+SH+G[online](a=0.01),CMS-CPC/J+SH+G[online](a=0.01)+NGRr,CMS-CPC/H+SH,CMS-CPC/H+SH+NGRr,CMS-CPC/H+SH(a=0.01),CMS-CPC/H+SH(a=0.01)+NGRr,CMS-CPC/H+SH[both],CMS-CPC/H+SH[both]+NGRr,CMS-CPC/H+SH[both](a=0.01),CMS-CPC/H+SH[both](a=0.01)+NGRr,CMS-CPC/H+SH[online],CMS-CPC/H+SH[online]+NGRr,CMS-CPC/H+SH[online](a=0.01),CMS-CPC/H+SH[online](a=0.01)+NGRr,CMS-CPC/J+SH,CMS-CPC/J+SH+NGRr,CMS-CPC/J+SH(a=0.01),CMS-CPC/J+SH(a=0.01)+NGRr,CMS-CPC/J+SH[both],CMS-CPC/J+SH[both]+NGRr,CMS-CPC/J+SH[both](a=0.01),CMS-CPC/J+SH[both](a=0.01)+NGRr,CMS-CPC/J+SH[online],CMS-CPC/J+SH[online]+NGRr,CMS-CPC/J+SH[online](a=0.01),CMS-CPC/J+SH[online](a=0.01)+NGRr,CMS-CPCW/R+SH,CMS-CPCW/R+SH+NGRr,CMS-CPCW/R+SH(a=0.01),CMS-CPCW/R+SH(a=0.01)+NGRr,CMS-CPC/R+SH+G,CMS-CPC/R+SH+G+NGRr,CMS-CPC/R+SH+G(a=0.01),CMS-CPC/R+SH+G(a=0.01)+NGRr",   # Entry 31 evaluation subset
                "@E32S": "CPC-SC-T0.5+SH,CMS-CPC/H+SH+G,CMS-CPCW/H+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPC/H+SH+G(a=0.01),CMS-CPCW/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01)+NGRr,CMS-CPCW/H+SH(a=0.01)+NGRr",   # Entry 32 sensitivity
                "@E34": "CPC-SC-T0.5+SH,CMS-CPC/H+SH+G,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPCW/H+SH[both]+NGRr,CMS-CPC/H+CST+G,CMS-CPC/H+CST+G+NGRr,CMS-CPCW/H+CST+NGRr,CMS-CPC/H+CST+G[both]+NGRr,CMS-CPCW/H+CST[both]+NGRr,CMS-CPC/H+CST2+G+NGRr,CMS-CPCW/H+CST2+NGRr,CMS-CPC/H+CSTt+G+NGRr,CMS-CPCW/H+CSTt+G+NGRr",   # Entry 34 counterfactual shape test
+               "@E36": "CPC-SC-T0.5+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPC/H+CST+G+NGRr,CMS-CPC/H+SH+CST+G+NGRr,CMS-CPC/H+CSTF+G+NGRr,CMS-CPCW/H+CSTF+NGRr,CMS-CPC/H+SH+CSTF+G+NGRr,CMS-CPC/H+CST+CSTF+G+NGRr,CMS-CPCW/H+CST+CSTF+NGRr,CMS-CPC/H+CSTF+G,CMS-CPC/H+SH+G,CMS-CPC/H+CSTF+G[both]+NGRr,CMS-CPCW/H+CSTF[both]+NGRr",   # Entry 36 forward surgery
                "@E35": "CPC-SC-T0.5+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPC/H+CST+G+NGRr,CMS-CPC/H+SH+CST+G+NGRr,CMS-CPCW/H+SH+CST+NGRr,CMS-CPC/H+SH+CST+G,CMS-CPC/H+SH+G",   # Entry 35 SH AND CST
                "@E33B": "Xu21,Claxton24,TAO26,max-sim,SU25,SUE24,SU25-seg,SUE24-seg,Carson23,CPC-SC+CS,CPC-SC-T0.5+SH,CMS-CPC/H+SH+G,CMS-CPCW/H+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPCW/H+SH[both]+NGRr,CMS-CPC/H+SH+G(a=0.01)+NGRr,CMS-CPC/H+SHcf+G,CMS-CPCW/H+SHcf,CMS-CPC/H+SHcf+G+NGRr,CMS-CPCW/H+SHcf+NGRr,CMS-CPC/H+SHcf+G(a=0.01)+NGRr,CMS-CPCW/H+SHcf(a=0.01)+NGRr",   # Entry 33 competitors
                "@RHO": "CMS-T,CMS-T(a=0.01),CMS-CPC/H+SH,CMS-CPC/H+SH(a=0.01),CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-W/H+SH,CMS-W/H+SH(a=0.01),CMS-U/H+SH"}   # Entry 28 family lists (short job args)
@@ -65,6 +66,7 @@ _fa = sys.argv[sys.argv.index("--fams") + 1] if "--fams" in sys.argv else None
 FAMS = set(x for it in _fa.split(",") for x in FAM_PRESETS.get(it, it).split(",")) if _fa else None   # evaluate only these families (presets may be combined: @E33B,@E34)
 SEEDS = [int(x) for x in sys.argv[sys.argv.index("--seeds") + 1].split(",")] if "--seeds" in sys.argv else None   # restrict to these seeds
 CMSD = sys.argv[sys.argv.index("--cms") + 1] if "--cms" in sys.argv else None
+FWDD = sys.argv[sys.argv.index("--fwd") + 1] if "--fwd" in sys.argv else None   # Entry 36: dir of fwd_<ds>_<desc>_s<seed>.npz (cms_fwd.py) -> CSTF families
 CMSX = (sys.argv[sys.argv.index("--cms-extra") + 1], sys.argv[sys.argv.index("--cms-extra-tag") + 1] if "--cms-extra-tag" in sys.argv else "r1") if "--cms-extra" in sys.argv else None   # second CMS set (other rho), families suffixed {tag}   # dir of cms_<ds>_<desc>_s<seed>.npz (cms_dump.py) -> CMS families (Entry 28)
 LIGHT = "--light" in sys.argv
 NEWBASE = "--newbase" in sys.argv                # Entry 33: SU'25, SUE'24, Carson'23 baselines (needs --topk)
@@ -231,6 +233,10 @@ def families(z, b):
     if cmf and os.path.exists(cmf):                              # Entry 28: counterfactual map surgery (cms.py)
         import cms as CMS
         stc = dict(np.load(cmf))
+        ff = os.path.join(FWDD, f"fwd_{b['ds_tag']}_s{int(z['seed'])}.npz") if FWDD else None
+        if ff and os.path.exists(ff):                            # Entry 36: forward counterfactual null of the ghost track (cms_fwd.py)
+            import cms_fwd as CF
+            rc_ = CF.load_recs(ff)[0]; stc["_fwd"] = (CF.fwd_segments(rc_, b["H"], 0), CF.fwd_segments(rc_, b["H"], 1))
         for al in CMS_ALPHAS:
             sfx = "" if al == 0.05 else f"(a={al:g})"
             for grp in CMS_GROUPS:
@@ -238,7 +244,7 @@ def families(z, b):
                     CMS.GROUP = "cond"; F.update({k + sfx: v for k, v in CMS.rules_online(z, b, stc, alpha=al).items()}); continue
                 CMS.GROUP = grp; Fc, _ = CMS.rules(z, b, stc, alpha=al)
                 F.update({k + ("" if grp == "cond" else f"[{grp}]") + sfx: v for k, v in Fc.items()})
-            for n0 in ("CMS-CPCW/H+SH", "CMS-CPCW/H+SH+G", "CMS-CPC/H+SH", "CMS-CPC/H+SH+G", "CMS-CPCW/H+CST2", "CMS-CPC/H+CST2+G", "CMS-CPC/H+CSTt+G", "CMS-CPCW/H+CSTt+G", "CMS-CPC/H+CST+G", "CMS-CPCW/H+CST"):   # [both]: report only if the session-calibrated
+            for n0 in ("CMS-CPCW/H+SH", "CMS-CPCW/H+SH+G", "CMS-CPC/H+SH", "CMS-CPC/H+SH+G", "CMS-CPCW/H+CST2", "CMS-CPC/H+CST2+G", "CMS-CPC/H+CSTt+G", "CMS-CPCW/H+CSTt+G", "CMS-CPC/H+CST+G", "CMS-CPCW/H+CST", "CMS-CPC/H+CSTF+G", "CMS-CPCW/H+CSTF"):   # [both]: report only if the session-calibrated
                 a_, b_ = F.get(n0 + sfx), F.get(n0 + "[loco]" + sfx)                         # AND the other-session-calibrated rule report
                 if a_ and b_ and a_[3] is not None and b_[3] is not None:
                     F[n0 + "[both]" + sfx] = (np.minimum(a_[0], b_[0]), a_[1], 0.0, a_[3] & b_[3])
@@ -276,7 +282,8 @@ def families(z, b):
             CMS.GROUP = "loco"; tau_x = NV.gate_tau(zz, b, stc, beta_g); CMS.GROUP = "cond"   # causal gate radius (other sessions)
             mains = ("CMS-CPC/H+SH", "CMS-CPC/H+SH+G", "CMS-CPCW/H+SH", "CMS-CPCW/H+SH+G", "CMS-CPC/H+SHcf+G", "CMS-CPCW/H+SHcf",
                      "CMS-CPC/H+CST+G", "CMS-CPCW/H+CST", "CMS-CPC/H+CST2+G", "CMS-CPCW/H+CST2",
-                     "CMS-CPC/H+CSTt+G", "CMS-CPCW/H+CSTt+G", "CMS-CPC/H+SH+CST+G", "CMS-CPCW/H+SH+CST") + JN
+                     "CMS-CPC/H+CSTt+G", "CMS-CPCW/H+CSTt+G", "CMS-CPC/H+SH+CST+G", "CMS-CPCW/H+SH+CST",
+                     "CMS-CPC/H+CSTF+G", "CMS-CPCW/H+CSTF", "CMS-CPC/H+SH+CSTF+G", "CMS-CPC/H+CST+CSTF+G", "CMS-CPCW/H+CST+CSTF") + JN
             bases = [n for n in mains + ("CMS-T/H+SH", "CPC-SC-T0.5+SH", "CPC-SC+CS") for n in ([n] + [n + f"(a={al:g})" for al in CMS_ALPHAS if al != 0.05])]
             bases += [n + tg + sf for n in mains for tg in ("[online]", "[both]", "[loco]") for sf in [""] + [f"(a={al:g})" for al in CMS_ALPHAS if al != 0.05]]
             for n0 in bases:

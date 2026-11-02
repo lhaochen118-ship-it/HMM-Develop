@@ -7,6 +7,58 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 36 (branch `hmm-navigation-5`) — forward counterfactual surgery: the null of the system's own ghost track; vectorised statistics; St Lucia (2026-11-02)
+
+**Context.** Open items after Entry 35 (user, 2026-11-02): (1) "forward surgery" for the segments at the edge of an excursion, where
+CST lets false fixes through and SH must stay; (2) confirm the belief window N = 40 on seeds 1-9; (3) vectorise the counterfactual
+statistics (the pre-registered < 10 ms / frame of Entry 32 was missed: 10.3-17.5 ms); (4) St Lucia and a direct comparison with
+SafeVPR'26. No Kaggle token was available in this session: everything ran on the session's 4 CPU cores from the public caches.
+
+**Step 3 first: vectorised exact counterfactual statistics (`analysis/cms_vec.py`, default of `cms_exact.stats`).** Same arithmetic as
+`cms_exact.cms_stats_exact`, batched over frames (window groups by length, batched Procrustes, per-row searchsorted by offsets with an
+exact correction, two-stage corridor test with an anchor cover). Checks: identical to the loop on 4S old town CosPlace s0 (all 8
+outputs, max |diff| 0); against the PUBLISHED Kaggle cache (CMU CosPlace s0, top-300 recomputed locally): cost, cost_cf, z, z_cf
+100 %, j / j_cf 99.85 / 99.80 % (fp16 ties of the GPU lists). Bug found on the way: the CPU path of `cms_exact.topk_long` used the
+biased row std, the GPU path (torch) the unbiased one -> z differed by sqrt(N/(N-1)); CPU path fixed to ddof = 1. Speed on one core:
+3.9 ms / frame (KL = 300, K = 100, N = 20) vs 9.4 ms for the loop on the same core (Kaggle: 10.3-17.5 ms) -> the pre-registered
+< 10 ms / frame now holds.
+
+**Step 1 (diagnosis, labels only to evaluate): Proposition 14's assumption (S3-T) fails, at every depth, not only at the edge.**
+`analysis/cst_audit.py` measures the quantity Prop. 14 bounds, P(exists t in G0: r_t <= eps), on the real off-map segments
+(seeds 0-1, 84 runs). Pass rate of the current CST (target <= a/pi ~ 0.05): Nordland 0.28, NCLT 0.19, Boreas 0.17, old town 0.14,
+office 0.10, CMU 0.07, countryside 0.06; first segment of an excursion 0.09-0.44; CST threshold 1.2-2.3 x the oracle one (a-quantile
+of the real segment minima; e.g. Boreas 18.0 vs 12.3 m, Nordland 3.5 vs 1.7 frames). Two causes found:
+(i) *incoherent null track.* MP[j_cf] is the sequence of PER-FRAME counterfactual route winners, each from its own surgery and from
+another estimator (the route test): consecutive winners are unrelated places (residual median 240-570 m). The ghost the place chain
+really follows after an exit is coherent (moves with the odometry, sticks to the hole edge, locks onto a parallel street or a far
+look-alike; traced on CMU: 1.1 km error with residual 6-15 m). Diagnosis of the navigation cost of CST (Entry 35): on Boreas NetVLAD
+s7 CST lets 345 false fixes through (338 removed by SH), 269 of them >= 80 frames deep, median error 419 m; on old town NetVLAD s8
+three frames with 1.5 km error (+128 m mean navigation error). Only CMU s0 matches the "edge" picture (61 of 83 within 10 frames,
+error ~44 m).
+(ii) *truncated shape windows.* CMU sequences are short (130 per run): 43 % of the frames have a shape window cut by the start of
+their sequence; a robot that starts inside a hole initialises its chain on a look-alike and every track has a small residual on a
+short window (off-map pass rate 0.19-0.32 on these segments). Other datasets: 0.3-2 % of frames.
+The CST rules were valid in Entry 34 only because the presence onset also had to fire; Corollary 15's "the guarantee comes from CST
+alone" does not hold on the data.
+Recall loss on Oxford (Entry 35, H35d) is a different matter: there CST alone has recall 0.697, SH AND CST 0.691, SH alone 0.719 ->
+CST is STRICTER than SH on Oxford (not a leak at the boundary).
+
+**Step 2 (mechanism): forward counterfactual surgery (`analysis/cms_fwd.py`, `paper/cms_theory.md` section 4f).** A virtual EXIT at
+frame tau (every 1 excl of path): remove the map region visited AFTER tau (corridor rho = off_d around the believed positions of the
+next off_d + 20 excl of path, Voronoi cut against the believed positions before tau, so the map before the exit point stays, as at a
+real hole edge), then run the system's OWN place chain FORWARD from its belief at tau on the altered map with the real frames. The
+place chain is replicated exactly (hmm_diag.DiagFilter, emission (s - s_max)/(tau_e sd_far) recomputed on the altered map; MAP
+agreement with the stored chain 99.95-100 %). Its MAP after tau is the ghost the system would follow if the map ended at tau. A
+virtual START (chain restarted uniform at tau, corridor around the next 3 excl, window cut at tau) gives the null of truncated
+windows. CST-F: per calibration group, eps_X = min over excursion-position bins (>= 2/a segments each) of the floor(a (n_b+1))-th
+smallest virtual-segment minimum of the spliced-track residual; eps_S = the same over virtual starts; a frame passes iff r_t <= eps_X
+(full window) or r_t <= min(eps_S, eps_X) (truncated); windows < 1 excl are not certified. Proposition 16 / Corollary 17 (section 4f):
+under (S3-F), every off-map segment, edge included, passes with probability <= a(n_b+1)/(pi_b n_b+1), whatever the presence chain.
+*Design checks (labels only to evaluate; exits only, before the starts were added).* Horizon 6 excl, pooled threshold: CMU s0 pass
+0.164 -> 0.122, Nordland s0 0.267 -> 0.107 (per-position thresholds decrease with depth: the ghost locks in -> horizon too short).
+Horizon 20 excl + min over position bins: full-window pass rate CMU s0 0.052 (deep 0.057), Nordland s0 0.044 (deep 0.049), i.e. at
+the nominal a = 0.05; eps_X 10.0 m (CMU, SH tolerance 12.5, CST 15.5) and 1.4 frames (Nordland, SH 2.5, CST 3.1).
+
 ## Entry 35 (branch `hmm-navigation-5`) — SH AND CST: the guarantee from the surgery, the protection from the hand-set stop (2026-11-01)
 
 **Step 5 analysis of Entry 34 (paired cluster bootstrap, 366 runs).** CST vs the hand-set SH: recall +0.003 to +0.022 with CI > 0

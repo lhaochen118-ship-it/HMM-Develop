@@ -36,7 +36,8 @@ def topk_long(q, Mk, K):
     else:
         for a in range(0, n, 2048):
             S = q[a:a + 2048] @ Mk.T; i = np.argpartition(-S, K - 1, axis=1)[:, :K]; v = np.take_along_axis(S, i, 1)
-            o = np.argsort(-v, 1); I[a:a + 2048], Sv[a:a + 2048] = np.take_along_axis(i, o, 1), np.take_along_axis(v, o, 1); sd[a:a + 2048] = S.std(1)
+            o = np.argsort(-v, 1); I[a:a + 2048], Sv[a:a + 2048] = np.take_along_axis(i, o, 1), np.take_along_axis(v, o, 1)
+            sd[a:a + 2048] = S.std(1, ddof=1)                          # unbiased, as torch.std on the GPU path (Entry 36 fix)
     return I, Sv, sd
 
 
@@ -130,6 +131,14 @@ def cms_stats_exact(z, tkL, K=100, rho=None, ds=None, N=20, delta=8.0, trim=0.75
     return out
 
 
+def stats(z, tkL, **kw):
+    """the exact counterfactual statistics: vectorised implementation (cms_vec.py, Entry 36; identical outputs, verified against
+    the published cache) unless CMS_LOOP=1 (this module's per-frame loop)"""
+    if os.environ.get("CMS_LOOP") == "1": return cms_stats_exact(z, tkL, **kw)
+    import cms_vec
+    return cms_vec.cms_stats_vec(z, tkL, **kw)
+
+
 def main():
     import topk_dump as TKD
     dump, cdir, ds, desc = sys.argv[1:5]; tag = ds.replace(":", "_")
@@ -144,7 +153,7 @@ def main():
         I, Sv, sd = topk_long(q, M[kidx], KL)
         agree = float((I[:, 0] == z["top"]).mean())
         rho = cms.OFF_D.get(ds.split(":")[0], 40.0) + RHO_ADD * float(z["excl"])
-        st = cms_stats_exact(z, dict(idx=I, sim=Sv, std=sd), rho=rho, ds=ds)
+        st = stats(z, dict(idx=I, sim=Sv, std=sd), rho=rho, ds=ds)
         np.savez_compressed(out, **{k: (v.astype(np.float32) if isinstance(v, np.ndarray) and v.dtype == np.float64 else v) for k, v in st.items()})
         print(f"{out}: top-1 agreement {agree:.4f}, short lists {st['short'].mean():.4f}, {time.time() - t0:.0f}s", flush=True)
 

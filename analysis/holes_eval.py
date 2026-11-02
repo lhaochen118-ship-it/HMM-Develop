@@ -30,7 +30,7 @@ def main():
         IL, SL, sdL = CE.topk_long(q, M[kidx], 300)                      # Entry 29: exact counterfactual (top-300 list)
         tk = dict(idx=IL[:, :100], sim=SL[:, :100].astype(np.float16), std=sdL)
         np.savez(os.path.join(tkd, f"topk_{tag}_{desc}_s{s}.npz"), **tk)
-        st = CE.cms_stats_exact(z, dict(idx=IL, sim=SL, std=sdL), ds=ds)
+        st = CE.stats(z, dict(idx=IL, sim=SL, std=sdL), ds=ds)
         np.savez_compressed(os.path.join(cmd_, f"cms_{tag}_{desc}_s{s}.npz"), **st)
         np.savez_compressed(f"results/cms_d{ratio}_{tag}_{desc}_s{s}.npz", **{k: (v.astype(np.float32) if isinstance(v, np.ndarray) and v.dtype == np.float64 else v) for k, v in st.items()})
         np.savez_compressed(os.path.join(tcd, f"tao_{tag}_{desc}_s{s}.npz"), cost=st["cost"].astype(np.float32), j=st["j"].astype(np.int32))

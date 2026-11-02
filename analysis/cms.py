@@ -49,7 +49,7 @@ SENS = {k: float(v) for k, v in SENS.items()}
 P_TR = SENS.get("p", 0.01)
 CST = "--cst" in _sys.argv            # Entry 34: counterfactual SEGMENT shape test (exit / persistence calibrated by the surgery)
 SHCF = "--shcf" in _sys.argv          # Entry 33: SH tolerance calibrated on the counterfactual track (beta = SENS shcfb, 0.01)
-OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "oxford": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}
+OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "oxford": 40.0, "stlucia": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0}
 
 
 def _lookup(ks, ss, key, tol, K, valid=None):
@@ -384,6 +384,25 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
         F["CMS-CPC/H+SH+CST+G"] = (np.where(sh_c & ok1 & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & ok1 & agree)
         F["CMS-CPCW/H+SH+CST"] = (np.where(sh_c & ok1, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, sh_c & ok1, seqs))
         F["CMS-CPC/H+CST2+G"] = (np.where(ok2 & agree, lo2 - kap2, -np.inf), xc, 0.0, CG.hyst_ok(lo2 > kap2, lo2 > 0, one, seqs) & ok2 & agree)
+        if "_fwd" in st:
+            # Entry 36: FORWARD counterfactual shape test (cms_fwd.py). Null = the system's own place chain run forward from virtual
+            # exits on the map with the region visited after the exit removed (boundary and deep positions, the system's dynamics);
+            # eps_F = floor(a (n+1))-th smallest virtual-segment minimum of the spliced-track residual per calibration group
+            import cms_fwd as CF
+            seg0, seg1 = st["_fwd"]; aF = SENS.get("csta", 1.0) * alpha; grp = cal_groups(z, seqs)
+            eps_x = CF.eps_fwd(z, b, seg0, aF, "minbin", groups=grp)    # virtual exits: min over excursion-position bins
+            eps_s = CF.eps_fwd(z, b, seg1, aF, "pooled", groups=grp) if seg1 else np.full(len(eps_x), -np.inf)   # virtual starts
+            oq_ = z["o_q"]; oq_ = (oq_[:, hz] if oq_.ndim > 1 and oq_.shape[1] > 2 else oq_).astype(float); oq_ = oq_ if oq_.ndim > 1 else oq_[:, None]
+            full = np.zeros(len(r_c_keep), bool)
+            for sq in seqs:
+                cu = np.r_[0, np.cumsum(np.linalg.norm(np.diff(oq_[sq], axis=0), axis=1))]; full[sq] = cu >= 3.0 * excl
+            epsF = np.where(full, eps_x, np.minimum(eps_s, eps_x))      # truncated shape window (sequence start): start null
+            okF = np.isfinite(r_c_keep) & (r_c_keep <= epsF)             # windows shorter than 1 excl cannot be certified
+            F["CMS-CPC/H+CSTF+G"] = (np.where(okF & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & okF & agree)
+            F["CMS-CPCW/H+CSTF"] = (np.where(okF, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, okF, seqs))
+            F["CMS-CPC/H+SH+CSTF+G"] = (np.where(sh_c & okF & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & okF & agree)
+            F["CMS-CPC/H+CST+CSTF+G"] = (np.where(ok1 & okF & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & ok1 & okF & agree)
+            F["CMS-CPCW/H+CST+CSTF"] = (np.where(ok1 & okF, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, ok1 & okF, seqs))
         F["CMS-CPCW/H+CST2"] = (np.where(ok2, wq2 - kW2, -np.inf), xc, 0.0, CG.hyst_ok(wq2 > kW2, lo2 > 0, ok2, seqs))
     onWU = (sc_t > -kT2) | (wq2 > kW2)
     F["CMS-WU/H+SH"] = (np.where(sh_c, np.maximum(sc_t + kT2, wq2 - kW2), -np.inf), xc, 0.0, onWU & sh_c)
