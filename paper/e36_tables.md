@@ -1,0 +1,124 @@
+### Kiểm toán (S3-T) / (S3-F): tỷ lệ đoạn off-map THẬT qua phép thử hình dạng (mục tiêu ≤ a = 0.05; nhãn chỉ để đánh giá)
+
+| Dataset | run | CST: tất cả / mép / sâu | CST-F: tất cả / mép / sâu | CST-F: cửa sổ đủ / bị cắt | ε CST / ε CST-F / oracle |
+|---|---|---|---|---|---|
+| Boreas | 8 | 0.182 / 0.397 / 0.178 | **0.025** / 0.005 / 0.027 | 0.025 / 0.000 | 18.5 / 8.3 / 12.2 |
+| NCLT | 5 | 0.187 / 0.142 / 0.192 | **0.025** / 0.018 / 0.028 | 0.024 / 0.033 | 6.1 / 3.7 / 4.3 |
+| CMU | 18 | 0.067 / 0.111 / 0.056 | **0.019** / 0.011 / 0.015 | 0.020 / 0.016 | 14.0 / 9.0 / 13.7 |
+| Nordland | 18 | 0.302 / 0.372 / 0.302 | **0.036** / 0.011 / 0.039 | 0.036 / 0.028 | 3.6 / 1.5 / 1.7 |
+| 4S office | 18 | 0.099 / 0.236 / 0.089 | **0.004** / 0.000 / 0.004 | 0.004 / nan | 14.5 / 9.3 / 15.5 |
+| 4S old town | 18 | 0.147 / 0.445 / 0.117 | **0.019** / 0.055 / 0.016 | 0.018 / 0.042 | 23.6 / 9.2 / 14.0 |
+| 4S countryside | 18 | 0.051 / 0.083 / 0.051 | **0.015** / 0.014 / 0.016 | 0.015 / nan | 12.2 / 9.2 / 13.0 |
+| Oxford | 30 | 0.321 / 0.320 / 0.346 | **0.033** / 0.022 / 0.038 | 0.033 / 0.025 | 13.6 / 4.8 / 6.2 |
+| St Lucia | 5 | 0.219 / 0.144 / 0.292 | **0.047** / 0.015 / 0.060 | 0.048 / 0.000 | 10.4 / 2.3 / 3.4 |
+
+### Entry 36 — CST-F (seed 0–2, 103 run, α = 0.05): recall / segFAR TB / tệ nhất / sai số điều hướng (m)
+
+| Luật | Boreas | NCLT | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| CPC-SC-T½+SH (null bản đồ) | 0.710 / 0.007 / 0.023 / 7.9 | 0.564 / 0.001 / 0.003 / 5.0 | 0.713 / 0.004 / 0.021 / 4.0 | 0.711 / 0.000 / 0.003 / 11.5 | 0.736 / 0.000 / 0.003 / 11.9 | 0.616 / 0.006 / 0.023 / 32.0 | 0.340 / 0.000 / 0.000 / 52.0 |
+| CMS-CPC/ H+SH+G+NGRr (SH chọn tay) | 0.815 / 0.006 / 0.022 / 4.7 | 0.594 / 0.002 / 0.007 / 4.4 | 0.764 / 0.003 / 0.014 / 3.9 | 0.752 / 0.000 / 0.000 / 6.9 | 0.795 / 0.000 / 0.006 / 10.1 | 0.687 / 0.003 / 0.010 / 27.5 | 0.513 / 0.001 / 0.006 / 33.9 |
+| SH ∧ CST (Entry 35) | 0.815 / 0.006 / 0.022 / 4.6 | 0.592 / 0.002 / 0.007 / 4.5 | 0.762 / 0.003 / 0.014 / 3.9 | 0.752 / 0.000 / 0.000 / 6.9 | 0.792 / 0.000 / 0.006 / 10.2 | 0.686 / 0.003 / 0.010 / 27.5 | 0.499 / 0.000 / 0.000 / 34.8 |
+| CST (Entry 34) | 0.822 / 0.019 / 0.058 / 16.3 | 0.602 / 0.003 / 0.010 / 5.3 | 0.769 / 0.008 / 0.041 / 4.0 | 0.764 / 0.001 / 0.005 / 6.9 | 0.805 / 0.013 / 0.072 / 10.5 | 0.715 / 0.017 / 0.057 / 41.5 | 0.510 / 0.002 / 0.033 / 32.5 |
+| **CMS-CPC/ H+CSTF+G+NGRr (CST-F, đề xuất)** | 0.804 / 0.004 / 0.013 / 3.8 | 0.564 / 0.000 / 0.000 / 3.4 | 0.603 / 0.000 / 0.003 / 3.1 | 0.726 / 0.000 / 0.000 / 7.0 | 0.771 / 0.000 / 0.006 / 10.2 | 0.637 / 0.002 / 0.008 / 28.5 | 0.477 / 0.000 / 0.000 / 39.2 |
+| SH ∧ CST-F | 0.804 / 0.004 / 0.013 / 4.0 | 0.564 / 0.000 / 0.000 / 3.4 | 0.603 / 0.000 / 0.000 / 3.1 | 0.726 / 0.000 / 0.000 / 7.0 | 0.771 / 0.000 / 0.006 / 10.2 | 0.637 / 0.002 / 0.008 / 28.5 | 0.477 / 0.000 / 0.000 / 39.2 |
+| CMS-CPCW/ H+CSTF+NGRr | 0.795 / 0.004 / 0.012 / 4.2 | 0.553 / 0.000 / 0.000 / 3.6 | 0.600 / 0.000 / 0.003 / 3.1 | 0.717 / 0.000 / 0.000 / 6.9 | 0.765 / 0.000 / 0.003 / 10.2 | 0.632 / 0.002 / 0.008 / 28.6 | 0.454 / 0.000 / 0.002 / 44.2 |
+| CST-F [both] (nhân quả) | 0.782 / 0.004 / 0.013 / 4.2 | 0.553 / 0.000 / 0.000 / 3.5 | 0.592 / 0.000 / 0.000 / 3.0 | 0.697 / 0.000 / 0.000 / 7.5 | 0.746 / 0.000 / 0.000 / 10.5 | 0.606 / 0.000 / 0.000 / 30.5 | 0.424 / 0.000 / 0.000 / 45.5 |
+| CMS-CPCW/ H+CSTF[both]+NGRr (nhân quả) | 0.772 / 0.004 / 0.012 / 4.4 | 0.540 / 0.000 / 0.000 / 3.7 | 0.588 / 0.000 / 0.000 / 3.1 | 0.665 / 0.000 / 0.000 / 9.5 | 0.734 / 0.000 / 0.000 / 10.8 | 0.597 / 0.000 / 0.003 / 31.2 | 0.390 / 0.000 / 0.000 / 49.6 |
+| CST-F không cổng +NGRr | 0.804 / 0.007 / 0.020 / 8.0 | 0.564 / 0.002 / 0.010 / 4.7 | 0.603 / 0.002 / 0.027 / 3.1 | 0.729 / 0.001 / 0.003 / 5.9 | 0.773 / 0.001 / 0.015 / 10.3 | 0.650 / 0.002 / 0.009 / 44.0 | 0.491 / 0.000 / 0.000 / 35.1 |
+
+**Kiểm giả thuyết (đăng ký trước, Entry 36):**
+
+- H36a: tỷ lệ qua của CST-F ≤ 0.07 trên 7/7 (cần ≥ 6/7); thấp hơn CST trên 7/7 (cần 7/7)
+- H36b: segFAR TB của CST-F ≤ 0.05 trên 7/7
+- H36c: sai số điều hướng CST-F − SH ≤ 1 m trên 6/7 (cần ≥ 6/7): Boreas -0.9, NCLT -1.0, CMU -0.9, Nordland +0.1, 4S office +0.1, 4S old town +1.0, 4S countryside +5.3
+- H36d: recall CST-F − SH ≥ −0.03 trên 4/7 (cần ≥ 4/7): Boreas -0.011, NCLT -0.030, CMU -0.161, Nordland -0.027, 4S office -0.024, 4S old town -0.050, 4S countryside -0.036
+- So với CST (Entry 34) về sai số điều hướng: Boreas -12.5 m, NCLT -1.8 m, CMU -1.0 m, Nordland +0.1 m, 4S office -0.3 m, 4S old town -13.0 m, 4S countryside +6.7 m
+
+Tỷ lệ run có segFAR > α / segFAR tệ nhất (mọi dataset):
+
+| Luật | run > α | tệ nhất | số run |
+|---|---|---|---|
+| CMS-CPC/H+SH+G+NGRr (SH chọn tay) | 0.000 | 0.022 | 103 |
+| SH ∧ CST (Entry 35) | 0.000 | 0.022 | 103 |
+| CST (Entry 34) | 0.029 | 0.072 | 103 |
+| **CMS-CPC/H+CSTF+G+NGRr (CST-F, đề xuất)** | 0.000 | 0.013 | 103 |
+| SH ∧ CST-F | 0.000 | 0.013 | 103 |
+| CMS-CPCW/H+CSTF+NGRr | 0.000 | 0.012 | 103 |
+| CST-F [both] (nhân quả) | 0.000 | 0.013 | 103 |
+
+### Oxford RobotCar (30 run, 30 % lỗ): recall / segFAR TB / tệ nhất / sai số (m)
+
+| Luật | Oxford RobotCar |
+|---|---|
+| CPC-SC-T½+SH (null bản đồ) | 0.468 / 0.011 / 0.042 / 37.5 |
+| CMS-CPC/ H+SH+G+NGRr (SH chọn tay) | 0.729 / 0.004 / 0.011 / 21.8 |
+| SH ∧ CST (Entry 35) | 0.694 / 0.002 / 0.009 / 22.1 |
+| CST (Entry 34) | 0.700 / 0.013 / 0.051 / 22.2 |
+| **CMS-CPC/ H+CSTF+G+NGRr (CST-F, đề xuất)** | 0.550 / 0.001 / 0.003 / 23.8 |
+| SH ∧ CST-F | 0.550 / 0.001 / 0.003 / 23.8 |
+| CMS-CPCW/ H+CSTF+NGRr | 0.564 / 0.001 / 0.003 / 23.4 |
+| CST-F [both] (nhân quả) | 0.532 / 0.001 / 0.003 / 24.9 |
+| CMS-CPCW/ H+CSTF[both]+NGRr (nhân quả) | 0.541 / 0.001 / 0.003 / 24.6 |
+| CST-F không cổng +NGRr | 0.556 / 0.002 / 0.005 / 23.3 |
+
+- CMS-CPC/H+SH+G+NGRr (SH chọn tay): run segFAR > α = 0.00, tệ nhất 0.011 (30 run)
+- SH ∧ CST (Entry 35): run segFAR > α = 0.00, tệ nhất 0.009 (30 run)
+- CST (Entry 34): run segFAR > α = 0.03, tệ nhất 0.051 (30 run)
+- **CMS-CPC/H+CSTF+G+NGRr (CST-F, đề xuất)**: run segFAR > α = 0.00, tệ nhất 0.003 (30 run)
+- SH ∧ CST-F: run segFAR > α = 0.00, tệ nhất 0.003 (30 run)
+
+### St Lucia (5 run, 30 % lỗ): recall / segFAR TB / tệ nhất / sai số (m)
+
+| Luật | St Lucia |
+|---|---|
+| CPC-SC-T½+SH (null bản đồ) | 0.920 / 0.021 / 0.037 / 18.4 |
+| CMS-CPC/ H+SH+G+NGRr (SH chọn tay) | 0.820 / 0.000 / 0.000 / 23.1 |
+| SH ∧ CST (Entry 35) | 0.818 / 0.000 / 0.000 / 23.2 |
+| CST (Entry 34) | 0.818 / 0.000 / 0.000 / 23.2 |
+| **CMS-CPC/ H+CSTF+G+NGRr (CST-F, đề xuất)** | 0.622 / 0.000 / 0.000 / 26.0 |
+| SH ∧ CST-F | 0.622 / 0.000 / 0.000 / 26.0 |
+| CMS-CPCW/ H+CSTF+NGRr | 0.645 / 0.000 / 0.000 / 23.9 |
+| CST-F [both] (nhân quả) | 0.586 / 0.000 / 0.000 / 26.5 |
+| CMS-CPCW/ H+CSTF[both]+NGRr (nhân quả) | 0.603 / 0.000 / 0.000 / 25.4 |
+| CST-F không cổng +NGRr | 0.633 / 0.003 / 0.013 / 22.7 |
+
+- CMS-CPC/H+SH+G+NGRr (SH chọn tay): run segFAR > α = 0.00, tệ nhất 0.000 (5 run)
+- SH ∧ CST (Entry 35): run segFAR > α = 0.00, tệ nhất 0.000 (5 run)
+- CST (Entry 34): run segFAR > α = 0.00, tệ nhất 0.000 (5 run)
+- **CMS-CPC/H+CSTF+G+NGRr (CST-F, đề xuất)**: run segFAR > α = 0.00, tệ nhất 0.000 (5 run)
+- SH ∧ CST-F: run segFAR > α = 0.00, tệ nhất 0.000 (5 run)
+
+### Cửa sổ niềm tin N = 40 so với N = 20 (seed 1–9, cùng run): recall / segFAR TB / sai số (m)
+
+| Luật | N | Boreas | CMU | Nordland | 4S office | 4S old town | 4S countryside |
+|---|---|---|---|---|---|---|---|
+| CMS-CPC/H+SH+G+NGRr | 20 | 0.818 / 0.007 / 4.1 | 0.907 / 0.013 / 3.7 | 0.840 / 0.000 / 4.8 | 0.857 / 0.000 / 9.0 | 0.655 / 0.006 / 29.1 | 0.553 / 0.000 / 23.5 |
+| CMS-CPC/H+SH+G+NGRr | 40 | 0.820 / 0.008 / 4.0 | 0.904 / 0.011 / 3.8 | 0.852 / 0.000 / 4.9 | 0.861 / 0.000 / 9.0 | 0.659 / 0.008 / 29.8 | 0.622 / 0.000 / 22.1 |
+| CMS-CPCW/H+SH+NGRr | 20 | 0.816 / 0.007 / 9.3 | 0.911 / 0.008 / 3.5 | 0.843 / 0.000 / 5.0 | 0.856 / 0.000 / 9.0 | 0.658 / 0.006 / 30.3 | 0.518 / 0.000 / 25.9 |
+| CMS-CPCW/H+SH+NGRr | 40 | 0.818 / 0.008 / 7.1 | 0.914 / 0.011 / 3.8 | 0.852 / 0.001 / 5.1 | 0.862 / 0.000 / 8.9 | 0.663 / 0.008 / 29.3 | 0.597 / 0.000 / 22.7 |
+
+- H36f: N = 40 segFAR ≤ 0.05 trên 6/6 (cần 6/6); recall ≥ N = 20 trên 5/6 (cần ≥ 5/6): Boreas +0.002, CMU -0.003, Nordland +0.012, 4S office +0.004, 4S old town +0.004, 4S countryside +0.069
+
+### So sánh trực tiếp với SafeVPR'26 trên St Lucia (thước đo của SafeVPR: FDR của tập được chấp nhận, TPR; mỗi lượt truy vấn là một điều kiện giữ ra)
+
+St Lucia, CosPlace, 10 m frames, map 100909_0845, 5 query traversals x 5 hole layouts (30 % map blocks removed) = 25 held-out conditions; SafeVPR'26 calibrated with labels on the other 4 traversals (Mondrian LTT, B = 5, M = 5, delta = 0.05), our rules label-free; FDR = wrong accepted / accepted (tolerance 25 m), TPR = correct accepted / correct candidates, recall = correct accepted / all query frames
+
+| Giao thức | Phương pháp | α | hợp lệ (FDR ≤ α) | FDR TB | TPR TB | recall TB | nhãn |
+|---|---|---|---|---|---|---|---|
+| 30 % lỗ | SafeVPR'26 (MNN DINOv2-B/14, Mondrian LTT, labels) | 0.05 | 25/25 | 0.0083 | 0.655 | 0.462 | calibration traversals |
+| 30 % lỗ | SafeVPR'26 (MNN DINOv2-B/14, Mondrian LTT, labels) | 0.1 | 25/25 | 0.0198 | 0.795 | 0.557 | calibration traversals |
+| 30 % lỗ | CMS-CPC/H+SH+G+NGRr | – | 25/25 | 0.0017 | 0.821 | 0.592 | none |
+| 30 % lỗ | CMS-CPC/H+SH+CSTJs+G+NGRr | – | 25/25 | 0.0017 | 0.818 | 0.590 | none |
+| 30 % lỗ | CMS-CPC/H+CSTJs+G+NGRr | – | 25/25 | 0.0065 | 0.819 | 0.591 | none |
+| 30 % lỗ | CMS-CPC/H+CSTF+G+NGRr | – | 25/25 | 0.0000 | 0.611 | 0.442 | none |
+| 30 % lỗ | CPC-SC-T0.5+SH | – | 25/25 | 0.0108 | 0.928 | 0.669 | none |
+| 30 % lỗ | CMS-CPCW/H+SH+NGRr | – | 25/25 | 0.0104 | 0.864 | 0.623 | none |
+| không lỗ | SafeVPR'26 (MNN DINOv2-B/14, Mondrian LTT, labels) | 0.05 | 5/5 | 0.0001 | 1.000 | 0.994 | calibration traversals |
+| không lỗ | SafeVPR'26 (MNN DINOv2-B/14, Mondrian LTT, labels) | 0.1 | 5/5 | 0.0001 | 1.000 | 0.994 | calibration traversals |
+| không lỗ | CMS-CPC/H+SH+G+NGRr | – | 5/5 | 0.0000 | 0.999 | 0.999 | none |
+| không lỗ | CMS-CPC/H+SH+CSTJs+G+NGRr | – | 5/5 | 0.0000 | 0.995 | 0.995 | none |
+| không lỗ | CMS-CPC/H+CSTJs+G+NGRr | – | 5/5 | 0.0000 | 0.995 | 0.995 | none |
+| không lỗ | CMS-CPC/H+CSTF+G+NGRr | – | 5/5 | 0.0000 | 0.807 | 0.807 | none |
+| không lỗ | CPC-SC-T0.5+SH | – | 5/5 | 0.0000 | 1.000 | 0.999 | none |
+
