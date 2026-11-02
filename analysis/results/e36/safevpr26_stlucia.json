@@ -1,0 +1,155 @@
+{
+ "rows": [
+  {
+   "protocol": "holes",
+   "method": "SafeVPR'26 (MNN DINOv2-B/14, Mondrian LTT, labels)",
+   "alpha": 0.05,
+   "valid": "25/25",
+   "fdr": 0.00833965923435887,
+   "tpr": 0.6554618618648143,
+   "recall": 0.4615037418917088,
+   "labels": "calibration traversals"
+  },
+  {
+   "protocol": "holes",
+   "method": "SafeVPR'26 (MNN DINOv2-B/14, Mondrian LTT, labels)",
+   "alpha": 0.1,
+   "valid": "25/25",
+   "fdr": 0.01979757379253183,
+   "tpr": 0.7945225608608402,
+   "recall": 0.5566453769219937,
+   "labels": "calibration traversals"
+  },
+  {
+   "protocol": "holes",
+   "method": "CMS-CPC/H+SH+G+NGRr",
+   "alpha": 0.05,
+   "valid": "25/25",
+   "fdr": 0.001704350779638749,
+   "tpr": 0.8205940320210656,
+   "recall": 0.5919139367598707,
+   "labels": "none"
+  },
+  {
+   "protocol": "holes",
+   "method": "CMS-CPC/H+SH+CSTJs+G+NGRr",
+   "alpha": 0.05,
+   "valid": "25/25",
+   "fdr": 0.0017074573143758122,
+   "tpr": 0.8180831757356806,
+   "recall": 0.5900778153600121,
+   "labels": "none"
+  },
+  {
+   "protocol": "holes",
+   "method": "CMS-CPC/H+CSTJs+G+NGRr",
+   "alpha": 0.05,
+   "valid": "25/25",
+   "fdr": 0.006451594623335515,
+   "tpr": 0.8193668274120534,
+   "recall": 0.5909991287542878,
+   "labels": "none"
+  },
+  {
+   "protocol": "holes",
+   "method": "CMS-CPC/H+CSTF+G+NGRr",
+   "alpha": 0.05,
+   "valid": "25/25",
+   "fdr": 0.0,
+   "tpr": 0.6113219824236891,
+   "recall": 0.44162559721474803,
+   "labels": "none"
+  },
+  {
+   "protocol": "holes",
+   "method": "CPC-SC-T0.5+SH",
+   "alpha": 0.05,
+   "valid": "25/25",
+   "fdr": 0.010778786992650481,
+   "tpr": 0.9276719143095102,
+   "recall": 0.6685524948222344,
+   "labels": "none"
+  },
+  {
+   "protocol": "holes",
+   "method": "CMS-CPCW/H+SH+NGRr",
+   "alpha": 0.05,
+   "valid": "25/25",
+   "fdr": 0.01043749473208928,
+   "tpr": 0.8641224461948595,
+   "recall": 0.6232927542073711,
+   "labels": "none"
+  },
+  {
+   "protocol": "nohole",
+   "method": "SafeVPR'26 (MNN DINOv2-B/14, Mondrian LTT, labels)",
+   "alpha": 0.05,
+   "valid": "5/5",
+   "fdr": 0.00012468827930174563,
+   "tpr": 0.9998754669987546,
+   "recall": 0.9941696452611632,
+   "labels": "calibration traversals"
+  },
+  {
+   "protocol": "nohole",
+   "method": "SafeVPR'26 (MNN DINOv2-B/14, Mondrian LTT, labels)",
+   "alpha": 0.1,
+   "valid": "5/5",
+   "fdr": 0.00012468827930174563,
+   "tpr": 0.9998754669987546,
+   "recall": 0.9941696452611632,
+   "labels": "calibration traversals"
+  },
+  {
+   "protocol": "nohole",
+   "method": "CMS-CPC/H+SH+G+NGRr",
+   "alpha": 0.05,
+   "valid": "5/5",
+   "fdr": 0.0,
+   "tpr": 0.9987592854588314,
+   "recall": 0.9986354467353087,
+   "labels": "none"
+  },
+  {
+   "protocol": "nohole",
+   "method": "CMS-CPC/H+SH+CSTJs+G+NGRr",
+   "alpha": 0.05,
+   "valid": "5/5",
+   "fdr": 0.0,
+   "tpr": 0.9951612113142337,
+   "recall": 0.99503775718302,
+   "labels": "none"
+  },
+  {
+   "protocol": "nohole",
+   "method": "CMS-CPC/H+CSTJs+G+NGRr",
+   "alpha": 0.05,
+   "valid": "5/5",
+   "fdr": 0.0,
+   "tpr": 0.9951612113142337,
+   "recall": 0.99503775718302,
+   "labels": "none"
+  },
+  {
+   "protocol": "nohole",
+   "method": "CMS-CPC/H+CSTF+G+NGRr",
+   "alpha": 0.05,
+   "valid": "5/5",
+   "fdr": 0.0,
+   "tpr": 0.8070282517770581,
+   "recall": 0.8069131817581823,
+   "labels": "none"
+  },
+  {
+   "protocol": "nohole",
+   "method": "CPC-SC-T0.5+SH",
+   "alpha": 0.05,
+   "valid": "5/5",
+   "fdr": 0.0,
+   "tpr": 0.999503327997094,
+   "recall": 0.9993794892735715,
+   "labels": "none"
+  }
+ ],
+ "note": "St Lucia, CosPlace, 10 m frames, map 100909_0845, 5 query traversals x 5 hole layouts (30 % map blocks removed) = 25 held-out conditions; SafeVPR'26 calibrated with labels on the other 4 traversals (Mondrian LTT, B = 5, M = 5, delta = 0.05), our rules label-free; FDR = wrong accepted / accepted (tolerance 25 m), TPR = correct accepted / correct candidates, recall = correct accepted / all query frames"
+}

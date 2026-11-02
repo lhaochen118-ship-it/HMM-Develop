@@ -105,10 +105,12 @@ def main():
                   + ", ".join(f"{E.DS_NAME[d]} {m(T40, d, SH, 0) - m(T20, d, SH, 0):+.3f}" for d in dss), ""]
     if arg("--safevpr") and os.path.exists(arg("--safevpr")):
         S = json.load(open(arg("--safevpr")))
-        L += ["### So sánh trực tiếp với SafeVPR'26 trên St Lucia (giao thức của SafeVPR: không lỗ, mỗi lượt truy vấn là một điều kiện giữ ra)", "",
-              "| Phương pháp | α | hợp lệ (FDR ≤ α) | FDR chấp nhận TB | TPR TB | nhãn |", "|---|---|---|---|---|---|"]
+        L += ["### So sánh trực tiếp với SafeVPR'26 trên St Lucia (thước đo của SafeVPR: FDR của tập được chấp nhận, TPR; mỗi lượt truy vấn là một điều kiện giữ ra)", "",
+              S.get("note", ""), "",
+              "| Giao thức | Phương pháp | α | hợp lệ (FDR ≤ α) | FDR TB | TPR TB | recall TB | nhãn |", "|---|---|---|---|---|---|---|---|"]
         for row in S["rows"]:
-            L.append(f"| {row['method']} | {row['alpha']} | {row['valid']} | {row['fdr']:.4f} | {row['tpr']:.3f} | {row['labels']} |")
+            a = row["alpha"] if "SafeVPR" in row["method"] else "–"
+            L.append(f"| {'30 % lỗ' if row.get('protocol') == 'holes' else 'không lỗ'} | {row['method']} | {a} | {row['valid']} | {row['fdr']:.4f} | {row['tpr']:.3f} | {row.get('recall', float('nan')):.3f} | {row['labels']} |")
         L.append("")
     tables = "\n".join(L) + "\n"
     open(os.path.join(HERE, "e36_tables.md"), "w").write(tables); print(tables)
