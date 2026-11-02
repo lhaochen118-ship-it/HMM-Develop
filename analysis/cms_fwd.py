@@ -110,7 +110,7 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
     tree = cKDTree(Pl); recs = []; n_ag = [0, 0]; t0 = time.time()
     for si, idx in enumerate(b["seqs"]):
         L = len(idx); o = o_all[idx]; cum = np.r_[0, np.cumsum(np.linalg.norm(np.diff(o, axis=0), axis=1))]
-        Sq = q[idx] @ M.T                                               # (L, n_map) similarities
+        Sq = q[idx].astype(np.float32) @ M.T                            # (L, n_map) similarities (q may be kept in fp16: memory)
         # exact replica of the system's place chain on the unaltered map (beliefs at the exit frames)
         keep1 = np.ones((ch.n, 1), bool); bel = np.full((ch.n, 1), 1.0 / ch.n); exits = {}; rep = np.empty(L, int); last_ex = 0.0
         for i in range(L):
@@ -283,7 +283,7 @@ def main():
     stride = sys.argv[sys.argv.index("--stride") + 1] if "--stride" in sys.argv else None
     stride = None if stride is None else (stride if stride.endswith("x") else int(stride))
     hor = float(sys.argv[sys.argv.index("--horizon") + 1]) if "--horizon" in sys.argv else 6.0
-    t0 = time.time(); ep = TKD.load(dump, ds, desc); q = ep.q.astype(np.float32); M = ep.m.astype(np.float32)[z["kidx"]]
+    t0 = time.time(); ep = TKD.load(dump, ds, desc); q = ep.q; M = ep.m.astype(np.float32)[z["kidx"]]   # q stays fp16 (cast per sequence)
     assert len(q) == len(z["top"])
     R = fwd_null(zz, b, q, M, c, stride=stride, horizon=hor, verbose="--verbose" in sys.argv)
     save(of, R)
