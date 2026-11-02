@@ -181,7 +181,8 @@ STLUCIA_Q = ["180809_1545", "190809_0845", "100909_1210", "210809_1000", "110909
 
 def load_stlucia(dump, desc="salad", ref=STLUCIA_REF, qrecs=STLUCIA_Q):
     """St Lucia Multiple Times of Day (Glover et al. ICRA 2010; automation/make_stlucia.py: frames every 5 m of GPS path, 640 x 480
-    roof webcam): map = the reference traversal, queries = qrecs (condition = traversal). Positions: GPS in a local metric frame
+    roof webcam; the Entry 36 dump keeps every other frame -> 10 m, map and queries): map = the reference traversal, queries = qrecs
+    (condition = traversal). Positions: GPS in a local metric frame
     shared by all traversals. No odometry in the dataset: simulated from the ground truth (as CMU / Nordland / Oxford)."""
     seqs = [r for r in [ref] + list(qrecs) if os.path.isfile(os.path.join(dump, desc, f"stlucia_{r}.npy"))]
     M = {r: np.load(os.path.join(dump, "meta", f"stlucia_{r}.npz"), allow_pickle=True) for r in seqs}

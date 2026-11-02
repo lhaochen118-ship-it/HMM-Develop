@@ -79,10 +79,13 @@ def main():
         c, d = match(qd, md, T); cand[rows], dsc[rows] = c, d
         qn = meta(r)["names"]; assert len(qn) == len(rows)
         QP = patches([os.path.join(img_root, r, f"{n}.jpg") for n in qn])
-        rho = np.full(len(rows), np.nan)
+        rho = np.full(len(rows), np.nan); memo = {}
+        def pair(a, m):
+            if (a, m) not in memo: memo[(a, m)] = mnn_ratio(QP[a], MPt[m])
+            return memo[(a, m)]
         for i in range(T - 1, len(rows)):
             if c[i] < 0: continue
-            vals = [mnn_ratio(QP[i - k], MPt[c[i] - k]) for k in range(T) if c[i] - k >= 0]
+            vals = [pair(i - k, c[i] - k) for k in range(T) if c[i] - k >= 0]
             rho[i] = float(np.mean(vals)) if vals else np.nan
         s[rows] = rho; print(f"{r}: {len(rows)} queries, {time.time() - t0:.0f}s", flush=True)
     np.savez(os.path.join("results", f"safevpr26_{ds}_{desc}.npz"), cand=cand, s=s, d=dsc, q_rec=recs)
