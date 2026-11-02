@@ -292,8 +292,10 @@ def families(z, b):
                 if n0 not in F or F[n0][3] is None: continue
                 if FAMS is not None and not any(n0 + sx in FAMS for sx in ("+NGR", "+NGRr", "+NG", "+DRG")): continue   # gate only what is asked
                 tau_n = tau_x if any(t in n0 for t in ("[online]", "[both]", "[loco]")) else tau
-                sc0, xf0, t0_, a0 = F[n0]; ag = NV.nav_gate(a0, xf0, zz, b, tau_n, release=True, R=R_g)
-                F[n0 + "+NGR"] = (None if sc0 is None else np.where(a0 & ~ag, -np.inf, sc0), xf0, t0_, ag)
+                sc0, xf0, t0_, a0 = F[n0]
+                if FAMS is None or n0 + "+NGR" in FAMS:                  # (open release; skipped when only +NGRr is asked)
+                    ag = NV.nav_gate(a0, xf0, zz, b, tau_n, release=True, R=R_g)
+                    F[n0 + "+NGR"] = (None if sc0 is None else np.where(a0 & ~ag, -np.inf, sc0), xf0, t0_, ag)
                 if GATE_RATE:                                    # Entry 30: rate-limited release (Entry 29 behaviour) as a second variant
                     ar = NV.nav_gate(a0, xf0, zz, b, tau_n, release=True, R=R_g, mode="rate")
                     F[n0 + "+NGRr"] = (None if sc0 is None else np.where(a0 & ~ar, -np.inf, sc0), xf0, t0_, ar)

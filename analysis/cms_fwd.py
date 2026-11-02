@@ -226,31 +226,35 @@ def joint_segments(recs, H, lo, kap, llc, Hreal, jref, P, excl, p_tr=0.01, g_rad
 
 
 def eps_fwd(z, b, segs, a, mode="pooled", groups=None):
-    """CST-F threshold per frame: floor(a (n+1))-th smallest virtual-segment minimum per calibration group (cms.cal_groups; a
-    virtual segment belongs to the group of its exit frame). mode "pooled" or "minpos" (min of the per-position thresholds)"""
+    """CST-F / CST-J threshold per frame: floor(a (n+1))-th smallest virtual-segment value per calibration group (cms.cal_groups; a
+    virtual segment belongs to the group of its exit frame). mode "pooled", "minbin" (positions merged in order until a bin has
+    >= 2/a segments, eps = min over bins), "bins3" (edge / early / deep) or "minpos" (min of the per-position thresholds).
+    Vectorised (same result as the per-segment loops of the first version)."""
     import cms as CMS
     eps = np.full(len(z["cond"]), -np.inf)
+    if not segs: return eps
+    ex = np.array([s_[0] for s_ in segs]); pos = np.array([s_[2] for s_ in segs]); val = np.array([s_[3] for s_ in segs], float)
+    def q(v):
+        v = np.sort(v); k = int(np.floor(a * (len(v) + 1))); return v[k - 1] if k >= 1 else -np.inf
+    nmin = int(np.ceil(2.0 / a))
     for sqs, cqs in (groups or CMS.cal_groups(z, b["seqs"])):
-        m = np.concatenate(sqs); cset = set(np.concatenate(cqs).tolist()); mine = [s for s in segs if s[0] in cset]
-        def q(v):
-            v = np.sort(v); k = int(np.floor(a * (len(v) + 1))); return v[k - 1] if k >= 1 else -np.inf
-        if mode == "pooled": e = q([s[3] for s in mine])
-        elif mode == "bins3":                                           # three fixed position bins: edge (0), early (1-2), deep (>= 3);
-            nmin = int(np.ceil(2.0 / a)); bins, cur = [], []            # a bin with < 2/a segments is merged into the next one
-            for lo, hi in ((0, 0), (1, 2), (3, 10 ** 9)):
-                cur += [s[3] for s in mine if lo <= s[2] <= hi]
-                if len(cur) >= nmin: bins.append(cur); cur = []
-            if cur: (bins[-1].extend(cur) if bins else bins.append(cur))
-            e = min([q(v) for v in bins] or [-np.inf])
-        elif mode == "minbin":                                          # positions merged (in order) until a bin has >= 2/a segments;
-            nmin = int(np.ceil(2.0 / a)); bins, cur = [], []            # eps = min over bins (valid at every position, Prop. 16)
-            for p in sorted(set(s[2] for s in mine)):
-                cur += [s[3] for s in mine if s[2] == p]
-                if len(cur) >= nmin: bins.append(cur); cur = []
-            if cur: (bins[-1].extend(cur) if bins else bins.append(cur))
+        m = np.concatenate(sqs); sel = np.isin(ex, np.concatenate(cqs)); P_, V_ = pos[sel], val[sel]
+        if not len(V_): eps[m] = -np.inf; continue
+        if mode == "pooled": e = q(V_)
+        elif mode in ("minbin", "bins3"):
+            if mode == "minbin": edges = [(p_, p_) for p_ in np.unique(P_)]
+            else: edges = [(0, 0), (1, 2), (3, 10 ** 9)]
+            bins, cur = [], []
+            for lo_, hi_ in edges:
+                cur.append(V_[(P_ >= lo_) & (P_ <= hi_)])
+                if sum(len(c) for c in cur) >= nmin: bins.append(np.concatenate(cur)); cur = []
+            if cur:
+                rest = np.concatenate(cur)
+                if bins: bins[-1] = np.concatenate([bins[-1], rest])
+                else: bins.append(rest)
             e = min([q(v) for v in bins] or [-np.inf])
         else:
-            ps = sorted(set(s[2] for s in mine)); e = min([q([s[3] for s in mine if s[2] == p]) for p in ps] or [-np.inf])
+            e = min([q(V_[P_ == p_]) for p_ in np.unique(P_)] or [-np.inf])
         eps[m] = e
     return eps
 
