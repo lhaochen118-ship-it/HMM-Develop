@@ -285,6 +285,24 @@ quỹ đạo vốn đã là ma ⇒ hệ số 1/π như Định lý 6.
 max_b a(n_b+1)/(π_b n_b+1) ≈ a/π ở **mọi** vị trí trong chuyến, với mọi chuỗi hiện diện, mọi dung sai SH (SH, +G, +NGRr chỉ bỏ báo
 cáo, Bổ đề 7). Khoảng trống của Mệnh đề 14 / Định lý 6′ ở mép (độ sâu < N) đóng lại vì null có chính các đoạn mép ảo.
 
+**Hiệu chuẩn đầu-cuối bằng mô phỏng tiến (CST-J, Mệnh đề 18).** CST-F đòi phép thử hình dạng **một mình** đạt mức a, nên ở nơi
+residual của quỹ đạo đúng và quỹ đạo ma chồng lấn (Oxford: frame cách 10 m, cửa sổ 75 m chỉ ~8 điểm, đường phố thẳng) ngưỡng hợp lệ
+rất chặt (ε = 4.4 m so với SH 12.5 m) và recall mất nhiều. Nhưng một báo cáo cần **cả** chuỗi hiện diện bật, cổng đồng thuận **và**
+phép thử hình dạng. Lối thoát ảo cho phép mô phỏng **toàn bộ quyết định**: dọc mỗi lần chạy ảo, chuỗi hiện diện được tiếp tục từ
+**trạng thái thật** tại τ (log-odds ℓ_τ và trạng thái trễ H_τ; khởi đầu ảo: odds 1, tắt) với log-LR phản thực ℓ^cf_s của các frame
+sau τ (null off-map của bằng chứng hiện diện, như Định lý 6–6′), khởi phát khi > κ, duy trì khi > 0; cổng +G so nơi ma với winner
+tuyến phản thực; residual của quỹ đạo ghép. Giá trị tới hạn của một đoạn ảo c_G = min{ r^τ_s : s ∈ G, chuỗi ảo bật và cổng đồng
+thuận } (∞ nếu không có) = dung sai lớn nhất mà hệ thống **không** báo trong đoạn đó. ε_J = min theo bin vị trí của phần tử nhỏ thứ
+⌊a(n_b + 1)⌋ của c_G (có thể = ∞: khi đó chuỗi hiện diện tự nó đã đủ). Luật: báo iff chuỗi bật ∧ cổng ∧ r_t ≤ ε_J.
+
+*Mệnh đề 18.* Dưới (S3-J) — vector (gia số log-LR, cổng, residual) của một đoạn off-map thật ở bin b, cùng trạng thái chuỗi lúc rời
+bản đồ, hoán đổi được với các đoạn ảo của bin b từ lối thoát ảo có niềm tin đúng — với mọi đoạn off-map G₀ (mép hay sâu, có chuỗi
+mang vào hay không): P(hệ thống báo trong G₀) ≤ a(n_b + 1)/(π_b n_b + 1). *Chứng minh:* {∃ t ∈ G₀ báo} = {c_{G₀} ≤ ε_J} và
+ε_J ≤ ε_b; lập luận hạng của Định lý 6. ∎ Đây là hiệu chuẩn của **chính quyết định cuối** (khởi phát, duy trì, mép, cổng), không phải
+của từng thành phần; dung sai SH chọn tay được thay bằng dung sai tại đó tỷ lệ báo sai mô phỏng bằng a. *Xấp xỉ đã biết:* bằng
+chứng hiện diện của frame ảo dùng thống kê phẫu thuật đầy đủ tại frame đó (không phải phẫu thuật tiến) — ở mép (độ trễ < N frame)
+null này "off-map hơn" thực tế; cổng +NGRr chỉ bỏ báo cáo.
+
 ## 5. Điểm mới so với tài liệu (tóm tắt; Gate 12 trong `LITERATURE_GATE.md`)
 
 - Null bản đồ (SelfCal, certified, CPC-SC; SAFEVPR'26 và Quantile Transfer dùng nhãn trên traversal hiệu chuẩn): null đến

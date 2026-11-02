@@ -172,7 +172,7 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
                 rem = a["keep"]; nb_ = tree.query_ball_point(xc[idx[lags]], rho)
                 voff = np.array([not rem[np.asarray(l_, int)].any() for l_ in nb_])
                 gerr = np.linalg.norm(track[lags] - xc[idx[lags]], axis=1)   # ghost displacement from the belief
-                recs.append((idx[a["ie"]], idx[lags], rr, voff, gerr, a["mode"]))
+                recs.append((idx[a["ie"]], idx[lags], rr, voff, gerr, a["mode"], np.array([a["g"][k] for k in lags], np.int32)))
         if verbose: print(f"  seq {si} {L} frames, {len(exits)} exits, {time.time() - t0:.0f}s", flush=True)
     return dict(recs=recs, agree=n_ag[0] / max(n_ag[1], 1), tau=tau, rho=float(rho), stride=float(stride_path / excl) if stride_path else int(stride), horizon=horizon)
 
@@ -191,6 +191,36 @@ def fwd_segments(recs, H, mode=0):
         for p_, k in enumerate(range(i, j - H + 1, H)):
             v = rr[k:k + H]; v = v[np.isfinite(v)]
             out.append((ex, fr[k:k + H], p_, float(v.min()) if len(v) else np.inf))
+    return out
+
+
+def joint_segments(recs, H, lo, kap, llc, Hreal, jref, P, excl, p_tr=0.01, g_rad=1.0, mode=0):
+    """JOINT forward simulation of the whole decision (Entry 36, CST-J). Along every virtual run the presence chain is continued from
+    the REAL state at the exit (log-odds lo and hysteresis state Hreal of the exit frame; a virtual start begins at odds 1, off) with
+    the counterfactual log-LR llc of the frames after the exit (the off-map null of the presence evidence, as in Theorems 6-6'),
+    onset when log-odds > kappa, persistence while > 0; the agreement gate compares the ghost place with the counterfactual route
+    winner jref (|.| <= g excl). A virtual frame is a REPORT CANDIDATE iff the virtual chain is on, the gate agrees and its shape
+    residual is finite. Returns [(exit, frames, position, critical residual)] per virtual off-map segment: the smallest residual among
+    its report candidates (inf if none) = the largest tolerance at which the system would NOT report in that segment."""
+    g = lambda l: np.log((1 / (1 + np.exp(-l)) * (1 - p_tr) + (1 - 1 / (1 + np.exp(-l))) * p_tr) /
+                         (1 - (1 / (1 + np.exp(-l)) * (1 - p_tr) + (1 - 1 / (1 + np.exp(-l))) * p_tr)))
+    out = []
+    for rc in recs:
+        if rc[5] != mode: continue
+        ex, fr, rr, voff, _, _, gi = rc
+        l, h = (float(lo[ex]), bool(Hreal[ex])) if mode == 0 else (None, False)
+        cand = np.zeros(len(fr), bool)
+        for q_, s_ in enumerate(fr):
+            l = float(np.clip((g(l) if l is not None else 0.0) + llc[s_], -50, 50))
+            h = (l > 0) if h else (l > kap[s_])
+            ag = gi[q_] >= 0 and np.linalg.norm(P[gi[q_]] - P[jref[s_]]) <= excl * g_rad
+            cand[q_] = h and ag and np.isfinite(rr[q_])
+        i = 0
+        while i < len(fr) and not voff[i]: i += 1
+        j = i
+        while j < len(fr) and voff[j]: j += 1
+        for p_, k in enumerate(range(i, j - H + 1, H)):
+            c = cand[k:k + H]; out.append((ex, fr[k:k + H], p_, float(rr[k:k + H][c].min()) if c.any() else np.inf))
     return out
 
 
@@ -228,7 +258,7 @@ def save(of, R, extra=None):
     recs = R["recs"]; cat = lambda k: np.concatenate([r[k] for r in recs]) if recs else np.zeros(0)
     np.savez_compressed(of, ex=np.concatenate([np.full(len(r[1]), r[0]) for r in recs]).astype(np.int32) if recs else np.zeros(0, np.int32),
                         fr=cat(1).astype(np.int32), rr=cat(2).astype(np.float32), voff=cat(3).astype(bool), gerr=cat(4).astype(np.float32),
-                        mode=np.array([r[5] for r in recs], np.int8),
+                        mode=np.array([r[5] for r in recs], np.int8), gidx=cat(6).astype(np.int32),
                         lens=np.array([len(r[1]) for r in recs], np.int32), agree=R["agree"], tau=R["tau"], rho=R["rho"], stride=R["stride"],
                         horizon=R["horizon"], **(extra or {}))
 
@@ -237,7 +267,8 @@ def load_recs(f):
     q = np.load(f); cut = np.cumsum(q["lens"])[:-1]
     sp_ = lambda k: np.split(q[k], cut)
     md = q["mode"] if "mode" in q.files else np.zeros(len(q["lens"]), np.int8)
-    return [(int(e[0]), f_, r_, v_, g_, int(m_)) for e, f_, r_, v_, g_, m_ in zip(sp_("ex"), sp_("fr"), sp_("rr"), sp_("voff"), sp_("gerr"), md) if len(e)], q
+    gi = sp_("gidx") if "gidx" in q.files else [np.full(len(x), -1, np.int32) for x in sp_("fr")]
+    return [(int(e[0]), f_, r_, v_, g_, int(m_), gg) for e, f_, r_, v_, g_, m_, gg in zip(sp_("ex"), sp_("fr"), sp_("rr"), sp_("voff"), sp_("gerr"), md, gi) if len(e)], q
 
 
 def main():

@@ -233,7 +233,8 @@ def cms_stats_vec(z, tkL, K=100, rho=None, ds=None, N=20, delta=8.0, trim=0.75, 
             look = (RT[0][W], RT[1][W], RT[2][W], np.full(W.shape, K))
             C, jr, A = _route_cost(S, IL[t, :K], np.ones((len(t), K), bool), dl, ow, look, trim, delta, wapp)
             out["cost"][t], out["j"][t] = C, jr
-            val = ~in_corridor(S["EPL"][W], A, rho)                    # unmasked long-list entries of the window frames
+            memb = in_corridor(np.broadcast_to(S["P"][None], (len(t),) + S["P"].shape), A, rho)   # every map row vs the corridor
+            val = ~memb[np.arange(len(t))[:, None, None], IL[W]]       # unmasked long-list entries of the window frames (same test)
             removed = lambda q, A=A: in_corridor(q, A, rho)
             cf_from_mask(S, t, W, dl, ow, val, removed, K, out, None, trim, delta, wapp)
             if hook is not None: hook(S, t, W, dl, ow, A, anchor_dist2(S, W, A), out)

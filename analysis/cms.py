@@ -405,6 +405,26 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
             F["CMS-CPC/H+SH+CSTF+G"] = (np.where(sh_c & okF & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & okF & agree)
             F["CMS-CPC/H+CST+CSTF+G"] = (np.where(ok1 & okF & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & ok1 & okF & agree)
             F["CMS-CPCW/H+CST+CSTF"] = (np.where(ok1 & okF, wq - kW, -np.inf), xc, 0.0, CG.hyst_ok(wq > kW, lo > 0, ok1 & okF, seqs))
+            if "_fwdrecs" in st:
+                # Entry 36 CST-J: the tolerance of the shape test is calibrated on the JOINT forward simulation of the whole decision
+                # (presence chain continued from its real state at the virtual exit with counterfactual evidence, agreement gate on the
+                # ghost, shape residual of the spliced track): eps_J = largest tolerance at which the simulated report rate of virtual
+                # off-map segments is <= a at every position bin (cms_fwd.joint_segments; Proposition 18)
+                recs = st["_fwdrecs"]
+                if GROUP != "loco":                                      # the simulated chain uses the session-calibrated (cond) chain;
+                    Hreal = CG.hyst_ok(lo > kap, lo > 0, one, seqs)     # the causal [loco] threshold reuses it on the OTHER sessions only
+                    jref = np.where(st["j_cf"] >= 0, st["j_cf"], jj).astype(int); Pl = MP[:, hz] if (MP.ndim > 1 and MP.shape[1] > 2) else (MP if MP.ndim > 1 else MP[:, None])
+                    gr = SENS.get("g", 1.0); llc_c = lo_parts[1]          # counterfactual log-LR of the same calibration
+                    st["_joint"] = (CF.joint_segments(recs, b["H"], lo, kap, llc_c, Hreal, jref, Pl, excl, P_TR, gr, 0),
+                                    CF.joint_segments(recs, b["H"], lo, kap, llc_c, Hreal, jref, Pl, excl, P_TR, gr, 1))
+                sj0, sj1 = st["_joint"]
+                ej_x = CF.eps_fwd(z, b, sj0, aF, fmode, groups=grp)
+                ej_s = CF.eps_fwd(z, b, sj1, aF, "pooled", groups=grp) if sj1 else np.full(len(ej_x), -np.inf)
+                epsJ = np.where(full, ej_x, np.minimum(ej_s, ej_x))
+                okJ = np.isfinite(r_c_keep) & (r_c_keep <= epsJ)
+                st["_epsJ"] = epsJ
+                F["CMS-CPC/H+CSTJ+G"] = (np.where(okJ & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & okJ & agree)
+                F["CMS-CPC/H+SH+CSTJ+G"] = (np.where(sh_c & okJ & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & okJ & agree)
         F["CMS-CPCW/H+CST2"] = (np.where(ok2, wq2 - kW2, -np.inf), xc, 0.0, CG.hyst_ok(wq2 > kW2, lo2 > 0, ok2, seqs))
     onWU = (sc_t > -kT2) | (wq2 > kW2)
     F["CMS-WU/H+SH"] = (np.where(sh_c, np.maximum(sc_t + kT2, wq2 - kW2), -np.inf), xc, 0.0, onWU & sh_c)
