@@ -122,6 +122,51 @@ dumps, counterfactual statistics with N = 40 (`cms_vec`, checked against the loo
 (@E32S: CMS-CPC/H+SH+G+NGRr, CMS-CPCW/H+SH+NGRr), group cond, alpha 0.05. H36f: with N = 40 the main rule keeps mean segFAR <= 0.05
 on 6/6 and its recall is >= the N = 20 recall on >= 5/6. N = 40 becomes the default only if H36f holds.
 
+**Results (labels only to evaluate; raw `analysis/results/e36/` (main, oxford, stlucia, conf, conf_oxford, n40, design .tgz;
+audit_s3f.json, safevpr26_stlucia.json), tables `paper/e36_tables.md`, report `paper/BAO_CAO_E36.pdf`).** Main set = 104 runs (seeds
+0-2; Boreas 8 runs, see the deviation), Oxford 30 runs (seeds 0-4), St Lucia 5 runs (CosPlace), confirmation 45 + 15 runs.
+1. *H36a supported (7/7, Oxford and St Lucia too).* Pass rate of real off-map segments under CST-F (edge included): Boreas 0.025, NCLT
+   0.025, CMU 0.019, Nordland 0.036, office 0.004, old town 0.019, countryside 0.015, Oxford 0.033, St Lucia 0.047; CST: 0.182, 0.187,
+   0.067, 0.302, 0.099, 0.147, 0.051, 0.321, 0.219. The guarantee of the shape test now holds on the data, including the edge.
+2. *H36b supported.* CST-F (CMS-CPC/H+CSTF+G+NGRr) mean segFAR <= 0.004 on 7/7 (no run above alpha, worst 0.013), Oxford 0.001, St
+   Lucia 0.000. Causal [both] versions likewise.
+3. *H36c supported (6/7).* Navigation error vs the SH rule: Boreas -0.9 m, NCLT -1.0, CMU -0.9, Nordland +0.1, office +0.1, old town
+   +1.0, countryside +5.3; vs CST (Entry 34): Boreas -12.5 m, old town -13.0 m. The navigation cost of CST is removed.
+4. *H36d NOT supported (3/7).* Recall vs SH: Boreas -0.011, NCLT -0.032, CMU -0.161, Nordland -0.027, office -0.024, old town -0.050,
+   countryside -0.036; Oxford 0.550 vs 0.729 (H36e: valid, recall criterion NOT met by CST-F); St Lucia 0.622 vs 0.820. A guarantee
+   from the shape test alone is strict where correct and ghost tracks overlap (Oxford, 10 m frames) and at sequence starts (CMU).
+5. *H36g (secondary, CST-J) supported on the evaluation set.* Mean segFAR 0.005-0.030 on 7/7, Oxford 0.041 (30 % of runs > alpha);
+   recall >= SH on 6/7 (CMU 0.644 vs 0.764) and Oxford (0.755 vs 0.729). Navigation cost returns where alpha is spent on harmful
+   false fixes (Boreas 11.6 vs 4.7 m, old town 39.4 vs 27.5 m). SH AND CST-J: recall within 0.007 of SH on 6/7, CMU -0.149.
+6. *Exploratory CST-J\* and its held-out confirmation H36h: partly supported.* Evaluation set: SH AND CST-J\* recall = SH within 0.003
+   on 7/7 (Boreas 0.814 / 0.815, NCLT 0.612 / 0.612, CMU 0.764 / 0.764, Nordland 0.752, office 0.794 / 0.795, old town 0.686 / 0.687,
+   countryside 0.511 / 0.513) and Oxford (0.729 = 0.729; SH AND CST 0.694 -> the Oxford criterion of Entry 35 is met), errors within
+   0.3 m except countryside (+1.5 m). Held out (45 + 15 runs): SH AND CST-J\* recall within 0.01 of SH, error within 1 m and segFAR <=
+   0.05 on 6/6; but CST-J\* ALONE breaks alpha on CMU (mean segFAR 0.068, worst 0.135; pre-registered CST-J 0.065): the joint
+   simulation is anti-conservative there (its presence evidence is the full-surgery null, approximate at the edge and at sequence
+   starts), so the validity of SH AND CST-J\* on CMU rests on SH, not on Proposition 18.
+7. *H36f (N = 40) supported on CosPlace (48 runs, seeds 1-9).* Mean segFAR <= 0.011 on 6/6; recall vs N = 20: Boreas +0.002, CMU
+   -0.003, Nordland +0.012, office +0.004, old town +0.004, countryside +0.069 (>= on 5/6). Per the pre-registration N = 40 becomes the
+   recommended belief window; confirmation on the other descriptors is still open.
+8. *St Lucia (new dataset; CosPlace; map 100909_0845, 5 query traversals; 10 m frames).* Protocol with 30 % holes: SH 0.820 / 0.000,
+   CPCW 0.857 / 0.006, CST-F 0.622 / 0.000; the map-null rule CPC-SC-T(1/2)+SH is better here (0.920 / 0.021): on a single 17 km route
+   the map self-replay null works and CMS is conservative. *Direct comparison with SafeVPR'26* (reproduced from the paper; verifier
+   DINOv2 ViT-B/14, not the paper's ViT-L/14; Mondrian LTT with labels on the other traversals; SafeVPR's own metric, accepted-set FDR /
+   TPR): without holes every method is saturated (FDR <= 0.0001, recall 0.994-0.999); with 30 % holes (25 held-out conditions)
+   SafeVPR'26 alpha 0.05: FDR 0.008, TPR 0.655, recall 0.462; alpha 0.10: 0.020 / 0.795 / 0.557; ours without any label: SH rule 0.002 /
+   0.821 / 0.592, SH AND CST-J\* 0.002 / 0.818 / 0.590, CPCW 0.010 / 0.864 / 0.623; all 25/25 valid. Our recall is higher than
+   SafeVPR'26 at both levels, with lower FDR, and no calibration traversal.
+9. *Running time.* Counterfactual statistics 3.9 ms / frame (vectorised, one core); forward null 4-31 ms / frame (one core shared by
+   ~5 jobs; horizon 20 excl; the cost grows with map size: Boreas / NCLT the highest); decision layer ~1-2 ms. Real time at 10 Hz holds.
+**Verdict.** (i) The forward surgery delivers what the theory promised: a null of the system's own ghost track that makes the shape test
+valid on its own at every position of an excursion, edge included (audit 9/9 dataset groups), with no hand-set tolerance and without
+CST's navigation cost; its price is recall (-0.01 to -0.18). (ii) Calibrating the whole decision on forward simulations (CST-J) keeps
+the recall of the hand-set rule and fixes Oxford, but its assumption is approximate and fails on held-out CMU, so it is not a
+guarantee. (iii) Recommended: **CMS-CPC/H+CSTF+G+NGRr** when a certified per-segment bound is required (and N = 40); **SH AND CST-J\***
+(= SH recall, Oxford criterion met, guarantee approximate) as the practical rule. Novelty: forward counterfactual simulation of the
+system's own failure from virtual exits (Gate 14 to do). Open: forward surgery of the PRESENCE evidence (the CST-J approximation),
+an exact null for sequence starts, N = 40 on all descriptors, Boreas on all seeds (GPU).
+
 ## Entry 35 (branch `hmm-navigation-5`) — SH AND CST: the guarantee from the surgery, the protection from the hand-set stop (2026-11-01)
 
 **Step 5 analysis of Entry 34 (paired cluster bootstrap, 366 runs).** CST vs the hand-set SH: recall +0.003 to +0.022 with CI > 0
