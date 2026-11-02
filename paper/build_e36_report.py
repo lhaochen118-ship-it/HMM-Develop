@@ -19,7 +19,10 @@ SH, SHCST, CST, CSTF = "CMS-CPC/H+SH+G+NGRr", "CMS-CPC/H+SH+CST+G+NGRr", "CMS-CP
 ROWS = [("CPC-SC-T0.5+SH", "CPC-SC-T½+SH (null bản đồ)"), (SH, "CMS-CPC/H+SH+G+NGRr (SH chọn tay)"), (SHCST, "SH ∧ CST (Entry 35)"),
         (CST, "CST (Entry 34)"), (CSTF, "**CMS-CPC/H+CSTF+G+NGRr (CST-F, đề xuất)**"), ("CMS-CPC/H+SH+CSTF+G+NGRr", "SH ∧ CST-F"),
         ("CMS-CPCW/H+CSTF+NGRr", "CMS-CPCW/H+CSTF+NGRr"), ("CMS-CPC/H+CSTF+G[both]+NGRr", "CST-F [both] (nhân quả)"),
-        ("CMS-CPCW/H+CSTF[both]+NGRr", "CMS-CPCW/H+CSTF[both]+NGRr (nhân quả)"), ("CMS-CPC/H+CSTF+G", "CST-F không cổng +NGRr")]
+        ("CMS-CPCW/H+CSTF[both]+NGRr", "CMS-CPCW/H+CSTF[both]+NGRr (nhân quả)"), ("CMS-CPC/H+CSTF+G", "CST-F không cổng +NGRr"),
+        ("CMS-CPC/H+CSTJ+G+NGRr", "CST-J (mô phỏng cả quyết định)"), ("CMS-CPC/H+SH+CSTJ+G+NGRr", "SH ∧ CST-J"),
+        ("CMS-CPC/H+CSTJs+G+NGRr", "CST-J\\* (thăm dò)"), ("CMS-CPC/H+SH+CSTJs+G+NGRr", "**SH ∧ CST-J\\*** (thăm dò)"),
+        ("CMS-CPC/H+CSTJ+G[both]+NGRr", "CST-J [both] (nhân quả)")]
 
 
 def m(T, d, n, k):
@@ -91,6 +94,18 @@ def main():
         for nmr, lab in ROWS[1:6]:
             a, b, c = runs_over(T, [ds], nmr); L.append(f"- {lab}: run segFAR > α = {a:.2f}, tệ nhất {b:.3f} ({c} run)")
         L.append("")
+    if arg("--conf"):                      # held-out confirmation of CST-J* (seeds 3-5 x 3 descriptors; Oxford seeds 5-9)
+        for dd, title in ((arg("--conf"), "5 dataset có lỗ, seed 3–5 × CosPlace / NetVLAD / MegaLoc (45 run)"), (arg("--confox"), "Oxford, seed 5–9 × CosPlace / NetVLAD / MegaLoc (15 run)")):
+            if not dd or not os.path.isdir(dd): continue
+            T = E.defaults(E.load(dd)); dss = [d for d in MAIN + ["oxford"] if d in T]
+            CR = [(SH, "SH"), (SHCST, "SH ∧ CST"), (CSTF, "CST-F"), ("CMS-CPC/H+CSTJ+G+NGRr", "CST-J"), ("CMS-CPC/H+SH+CSTJ+G+NGRr", "SH ∧ CST-J"),
+                  ("CMS-CPC/H+CSTJs+G+NGRr", "CST-J\\*"), ("CMS-CPC/H+SH+CSTJs+G+NGRr", "**SH ∧ CST-J\\***")]
+            L += tab_def(T, CR, dss, f"### Xác nhận giữ ra của CST-J\\* ({title}): recall / segFAR TB / tệ nhất / sai số (m)", oracle=False)
+            n1 = "CMS-CPC/H+SH+CSTJs+G+NGRr"; n2 = "CMS-CPC/H+CSTJs+G+NGRr"
+            r_ok = sum(abs(m(T, d, n1, 0) - m(T, d, SH, 0)) <= 0.01 for d in dss); e_ok = sum(m(T, d, n1, 4) - m(T, d, SH, 4) <= 1.0 for d in dss)
+            v_ok = sum(m(T, d, n1, 1) <= 0.05 for d in dss); v2 = sum(m(T, d, n2, 1) <= 0.05 for d in dss)
+            L += [f"- H36h: SH ∧ CST-J\\* recall trong 0.01 của SH trên {r_ok}/{len(dss)}, sai số trong 1 m trên {e_ok}/{len(dss)}, segFAR ≤ 0.05 trên {v_ok}/{len(dss)}; "
+                  f"CST-J\\* một mình segFAR ≤ 0.05 trên {v2}/{len(dss)}", ""]
     if arg("--n40"):
         d20, d40 = os.path.join(arg("--n40"), "n20"), os.path.join(arg("--n40"), "n40")
         if os.path.isdir(d20) and os.path.isdir(d40):
