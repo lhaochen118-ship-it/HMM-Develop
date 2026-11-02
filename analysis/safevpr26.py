@@ -78,7 +78,12 @@ def main():
         rows = np.flatnonzero(recs == r); qd = ep.q[rows].astype(np.float32)
         c, d = match(qd, md, T); cand[rows], dsc[rows] = c, d
         qn = meta(r)["names"]; assert len(qn) == len(rows)
-        QP = patches([os.path.join(img_root, r, f"{n}.jpg") for n in qn])
+        qf = os.path.join("results", f"patch_{ds}_{r}.npy")
+        if os.path.exists(qf): QP = np.load(qf)
+        else:
+            QP = patches([os.path.join(img_root, r, f"{n}.jpg") for n in qn])
+            if "--save-qpatch" in sys.argv: np.save(qf, QP)
+        if "--patch-only" in sys.argv: print(f"{r}: patches {QP.shape}", flush=True); continue
         rho = np.full(len(rows), np.nan); memo = {}
         def pair(a, m):
             if (a, m) not in memo: memo[(a, m)] = mnn_ratio(QP[a], MPt[m])
@@ -88,8 +93,35 @@ def main():
             vals = [pair(i - k, c[i] - k) for k in range(T) if c[i] - k >= 0]
             rho[i] = float(np.mean(vals)) if vals else np.nan
         s[rows] = rho; print(f"{r}: {len(rows)} queries, {time.time() - t0:.0f}s", flush=True)
+    if "--patch-only" in sys.argv: return
     np.savez(os.path.join("results", f"safevpr26_{ds}_{desc}.npz"), cand=cand, s=s, d=dsc, q_rec=recs)
 
 
+def holes():
+    """map-hole protocol (Entry 36): for every seed's reduced map (navcache kidx) the matcher runs on the reduced map and the MNN
+    verifier on the saved patch tokens -> results/safevpr26_<ds>_<desc>_s<seed>.npz (cand = FULL-map row)"""
+    dump, ds, desc, navdir = sys.argv[2:6]; T = 10
+    import glob, topk_dump as TKD
+    ep = TKD.load(dump, ds, desc); recs = np.asarray(ep.q_rec).astype(str)
+    MPt = np.load(os.path.join("results", f"patch_{ds}_{ep.ref}.npy"))
+    QPs = {r: np.load(os.path.join("results", f"patch_{ds}_{r}.npy")) for r in dict.fromkeys(recs)}
+    for nf in sorted(glob.glob(os.path.join(navdir, f"navcache_{ds}_{desc}_s*.npz"))):
+        seed = int(nf.rsplit("_s", 1)[1][:-4]); z = np.load(nf, allow_pickle=True); kidx = z["kidx"]
+        md = ep.m.astype(np.float32)[kidx]; cand = np.full(len(recs), -1); s = np.full(len(recs), np.nan)
+        for r in dict.fromkeys(recs):
+            rows = np.flatnonzero(recs == r); c, _ = match(ep.q[rows].astype(np.float32), md, T); QP = QPs[r]; memo = {}
+            for i in range(T - 1, len(rows)):
+                if c[i] < 0: continue
+                vals = []
+                for k in range(T):
+                    if c[i] - k < 0: continue
+                    key = (i - k, c[i] - k)
+                    if key not in memo: memo[key] = mnn_ratio(QP[i - k], MPt[kidx[c[i] - k]])
+                    vals.append(memo[key])
+                s[rows[i]] = float(np.mean(vals)) if vals else np.nan
+            cand[rows] = np.where(c >= 0, kidx[np.maximum(c, 0)], -1)
+        np.savez(os.path.join("results", f"safevpr26_{ds}_{desc}_s{seed}.npz"), cand=cand, s=s, q_rec=recs); print(f"seed {seed} done", flush=True)
+
+
 if __name__ == "__main__":
-    main()
+    holes() if sys.argv[1] == "--holes" else main()
