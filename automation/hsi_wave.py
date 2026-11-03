@@ -34,7 +34,8 @@ def main():
     out, K, variants = sys.argv[1], int(sys.argv[2]), sys.argv[3]
     tag = sys.argv[sys.argv.index("--tag") + 1] if "--tag" in sys.argv else ""
     nv = len(variants.split(","))
-    jobs = [(FRAMES[ds] * nseeds(s) * nv, f"hsi_eval.py DIR:navcache_ {ds} {d} {s} --variants {variants} --frames" + (f" --tag {tag}" if tag else ""))
+    src = lambda ds: "DIR:navcache_@hmm-e37-caches" if ds in ("oxford", "stlucia") else "DIR:navcache_@hmm-navcache-v2"   # explicit mount
+    jobs = [(FRAMES[ds] * nseeds(s) * nv, f"hsi_eval.py {src(ds)} {ds} {d} {s} --variants {variants} --frames" + (f" --tag {tag}" if tag else ""))
             for ds, d, s in runs()]
     jobs.sort(reverse=True); bins = [[0, []] for _ in range(K)]
     for c, j in jobs:

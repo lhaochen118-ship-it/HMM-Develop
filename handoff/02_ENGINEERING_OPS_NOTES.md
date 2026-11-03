@@ -5,6 +5,21 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## I2. Vòng ý tưởng 2 (2026-11-03, HSI): vận hành — đọc cùng §00
+
+- **Đánh giá HSI chỉ cần CPU** (từ cache `nav_demo --cache`): `analysis/hsi_eval.py <cache> <ds> <desc> <seeds> --variants ...`; đợt: `automation/hsi_wave.py`
+  (LPT theo frame × biến thể) → `fanout.py --groups --build-only --cpu --nodumps --ds <cache datasets> --par 4` → `central_monitor.py` → `automation/hsi_collect.py`.
+  441 run × 12 biến thể ≈ 17 phút trên 10 phiên CPU (2 acc × 5); không tốn hạn mức GPU.
+- **`--nodumps`** (make_eval_kernel): không mount dump descriptor; runner phải tạo `dump_all` rỗng (lỗi đã gặp: FileNotFoundError ở dòng in thư mục dump — mọi
+  kernel hỏng trong 1 phút; đã sửa).
+- **Token runner với nhiều dataset cache cùng tên file** (cache chính và cache lỗ 10/50 % có CÙNG tên `navcache_<ds>_<desc>_s<seed>.npz`): dùng
+  `DIR:navcache_@<tên thư mục>` tường minh (`@hmm-navcache-v2`, `@hmm-e37-caches`, `@d10`, `@d50`); `hsi_eval` ghi `cache_path` vào JSON để kiểm.
+- **OpenMP quá tải:** hai tiến trình HistGradientBoosting song song với OMP mặc định (4 luồng mỗi tiến trình trên 4 lõi) chậm ~10× — đặt
+  `OMP_NUM_THREADS` = lõi / số job (runner đã làm; cục bộ phải tự đặt).
+- **Băm đơn vị hiệu chuẩn:** `(unit * hằng) % 2` với unit chẵn cho mọi đơn vị cùng lớp (CMU: mọi chuỗi thành đơn vị hiệu chuẩn, mô hình không
+  bao giờ được huấn luyện) — dùng `calib_units` (ngẫu nhiên tất định theo đơn vị).
+- Phiên khác (ý tưởng 1) có thể đẩy commit lên cùng branch: `git fetch` + `git rebase origin/hmm-2nd-idea` trước khi push.
+
 ## 00. NGUYÊN TẮC TỐI ƯU TÀI NGUYÊN (đúc kết đến 2026-11-03; áp dụng cho mọi đợt của ý tưởng 2)
 
 | Tài nguyên | Thực tế đo được | Quy tắc |

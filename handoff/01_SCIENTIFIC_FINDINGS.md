@@ -6,6 +6,26 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
+## I2. Ý tưởng 2 — HSI (2026-11-03, branch `hmm-2nd-idea`, Entry 1–4) — đọc trước mọi mục khác
+
+**Báo cáo:** `paper/BAO_CAO_HSI.pdf`; lý thuyết `paper/hsi_theory.md`; nhật ký `RESEARCH_LOG.md`; số liệu `analysis/results/hsi/`.
+
+1. **Chẩn đoán:** mất recall nằm ở quyết định báo, không ở bộ lọc vị trí (chuỗi đúng 54–99.8 % frame on-map); một GBM có giám sát trên đặc trưng
+   nhân quả vượt SH +0.12…+0.31 ⇒ thông tin có sẵn, thiếu cách học/hiệu chuẩn không nhãn; thống kê bất biến affine bỏ thông tin (AUROC 0.65 vs 0.95).
+2. **Chứng chỉ hình học bất biến điều kiện ảnh:** chuỗi vị trí khớp odometry ở mọi độ trễ 10–80 m ⇒ fix đúng với xác suất ≥ 0.993 (28/28 run),
+   không dùng similarity. Neo sai còn lại = tuyến dịch cứng (aliasing có cấu trúc, hàng trăm mét) ⇒ tham chiếu phải nhất quán qua dead-reckoning
+   (40 → 6 run vi phạm khi thêm tham chiếu tin cậy).
+3. **Nhãn hồi cứu tự sinh** (cầu dead-reckoning hai phía giữa đoạn đã xác minh + vùng phủ bản đồ): nhãn off-map chính xác 1.000 khi odometry tốt,
+   0.88–0.93 với VIO/Segway trôi.
+4. **Luật khuyến nghị HSI-rot-m-sc (Entry 3), 413 run giữ ra:** hợp lệ 413/413, kiểm toán theo vị trí ≤ 0.07 trên 9/9 dataset (ý tưởng 1 không đạt),
+   recall +0.041 so với SH (7/9 dataset; DINOv2 +0.123, NetVLAD +0.068), sai số ≤ SH trên 6/9. Bền ở lỗ 10 % (0/84 vi phạm) và 50 % (4/84; SH 3/84);
+   off-map tự nhiên 1/36. ~1 ms/frame trên 1 lõi CPU (ý tưởng 1: 18–45 ms/frame GPU).
+5. **Ablation quyết định:** hiệu chuẩn biên chung (+0.09 recall so với có điều kiện), gộp phiên (+0.044), cửa sổ theo mét (+0.12, Oxford/St Lucia
+   10 m/frame), nhất quán ngắn hạn và null "chưa từng xác minh" cần cho tính hợp lệ (bỏ đi: 13 và 7 run vi phạm).
+6. **Âm / mở:** CMU 0.652 vs SH 0.835 (chuỗi ngắn, khởi động lạnh phiên đầu, đầu chuỗi chiếm ngân sách hiệu chuẩn) — Entry 4 (Mondrian theo chế độ)
+   đang kiểm; NCLT −0.11 (off-map sát bản đồ, off_d 20 m); sai số điều hướng old town +5.7 m, Boreas +2.5 m; bảo đảm dựa trên hoán đổi giữa đoạn
+   null hồi cứu và đoạn sai thật (gộp phiên ⇒ hoán đổi giữa điều kiện chỉ xấp xỉ).
+
 ## 0. Đọc cho ý tưởng 2 (branch `hmm-2nd-idea`)
 
 Các mục dưới đây là phát hiện của ý tưởng 1 và các hướng trước (SelfCal, CPC-HMM, CMS). Tóm tắt chuyển giao + số liệu cần đánh bại:
