@@ -24,11 +24,11 @@ def summary(rdir, bases, main, out_md):
 def main():
     rdir, bases = sys.argv[1], sys.argv[2:]
     P = os.path.join(ROOT, "paper")
-    summary(rdir, bases, "HSI", os.path.join(P, "hsi_tables_e1.md"))
-    summary(rdir, bases, "HSI-rot-m", os.path.join(P, "hsi_tables_e2.md"))
+    summary(rdir, bases, "HSI-rot-m-sc", os.path.join(P, "hsi_tables_e1.md"))
+    summary(rdir, bases, "HSI", os.path.join(P, "hsi_tables_e2.md"))
     text = open(os.path.join(P, "hsi_report_text.md")).read()
-    t1 = open(os.path.join(P, "hsi_tables_e1.md")).read().replace("# HSI wave summary", "### Bảng A — Entry 1 (luật HSI đóng băng)")
-    t2 = open(os.path.join(P, "hsi_tables_e2.md")).read().replace("# HSI wave summary", "### Bảng B — Entry 2 (HSI-rot-m)")
+    t1 = open(os.path.join(P, "hsi_tables_e1.md")).read().replace("# HSI wave summary", "### Bảng A — luật khuyến nghị HSI-rot-m-sc (Entry 3), tập giữ ra; Ablation: mọi biến thể")
+    t2 = open(os.path.join(P, "hsi_tables_e2.md")).read().replace("# HSI wave summary", "### Bảng B — cấu hình Entry 1 (cửa sổ theo frame), để đối chiếu")
     md = text.replace("{{TABLES_E1}}", t1).replace("{{TABLES_E2}}", t2)
     out = os.path.join(P, "BAO_CAO_HSI.md"); open(out, "w").write(md)
     subprocess.run([sys.executable, os.path.join(ROOT, "automation", "md2pdf.py"), out, out[:-3] + ".pdf"])
