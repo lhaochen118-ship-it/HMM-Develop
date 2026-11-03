@@ -1,0 +1,5 @@
+{"_note": "worker-seconds measured on the probe kernel e37p-1 (L4 session, 46 parallel jobs, route test on the GPU) 2026-11-03; eval / n40 partly estimated",
+ "ms": {"cmu": 38, "nord": 89, "4s:office_loop": 96, "4s:old_town": 87, "4s:countryside": 83, "boreas": 86, "nclt": 103, "oxford": 113},
+ "eval": {"cmu": 150, "nord": 200, "4s": 200, "boreas": 700, "nclt": 500, "oxford": 500},
+ "n40": {"cmu": 153, "nord": 200, "4s": 200, "boreas": 469},
+ "prep_ox": 93, "par": 46}

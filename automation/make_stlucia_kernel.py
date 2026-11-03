@@ -11,6 +11,7 @@ Steps inside the kernel:
   3. analysis jobs from the code dataset, in parallel (one BLAS thread per job, GPUs round robin):
        e37_prep.py <dump> stlucia <desc> <seed> --no-fwd   (navcache, exact statistics, top-K, route cost; 6 descriptors x seeds 0-4)
        e37_fwd.py  <dump> results stlucia <desc> <seed> k/n (forward null with presence, 2 parts per run, after its prep)
+       e37_eval.py <dump> results results/cms results/topk results/tao stlucia <desc> <seed> n --wait   (merge + rules @E36,@E37)
        safevpr26.py --holes <dump> stlucia <desc> results --patch-dir patchL --tag vitl   (map-hole protocol, after the 5 preps)
        safevpr26.py <dump> - stlucia <desc> - --patch-dir patchL --tag vitl               (no-hole protocol)
   4. results.tar (results/ + logs/) and the dump (for nhatlong1103/stlucia-vpr-dump).
@@ -47,6 +48,7 @@ body = r'''
 import shutil, subprocess, threading
 from concurrent.futures import ThreadPoolExecutor
 DESCRIPTORS, SEEDS, PAR, PARTS, TEST = %s, %s, %d, %d, %d
+CONFIG.NUM_WORKERS = min(16, os.cpu_count() or 4)                    # first reads from /kaggle/input are slow: more parallel readers
 W = "/kaggle/working"; DUMP = os.path.join(W, "dump"); PL = os.path.join(W, "patchL"); os.makedirs(PL, exist_ok=True)
 os.makedirs(os.path.join(DUMP, "meta"), exist_ok=True)
 FR = next(d for d, subs, _ in os.walk("/kaggle/input", followlinks=True) if "frames_meta" in subs)
@@ -149,6 +151,8 @@ for d in DESC_OK:
     for s in SEEDS:
         for k in range(PARTS):
             JOBS.append((f"fwd_{d}_s{s}_p{k}", ["e37_fwd.py", DUMP, "results", "stlucia", d, str(s), f"{k}/{PARTS}"], (f"prep_{d}_s{s}",)))
+        JOBS.append((f"eval_{d}_s{s}", ["e37_eval.py", DUMP, "results", "results/cms", "results/topk", "results/tao", "stlucia", d, str(s),
+                                        str(PARTS), "--wait"], tuple(f"fwd_{d}_s{s}_p{k}" for k in range(PARTS))))
     if VITL:
         JOBS.append((f"sv_holes_{d}", ["safevpr26.py", "--holes", DUMP, "stlucia", d, "results", "--patch-dir", PL, "--tag", "vitl"],
                      tuple(f"prep_{d}_s{s}" for s in SEEDS)))

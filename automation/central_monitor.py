@@ -189,7 +189,10 @@ while pend:
     same = [k for k in due if acct(k) == last_acct[0]]                 # stay on the account of the previous call while it has work
     slug = min(same or due or pend, key=lambda k: (ST[k]["next"] if not (same or due) else prio(k))); s = ST[slug]; last_acct[0] = acct(slug)
     w = s["next"] - time.time()
-    if w > 0: time.sleep(min(w, 60)); continue
+    # a kernel waiting for a free slot that has one now: do not sleep until the next status poll (the API gap still applies)
+    pushable = any(ST[k].get("unpushed") and ST[k].get("retry", 0) <= time.time() and
+                   any(len(busy(a, ktype(k))) < LIMIT[ktype(k)] for a in ACTIVE_ACC[:N_ACT[0]]) for k in pend)
+    if w > 0: time.sleep(min(w, 2 if pushable else 60)); continue
     if PULL_FIRST.search(slug) and not s.get("pull_tried"):
         s["pull_tried"] = True; out = s["kdir"] + "_out"; os.makedirs(out, exist_ok=True)
         api(s["kid"], "kernels", "output", s["kid"], "-p", out, "-o")
