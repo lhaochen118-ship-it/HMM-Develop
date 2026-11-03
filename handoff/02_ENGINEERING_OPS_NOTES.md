@@ -23,6 +23,18 @@ Luồng chuẩn của một đợt: (1) smoke test cục bộ đầu-cuối trê
 GPU = numpy); (3) chi phí đo ⇒ đóng gói LPT theo đơn vị phụ thuộc (job chuẩn bị đầu, job chờ cuối), gộp mọi giai đoạn trong kernel;
 (4) đồng bộ code dataset mọi acc, chờ "ready"; (5) một monitor đẩy và kéo; (6) gom kết quả ngay khi từng kernel xong.
 
+## 0. Bài học vận hành mới nhất cho ý tưởng 2 (2026-11-03, sau Entry 39 của ý tưởng 1)
+
+- **API Kaggle (giới hạn theo IP, cửa sổ dài):** bị chặn 2 lần liên tiếp sau khi kéo hàng chục đầu ra lớn + vòng kiểm tra song song 9 acc. Chỉ một
+  tiến trình gọi API; kéo đầu ra cách nhau ≥ 45 s; không vòng `datasets status` song song; kernel vẫn chạy khi bị chặn, chỉ việc kéo bị trễ.
+- **central_monitor:** hỏi kernel quá hạn lâu nhất trước (bản cũ bỏ đói acc khác); bỏ qua acc bị người khác chiếm GPU (15 phút) và acc hết hạn
+  mức tuần (7 ngày); khi chuyển kernel sang acc khác thì đồng bộ code dataset của acc đó và chờ "ready".
+- **Đường găng thay vì tổng chi phí:** một bước chuẩn bị CPU dài (Boreas 41–55 phút) làm mọi job phụ thuộc chờ, kernel L4 kéo dài gấp đôi. Tách bước
+  chuẩn bị nặng thành đợt riêng trước, hoặc đưa lên GPU; xếp job phụ thuộc theo thời gian chuẩn bị tăng dần.
+- **Phiên CPU (4 vCPU):** chậm ~1.3× so với ước tính từ L4-GPU; dùng cho đơn vị nhỏ, không tốn hạn mức GPU.
+- **Gom kết quả:** giữ MỌI file trung gian cần cho phân tích sau (vd. cache sinh trong kernel) trước khi xoá tar; tải lại tốn 30 phút và rủi ro API.
+- **Toạ độ 3-D:** luôn dùng trục phẳng `z["hz"]` (4Seasons, NCLT); dùng 2 cột đầu đã làm sai một chẩn đoán.
+
 ## 000000000. Vòng 12 (2026-11-03, Entry 38): vận hành
 
 - **Hạn mức GPU:** mỗi acc 30 GPU-giờ/tuần; phiên L4×4 tính **4 GPU-giờ mỗi giờ** (≈ 7.5 giờ L4/acc/tuần). `nhatlong1103` hết quota trong vòng này

@@ -11,6 +11,17 @@ ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables
 Các mục dưới đây là phát hiện của ý tưởng 1 và các hướng trước (SelfCal, CPC-HMM, CMS). Tóm tắt chuyển giao + số liệu cần đánh bại:
 `07_IDEA1_SUMMARY.md`. Phát hiện của ý tưởng 2 ghi thành mục mới ở đầu file này.
 
+## 00. Phát hiện mới nhất có ích cho thiết kế ý tưởng 2 (từ Entry 38–39 của ý tưởng 1)
+
+- **Metric:** ngưỡng nhị phân off_d (40 m) phạt fix "gần đúng" (sai 40–50 m ở mép lỗ) như fix sai hẳn: 91–97 % báo sai ở mép là loại này; tính
+  off-map từ off_d + 5 m thì phần dư biến mất. Ý tưởng 2 nên báo cáo thêm sai số liên tục (phân phối sai số fix, sai số điều hướng) và độ nhạy
+  theo biên định nghĩa, để không tối ưu theo một tạo tác của metric.
+- **Nguồn sai số điều hướng thật:** fix sai > 100 m, một nửa xảy ra khi robot vẫn trên bản đồ (sai nơi) — phép thử hình dạng chọn tay (SH) chặn được;
+  bất kỳ giải pháp mới nào cũng phải kiểm loại lỗi "trên bản đồ nhưng sai nơi", không chỉ "ngoài bản đồ".
+- **Hình dạng lỗ ảo (ống hay khối) gần như không đổi kết quả hiệu chuẩn** (Entry 38): đừng đầu tư vào hình học lỗ.
+- **Hệ số 1/π:** khi hiệu chuẩn từ mô phỏng trên chính luồng, phần mô phỏng xuất phát từ trạng thái đã sai (π ≈ 0.55–0.70) làm cận lỏng ra a/π.
+- **Bố cục lỗ mới (seed 10–12):** kết quả xác nhận ở `07_IDEA1_SUMMARY.md` §6 (bổ sung khi xong).
+
 ## N000000000. Vòng 12 (2026-11-03, Entry 38) — đọc trước §N00000000
 
 - **Thử:** họ lỗ ảo hình khối (lưới ngẫu nhiên mỗi lần chạy ảo) + luật giao CST-JSU (Mệnh đề 20: hợp lệ nếu lỗ thật giống MỘT họ). Báo cáo

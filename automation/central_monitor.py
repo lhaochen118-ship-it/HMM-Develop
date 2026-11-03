@@ -206,8 +206,9 @@ while pend:
     if pushed_now[0]:                                                  # keep pushing while kernels wait for a free slot (status polls later)
         pushed_now[0] = False; continue
     due = [k for k in pend if ST[k]["next"] <= time.time()]
-    same = [k for k in due if acct(k) == last_acct[0]]                 # stay on the account of the previous call while it has work
-    slug = min(same or due or pend, key=lambda k: (ST[k]["next"] if not (same or due) else prio(k))); s = ST[slug]; last_acct[0] = acct(slug)
+    # most overdue first (2026-11-03: "stay on the previous call's account" starved the other accounts when one account had more due
+    # kernels than polls per run-poll period); the previous account still wins ties within 60 s
+    slug = min(due or pend, key=lambda k: (ST[k]["next"] - (60 if acct(k) == last_acct[0] else 0), prio(k))); s = ST[slug]; last_acct[0] = acct(slug)
     w = s["next"] - time.time()
     # a kernel waiting for a free slot that has one now: do not sleep until the next status poll (the API gap still applies)
     pushable = any(ST[k].get("unpushed") and ST[k].get("retry", 0) <= time.time() and
