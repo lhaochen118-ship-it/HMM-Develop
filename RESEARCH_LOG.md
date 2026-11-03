@@ -4,6 +4,16 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+## Quét α và tham chiếu Claxton'24 (mô tả, không quyết định luật; đợt `hsi8`, 413 run giữ ra, 2026-11-03 19:00 UTC)
+
+Luật HSI-rot-m-sc ở α ∈ {0.01, 0.02, 0.05, 0.1, 0.2} (`paper/tables/hsi_alpha.md`, `paper/figures/hsi_alpha.png`). segFAR thực (TB các TB dataset /
+dataset tệ nhất / run > α / run > 0.05 / recall gộp / sai số): α 0.01 — 0.0008 / 0.0030 / 6 / 0 / 0.707 / 16.5; 0.02 — 0.0013 / 0.0035 / 4 / 0 / 0.733 /
+15.9; 0.05 — 0.0023 / 0.0060 / 0 / 0 / 0.772 / 15.0; 0.1 — 0.0046 / 0.0143 / 0 / 0 / 0.799 / 15.0; 0.2 — 0.0083 / 0.0437 / 0 / 0 / 0.811 / 16.0.
+**Đọc:** bảo đảm đúng ở mọi mức (TB ≪ α) nhưng bảo thủ 5–25× — hệ quả dự kiến của null là TẬP CHA của off-map (có thể off-map ∪ fix sai ∪ chưa
+xác minh, Mệnh đề 4 (i)); ở α nhỏ (0.01) vài run vượt do số đoạn hiệu chuẩn ít (ngưỡng conformal rời rạc). Recall tăng đều theo α (0.707 → 0.811;
+oracle 0.845). Tham chiếu **Claxton'24** (MLP giám sát bằng nhãn của 2 điều kiện dễ nhất, kiểu RA-L'24): recall 0.729 nhưng **287/413 run vượt
+α**, sai số 46 m — một bộ giám sát học có nhãn không được hiệu chuẩn cho off-map không thay được hiệu chuẩn trên excursion thật; Xu'21: 202/413.
+
 ## Entry 5 — chứng nhận rồi hiệu chuẩn: chứng chỉ hình học làm điểm neo hồi cứu (HSI-V) — đăng ký trước (2026-11-03 18:45 UTC)
 
 *Viết TRƯỚC khi xem bất kỳ kết quả giữ ra nào của Entry 4 (đợt `hsi7` đang chạy) và của Entry 5.*
@@ -48,6 +58,9 @@ Recall / segFAR TB / run > α / sai số (TB theo run, gộp 413): HSI-rot-m-sc 
 Mondrian theo chế độ cải thiện điều hướng rõ (Boreas 6.9 → 4.4 m, old town 31.6 → 28.7, countryside 26.8 → 24.8) và giảm segFAR, đổi lại −0.008 recall.
 **Quyết định (theo quy tắc đăng ký trước):** giữ HSI-rot-m-sc; HSI-M báo cáo như điểm vận hành ưu tiên điều hướng (bảo đảm theo chế độ). Quan sát
 hậu nghiệm (không dùng để quyết định): HSI-M-nos đạt điều kiện số của H8 (CMU +0.043, gộp −0.002) với sai số 13.9 m.
+Bền (mọi run, 3 seed × 36): lỗ 10 % — HSI-M 0/108 run > α, recall 0.747 (HSI-rot-m-sc 0.755, 0/108), sai số 11.2 vs 12.1 m; lỗ 50 % — 4/108 (cùng 4 run
+CMU như HSI-rot-m-sc), recall 0.734 vs 0.744, sai số 19.5 vs 22.6 m (old town 56.7 → 40.6 m); off-map tự nhiên 4Seasons — 0/36 (HSI-rot-m-sc 1/36),
+recall 0.742 vs 0.743.
 
 ## Entry 3 — đầu chuỗi và biên null (HSI-rot-m-sc) — đăng ký trước (2026-11-03 17:00 UTC, chưa xem kết quả giữ ra nào của Entry 1–2)
 
