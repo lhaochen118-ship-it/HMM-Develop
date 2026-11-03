@@ -303,6 +303,52 @@ của từng thành phần; dung sai SH chọn tay được thay bằng dung sai
 chứng hiện diện của frame ảo dùng thống kê phẫu thuật đầy đủ tại frame đó (không phải phẫu thuật tiến) — ở mép (độ trễ < N frame)
 null này "off-map hơn" thực tế; cổng +NGRr chỉ bỏ báo cáo.
 
+## 4g. Phẫu thuật tiến của BẰNG CHỨNG HIỆN DIỆN và null chính xác cho đầu chuỗi: CST-JS (Entry 37)
+
+**Đóng xấp xỉ của Mệnh đề 18.** Ở CST-J, log-LR hiện diện của frame ảo s lấy từ phẫu thuật đầy đủ tại s (hành lang ρ quanh các anchor
+của chính frame s), không phải từ bản đồ M \ V_τ của lần chạy ảo. Đo trên CMU seed 3 (thiết kế): tỷ lệ đoạn ảo vị trí 0 mà hệ thống
+báo là **0.224** khi mọi thống kê được tính lại trên bản đồ của lần chạy ảo, so với 0.045 với hiện diện phẫu thuật đầy đủ ⇒ CST-J đánh
+giá thấp rủi ro ở mép ~5 lần (cơ chế CST-J\* vượt α trên CMU giữ ra, Entry 36). **Phẫu thuật tiến của hiện diện** (`cms_fwd.FwdStats`):
+với mỗi lần chạy ảo (lối thoát hoặc khởi đầu) và mỗi frame s của nó, chi phí tuyến C, winner j và độ khác biệt z được tính **đúng phép
+tính của hệ thống** (`cms_exact` / `cms_vec`) trên M \ V_τ: giả thuyết = top-K của bản đồ còn lại lấy từ hàng similarity đầy đủ, bảng tra
+cứu của mọi frame trong cửa sổ N frame cũng trên M \ V_τ (kể cả các frame trước τ), vệt anchor rời chunk từ điểm đầu tiên rơi vào vùng
+bị xoá (cùng quy ước của phẫu thuật đầy đủ); khởi đầu ảo: cửa sổ cắt tại τ. Thống kê được đổi sang log-LR bằng **phép biến đổi của chính
+hệ thống** (`cms.chain_xform`: hạng trong pool phản thực của nhóm, Beta-EM, luỹ thừa e-value), cổng +G dùng winner tiến j^τ_s. Với V = ∅
+FwdStats trùng cache công bố (cost 100 %, z 100 %, j 99.83 %, hoà fp16). Mỗi thành phần của quyết định dọc một lần chạy ảo giờ là đúng
+cái hệ thống sẽ tính nếu bản đồ kết thúc tại τ — không còn thống kê thay thế.
+
+**Null chính xác cho đầu chuỗi.** Một chuỗi bắt đầu **trong** lỗ: chuỗi vị trí khởi động từ niềm tin đều, mọi cửa sổ (hình dạng và
+hiện diện) bị cắt ở frame đầu. Khởi đầu ảo **đủ chân trời** (mode 2): tại mỗi τ, xoá hành lang ρ quanh toàn bộ đường tin của off_d + 20 excl
+quãng đường kế tiếp (không cắt Voronoi: không có gì trước điểm bắt đầu), chạy hệ thống từ τ như một chuỗi mới. Vị trí kể từ đầu chuỗi
+p(t) = ⌊(t − t₀)/H⌋ biết được không cần nhãn; đoạn ảo được xếp theo vị trí của chúng kể từ khởi đầu ảo.
+
+**Luật CST-JS.** Báo frame t iff chuỗi hiện diện bật ∧ cổng ∧ r_t ≤ ε_X (dung sai lối thoát: min theo bin vị trí trong chuyến của giá
+trị tới hạn mô phỏng, như ε_J nhưng với hiện diện tiến) và, nếu t nằm trong chân trời khởi đầu (quãng đường từ đầu chuỗi ≤ off_d + 20 excl),
+r_t ≤ ε_S(p(t)); frame có cửa sổ hình dạng < 1 excl (r_t không xác định) báo iff ℓ_t > κ′(p(t)). Ngưỡng khởi đầu theo bin vị trí
+(gộp theo thứ tự đến ≥ 2/(a/2) đoạn ảo): bin có frame cửa sổ ngắn chia ngân sách — ε_S = phần tử nhỏ thứ ⌊(a/2)(n_b + 1)⌋ của giá trị
+tới hạn c_G, κ′ = phần tử thứ ⌈(1 − a/2)(n_b + 1)⌉ của log-odds lớn nhất của các ứng viên cửa sổ ngắn trong đoạn; bin không có cửa sổ
+ngắn: ε_S ở mức a, κ′ = ∞.
+
+**(S3-JF)** Với cùng nhóm hiệu chuẩn, vector (log-LR hiện diện, winner tuyến, residual, trạng thái chuỗi khi rời bản đồ) của một đoạn
+off-map thật ở bin b hoán đổi được với vector của các đoạn ảo ở bin b từ lối thoát ảo có niềm tin đúng. **(S3-S)** Một đoạn off-map thật
+ở vị trí p kể từ đầu chuỗi, của một chuỗi bắt đầu trong lỗ, hoán đổi được với các đoạn ảo ở bin của p từ các khởi đầu ảo.
+So với (S3-J): mọi thống kê trong vector ảo giờ là phép tính thật của hệ thống trên bản đồ ảo, nên giả định còn lại chỉ là "lỗ thật giống
+lỗ ảo" (cùng bản chất với S1 của Định lý 6), không còn sai khác do thống kê thay thế.
+
+**Mệnh đề 19.** Dưới (S3-JF) và (S3-S), với mọi đoạn off-map thật G₀ (mép, sâu, hay trong chân trời đầu chuỗi):
+P(hệ thống báo trong G₀) ≤ a(n_b + 1)/(π_b n_b + 1). *Chứng minh.* (i) G₀ ngoài chân trời đầu chuỗi: {báo trong G₀} = {c_{G₀} ≤ ε_X} và
+ε_X ≤ ε_b, lập luận hạng của Định lý 6 trong bin b (như Mệnh đề 18, nay với (S3-JF)). (ii) G₀ trong chân trời đầu chuỗi: một báo cần
+cả r_t ≤ ε_X và r_t ≤ ε_S (cửa sổ đủ ≥ 1 excl) hoặc ℓ_t > κ′ (cửa sổ ngắn) nên {báo trong G₀} ⊆ {c_{G₀} ≤ ε_S} ∪ {max ℓ ứng viên ngắn > κ′};
+mỗi biến cố có xác suất ≤ (a/2)(n_b + 1)/(π_b n_b + 1) theo hạng trong bin của khởi đầu ảo; cận hợp cho a(·). Bin không có cửa sổ ngắn:
+biến cố thứ hai rỗng, mức a. ∎ Hệ quả: bảo đảm theo đoạn ở **mọi** vị trí, mép và đầu chuỗi gồm cả, không có hằng số chọn tay (dung
+sai và ngưỡng khởi phát cửa sổ ngắn đều hiệu chuẩn trên mô phỏng của chính hệ thống); SH, +G, +NGRr chỉ bỏ báo cáo (Bổ đề 7).
+*Nhiễm* như Mệnh đề 16 (lối thoát ảo có niềm tin sai ⇒ bảo thủ; frame đã off-map ⇒ hệ số 1/π). *Kiểm thực nghiệm:* tỷ lệ đoạn off-map
+thật có báo theo lớp vị trí (`analysis/e37_audit.py`, giả thuyết H37b) và segFAR trên tập giữ ra seed 6–9 (H37a).
+
+**Chi phí.** Mỗi frame có ~45 lần chạy ảo sống, mỗi lần một phép thử tuyến trên bản đồ của nó: 20–100 ms / frame trên một lõi (numpy),
+1.3–1.8 × nhanh hơn khi phép thử tuyến chạy trên GPU (`analysis/cms_torch.py`, float64, trùng tuyệt đối với numpy trên L4). Đây là chi phí
+hiệu chuẩn (chạy một lần trên luồng của phiên, song song theo chuỗi), không phải chi phí quyết định trực tuyến (~1–2 ms / frame).
+
 ## 5. Điểm mới so với tài liệu (tóm tắt; Gate 12 trong `LITERATURE_GATE.md`)
 
 - Null bản đồ (SelfCal, certified, CPC-SC; SAFEVPR'26 và Quantile Transfer dùng nhãn trên traversal hiệu chuẩn): null đến
