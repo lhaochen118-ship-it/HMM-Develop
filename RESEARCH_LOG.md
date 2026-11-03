@@ -7,6 +7,72 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 37 (branch `hmm-navigation-5`) — forward surgery of the PRESENCE evidence; exact null of sequence starts (CST-JS); all descriptors (2026-11-03)
+
+**Context.** Open items after Entry 36 (user, 2026-11-02): (1) run the system's PRESENCE evidence forward on every virtual run's altered
+map, so that the joint calibration CST-J becomes a real guarantee; (2) an exact null for sequence starts (the CMU problem); (3) with GPU:
+Boreas on all 18 runs, N = 40 on every descriptor, St Lucia with 6 descriptors. Code and design checks were done in the previous
+session (`handoff/06_E37_DANG_DO.md`); this entry is completed in the session of 2026-11-03 (7 Kaggle accounts).
+
+**Method (code: `analysis/cms_fwd.py` FwdStats / HoleMask / joint_crit / eps_start_pos, `analysis/cms.py` CST-JS block,
+`analysis/cms_torch.py`).** (i) *Forward presence.* For every virtual run (exit every 1 excl, horizon off_d + 20 excl; starts) the
+system's own presence statistics (route cost C, winner j, distinctiveness z of `cms_exact` / `cms_vec`) are recomputed on THAT run's
+altered map: hypotheses = top-K of the remaining map from the full similarity row, look-up tables of every window frame on the same map,
+anchor traces leave the chunk where they enter the removed region; mapped to log-LR by the system's own transform (`cms.chain_xform`);
+the presence chain is continued from its real state at the exit, the agreement gate uses the forward winner. With nothing removed the
+statistics equal the published cache (cost 100 %, z 100 %, j 99.83 %, fp16 ties). (ii) *Exact start null.* Virtual starts over the
+exits' full horizon (mode 2; hole = corridor rho around the whole believed path of the run; chain restarted uniform; windows truncated at
+the start). Thresholds of the start null per POSITION since the sequence start (position = frame index // H, known without labels; bins
+of >= 2/(a/2) segments); a frame within that horizon of its sequence start must pass both the exit threshold (min over excursion-position
+bins) and its start-position threshold; frames whose shape window is < 1 excl pass iff their presence log-odds exceeds kappa' (the start
+null's log-odds threshold of its position bin), a split a/2 (tolerance) + a/2 (kappa'). Proposition (to write as section 4g): under the
+exchangeability of each real off-map segment with the virtual segments of its bin (exits: the S3-F condition of Entry 36 extended to the
+joint decision; starts: a real start inside a hole vs the virtual starts), the report rate of a real off-map segment is <= a at every
+position, edge and start included, with no hand-set constant.
+
+**Design data and numbers already seen (labels only to evaluate).** CMU seed 3 x CosPlace / NetVLAD (the Entry 36 held-out runs where
+CST-J\* broke alpha) were used to build the construction; CMU seeds 3-5 x CosPlace / NetVLAD / MegaLoc are DESIGN data from now on and
+are reported separately. Seen on CMU s3 (recall / segFAR, +G+NGRr): SH 0.855 / 0.011 and 0.500 / 0.000; CST-J\* 0.868 / 0.011 and
+0.568 / 0.014; CST-F 0.678 / 0.000 and 0.348 / 0.000; CST-JS 0.826 / 0.000 and 0.526 / 0.011; SH AND CST-JS 0.826 / 0.000 and
+0.475 / 0.000; CST-JS0 0.685 / 0.000 and 0.426 / 0.011; CST-JSL 0.863 / 0.005 and 0.554 / 0.014; CST-JS [both] 0.812 / 0.000 and
+0.487 / 0.008. Mechanism seen: the virtual exits of position 0 are reported by the system in 22.4 % with forward presence vs 4.5 % with
+the full-surgery presence of Entry 36 (CST-J under-estimated the edge risk ~5x); on positions 0-2 from the sequence start the system
+reports on a short window in > 5 % of the virtual starts (kappa' = 5.76 restores validity, 77 % of the correct short-window frames
+exceed it).
+
+**Pre-registration of the Entry 37 evaluation (written and committed before any evaluation run; labels only to evaluate).**
+Data (forward nulls with presence computed for all of them in Kaggle wave 1; nothing below has been evaluated):
+- *Main set:* seeds 0-2 of the 6 holed datasets x 6 descriptors + NCLT seed 0 x 6 = 114 runs (Boreas now 18 runs, item 3a).
+- *Held-out set (never used for any CST rule):* seeds 6-9 of the 6 holed datasets x 6 descriptors = 144 runs.
+- *Oxford RobotCar:* seeds 0-4 x 6 descriptors (30 runs, as Entry 36) + held-out seeds 5-9 x SALAD / MixVPR / DINOv2 (15 runs, new
+  descriptors; Entry 36 used CosPlace / NetVLAD / MegaLoc there).
+- *St Lucia (item 3c):* 6 descriptors x seeds 0-4 (30 runs), if the dump is built in this session; reported separately.
+- *Design:* CMU seeds 3-5 x CosPlace / NetVLAD / MegaLoc (9 runs), reported separately, not counted for any hypothesis.
+Rules at alpha = 0.05, groups cond + loco, `oc_curves.py --cst --fwd --fams @E36,@E37 --navgate --gate-rate` (Oxford `--mapdump`).
+**Main rule: CMS-CPC/H+CSTJS+G+NGRr.** Practical variant CMS-CPC/H+SH+CSTJS+G+NGRr; causal CMS-CPC/H+CSTJS+G[both]+NGRr; references
+SH (CMS-CPC/H+SH+G+NGRr), SH AND CST, CST-F (Entry 36 main), CST-J and CST-J\* (Entry 36, recomputed from the new nulls: mode 1 is
+the Entry 36 start family); ablations CSTJS0 (short windows never certified), CSTJSL (CST-JS structure with the Entry 36 full-surgery
+presence), CSTJF0 (starts min over bins, no short windows). The datasets are counted as 7 (6 holed + NCLT) as in Entries 34-36.
+- **H37a (validity, the claim of item 1-2):** mean segFAR of the main rule <= 0.05 on 7/7 and on Oxford (main set) AND on 6/6 of the
+  held-out set, CMU included (where CST-J\* gave 0.068), and on the Oxford held-out runs.
+- **H37b (audit by position):** fraction of REAL off-map segments with at least one report of the main rule, pooled per dataset, split
+  into (edge = first segment of an excursion, deep = later segments, start = segments within the start horizon of a sequence): <= 0.07
+  in every class with >= 50 segments on >= 6/7 datasets (main + held-out sets pooled), and lower than CST-J\* at the edge on >= 5/7.
+- **H37c (price vs Entry 36):** recall of the main rule >= CST-F + 0.05 on CMU (main and held-out) and within 0.03 of SH on >= 4/7
+  (main set).
+- **H37d (navigation):** mean navigation error of the main rule within 1 m of SH or lower on >= 5/7 (main set).
+- **H37e (Oxford):** main rule valid on both Oxford sets; recall reported against SH (0.729 on the 30 runs of Entry 36); criterion:
+  within 0.03 of SH.
+- **H37f (N = 40 on every descriptor, item 3b):** seeds 1-9 of the 6 holed datasets x NetVLAD / MegaLoc / SALAD / MixVPR / DINOv2
+  (270 runs) + Boreas CosPlace seeds 4-9, rules @E32S (group cond, alpha 0.05, +NGRr) with N = 40 vs the published N = 20 statistics:
+  mean segFAR <= 0.05 on 6/6 for every descriptor, and recall(N = 40) >= recall(N = 20) on >= 5/6 datasets pooled over descriptors
+  (per-descriptor tables reported whatever the outcome). N = 40 stays the recommended window only if H37f holds.
+- **H37g (St Lucia, if built):** main rule mean segFAR <= 0.05 on 6/6 descriptors; recall vs SH and vs SafeVPR'26 (verifier DINOv2
+  ViT-L/14 as in the paper, if the weights can be downloaded) reported.
+- Running time of the forward null with presence (ms / frame, CPU and GPU) is reported; no criterion.
+Decision rule: the main rule is recommended as a guarantee if H37a and H37b hold; if H37a fails on the held-out set the failure is
+reported and the Entry 36 recommendation (CST-F for a certified bound, SH AND CST-J\* as practical) stays.
+
 ## Entry 36 (branch `hmm-navigation-5`) — forward counterfactual surgery: the null of the system's own ghost track; vectorised statistics; St Lucia (2026-11-02)
 
 **Context.** Open items after Entry 35 (user, 2026-11-02): (1) "forward surgery" for the segments at the edge of an excursion, where

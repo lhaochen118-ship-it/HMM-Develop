@@ -1,10 +1,10 @@
-# Accounts that may receive NEW kernels, in packing order (user rules 2026-11-01): fill one account (2 GPU + 5 CPU sessions)
-# before the next; at most 8 accounts at the same time (15:55); after every Kaggle API block one account fewer (central_monitor,
-# kept once the block ends). Only the 6 accounts given for new work are listed: the older accounts were to be left alone once
-# their running kernels finish (user, 2026-11-01 ~11:00), so 8 would need the user's OK to reuse two of them.
-phatle1578
-mucnokieu
-huyenco
-nguynduylm
-loinguyentran
-yeshenhi
+# Accounts that may receive NEW kernels, in packing order (user rules): fill one account (2 GPU + 5 CPU sessions) before the next;
+# at most 8 accounts at the same time; after every Kaggle API block one account fewer (central_monitor, kept once the block ends).
+# 2026-11-03 (Entry 37): the 7 accounts given by the user for this round, L4 first (handoff/06 section 2).
+nhatlong1103
+quynhle07
+nguyenhoa99
+synchan5704
+yuan1103
+quynhtran35
+caotienminh1

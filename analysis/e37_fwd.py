@@ -29,8 +29,13 @@ def main():
     R = CF.fwd_null(zz, b, q, M, c, stride="1x", horizon=20.0, presence=True, start_h=(None, "full"), ds=ds)
     CF.save(of, R)
     nf = R["n_frames"]; dt = time.time() - t0
+    import resource, cms_torch as CT
+    dev = CT.device() or "numpy"; gm = ""
+    if dev == "cuda":
+        import torch; gm = f", GPU peak {torch.cuda.max_memory_allocated() / 2 ** 30:.2f} GB"
     print(f"{of}: {len(R['recs'])} runs, {nf} frames, agreement {R['agree']:.4f}, load {tl:.0f}s, total {dt:.0f}s "
-          f"({1e3 * (dt - tl) / max(nf, 1):.1f} ms/frame)", flush=True)
+          f"({1e3 * (dt - tl) / max(nf, 1):.1f} ms/frame), device {dev}, peak RSS {resource.getrusage(resource.RUSAGE_SELF).ru_maxrss / 2 ** 20:.2f} GB{gm}",
+          flush=True)
 
 
 if __name__ == "__main__":

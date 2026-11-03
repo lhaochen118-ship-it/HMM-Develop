@@ -1,2 +1,2 @@
-# accounts that must not be used: fanout.py puts them last (user 2026-11-01: yuan1103 and yeshenhi are given for this round, so they are NOT reserved now)
+# accounts that must not be used: fanout.py puts them last (2026-11-03: every account given this round is active)
 mxuanquy
