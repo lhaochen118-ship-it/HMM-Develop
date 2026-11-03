@@ -4,6 +4,19 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+**Kết quả giữ ra Entry 5 (đợt `hsi9`, 441 + 216 lỗ + 36 tự nhiên run; nguồn cache đã kiểm; 2026-11-03 19:30 UTC).** Gộp 413 run (recall / segFAR TB /
+run > α / sai số): HSI-rot-m-sc 0.772 / 0.0026 / 0 / 15.0; **HSI-V 0.786 / 0.0040 / 0 / 15.3**; HSI-VM 0.775 / 0.0026 / 0 / **13.6**; HSI-Vc 0.775 / 0.0030 /
+0 / 15.4; HSI-Gdrop 0.784 / 0.0036 / 0 / 14.9; geo-rm (chỉ chứng chỉ) 0.684 / 0.0007 / 0 / 16.2; SH 0.731 / 0.0029 / 2 / 15.6. Theo dataset (HSI-V vs
+HSI-rot-m-sc): NCLT 0.645 vs 0.577 (+0.068; SH 0.690), CMU 0.676 vs 0.652 (+0.024), Oxford 0.807 vs 0.764, countryside 0.666 vs 0.642, St Lucia 0.916 vs
+0.905; các dataset khác ±0.005. HSI-V so với SH: **H1–H5 đạt** (0/413; ≥ SH trên 7/9, gộp +0.054; DINOv2 + NetVLAD +0.110; điều hướng 7/9; vị trí 9/9).
+**H9 không đạt** — gộp +0.014 ≥ 0.01 và NCLT +0.068 đạt, nhưng CMU +0.024 < +0.03. **H10 đạt** (geo-rm 0/413 run > 0.05; cũng 0/108 lỗ 10 %, 0/108 lỗ 50 %,
+0/36 tự nhiên — giả định ε_G nhỏ của Mệnh đề 6 đứng vững). **H11 đạt** (HSI-V: lỗ 10 % 0/108, lỗ 50 % 5/108 = 4.6 % — đều ở CMU, HSI-rot-m-sc 4/108;
+tự nhiên 0/36). Lỗ 50 %: HSI-V recall 0.752 vs 0.744 nhưng sai số old town 62.8 vs 56.7 m; HSI-VM 0.740, sai số 19.6 vs 22.6 m.
+**Quyết định (theo quy tắc đăng ký trước):** H9 trượt ⇒ **HSI-rot-m-sc vẫn là luật khuyến nghị**; HSI-V báo cáo như biến thể hợp lệ có recall cao
+nhất (+0.014 gộp, NCLT +0.068, 0 vi phạm) — cơ chế (cầu hồi cứu neo bằng chứng chỉ) được xác nhận bởi H10 và ablation (Vc giữ chứng chỉ trong α:
++0.003; Gdrop bỏ chứng chỉ khỏi α nhưng cầu cũ: +0.012). HSI-VM là điểm vận hành ưu tiên điều hướng (−1.4 m, recall +0.003). Tập xác nhận mới
+(seed 10–12) đang chạy (đợt `hsi10`): C1 áp cho HSI-rot-m-sc, C2 kiểm dấu lợi ích của HSI-V trên dữ liệu chưa từng thấy.
+
 ## Quét α và tham chiếu Claxton'24 (mô tả, không quyết định luật; đợt `hsi8`, 413 run giữ ra, 2026-11-03 19:00 UTC)
 
 Luật HSI-rot-m-sc ở α ∈ {0.01, 0.02, 0.05, 0.1, 0.2} (`paper/tables/hsi_alpha.md`, `paper/figures/hsi_alpha.png`). segFAR thực (TB các TB dataset /
