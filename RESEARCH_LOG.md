@@ -7,6 +7,49 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 38 (branch `hmm-navigation-5`) — block-shaped virtual holes for the edge of real holes (2026-11-03)
+
+**Context.** Entry 37: CST-JS is valid at the segFAR level (held-out seeds 6-9 included) but the position audit failed (H37b 4/7):
+the EDGE segments of real holes are reported at 0.084 (Boreas) and 0.109 (old town). User: continue with block-shaped virtual holes.
+
+**Diagnosis (labels only to evaluate; Entry 37 main + held-out runs, `CMS-CPC/H+CSTJS+G+NGRr`).** Real holes of the benchmark are
+square map cells (300 m, 30 % of the cells removed): every place of a cell goes, parallel and crossing streets included. The virtual holes
+of Entries 36-37 are tubes of radius rho = off_d along the believed path (Voronoi cut at the exit). Reported real edge segments:
+Boreas 263, the robot only just past off_d (distance to the nearest remaining place at the reports: median 41.8 m, p90 46.9; whole
+segment within 54 m), fix error median 43.2 m = the nearest remaining place (the ghost rides along the remaining map at the hole
+border); countryside 23 (41 / 42 m) and Nordland 15 (11 / 11 frames, off_d 10) the same; old town 47, robot just past off_d (41.7 m) but
+the fix is a far look-alike (error median 1.03 km): the source of the +14.5 m navigation cost.
+
+**Method (`analysis/cms_fwd.py` BlockGrid / block_grid / BlockHoleMask, fwd_null(shape="block"); `analysis/cms.py` CST-JSB / CST-JSU).**
+Every virtual run removes whole CELLS of its own random square grid: side = the config's map-null block (`sc_eval.CFG`, 300 m; Nordland
+200 frames) x a scale drawn from {0.5, 1, 2}, rotation U[0, pi/2), offset U[0, 1) cells (a prior over block-shaped missing areas, not the
+benchmark's grid: fixed 300 m, axis-aligned in the map's projected frame, zero offset), deterministic per (exit frame, family). Exits:
+the cells holding a map place within rho of the believed path of the next off_d + 20 excl, then the same Voronoi cut against the path
+before the exit; starts: the cells within rho of the start's believed path. Presence statistics, chain, shape test, joint simulation,
+thresholds (exits min over excursion-position bins, starts per position since the sequence start, kappa') exactly as CST-JS. The anchor
+traces of the route test leave the chunk inside the removed cells (BlockHoleMask; numpy and torch outputs identical on the checks).
+Checks: block nulls of CMU CosPlace s0 part 3/12 numpy vs torch-CPU identical (all keys); the ghost moves farther (exits: median
+displacement 233 vs 154 m; full starts 653 vs 174 m); end to end (parts -> merge -> rules) runs; `--corr` (published corridor null) gives
+results identical to recomputed parts. Rules: **CST-JSB** = CST-JS on the block null; **CST-JSU** = a frame must pass the corridor AND the
+block thresholds (at least as strict as CST-JS by construction).
+
+**Pre-registration (written and committed before any Entry 38 result exists; the Kaggle wave was pushed minutes before).**
+Sets: *E37 sets* = the Entry 37 main (114) + held-out (144) runs and Oxford (45), on which the failure was found (block nulls computed,
+corridor nulls = `hmm-fwd-null-e37`); *fresh held-out* = seeds 3-5 x 6 holed datasets x 6 descriptors minus CMU s3-5 x CosPlace /
+NetVLAD / MegaLoc (the Entry 37 design runs): 99 runs never used for any Entry 37/38 rule, both null families computed. alpha = 0.05,
+groups cond + loco, +G+NGRr as Entry 37. **Main rule: CMS-CPC/H+CSTJSU+G+NGRr.** Secondary: CST-JSB, SH AND CST-JSU, CST-JSU [both];
+references SH, CST-JS, SH AND CST-JS, CST-F.
+- **H38a (validity):** CST-JSU mean segFAR <= 0.05 on 6/6 of the fresh held-out and 7/7 + Oxford of the E37 sets.
+- **H38b (position audit, the target):** report rate of real off-map segments (classes start / edge / deep as `e37_audit.py`) <= 0.07 in
+  every class with >= 50 segments on >= 6/7 datasets of the E37 sets and on >= 5/6 of the fresh held-out.
+- **H38c (price):** recall of CST-JSU within 0.03 of SH on >= 4/6 of the fresh held-out (and reported on the E37 sets); >= CST-F + 0.05 on
+  CMU.
+- **H38d (navigation):** mean navigation error within 1 m of SH on >= 5/6 of the fresh held-out; old town error on the E37 sets reported
+  against SH (CST-JS: +14.5 m).
+- **H38e (Oxford, E37 runs):** CST-JSU valid; recall vs SH reported.
+Decision rule: CST-JSU becomes the recommended label-free rule with a per-position guarantee iff H38a and H38b hold; otherwise the
+Entry 37 recommendation (SH AND CST-JS practical, CST-F certified) stays and CST-JSB / CST-JSU are reported as ablations.
+
 ## Entry 37 (branch `hmm-navigation-5`) — forward surgery of the PRESENCE evidence; exact null of sequence starts (CST-JS); all descriptors (2026-11-03)
 
 **Context.** Open items after Entry 36 (user, 2026-11-02): (1) run the system's PRESENCE evidence forward on every virtual run's altered
