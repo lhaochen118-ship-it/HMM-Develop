@@ -72,12 +72,12 @@ def main():
     if not res: print("no held-out run with a baseline"); return
     h1a = sum(r["HSI"][1] <= 0.05 for r in res.values()); over = sum(H[k]["HSI"]["seg_FAR"] > 0.05 for k in held); h1 = h1a == ndat and over <= 0.1 * len(held)
     P(f"- **H1 (validity):** mean segFAR <= 0.05 on {h1a}/{ndat} datasets; runs > 0.05: {over}/{len(held)} ({over / max(len(held), 1):.1%}) -> **{'supported' if h1 else 'NOT supported'}**")
-    h2a = sum(r["d_rec"] >= 0 for r in res.values()); dall = np.mean([H[k]["HSI"]["recall"] - B[k]["SH"]["recall"] for k in paired]); h2 = h2a >= 5 and dall >= 0
+    h2a = sum(r["d_rec"] >= 0 for r in res.values()); dall = np.mean([H[k]["HSI"]["recall"] - B[k]["SH"]["recall"] for k in paired]); h2 = h2a >= 0.55 * ndat and dall >= 0
     P(f"- **H2 (recall):** HSI >= SH on {h2a}/{ndat} datasets; pooled mean difference {dall:+.4f} -> **{'supported' if h2 else 'NOT supported'}**")
     wk = [k for k in paired if k[1] in ("dinov2", "netvlad")]; dw = np.mean([H[k]["HSI"]["recall"] - B[k]["SH"]["recall"] for k in wk]) if wk else float("nan")
     P(f"- **H3 (weak descriptors):** DINOv2 + NetVLAD held-out runs: mean HSI − SH = {dw:+.4f} over {len(wk)} runs -> **{'supported' if dw >= 0.05 else 'NOT supported'}**")
     h4a = sum(r["d_err"] <= 1.0 for r in res.values())
-    P(f"- **H4 (navigation):** mean error within +1 m of SH on {h4a}/{ndat} datasets -> **{'supported' if h4a >= 5 else 'NOT supported'}**")
+    P(f"- **H4 (navigation):** mean error within +1 m of SH on {h4a}/{ndat} datasets -> **{'supported' if h4a >= 0.55 * ndat else 'NOT supported'}**")
     # H5: pooled position classes per dataset
     h5 = 0; lines = []
     for ds in res:
@@ -87,7 +87,7 @@ def main():
                 cl.setdefault(c, [0, 0.0]); cl[c][0] += nseg; cl[c][1] += rate * nseg
         okd = all(v[1] / v[0] <= 0.07 for c, v in cl.items() if v[0] >= 50)
         h5 += okd; lines.append(f"{ds}: " + ", ".join(f"{c} {v[1] / max(v[0], 1):.3f} (n={v[0]})" for c, v in cl.items()))
-    P(f"- **H5 (position audit):** every class <= 0.07 (classes with >= 50 segments) on {h5}/{ndat} datasets -> **{'supported' if h5 >= 7 else 'NOT supported'}**")
+    P(f"- **H5 (position audit):** every class <= 0.07 (classes with >= 50 segments) on {h5}/{ndat} datasets -> **{'supported' if h5 >= 0.75 * ndat else 'NOT supported'}**")
     for l in lines: P(f"  - {l}")
     # ---- per descriptor (held-out, pooled over datasets)
     P("\n## Held-out, per descriptor (mean over datasets and seeds)\n")

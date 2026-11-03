@@ -16,6 +16,14 @@ với SH (thắng 21/28), sai số −0.3 m (tốt hơn 19/28), segFAR TB 0.004 
 **Đăng ký trước:** luật ứng viên **HSI-rot-m-sc**, cùng tập giữ ra / tham chiếu / H1–H5 như Entry 1; **H7:** HSI-rot-m-sc ≥ HSI-rot-m (Entry 2)
 về recall TB trên ≥ 6/9 dataset mà không có dataset nào segFAR TB > 0.05. **Quyết định:** H1 ∧ H2 ∧ H7 ⇒ thay HSI-rot-m làm luật khuyến nghị.
 
+**Kết quả giữ ra Entry 3 (đợt `hsi4`, 441 run, 413 giữ ra; 2026-11-03 17:50 UTC).** HSI-rot-m-sc: H1 **đạt** (0/413 run > 0.05; segFAR TB
+dataset tối đa 0.006), H2 **đạt** (≥ SH trên 7/9 dataset; gộp +0.041), H3 **đạt** (DINOv2 + NetVLAD +0.096), H4 **đạt** (6/9), H5 **đạt** (9/9),
+**H7 đạt** (≥ HSI-rot-m trên 8/9 dataset — CMU giảm: 0.652 vs 0.692). Recall HSI-rot-m-sc / SH: Boreas 0.892 / 0.777, office 0.872 / 0.803,
+countryside 0.642 / 0.492, St Lucia 0.905 / 0.761, Oxford 0.764 / 0.719, old town 0.735 / 0.708, Nordland 0.785 / 0.770, CMU 0.652 / 0.835,
+NCLT 0.577 / 0.690. Sai số điều hướng: tốt hơn SH ở countryside (−6.7 m), St Lucia (−6.7), Nordland (−1.0), office (−0.7), Oxford (−0.4), CMU
+(−0.1); kém hơn ở old town (+5.7), Boreas (+2.5), NCLT (+1.9). **Quyết định (theo quy tắc đăng ký trước):** HSI-rot-m-sc là luật khuyến nghị của
+ý tưởng 2; ghi rõ cái giá ở CMU (đầu chuỗi được nới làm tăng ngưỡng hiệu chuẩn chung) và sai số Boreas.
+
 ## Entry 2 — cửa sổ theo mét quãng đường + bù hướng có giới hạn (HSI-rot-m) — đăng ký trước (2026-11-03 16:40 UTC)
 
 **Bối cảnh.** Viết TRƯỚC khi xem bất kỳ kết quả giữ ra nào của Entry 1 (đợt `hsi1` đang chạy). Hai lỗi đơn vị/giả định của cấu hình Entry 1 nhìn
@@ -101,3 +109,16 @@ trong Entry 1); nếu nó hơn HSI trên tập giữ ra thì là ứng viên cho
 **Đã biết từ tập thiết kế (seed 0, 28 run; để đọc kết quả trung thực):** HSI recall TB +0.001 so với SH (thắng 15/28), segFAR TB 0.002 (max
 0.033), sai số +0.9 m (tốt hơn 16/28); thắng Boreas (+0.107), countryside (+0.105), Nordland (+0.063); thua NCLT (−0.175), old town (−0.062),
 CMU (−0.037). HSI-adapt: +0.025 recall (18/28) nhưng 1 run vượt α (CMU DINOv2 0.060).
+
+**Kết quả giữ ra Entry 1 (đợt `hsi1`, 441 run × 12 biến thể; 413 giữ ra).** HSI (cấu hình đóng băng, cửa sổ theo frame): H1 **đạt** (1/413 run
+> 0.05), **H2 không đạt** (≥ SH trên 3/9 dataset; gộp −0.069), **H3 không đạt** (−0.032), H4 đạt (5/9), H5 đạt (9/9). Thất bại tập trung ở đúng
+hai dataset 10 m/frame (Oxford 0.285 vs SH 0.719; St Lucia 0.447 vs 0.761) — lý do đã được nêu và sửa trong Entry 2 (đăng ký trước kết quả này),
+cộng old town (0.598 vs 0.708) và CMU (0.682 vs 0.835). **Ablation (giữ ra, TB theo dataset; recall / segFAR / số run > 0.05 / sai số):** HSI
+0.626 / 0.0016 / 1 / 20.1; hiệu chuẩn có điều kiện (regime) 0.534 / 0.0002 / 0 — hiệu chuẩn biên chung mang lại +0.09 recall; theo phiên (sess)
+0.582 / 0.0007 / 0 — gộp phiên +0.044; bỏ nhất quán ngắn (nosc) 0.640 / 0.0042 / **13** — cần cho tính hợp lệ; bỏ null chưa xác minh (nounl) 0.630 /
+0.0025 / **7** — cần cho tính hợp lệ; dung sai tự hiệu chuẩn (adapt) 0.651 / 0.0043 / 7; bỏ sàn MAP 0.630 / 0.0032 / 1; bỏ cổng DR 0.631 /
+0.0031 / 1; cầu cứng (rigid) 0.635 / 0.0018 / 0; chỉ hình học (geo) 0.564 / 0.0026 / 6; chỉ neo nhân quả (anc) 0.547 / 0.0147 / **40** (tham chiếu
+tin cậy giảm vi phạm 40 → 6); cửa sổ theo mét (HSI-m) 0.746 / 0.0027 / 1; + bù hướng (HSI-rot-m) 0.756 / 0.0027 / 0. Tham chiếu: SH 0.728 / 0.0025 /
+2 / 14.9; Xu'21 (nhãn) 0.689 / 0.190 / 202; oracle top-1 0.842. HSI-rot (ứng viên phụ, cửa sổ frame) 0.632 — bù hướng chỉ có ích khi đã sửa đơn vị.
+**Kết luận Entry 1:** cấu hình frame bị bác trên tập giữ ra (H2, H3); các thành phần then chốt được xác nhận bằng ablation (hiệu chuẩn biên
+chung, gộp phiên, nhất quán ngắn, null chưa xác minh, tham chiếu tin cậy).
