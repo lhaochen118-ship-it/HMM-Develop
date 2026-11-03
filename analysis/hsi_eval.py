@@ -32,8 +32,12 @@ VARIANTS = {
     "HSI-rot-m-sc": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25),
     "HSI-M": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, mondrian="ref"),   # (Entry 4) Mondrian by regime
     "HSI-M-nos": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, null_cap=0.25, mondrian="ref"),                   # Entry 4 without start relax
+    "HSI-sc@0.01": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, alpha=0.01),
+    "HSI-sc@0.02": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, alpha=0.02),
+    "HSI-sc@0.1": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, alpha=0.1),
+    "HSI-sc@0.2": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, alpha=0.2),
     "geo": None, "anc": None,                       # geometric self-verification only (a|b); causal anchors only
-    "Xu21": None, "oracle": None, "top1": None,     # references from the cache: Xu'21 HMM off-map state (T, k tuned WITH labels on
+    "Xu21": None, "oracle": None, "top1": None, "Claxton24": None,     # references from the cache: Xu'21 HMM off-map state (T, k tuned WITH labels on
 }                                                   # the 2 easiest conditions, nav_demo), oracle (correct top-1 only), accept-all top-1
 
 
@@ -67,7 +71,12 @@ def main():
         cfg = hsi.Cfg(z, name); seqs = hsi.deployment_seqs(z); n = len(z["est_c"])
         for v in vs:
             t0 = time.time()
-            if v in ("Xu21", "oracle", "top1"):
+            if v == "Claxton24":                                 # Claxton et al. RA-L'24 style MLP monitor trained WITH labels on the 2 easiest conditions
+                import nav_demo as N_
+                bad_top = z["offm"] | (z["err_top"] > float(z["excl"]))
+                acc = N_.claxton_rule(z["srt10"], z["Smean"], z["Sstd"], z["bsel"], z["good"], bad_top, int(z["seed"]))
+                o = dict(acc=acc, seqs=seqs, cfg=cfg, xf=z["MP"][z["top"]]); diag = {}
+            elif v in ("Xu21", "oracle", "top1"):
                 MP_ = z["MP"]
                 acc, xf = {"Xu21": (z["acc_h"], z["x_hmm"]), "oracle": (z["good"], MP_[z["top"]]), "top1": (np.ones(n, bool), MP_[z["top"]])}[v]
                 o = dict(acc=acc, seqs=seqs, cfg=cfg, xf=xf); diag = {}
