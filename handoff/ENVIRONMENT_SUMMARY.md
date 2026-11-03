@@ -173,6 +173,7 @@ Tải dataset public **không cần token**: `python3 automation/anon_download.p
 | `hmm-fwd-null-e37` | Null tiến có thống kê hiện diện (`fwd_<ds>_<desc>_s<seed>.npz`, mode 0/1/2) của 342 run: seed 0–2 (+ NCLT 0), 6–9, CMU 3–5, Oxford 0–9, St Lucia 0–4 |
 | `hmm-cms-cache-n40` | Thống kê CMS chính xác với N = 40 (276 run, seed 1–9) |
 | `hmm-e37-caches` | navcache / cms / topk / tao của Oxford (45 run) và St Lucia (30 run) tính trong kernel |
+| `hmm-fwd-null-e37-holes` | Null tiến có hiện diện trên bản đồ lỗ 10 % (`d10/`) và 50 % (`d50/`), seed 0–2 × 6 dataset × 6 descriptor (216 run) |
 
 Model Kaggle dùng: `metaresearch/dinov2/pyTorch/large/1` (DINOv2 ViT-L/14, HF format; verifier SafeVPR'26).
 **Acc vòng 11:** nhatlong1103, quynhle07, nguyenhoa99, synchan5704, yuan1103, quynhtran35, caotienminh1, anderson1202, loinguyentran (L4),
