@@ -138,6 +138,16 @@ def retarget(kd, s, acc):
     md["id"] = f"{acc}/{os.path.basename(kd)}"
     md["dataset_sources"] = [d.replace(f"{old}/dive-vpr-analysis", f"{acc}/dive-vpr-analysis") for d in md["dataset_sources"]]
     json.dump(md, open(f, "w"), indent=2); s["kid"] = md["id"]
+    # the target account's code dataset must hold the current analysis/*.py (hash-cached: no upload when unchanged); a kernel
+    # moved to an account with stale code fails at once (2026-11-03: "can't open file mps_probe.py")
+    r = subprocess.run([sys.executable, os.path.join(ROOT, "automation", "make_eval_kernel.py"), os.path.join(os.path.dirname(kd), f"_codesync_{acc}"),
+                        "codesync", "true", "", "--owner", acc], capture_output=True, text=True)
+    if "unchanged" not in r.stdout:
+        for _ in range(30):                                            # wait until the new version is ready before the push
+            o = subprocess.run(["kaggle", "datasets", "status", f"{acc}/dive-vpr-analysis"], capture_output=True, text=True,
+                               env=dict(os.environ, KAGGLE_API_TOKEN=open(os.path.expanduser(f"~/.kaggle/tok_{acc}")).read().strip())).stdout.strip()
+            if o.endswith("ready"): break
+            time.sleep(10)
 
 
 def to_t4(kd, s):
@@ -187,6 +197,9 @@ while pend:
             if "maximum batch" in p.lower():                           # the account's sessions are used by someone else: skip it 15 min,
                 FULL[(a, ktype(k))] = time.time() + 900; s["retry"] = 0.0   # try the next account at once
                 say(f"{k}: {a} has no free {ktype(k)} session (other users' kernels) -> next account")
+            elif "weekly gpu quota" in p.lower():                      # weekly GPU quota spent (L4 x4 counts 4 GPU-hours per hour)
+                FULL[(a, "gpu")] = time.time() + 7 * 86400; s["retry"] = 0.0
+                say(f"{k}: {a} weekly GPU quota spent -> next account ({line})")
             else:
                 s["retry"] = time.time() + 600; say(f"{k}: PUSH_FAILED on {a}: {line}")
         save(); break

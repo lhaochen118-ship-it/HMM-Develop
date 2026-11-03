@@ -128,7 +128,7 @@ class FwdStats:
         runs with the same window length are batched together (each row keeps its own run's tables and removed region, MultiMask), so
         the device gets few large calls instead of many small ones. runs = [(keep, lo, lags, rem)]; returns [(C, J, Z)] per run."""
         import cms_torch as CT
-        B = B or (2048 if CT.device() == "cuda" else 512)
+        B = B or (int(os.environ.get("CMS_BATCH", "1024")) if CT.device() == "cuda" else 512)   # 1024 rows ~ 1 GB VRAM per process
         N = self.N; groups = {}; out = []
         for ri, (keep, lo, lags, rem) in enumerate(runs):
             f0 = max(lo, int(lags.min()) - N + 1); f1 = int(lags.max())
@@ -144,10 +144,17 @@ class FwdStats:
             J, V, TIw, TVw, dl, ow, sdv = cat(2), cat(3), cat(4), cat(5), cat(6), cat(7), cat(8)
             own = np.concatenate([np.full(len(e[1]), e[0]) for e in lst]); pos = np.concatenate([e[1] for e in lst])
             ends = np.cumsum([len(e[1]) for e in lst]); starts = ends - np.array([len(e[1]) for e in lst])
+            def chunk(a, b):                                           # rows [a, b); out of device memory -> two halves (row-wise:
+                segs = [(max(st_, a) - a, min(en_, b) - a, e[9]) for st_, en_, e in zip(starts, ends, lst) if en_ > a and st_ < b]   # same result)
+                try:
+                    return self.stats(J[a:b], V[a:b], TIw[a:b], TVw[a:b], dl[a:b], ow[a:b], sdv[a:b], removed=MultiMask(segs))
+                except Exception as ex_:
+                    if "out of memory" not in str(ex_).lower() or b - a <= 32: raise
+                    import torch; torch.cuda.empty_cache(); h = (a + b) // 2
+                    return tuple(np.concatenate([x_, y_]) for x_, y_ in zip(chunk(a, h), chunk(h, b)))
             for a in range(0, len(J), B):
                 b = min(a + B, len(J))
-                segs = [(max(st_, a) - a, min(en_, b) - a, e[9]) for st_, en_, e in zip(starts, ends, lst) if en_ > a and st_ < b]
-                C, Jw, Z = self.stats(J[a:b], V[a:b], TIw[a:b], TVw[a:b], dl[a:b], ow[a:b], sdv[a:b], removed=MultiMask(segs))
+                C, Jw, Z = chunk(a, b)
                 for r_ in np.unique(own[a:b]):
                     m_ = own[a:b] == r_; out[r_][0][pos[a:b][m_]] = C[m_]; out[r_][1][pos[a:b][m_]] = Jw[m_]; out[r_][2][pos[a:b][m_]] = Z[m_]
         return out

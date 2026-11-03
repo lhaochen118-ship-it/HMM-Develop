@@ -50,6 +50,42 @@ references SH, CST-JS, SH AND CST-JS, CST-F.
 Decision rule: CST-JSU becomes the recommended label-free rule with a per-position guarantee iff H38a and H38b hold; otherwise the
 Entry 37 recommendation (SH AND CST-JS practical, CST-F certified) stays and CST-JSB / CST-JSU are reported as ablations.
 
+**Execution (2026-11-03).** 18 L4 kernels + 12 CPU kernels (the two last L4 groups were re-split: caotienminh1's GPU sessions were
+held by other users' kernels), 2 877 jobs, every job rc = 0, 402 runs (303 E37-set runs with block nulls, 99 fresh held-out runs with both
+families); wall ~2 h (L4 kernels 51 min; one L4 kernel waited for a slot). nhatlong1103 reached its weekly GPU quota (30 h) during this
+wave: an L4 x4 session counts 4 GPU-hours per hour.
+
+**Results (labels only to evaluate; raw `analysis/results/e38/`, tables `paper/e38_tables.md`, report `paper/BAO_CAO_E38.pdf`).**
+1. *H38a supported.* CST-JSU mean segFAR, fresh held-out: Boreas 0.008, CMU 0.023, Nordland 0.002, office 0.006, old town 0.011,
+   countryside 0.005 (no run > alpha, worst 0.050); E37 sets 7/7 <= 0.05; Oxford 0.021.
+2. *H38b NOT supported (E37 sets 4/7, fresh 4/6).* Block-shaped virtual holes barely move the edge rate: E37 sets Boreas edge 0.084 (CST-JS)
+   -> 0.083 (CST-JSB) -> 0.076 (CST-JSU), old town 0.109 / 0.109 / 0.106, office start 0.119 (84 segments) unchanged; fresh held-out:
+   office edge 0.110 -> 0.100, old town 0.093 / 0.093, Boreas 0.065. The thresholds of the block family are nearly the corridor ones. The
+   hole SHAPE is therefore not the main cause of the edge excess (the Entry 37 mechanism hypothesis is refuted for this construction).
+3. *H38c supported.* Recall CST-JSU - SH on the fresh held-out: +0.003, -0.017, +0.013, +0.001, +0.003, +0.010 (6/6 within 0.03); CMU
+   +0.167 over CST-F.
+4. *H38d NOT supported (4/6).* Navigation error CST-JSU - SH (fresh): Boreas +1.9 m, old town +12.8 m (E37 sets: +10.8 m; CST-JS +13.5).
+5. *H38e supported.* Oxford CST-JSU 0.021, recall 0.728 vs SH 0.719.
+6. *Secondary (pre-specified), reported:* the CAUSAL intersection CST-JSU [both] (session-calibrated AND other-session-calibrated
+   thresholds) is <= 0.07 in every position class with >= 50 segments on **6/6 of the fresh held-out** (Boreas edge 0.055, old town 0.046,
+   office 0.029) and 5/7 of the E37 sets (Boreas edge 0.0700, office start 0.119 on 84 segments); its price: recall -0.02 to -0.034 vs
+   SH on the fresh held-out, navigation error within +0.8 m of SH on old town, +1.3 m on Boreas. SH AND CST-JSU, as SH AND CST-JS: every
+   class <= 0.07 on both sets.
+**Verdict (pre-registered decision rule).** H38a holds, H38b fails: CST-JSU is not promoted; the Entry 37 recommendation stays (SH AND
+CST-JS practical, CST-F certified). Block-shaped virtual holes are a valid but nearly redundant null family (Proposition 20 keeps the
+guarantee of the corridor family; the extra family costs <= 0.017 recall). The edge excess is not explained by the hole geometry; the
+remaining candidates: (i) the bound of Proposition 19 is a(n+1)/(pi n+1), not a: virtual exits taken inside real holes (wrong belief)
+dilute the null (pi ~ 0.7 gives a/pi ~ 0.07, the size of the Boreas excess, not of old town's); (ii) at a real edge the robot is only
+just past off_d (median 42 m): an evaluation-definition margin that the virtual off-map frames (belief-based) do not share. The causal
+[both] intersection is the candidate to confirm on new hole layouts (fresh seeds of the hole generator), with a pre-registration of its own.
+
+**Speed (measured on L4, same 48 CMU forward-null jobs, 46 in parallel).** Old code 35.5 ms/frame (CUDA time-slicing of 12 processes per
+GPU, many small route-test calls); with CUDA MPS 27.6 ms/frame (1.34x); with the batched presence statistics (`FwdStats.multi_stats`:
+route-test rows of all pending virtual runs of a sequence in one call per window length, `MultiMask`) 18.3 ms/frame (1.94x), outputs
+identical to the per-run path (corridor and block, numpy and torch). Batches of 2 048 rows used ~2 GB of VRAM per process (12 processes
+per 23 GB L4: a few jobs ran out of device memory) -> default 1 024 rows, automatic halving on out-of-memory (row-wise: same result),
+expandable allocator segments. With batching MPS adds nothing (19.5 ms/frame).
+
 ## Entry 37 (branch `hmm-navigation-5`) — forward surgery of the PRESENCE evidence; exact null of sequence starts (CST-JS); all descriptors (2026-11-03)
 
 **Context.** Open items after Entry 36 (user, 2026-11-02): (1) run the system's PRESENCE evidence forward on every virtual run's altered

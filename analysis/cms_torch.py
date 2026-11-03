@@ -16,6 +16,7 @@ Only the order of floating-point summations (means over the window) and the last
 Selection: CMS_DEVICE=cuda (default when a GPU is visible) | cpu (torch on CPU: equivalence tests) | numpy (never torch)."""
 import os
 import numpy as np
+os.environ.setdefault("PYTORCH_CUDA_ALLOC_CONF", "expandable_segments:True")   # many processes per GPU: less fragmentation
 
 BIG = 1e7
 _STATE = {}
