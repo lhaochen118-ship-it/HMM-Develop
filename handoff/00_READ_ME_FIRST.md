@@ -2,6 +2,7 @@
 
 *Cập nhật 2026-11-02 (branch `hmm-navigation-5`). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR. Báo cáo mới nhất: `paper/BAO_CAO_E36.pdf` (phẫu thuật tiến CST-F / CST-J, N = 40, St Lucia + SafeVPR'26); trước đó `paper/BAO_CAO_E32.pdf`.*
 
+**MỚI NHẤT (2026-11-03, Entry 38 xong):** `paper/BAO_CAO_E38.pdf`, `RESEARCH_LOG.md` Entry 38, `03_HANDOFF.md` §000000000.
 **MỚI NHẤT (2026-11-03, Entry 37 xong):** báo cáo `paper/BAO_CAO_E37.pdf`; kết quả + kết luận `RESEARCH_LOG.md` Entry 37; trạng thái
 `03_HANDOFF.md` §00000000. Mục "DANG DỞ" bên dưới là lịch sử của phiên trước.
 

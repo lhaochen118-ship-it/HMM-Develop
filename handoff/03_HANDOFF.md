@@ -4,6 +4,14 @@
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
+## 000000000. Vòng 12 (2026-11-03, Entry 38) — trạng thái
+
+- **Xong:** lỗ ảo hình khối + CST-JSB/CST-JSU, đăng ký trước, đợt 30 kernel (402 run), kiểm toán, báo cáo `paper/BAO_CAO_E38.pdf`, theory §4h,
+  null công khai `nhatlong1103/hmm-fwd-null-e38`. Kết luận: H38b không đạt ⇒ khuyến nghị Entry 37 giữ nguyên. Tăng tốc GPU 1.94× đã đưa vào code.
+- **Hạn mức GPU tuần:** `nhatlong1103` hết; các acc khác đã dùng nhiều (ước 15–25 / 30 GPU-giờ). Cần thêm acc L4 nếu chạy đợt lớn trước khi reset.
+- **Tiếp theo:** (1) xác nhận CST-JSU [both] trên bố cục lỗ mới (seed ≥ 10 của bộ sinh lỗ; cần navcache + thống kê chính xác + null hai họ);
+  (2) đo π và hiệu ứng biên off_d ở mép; (3) bài báo.
+
 ## 00000000. Vòng 11 (2026-11-03, branch `hmm-navigation-5`, Entry 37) — trạng thái
 
 - **Làm xong:** Entry 37 đủ: đăng ký trước → đợt Kaggle (13 L4 + St Lucia + thăm dò) → đánh giá gộp trong kernel → kiểm toán theo vị trí →

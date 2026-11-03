@@ -179,6 +179,14 @@ Model Kaggle dùng: `metaresearch/dinov2/pyTorch/large/1` (DINOv2 ViT-L/14, HF f
 **Acc vòng 11:** nhatlong1103, quynhle07, nguyenhoa99, synchan5704, yuan1103, quynhtran35, caotienminh1, anderson1202, loinguyentran (L4),
 yeshenhi (chỉ T4). Token ở `~/.kaggle/tok_<acc>` (không trong git), thứ tự dồn slot ở `automation/active_accounts.txt`.
 
+## 1g. Vòng 12 (Entry 38)
+
+| Slug | Nội dung |
+|---|---|
+| `hmm-fwd-null-e38` | Null tiến có hiện diện với **lỗ ảo hình khối** (402 run: tập E37 + seed 3–5) + `corridor_s345/` (null hành lang của seed 3–5) |
+
+**Hạn mức GPU:** 30 GPU-giờ/tuần/acc, L4×4 = 4 GPU-giờ mỗi giờ; `nhatlong1103` đã hết tuần này (2026-11-03).
+
 ## 1e. St Lucia Multiple Times of Day (vòng 10, Entry 36; CHƯA đăng Kaggle)
 
 - Nguồn: Hugging Face `medwa126/UQStLuciaMultipleToD` (mirror của QUT; 10 lượt chạy, video webcam 640 × 480, GPS mỗi frame), tải không cần

@@ -6,6 +6,15 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
+## N000000000. Vòng 12 (2026-11-03, Entry 38) — đọc trước §N00000000
+
+- **Thử:** họ lỗ ảo hình khối (lưới ngẫu nhiên mỗi lần chạy ảo) + luật giao CST-JSU (Mệnh đề 20: hợp lệ nếu lỗ thật giống MỘT họ). Báo cáo
+  `paper/BAO_CAO_E38.pdf`.
+- **Kết quả (đăng ký trước):** H38a đạt (6/6 giữ ra mới seed 3–5, 7/7, Oxford); H38c đạt (recall trong 0.017 của SH); **H38b không đạt** (4/7, 4/6):
+  lỗ khối gần như không đổi tỷ lệ báo ở mép ⇒ hình dạng lỗ không phải nguyên nhân chính; H38d không đạt (old town +12.8 m).
+- **Phụ:** CST-JSU [both] (nhân quả) ≤ 0.07 mọi lớp vị trí trên 6/6 giữ ra mới (giá recall −0.02…−0.034) — ứng viên cần xác nhận trên bố cục lỗ mới.
+- **Khuyến nghị không đổi:** SH ∧ CST-JS (thực dụng), CST-F (chứng nhận), N = 40.
+
 ## N00000000. Vòng 11 (2026-11-03, branch `hmm-navigation-5`, Entry 37) — đọc trước §N0000000
 
 - **Đóng góp:** phẫu thuật tiến cả **bằng chứng hiện diện** (mọi thống kê của hệ thống tính lại trên bản đồ của từng lần chạy ảo) + null chính

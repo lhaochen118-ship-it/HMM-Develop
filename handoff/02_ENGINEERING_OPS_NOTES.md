@@ -5,6 +5,20 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 000000000. Vòng 12 (2026-11-03, Entry 38): vận hành
+
+- **Hạn mức GPU:** mỗi acc 30 GPU-giờ/tuần; phiên L4×4 tính **4 GPU-giờ mỗi giờ** (≈ 7.5 giờ L4/acc/tuần). `nhatlong1103` hết quota trong vòng này
+  ("Maximum weekly GPU quota of 30.00 hours reached"); central_monitor bỏ qua acc hết quota 7 ngày. Phiên CPU (5/acc) không tốn quota.
+- **Acc bị người khác chiếm GPU** ("Maximum batch GPU session count of 2 reached" dù monitor không chạy gì ở đó, ví dụ caotienminh1): monitor bỏ qua
+  acc đó 15 phút và đẩy sang acc kế tiếp (trước đây đẩy lặp vào cùng acc). Khi chuyển kernel sang acc khác, monitor đồng bộ code dataset của acc
+  đích trước khi đẩy (lỗi "can't open file mps_probe.py").
+- **Tăng tốc đã đo trên L4 (48 job CMU):** gộp lô phép thử tuyến (`FwdStats.multi_stats`) 35.5 → 18.3 ms/frame (1.94×), đầu ra trùng tuyệt đối;
+  MPS 1.34× với code cũ, không thêm khi đã gộp lô. Lô GPU 1 024 hàng (`CMS_BATCH`), tự chia đôi khi OOM; `PYTORCH_CUDA_ALLOC_CONF=expandable_segments`.
+- **Đĩa phiên 30 GB:** mỗi kernel kéo về results.tar + bản giải nén (~0.6 GB/kernel E38) ⇒ đầy đĩa giữa đợt, monitor chết khi ghi state. Dùng
+  `collect38.sh`-kiểu: giải nén một lần, chép oc/frames/fwd, xoá tar và bản giải nén ngay.
+- **Chia lại đợt khi thiếu slot:** đơn vị run nhỏ (4S, Nordland, CMU) → phiên CPU (`make_eval_kernel` không `--l4`, `--par 4`); run lớn (Boreas, Oxford)
+  → một kernel L4 chờ slot.
+
 ## 00000000. Vòng 11 (2026-11-03, Entry 37): vận hành
 
 - **Kernel thăm dò trước đợt lớn** (`e37p-1`, job THẬT của đợt): đo ms/frame dưới tải đầy (46 job/phiên L4), RAM đỉnh, GPU, và so GPU với
