@@ -27,7 +27,7 @@ xác minh, Mệnh đề 4 (i)); ở α nhỏ (0.01) vài run vượt do số đo
 oracle 0.845). Tham chiếu **Claxton'24** (MLP giám sát bằng nhãn của 2 điều kiện dễ nhất, kiểu RA-L'24): recall 0.729 nhưng **287/413 run vượt
 α**, sai số 46 m — một bộ giám sát học có nhãn không được hiệu chuẩn cho off-map không thay được hiệu chuẩn trên excursion thật; Xu'21: 202/413.
 
-## Entry 6 — khi null đã sạch, bỏ phần lớn cổng heuristic (HSI-V-sc5) — đăng ký trước (2026-11-03 19:55 UTC)
+## Entry 6 — khi null đã sạch, bỏ phần lớn cổng heuristic (HSI-V-sc5) — đăng ký trước (2026-11-03 19:45 UTC)
 
 *Viết TRƯỚC khi xem bất kỳ kết quả nào của tập xác nhận mới (đợt `hsi10` đang chạy) và của Entry 6.*
 **Chẩn đoán (tập thiết kế, HSI-V):** frame đúng bị bỏ lỡ = 0.138 frame on-map, trong đó **nhất quán ngắn hạn (cổng sc 5/10/20 m) chiếm 0.089**,
