@@ -62,7 +62,7 @@ t0 = time.time()
 code = [d for d, _, fs in os.walk("/kaggle/input") if "selfcal.py" in fs][0]
 W = "/kaggle/working"; C = os.path.join(W, "code"); shutil.copytree(code, C, dirs_exist_ok=True)
 os.makedirs(os.path.join(C, "results"), exist_ok=True); os.makedirs(os.path.join(C, "logs"), exist_ok=True)
-D = os.path.join(W, "dump_all")
+D = os.path.join(W, "dump_all"); os.makedirs(D, exist_ok=True)      # exists even with --nodumps (cache-only jobs)
 for meta in [d for d, _, _ in os.walk("/kaggle/input") if os.path.basename(d) == "meta"]:
     src = os.path.dirname(meta)
     for sub in os.listdir(src):

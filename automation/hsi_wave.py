@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
-"""Build the groups file of an HSI evaluation wave (one line = one Kaggle kernel, jobs ';'-separated), LPT-packed by an
+"""(the runner of make_eval_kernel.py resolves DIR:navcache_ to a mounted cache dir and does not prepend the dump dir;
+hsi_eval.find() falls back to searching /kaggle/input, so Oxford / St Lucia caches of another dataset are found too)
+Build the groups file of an HSI evaluation wave (one line = one Kaggle kernel, jobs ';'-separated), LPT-packed by an
 estimated cost (frames x variants; measured on the local 28-run design set: ~0.35 ms per frame per variant, 1 thread).
 Usage: hsi_wave.py <groups_out> <n_kernels> <variants> [--sets main|all] [--tag t]
   main: 6 holed datasets x 6 descriptors x seeds 0-9, NCLT x 6 (seed 0), Oxford (cosplace/netvlad/megaloc 0-4, others 0-9),
@@ -32,7 +34,7 @@ def main():
     out, K, variants = sys.argv[1], int(sys.argv[2]), sys.argv[3]
     tag = sys.argv[sys.argv.index("--tag") + 1] if "--tag" in sys.argv else ""
     nv = len(variants.split(","))
-    jobs = [(FRAMES[ds] * nseeds(s) * nv, f"hsi_eval.py AUTO {ds} {d} {s} --variants {variants} --frames" + (f" --tag {tag}" if tag else ""))
+    jobs = [(FRAMES[ds] * nseeds(s) * nv, f"hsi_eval.py DIR:navcache_ {ds} {d} {s} --variants {variants} --frames" + (f" --tag {tag}" if tag else ""))
             for ds, d, s in runs()]
     jobs.sort(reverse=True); bins = [[0, []] for _ in range(K)]
     for c, j in jobs:

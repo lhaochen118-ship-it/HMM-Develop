@@ -3,6 +3,39 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 17 (2026-11-03, branch `hmm-2nd-idea`, idea 2 Entry 1) — hindsight geometric self-supervision of the report decision (HSI)
+
+**Claim checked.** A sequential map-relative localiser labels ITS OWN past frames in hindsight — fix correct / fix wrong / robot off the
+map — from geometry only: (1) the place chain's track is self-verified by its agreement with the odometry at several lags (no similarity
+threshold, so the certificate means the same in every appearance condition); (2) between verified runs, dead reckoning aligned on both sides
+gives the hindsight position of every frame, and the map's known coverage turns it into an off-map label. These labels, used causally
+(each one only after it is final), train the report score of the same deployment online and calibrate its threshold by conformal on REAL
+hindsight-labelled excursions (edges and starts included), jointly with calibration-free geometric reports (trusted anchors, dead-reckoning
+agreement). No ground truth, no labelled calibration traversal, no intervention on the map (unlike idea 1's counterfactual surgery).
+**Queries (web, 2026-11-03; paper text / abstracts only):** self-supervised place recognition confidence from odometry-consistency
+pseudo-labels / off-map detection without labels; Lajoie-Beltrame self-supervised domain calibration and uncertainty; adaptive conformal
+inference with delayed / self-generated feedback for robot localisation integrity; online learning of when to trust VPR fixes from wheel
+odometry hindsight labels; test-time training of visual localisation with an odometry / smoother teacher.
+**Closest work found.**
+- Lajoie & Beltrame, RA-L 2023 (arXiv 2203.04446): robust pose-graph optimisation (SLAM) sorts putative VPR matches into correct / incorrect;
+  the samples fine-tune the VPR network and train an uncertainty estimator for the target domain. Closest in spirit (SLAM as the teacher).
+  Differences: needs loop closures and an offline/periodic pose graph; labels pairs of images (training data), not the OFF-MAP state of the
+  robot; no online report decision, no false-report guarantee, no map with holes.
+- TF-VPR (Chen et al., arXiv 2208.09315, RA-L 2024): temporal neighbours of a stream as noisy labels for self-supervised VPR training; no
+  integrity decision.
+- Carson et al. ICRA 2023 (unsupervised match-quality prediction from gradient/argmin agreement), Claxton et al. RA-L 2024 (odometry projection
+  from the last verified match; supervised MLP monitor): label-free or odometry-based ideas, no hindsight labels, no guarantee.
+- ACI under delayed feedback (arXiv 2609.07251), online conformal with intermittent feedback (arXiv 2503.10345): the statistical tool for a
+  long-run guarantee once feedback exists; nothing on self-generated (geometric) feedback.
+- Self-supervised traversability / terrain learning from proprioceptive hindsight (Stavens & Thrun 2006, Brooks & Iagnemma 2007, ...) and
+  co-training (Blum & Mitchell 1998): the generic "one sense teaches another" principle, outside localisation integrity.
+**Differences claimed.** (i) The OFF-MAP class — the one no deployment has labels for — is labelled from dead reckoning plus the map's
+coverage; (ii) labels are produced and consumed online and causally (availability times) inside one deployment, to learn the report score
+and its threshold; (iii) conformal units are real hindsight-labelled excursions, calibrated jointly with calibration-free geometric reports
+(marginal guarantee for the union rule); (iv) the geometric self-verification itself is condition-invariant and is a report source with
+near-zero false reports. **Verdict:** not found as a whole; every component taken alone has precedent (pseudo-labelling, conformal,
+dead-reckoning gating, track confirmation). Novelty moderate-high; A*-readiness depends on the held-out evidence of Entry 1.
+
 ## Gate 15 (Entry 32, 2026-11-01) — systematic search before writing the paper
 
 **Queries (20, web):** VPR integrity monitoring false-positive guarantee sequential navigation; e-detectors / Shiryaev-Roberts /

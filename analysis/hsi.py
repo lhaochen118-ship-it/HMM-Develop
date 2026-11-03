@@ -120,14 +120,39 @@ def adaptive_tolerance(z, seqs, cfg, lags=(5, 10, 20, 40, 80), c=3.0, every=2000
     return out
 
 
+def window_rotation(F, O, idx, W, hz):
+    """per frame i of one sequence: angle of the 2-D rotation that best maps the odometry of frames [i-W, i] onto the chain
+    positions F (Kabsch). nan for i < W or for 1-D positions."""
+    L = len(idx); ang = np.full(L, np.nan)
+    if len(hz) != 2 or L <= W: return ang
+    t = np.arange(W, L); ii = t[:, None] - np.arange(W + 1)[None, ::-1]
+    R, _ = kabsch_batch(O[idx[ii]][..., hz], F[idx[ii]][..., hz]); ang[W:] = np.arctan2(R[:, 1, 0], R[:, 0, 0])
+    return ang
+
+
+def lag_res_rot(F, O, idx, k, ang, hz):
+    """|(F_{i+k} - F_i) - R(ang_{i+k}) (O_{i+k} - O_i)| for pairs ending at i+k (rotation of the window ending there)"""
+    if len(idx) <= k: return np.zeros(0)
+    dF = F[idx[k:]] - F[idx[:-k]]; dO = (O[idx[k:]] - O[idx[:-k]]).astype(float).copy(); a = np.nan_to_num(ang[k:])
+    if len(hz) == 2:
+        c, s_ = np.cos(a), np.sin(a); x, y = dO[:, hz[0]].copy(), dO[:, hz[1]].copy()
+        dO[:, hz[0]] = c * x - s_ * y; dO[:, hz[1]] = s_ * x + c * y
+    return np.linalg.norm(dF - dO, axis=1)
+
+
 # ------------------------------------------------------------------------------------------------- verification
 def causal_anchor(MP, est, O, seqs, cfg, n):
-    """anchor_t: the chain's displacement over the last k frames matches the odometry for every k in lags_c"""
-    out = np.zeros(n, bool)
+    """anchor_t: the chain's displacement over the last k frames matches the odometry for every k in lags_c (rot_max: after
+    the best rotation of the last max(lags_c) frames, which must stay within +-rot_max: a bounded heading offset of the
+    odometry is tolerated, a track that needs a large rotation is not)"""
+    out = np.zeros(n, bool); hz = horiz(MP); rm = getattr(cfg, "rot_max", None)
     for idx in seqs:
         L = len(idx); g = np.ones(L, bool); g[:max(cfg.lags_c)] = False
+        if rm is not None:
+            ang = window_rotation(MP[est], O, idx, max(cfg.lags_c), hz)
+            if len(hz) == 2: g &= np.abs(np.nan_to_num(ang, nan=np.inf)) <= rm
         for k in cfg.lags_c:
-            r = lag_res(MP[est], O, idx, k)
+            r = lag_res(MP[est], O, idx, k) if rm is None else lag_res_rot(MP[est], O, idx, k, ang, hz)
             ok = np.zeros(L, bool); ok[k:] = r <= cfg.tolv(k, idx[k:]); g &= ok
         out[idx] = g
     return out
@@ -480,9 +505,13 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     sc = np.ones(n, bool)
     if sc_lags:
         for idx in seqs:
-            L = len(idx); g = np.ones(L, bool); g[:max(sc_lags)] = False
+            L = len(idx); g = np.ones(L, bool); g[:max(sc_lags)] = False; hz_ = horiz(MP); rm = getattr(cfg, "rot_max", None)
+            if rm is not None:
+                ang = window_rotation(MP[est], O, idx, max(sc_lags), hz_)
+                if len(hz_) == 2: g &= np.abs(np.nan_to_num(ang, nan=np.inf)) <= rm
             for k in sc_lags:
-                r = lag_res(MP[est], O, idx, k); okk = np.zeros(L, bool); okk[k:] = r <= cfg.tolv(k, idx[k:]); g &= okk
+                r = lag_res(MP[est], O, idx, k) if rm is None else lag_res_rot(MP[est], O, idx, k, ang, hz_)
+                okk = np.zeros(L, bool); okk[k:] = r <= cfg.tolv(k, idx[k:]); g &= okk
             sc[idx] = g
     regime = ~geo & gate & sc
     # calibration units: JOINT (default) = every held-out null segment, scored by the whole rule (+inf where the geometry

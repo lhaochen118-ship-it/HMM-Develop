@@ -56,6 +56,11 @@ trên cùng (dataset, descriptor, seed) (`analysis/results/baselines_idea1/` e37
 - **Quyết định:** H1 ∧ H2 ⇒ HSI là luật khuyến nghị của ý tưởng 2; nếu H1 đạt mà H2 không ⇒ báo cáo HSI như luật hợp lệ bổ trợ (thắng ở đâu,
   thua ở đâu) và quay lại thiết kế; nếu H1 không đạt ⇒ chẩn đoán vị trí/điều kiện vi phạm trước khi sửa.
 
+**Bổ sung trước khi chạy đợt giữ ra (16:30 UTC, chưa có kết quả giữ ra nào):** thêm ứng viên phụ **HSI-rot** (= HSI + phép thử nhất quán sau
+phép quay tốt nhất của cửa sổ, giới hạn |góc| ≤ 20°: chịu được lệch hướng của odometry thật như NCLT/VIO, vẫn loại tuyến cần quay lớn). Tập
+thiết kế: +0.007 so với SH (thắng 14/28), segFAR TB 0.003 (max 0.037), NCLT +0.048 so với HSI. Báo cáo như ứng viên phụ (không thay luật chính
+trong Entry 1); nếu nó hơn HSI trên tập giữ ra thì là ứng viên cho Entry 2 (cần xác nhận trên dữ liệu mới).
+
 **Đã biết từ tập thiết kế (seed 0, 28 run; để đọc kết quả trung thực):** HSI recall TB +0.001 so với SH (thắng 15/28), segFAR TB 0.002 (max
 0.033), sai số +0.9 m (tốt hơn 16/28); thắng Boreas (+0.107), countryside (+0.105), Nordland (+0.063); thua NCLT (−0.175), old town (−0.062),
 CMU (−0.037). HSI-adapt: +0.025 recall (18/28) nhưng 1 run vượt α (CMU DINOv2 0.060).

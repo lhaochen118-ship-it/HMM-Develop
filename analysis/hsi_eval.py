@@ -24,12 +24,14 @@ VARIANTS = {
     "HSI-nogate": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="none", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5),                         # no dead-reckoning contradiction gate for (c)
     "HSI-rigid": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="rigid", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5),                          # one rigid bridge per gap instead of blended dead reckoning
     "HSI-nofloor": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint"),                        # no MAP floor (conformal threshold only)
+    "HSI-rot": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35),               # (Entry 2 candidate) bounded heading offset (20 deg) in the consistency tests
     "geo": None, "anc": None,                       # geometric self-verification only (a|b); causal anchors only
 }
 
 
 def find(cdir, fn):
-    roots = ["/kaggle/input", "."] if cdir == "AUTO" else [cdir]
+    """the cache file in cdir; AUTO (or not found there): search /kaggle/input and the cwd (several datasets may be mounted)"""
+    roots = ["/kaggle/input", "."] if cdir == "AUTO" else [cdir, "/kaggle/input"]
     for r in roots:
         for d, _, fs in os.walk(r, followlinks=True):
             if fn in fs: return os.path.join(d, fn)
