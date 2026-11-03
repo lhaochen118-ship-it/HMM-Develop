@@ -169,12 +169,12 @@ acct = lambda k: ST[k]["kid"].split("/")[0]
 ktype = lambda k: "gpu" if ST[k].get("gpu") else "cpu"
 prio = lambda k: KDIRS.index(ST[k]["kdir"]) if ST[k]["kdir"] in KDIRS else 1 << 30
 busy = lambda a, t: [k for k in pend if acct(k) == a and ktype(k) == t and not ST[k].get("unpushed")]
-last_acct = [None]; pushed_now = [False]
+last_acct = [None]; pushed_now = [False]; FULL = {}
 while pend:
     # user rule 2026-11-01 14:45: a new kernel goes to the FIRST account of active_accounts.txt (at most 4) with a free slot of its
     # type (2 GPU / 5 CPU sessions), i.e. one account is filled before the next; no free slot -> it waits. One push per iteration.
     for k in sorted([k for k in pend if ST[k].get("unpushed") and ST[k].get("retry", 0) <= time.time()], key=prio):
-        a = next((a for a in ACTIVE_ACC[:N_ACT[0]] if len(busy(a, ktype(k))) < LIMIT[ktype(k)]), None)
+        a = next((a for a in ACTIVE_ACC[:N_ACT[0]] if len(busy(a, ktype(k))) < LIMIT[ktype(k)] and FULL.get((a, ktype(k)), 0) <= time.time()), None)
         if a is None: continue
         s = ST[k]
         if acct(k) != a: retarget(s["kdir"], s, a)
@@ -184,7 +184,11 @@ while pend:
             s.update(unpushed=False, queued_since=time.time(), last=None, next=time.time() + 120); say(f"{k}: PUSH -> {a} ({ktype(k)})")
             pushed_now[0] = True
         else:
-            s["retry"] = time.time() + 600; say(f"{k}: PUSH_FAILED on {a}: {line}")
+            if "maximum batch" in p.lower():                           # the account's sessions are used by someone else: skip it 15 min,
+                FULL[(a, ktype(k))] = time.time() + 900; s["retry"] = 0.0   # try the next account at once
+                say(f"{k}: {a} has no free {ktype(k)} session (other users' kernels) -> next account")
+            else:
+                s["retry"] = time.time() + 600; say(f"{k}: PUSH_FAILED on {a}: {line}")
         save(); break
     if pushed_now[0]:                                                  # keep pushing while kernels wait for a free slot (status polls later)
         pushed_now[0] = False; continue

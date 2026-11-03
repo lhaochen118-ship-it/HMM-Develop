@@ -123,6 +123,35 @@ class FwdStats:
             cost = np.where(cnt > 0, C, np.inf); jw = np.where((cnt > 0) & np.isfinite(C), j_, -1)
         return cost, jw, zz
 
+    def multi_stats(self, Sq, sd, cum, o, runs, B=None):
+        """run_stats for SEVERAL virtual runs of one sequence at once (Entry 38 speed-up, same arithmetic): the route-test rows of all
+        runs with the same window length are batched together (each row keeps its own run's tables and removed region, MultiMask), so
+        the device gets few large calls instead of many small ones. runs = [(keep, lo, lags, rem)]; returns [(C, J, Z)] per run."""
+        import cms_torch as CT
+        B = B or (2048 if CT.device() == "cuda" else 512)
+        N = self.N; groups = {}; out = []
+        for ri, (keep, lo, lags, rem) in enumerate(runs):
+            f0 = max(lo, int(lags.min()) - N + 1); f1 = int(lags.max())
+            TI, TV = self.tables(np.where(keep[None, :], Sq[f0:f1 + 1], -np.inf))
+            n = len(lags); out.append((np.full(n, np.inf), np.full(n, -1), np.full(n, -np.inf)))
+            nw = np.array([i - max(lo, i - N + 1) + 1 for i in lags])
+            for n_w in np.unique(nw):
+                sel = np.flatnonzero(nw == n_w); ii = lags[sel]; W_ = ii[:, None] - np.arange(n_w)[None, :]
+                groups.setdefault(int(n_w), []).append((ri, sel, TI[ii - f0], TV[ii - f0], TI[W_ - f0], TV[W_ - f0],
+                                                       cum[ii][:, None] - cum[W_], o[W_], sd[ii], rem))
+        for n_w, lst in groups.items():
+            cat = lambda k: np.concatenate([e[k] for e in lst])
+            J, V, TIw, TVw, dl, ow, sdv = cat(2), cat(3), cat(4), cat(5), cat(6), cat(7), cat(8)
+            own = np.concatenate([np.full(len(e[1]), e[0]) for e in lst]); pos = np.concatenate([e[1] for e in lst])
+            ends = np.cumsum([len(e[1]) for e in lst]); starts = ends - np.array([len(e[1]) for e in lst])
+            for a in range(0, len(J), B):
+                b = min(a + B, len(J))
+                segs = [(max(st_, a) - a, min(en_, b) - a, e[9]) for st_, en_, e in zip(starts, ends, lst) if en_ > a and st_ < b]
+                C, Jw, Z = self.stats(J[a:b], V[a:b], TIw[a:b], TVw[a:b], dl[a:b], ow[a:b], sdv[a:b], removed=MultiMask(segs))
+                for r_ in np.unique(own[a:b]):
+                    m_ = own[a:b] == r_; out[r_][0][pos[a:b][m_]] = C[m_]; out[r_][1][pos[a:b][m_]] = Jw[m_]; out[r_][2][pos[a:b][m_]] = Z[m_]
+        return out
+
     def run_stats(self, Sq, sd, cum, o, keep, lo, lags, rem, B=None):
         """presence statistics of every lag frame of ONE virtual run (local frame indices of its sequence): tables of the frames
         max(lo, first lag - N + 1) .. last lag on the run's altered map (keep), windows truncated at lo (exits: 0, starts: the
@@ -140,6 +169,27 @@ class FwdStats:
                 C[ss], J[ss], Z[ss] = self.stats(TI[ii - f0], TV[ii - f0], TI[W_ - f0], TV[W_ - f0], cum[ii][:, None] - cum[W_], o[W_],
                                                  sd[ii], removed=rem)
         return C, J, Z
+
+
+class MultiMask:
+    """the removed regions of SEVERAL virtual runs for one batch of route-test rows: rows [a, b) of the batch belong to the run whose
+    mask is m (segments = [(a, b, m)]); every row is tested against its own run's mask (numpy and torch), so a batch can mix runs"""
+
+    def __init__(self, segs):
+        self.segs = segs
+
+    def __call__(self, q):
+        out = np.zeros(q.shape[:-1], bool)
+        for a, b, m in self.segs:
+            if m is not None: out[a:b] = m(q[a:b])
+        return out
+
+    def torch(self, q):
+        import torch
+        out = torch.zeros(q.shape[:-1], dtype=torch.bool, device=q.device)
+        for a, b, m in self.segs:
+            if m is not None: out[a:b] = m.torch(q[a:b])
+        return out
 
 
 class HoleMask:
@@ -186,6 +236,7 @@ def _hole_test(Xp, Xm, rho):
     return HoleMask(Xp, Xm, rho)
 
 
+FLUSH_LAGS = int(os.environ.get("CMS_FLUSH", "8192"))                  # Entry 38: lags of virtual runs batched per presence call
 BLOCK_SCALES = (0.5, 1.0, 2.0)                                          # Entry 38: block side = scale x the map-null block of the config
 
 
@@ -296,6 +347,14 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
     est_c = np.asarray(z["est_c"]); xc = Pl[est_c]; Dpath = rho + horizon * excl
     tree = cKDTree(Pl); recs = []; n_ag = [0, 0]; t0 = time.time()
     fs = FwdStats(z, ds, K=K, N=N) if presence else None
+    pend, npend = [], [0]                                               # virtual runs waiting for their presence statistics
+
+    def flush():
+        if not pend: return
+        res = fs.multi_stats(Sq, sdq, cum, o, [r_ for _, r_ in pend])
+        for (ri, _), (C_, j_, z_) in zip(pend, res):
+            recs[ri] = recs[ri] + (C_.astype(np.float32), z_.astype(np.float32), j_.astype(np.int32))
+        pend.clear(); npend[0] = 0
     shs = list(start_h) if isinstance(start_h, (tuple, list)) else [start_h]   # one virtual-start family per horizon: modes 1, 2, ...
     Dss = [3.0 * excl if h_ is None else (Dpath if h_ == "full" else float(h_) * excl) for h_ in shs]
     for si, idx in enumerate(b["seqs"]):
@@ -380,10 +439,11 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
                 voff = np.array([not rem[np.asarray(l_, int)].any() for l_ in nb_])
                 gerr = np.linalg.norm(track[lags] - xc[idx[lags]], axis=1)   # ghost displacement from the belief
                 rec = (idx[a["ie"]], idx[lags], rr, voff, gerr, a["mode"], np.array([a["g"][k] for k in lags], np.int32))
-                if presence:                                            # the system's presence statistics on this run's altered map
-                    C_, j_, z_ = fs.run_stats(Sq, sdq, cum, o, a["keep"], a["lo"], lags, a["rem"])
-                    rec = rec + (C_.astype(np.float32), z_.astype(np.float32), j_.astype(np.int32))
                 recs.append(rec)
+                if presence:                                            # the system's presence statistics on this run's altered map:
+                    pend.append((len(recs) - 1, (a["keep"], a["lo"], lags, a["rem"]))); npend[0] += len(lags)   # batched (multi_stats)
+                    if npend[0] >= FLUSH_LAGS: flush()
+        if presence: flush()                                            # Sq / cum / o belong to this sequence
         if verbose: print(f"  seq {si} {L} frames, {len(exits)} exits, {time.time() - t0:.0f}s", flush=True)
     return dict(recs=recs, agree=n_ag[0] / max(n_ag[1], 1), tau=tau, rho=float(rho), stride=float(stride_path / excl) if stride_path else int(stride), horizon=horizon,
                 start_h=np.array([D_ / excl for D_ in Dss]), presence=bool(presence), n_frames=int(n_ag[1]))
