@@ -27,7 +27,7 @@ if "--accounts" in sys.argv: ACCOUNTS = sys.argv[sys.argv.index("--accounts") + 
 _act = os.path.join(os.path.dirname(os.path.abspath(__file__)), "active_accounts.txt")
 if "--accounts" not in sys.argv and os.path.isfile(_act):
     ACCOUNTS = [l.strip() for l in open(_act) if l.strip() and not l.startswith("#")]
-if len(ACCOUNTS) > 8: sys.exit(f"user rule: at most 8 accounts at the same time, got {len(ACCOUNTS)}: {ACCOUNTS}")
+if len(ACCOUNTS) > 10: sys.exit(f"user rule: at most 10 accounts at the same time (2026-11-03), got {len(ACCOUNTS)}: {ACCOUNTS}")
 work, prefix, jobs = args[0], args[1], args[2]
 GROUPS = "--groups" in sys.argv                                          # --groups: each line of the jobs file is ONE kernel (jobs ';'-separated)
 if GROUPS:

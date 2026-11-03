@@ -127,7 +127,7 @@ def pull_done(kd, s):
 _act = os.path.join(ROOT, "automation", "active_accounts.txt")
 ACTIVE_ACC = [l.strip() for l in open(_act) if l.strip() and not l.startswith("#")] if os.path.isfile(_act) else []
 LIMIT = {"gpu": 2, "cpu": 5}                                           # Kaggle sessions per account
-MAX_ACC = 8                                                            # user rule 2026-11-01 15:55: at most 8 accounts at the same time
+MAX_ACC = 10                                                           # user rule 2026-11-01 15:55: at most 8 accounts; 2026-11-03: the user gave 10 accounts for this round
 N_ACT = [min(MAX_ACC, len(ACTIVE_ACC))]
 if os.path.isfile(SF + ".nacc"): N_ACT[0] = max(1, min(N_ACT[0], int(open(SF + ".nacc").read().strip() or N_ACT[0])))
 
@@ -169,7 +169,7 @@ acct = lambda k: ST[k]["kid"].split("/")[0]
 ktype = lambda k: "gpu" if ST[k].get("gpu") else "cpu"
 prio = lambda k: KDIRS.index(ST[k]["kdir"]) if ST[k]["kdir"] in KDIRS else 1 << 30
 busy = lambda a, t: [k for k in pend if acct(k) == a and ktype(k) == t and not ST[k].get("unpushed")]
-last_acct = [None]
+last_acct = [None]; pushed_now = [False]
 while pend:
     # user rule 2026-11-01 14:45: a new kernel goes to the FIRST account of active_accounts.txt (at most 4) with a free slot of its
     # type (2 GPU / 5 CPU sessions), i.e. one account is filled before the next; no free slot -> it waits. One push per iteration.
@@ -182,9 +182,12 @@ while pend:
         with open(s["kdir"] + ".log", "a") as fh: fh.write(f"{ts()} PUSH: {line}\n")
         if "successfully pushed" in p.lower() or "kernel version" in p.lower():
             s.update(unpushed=False, queued_since=time.time(), last=None, next=time.time() + 120); say(f"{k}: PUSH -> {a} ({ktype(k)})")
+            pushed_now[0] = True
         else:
             s["retry"] = time.time() + 600; say(f"{k}: PUSH_FAILED on {a}: {line}")
         save(); break
+    if pushed_now[0]:                                                  # keep pushing while kernels wait for a free slot (status polls later)
+        pushed_now[0] = False; continue
     due = [k for k in pend if ST[k]["next"] <= time.time()]
     same = [k for k in due if acct(k) == last_acct[0]]                 # stay on the account of the previous call while it has work
     slug = min(same or due or pend, key=lambda k: (ST[k]["next"] if not (same or due) else prio(k))); s = ST[slug]; last_acct[0] = acct(slug)

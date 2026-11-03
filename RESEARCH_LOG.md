@@ -70,8 +70,59 @@ presence), CSTJF0 (starts min over bins, no short windows). The datasets are cou
 - **H37g (St Lucia, if built):** main rule mean segFAR <= 0.05 on 6/6 descriptors; recall vs SH and vs SafeVPR'26 (verifier DINOv2
   ViT-L/14 as in the paper, if the weights can be downloaded) reported.
 - Running time of the forward null with presence (ms / frame, CPU and GPU) is reported; no criterion.
+- **H37h (hole-ratio robustness; secondary, added 2026-11-03 04:10 when the user gave 3 more accounts, before any of its runs; at
+  that time 12 main-set CMU runs (seeds 0-1) had been evaluated and read):** maps with 10 % / 50 % of the blocks removed
+  (`hmm-navcache-holes` d10 / d50, exact statistics `hmm-holes-cms-exact`), seeds 0-2 x 6 holed datasets x 6 descriptors (216 runs),
+  forward nulls recomputed on each holed map; the main rule keeps mean segFAR <= 0.05 on 6/6 at both ratios; recall vs SH reported.
 Decision rule: the main rule is recommended as a guarantee if H37a and H37b hold; if H37a fails on the held-out set the failure is
 reported and the Entry 36 recommendation (CST-F for a certified bound, SH AND CST-J\* as practical) stays.
+
+**Execution (2026-11-03).** Probe kernel e37p-1 (62 real jobs, L4): GPU route test 1.3-1.8 x faster than numpy under full load,
+outputs bit-identical (GPU vs numpy on L4; kernel vs local container). Wave 1 = 13 L4 kernels (7 accounts, 2 146 jobs: 1 527 forward-null
+parts, 300 runs evaluated in-kernel by `e37_eval.py`, 45 Oxford preparations, 274 N = 40 runs), 41-46 min per kernel, every job rc = 0,
+0 missing outputs; 12 CMU runs (seeds 0-1) whose nulls came from the probe were evaluated locally with the same script. St Lucia: frames
+built locally (`stlucia-vpr-frames`), one L4 kernel (6 descriptors, DINOv2 ViT-L/14 patch tokens, 30 runs end to end, SafeVPR'26 stage A).
+
+**Results (labels only to evaluate; raw `analysis/results/e37/` (oc_e37.tgz: 342 runs, n40.tgz, audit_e37.json,
+safevpr26_stlucia_vitl.json), tables `paper/e37_tables.md`, report `paper/BAO_CAO_E37.pdf`).** recall / mean segFAR / worst run / nav. error.
+1. *H37a supported.* Main set (114 runs) CST-JS mean segFAR: Boreas 0.009, NCLT 0.003, CMU 0.011, Nordland 0.001, office 0.007, old
+   town 0.010, countryside 0.003 (1/114 runs > alpha, worst 0.050); Oxford 0.023 (30 runs, worst 0.041) and Oxford held-out 0.019 (15
+   runs); **held-out seeds 6-9 (144 runs): Boreas 0.014, CMU 0.019, Nordland 0.001, office 0.007, old town 0.014, countryside 0.005**
+   (2.8 % of runs > alpha, worst 0.074). The same held-out runs under the Entry 36 rules: CST-J\* CMU 0.053 (worst 0.237), CST-J 0.052;
+   22 % of the held-out runs of CST-J\* exceed alpha. Ablation CST-JSL (CST-JS structure, Entry 36 full-surgery presence): CMU held-out
+   0.051, i.e. the forward PRESENCE surgery is what restores validity. Design runs (CMU s3-5, not counted): CST-JS 0.030 (3/9 > alpha,
+   worst 0.063).
+2. *H37b NOT supported (4/7; criterion 6/7).* Report rate of real off-map segments under CST-JS (main + held-out pooled; start / edge /
+   deep): Boreas 0.034 / **0.084** / 0.008, NCLT 0.005 / 0.006 / 0.001, CMU 0.016 / - / - (all CMU segments are within the start
+   horizon), Nordland 0.000 / 0.026 / 0.000, office **0.119** (84 segments) / 0.042 / 0.004, old town 0.014 / **0.109** / 0.006,
+   countryside 0.007 / 0.046 / 0.002. Lower than CST-J\* at the edge on 5/7 (CST-J\* edge: 0.152, 0.006, -, 0.134, 0.245, 0.178, 0.220),
+   i.e. the edge violation is roughly halved, not removed. SH AND CST-JS <= 0.07 in every class (old town edge 0.060). The residual
+   violation sits at the EDGE of real holes on Boreas and old town: real holes are map blocks, virtual holes are Voronoi cuts of the
+   believed path, so the first segment after a real exit is not exchangeable with the virtual position-0 segments there (S3-JF fails at
+   the edge on these two datasets); deep segments are at 0.000-0.008 everywhere.
+3. *H37c supported.* CST-JS - CST-F recall on CMU: +0.155 (main), +0.142 (held-out); CST-JS - SH within 0.03 on 7/7 and higher on 6/7
+   (Boreas +0.003, NCLT +0.020, CMU -0.006, Nordland +0.015, office +0.012, old town +0.009, countryside +0.010).
+4. *H37d supported at the limit (5/7).* Navigation error CST-JS - SH: Boreas +2.3 m, NCLT +0.4, CMU -0.3, Nordland +0.4, office 0.0, old
+   town **+14.5**, countryside +0.6. The spent alpha budget lands partly on harmful edge fixes on old town / Boreas (the H37b failure).
+5. *H37e supported.* Oxford CST-JS 0.738 vs SH 0.729 (+0.009; Entry 36 CST-F 0.550); Oxford held-out 0.711 vs 0.698 (+0.012).
+6. *H37f supported.* N = 40 vs N = 20 (seeds 1-9, 5 new descriptors + Boreas CosPlace, 276 runs): mean segFAR <= 0.015 in every
+   (dataset, descriptor); pooled recall higher on 6/6 (Boreas 0.766 -> 0.780, CMU 0.825 -> 0.833, Nordland 0.751 -> 0.764, office 0.786 ->
+   0.797, old town 0.710 -> 0.720, countryside 0.469 -> 0.503); small losses only for MegaLoc / SALAD on CMU / old town (-0.002 to
+   -0.008). N = 40 stays the recommended belief window.
+7. *H37g supported.* St Lucia (6 descriptors x seeds 0-4): CST-JS mean segFAR 0.013-0.036 per descriptor (worst run 0.073), recall
+   = SH on every descriptor (0.622-0.824). Direct comparison with SafeVPR'26 with the paper's ViT-L/14 verifier (25 held-out conditions
+   per descriptor, SafeVPR calibrated with labels): SafeVPR'26 alpha 0.05 recall 0.203-0.538 (FDR 0.007-0.011), alpha 0.10 0.212-0.585;
+   ours without labels: SH rule 0.444-0.596 (FDR 0.001-0.004), CST-JS 0.446-0.597 (FDR 0.003-0.008); all 25/25 valid; ours higher on
+   6/6 descriptors at both levels (largest gap NetVLAD 0.476 vs 0.203 / 0.212, DINOv2 0.446 vs 0.278 / 0.359).
+**Verdict (pre-registered decision rule).** H37a holds and H37b fails, so CST-JS is NOT promoted to a per-position guarantee. What
+Entry 37 establishes: (i) running the system's presence evidence forward on each virtual run's map makes the end-to-end calibration
+valid at the segFAR level on held-out data, including CMU where CST-J\* broke (0.019 vs 0.053), at the recall of the hand-set rule
+(within 0.006, higher on 6/7, Oxford +0.009) and +0.15 over CST-F on CMU; (ii) the exact start null removes the sequence-start problem
+(CMU start segments 0.016); (iii) the remaining gap is the EDGE of block-shaped real holes (Boreas, old town), which costs navigation
+error on old town (+14.5 m). Recommendation: **SH AND CST-JS** as the practical rule (recall within 0.016 of SH on 7/7, every position class
+<= 0.07, navigation error within 0.5 m of SH or lower on 6/7, countryside +2.3 m) and **CST-F** where a certified per-segment bound is required; CST-JS alone as the
+label-free, hand-set-free rule with a mean-level guarantee. Next: virtual holes with the block geometry of the deployment map (edge
+exchangeability), H37h (hole ratios, running).
 
 ## Entry 36 (branch `hmm-navigation-5`) — forward counterfactual surgery: the null of the system's own ghost track; vectorised statistics; St Lucia (2026-11-02)
 

@@ -83,7 +83,10 @@ def run(ij):
     i, j = ij; script, args = j[0], j[1:]
     env = dict(os.environ, OMP_NUM_THREADS=TH, MKL_NUM_THREADS=TH, OPENBLAS_NUM_THREADS=TH)
     if NGPU and len(JOBS) > 1: env["CUDA_VISIBLE_DEVICES"] = str(i %% NGPU)   # a single job keeps every GPU (multi-GPU scripts)              # spread jobs round-robin over all GPUs of the session
-    rs = lambda a: D if a == "DUMP" else CD if a == "CACHE" else TK if a == "TOPK" else (next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith(a[4:]) and f.endswith(".npz") for f in fs)), "") if a.startswith("DIR:") else a)
+    def rdir(a):                                                     # DIR:<prefix>[@<dir name>]: mounted dir of <prefix>*.npz (named <dir name>)
+        pre, _, nm = a[4:].partition("@")
+        return next((d for d, _, fs in os.walk("/kaggle/input") if (not nm or os.path.basename(d) == nm) and any(f.startswith(pre) and f.endswith(".npz") for f in fs)), "")
+    rs = lambda a: D if a == "DUMP" else CD if a == "CACHE" else TK if a == "TOPK" else (rdir(a) if a.startswith("DIR:") else a)
     if "DUMP" in args or "CACHE" in args or "TOPK" in args or any(a.startswith("DIR:") for a in args): cmd = [sys.executable, script] + [rs(a) for a in args]   # DIR:<prefix> = mounted dir of <prefix>*.npz
     else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
     t = time.time(); log = os.path.join(C, "logs", ("%%03d_" %% i) + "_".join(j).replace(".py", "").replace("/", "-")[:120] + ".log")   # short: long job args overflow NAME_MAX

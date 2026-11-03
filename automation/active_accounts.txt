@@ -8,3 +8,6 @@ synchan5704
 yuan1103
 quynhtran35
 caotienminh1
+# 2026-11-03 04:05: 3 more accounts given by the user; yeshenhi is T4-only (an L4 request silently falls back to CPU) -> not listed for L4 kernels
+anderson1202
+loinguyentran

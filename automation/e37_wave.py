@@ -51,6 +51,23 @@ def main():
             u.append((load[k] * ms(ds) / 1e3 + 60, f"e37_fwd.py {src} {ds} {desc} {seed} {k}/{n}" + (" --wait" if ds == "oxford" else "")))
         u.append((C["eval"].get(ds.split(":")[0], 300), f"e37_eval.py {ev} {ds} {desc} {seed} {n} --wait"))
         units.append(u)
+    if "--holes" in sys.argv:                                         # H37h: 10 % / 50 % holes, seeds 0-2 (separate wave)
+        for r in sys.argv[sys.argv.index("--holes") + 1].split(","):
+            for s in (0, 1, 2):
+                for ds in HOLED:
+                    for d in DESC:
+                        n = parts(fr, ds); load = [0] * n; t = fr[ds.replace(":", "_")]
+                        for L in sorted(t["seqs"], reverse=True): load[load.index(min(load))] += L
+                        u = [(load[k] * ms(ds) / 1e3 + 60, f"envrun.py @results/d{r} e37_fwd.py DUMP DIR:navcache_@d{r} {ds} {d} {s} {k}/{n}") for k in range(n)]
+                        hc = f"DIR:cms_@hcms_d{r}"
+                        u.append((C["eval"].get(ds.split(":")[0], 300), f"envrun.py @results/d{r} e37_eval.py DUMP DIR:navcache_@d{r} {hc} {hc} {hc} {ds} {d} {s} {n} --wait"))
+                        units.append(u)
+    else:
+        main_sets(run_unit, units, C, skip)
+    pack(units, nk, out, C)
+
+
+def main_sets(run_unit, units, C, skip):
     for s in (0, 1, 2):
         for ds in HOLED:
             for d in DESC: run_unit(ds, d, s)
@@ -70,16 +87,20 @@ def main():
     for s in range(4, 10):
         j = f"n40_run.py --one DUMP DIR:navcache_ DIR:cms_ results/cms40 DIR:topk_ DIR:tao_ boreas cosplace {s}"
         if j not in skip: units.append([(C["n40"]["boreas"], j)])
+
+
+def pack(units, nk, out, C):
     units.sort(key=lambda u: -sum(c for c, _ in u)); bins = [[0.0, []] for _ in range(nk)]
     for u in units:
         b = min(bins, key=lambda x: x[0]); b[0] += sum(c for c, _ in u); b[1] += u
     jobs = [j for u in units for j in u]
-    rank = lambda j: (0 if j[1].startswith("e37_prep") else 2 if j[1].startswith("e37_eval") else 1, -j[0])
+    has = lambda j, p_: p_ in j.split()[:3]                           # script name, possibly behind envrun.py VAR=... @dir
+    rank = lambda j: (0 if has(j[1], "e37_prep.py") else 2 if has(j[1], "e37_eval.py") else 1, -j[0])
     with open(out, "w") as f:
         for _, js in bins: f.write(";".join(j for _, j in sorted(js, key=rank)) + "\n")
     tot = sum(c for c, _ in jobs); par = C.get("par", 46)
-    cnt = lambda p: sum(1 for _, j in jobs if j.startswith(p))
-    print(f"{len(jobs)} jobs ({cnt('e37_fwd')} fwd parts, {cnt('e37_eval')} runs evaluated, {cnt('e37_prep')} Oxford preps, {cnt('n40')} N=40) in "
+    cnt = lambda p: sum(1 for _, j in jobs if has(j, p))
+    print(f"{len(jobs)} jobs ({cnt('e37_fwd.py')} fwd parts, {cnt('e37_eval.py')} runs evaluated, {cnt('e37_prep.py')} Oxford preps, {cnt('n40_run.py')} N=40) in "
           f"{nk} kernels; worker-seconds per kernel {min(b[0] for b in bins):.0f}-{max(b[0] for b in bins):.0f} (total {tot:.0f}; "
           f"~{max(b[0] for b in bins) / par / 60:.0f} min per kernel at {par} workers), jobs per kernel {min(len(b[1]) for b in bins)}-{max(len(b[1]) for b in bins)}")
 
