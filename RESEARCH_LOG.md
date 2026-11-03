@@ -114,6 +114,13 @@ safevpr26_stlucia_vitl.json), tables `paper/e37_tables.md`, report `paper/BAO_CA
    per descriptor, SafeVPR calibrated with labels): SafeVPR'26 alpha 0.05 recall 0.203-0.538 (FDR 0.007-0.011), alpha 0.10 0.212-0.585;
    ours without labels: SH rule 0.444-0.596 (FDR 0.001-0.004), CST-JS 0.446-0.597 (FDR 0.003-0.008); all 25/25 valid; ours higher on
    6/6 descriptors at both levels (largest gap NetVLAD 0.476 vs 0.203 / 0.212, DINOv2 0.446 vs 0.278 / 0.359).
+8. *H37h supported (6/6 at both ratios).* Hole-ratio robustness (seeds 0-2 x 6 holed datasets x 6 descriptors, forward nulls recomputed on
+   each holed map; 18 L4 kernels on 9 accounts, every job rc = 0): CST-JS mean segFAR at 10 % holes Boreas 0.006, CMU 0.024, Nordland
+   0.001, office 0.007, old town 0.010, countryside 0.003 (5.6 % of runs > alpha, worst 0.096); at 50 % 0.005, 0.023, 0.002, 0.012, 0.012,
+   0.010 (3.7 % > alpha, worst 0.119). Recall - SH: 10 % +0.002, -0.007, +0.012, +0.011, +0.006, +0.007; 50 % +0.001, -0.007, +0.010,
+   +0.020, +0.004, +0.019. CST-J\* breaks at 10 % (CMU 0.086, Boreas 0.045; 24 % of runs > alpha). The navigation cost at the hole edge
+   grows with the hole ratio on old town (CST-JS 31.8 / 72.4 m vs SH 21.5 / 36.9 m at 10 / 50 %), consistent with H37b; SH AND CST-JS keeps
+   SH's error (21.4 / 36.7 m) and validity (worst run 0.055 / 0.099, as SH 0.079 / 0.125).
 **Verdict (pre-registered decision rule).** H37a holds and H37b fails, so CST-JS is NOT promoted to a per-position guarantee. What
 Entry 37 establishes: (i) running the system's presence evidence forward on each virtual run's map makes the end-to-end calibration
 valid at the segFAR level on held-out data, including CMU where CST-J\* broke (0.019 vs 0.053), at the recall of the hand-set rule
@@ -122,7 +129,7 @@ valid at the segFAR level on held-out data, including CMU where CST-J\* broke (0
 error on old town (+14.5 m). Recommendation: **SH AND CST-JS** as the practical rule (recall within 0.016 of SH on 7/7, every position class
 <= 0.07, navigation error within 0.5 m of SH or lower on 6/7, countryside +2.3 m) and **CST-F** where a certified per-segment bound is required; CST-JS alone as the
 label-free, hand-set-free rule with a mean-level guarantee. Next: virtual holes with the block geometry of the deployment map (edge
-exchangeability), H37h (hole ratios, running).
+exchangeability); H37h holds (item 8).
 
 ## Entry 36 (branch `hmm-navigation-5`) — forward counterfactual surgery: the null of the system's own ghost track; vectorised statistics; St Lucia (2026-11-02)
 

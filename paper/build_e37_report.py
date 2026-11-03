@@ -4,7 +4,8 @@
   --audit FILE   e37_audit.py json over the main + held-out runs (report rate of real off-map segments by position class)
   --n40 DIR      oc_*_n40_s*.json and oc_*_n20_s*.json (recursive) + analysis/results/e36/n40 (CosPlace, Entry 36) if given twice
   --safevpr FILE safevpr26_eval json for St Lucia (6 descriptors, ViT-L/14 verifier)
-Usage: build_e37_report.py --oc DIR [--audit F] [--n40 DIR[,DIR2]] [--safevpr F]"""
+  --holes DIR    DIR/d10 and DIR/d50 with the oc_*_e37_s*.json of the hole-ratio runs (H37h)
+Usage: build_e37_report.py --oc DIR [--audit F] [--n40 DIR[,DIR2]] [--safevpr F] [--holes DIR]"""
 import sys, os, json, glob, re, shutil, tempfile
 import numpy as np
 HERE = os.path.dirname(os.path.abspath(__file__)); sys.path.insert(0, os.path.join(HERE, "..", "analysis")); sys.path.insert(0, HERE)
@@ -152,6 +153,21 @@ def main():
         up = sum(m(P40, d, SH, 0) >= m(P20, d, SH, 0) for d in dss)
         H.append(f"- H37f: N = 40 segFAR TB ≤ 0.05 ở mọi (dataset, descriptor): {okv}; recall gộp N40 ≥ N20 trên {up}/{len(dss)} (cần ≥ 5/6)")
         L.append("")
+    if arg("--holes"):                                                 # H37h: DIR/d10, DIR/d50 with oc_*_e37_s*.json
+        okh = []
+        for r in ("10", "50"):
+            d = os.path.join(arg("--holes"), f"d{r}")
+            if not os.path.isdir(d): continue
+            Th = E.defaults(E.load(d)); dh = [x for x in HOLED if x in Th]; n = sum(len(Th[x].get(SH, [])) for x in dh)
+            HR = [ROWS[1], ROWS[3], ROWS[5], ROWS[6], ROWS[7], ROWS[8], ROWS[9]]
+            L += tab_def(Th, HR, dh, f"### Độ bền tỷ lệ lỗ (H37h): {r} % khối bản đồ bị xoá, seed 0–2 ({n} run): recall / segFAR TB / tệ nhất / sai số (m)", oracle=False)
+            L += ["| Luật | run > α | tệ nhất | số run |", "|---|---|---|---|"]
+            for nm, lab in HR:
+                a, b_, c = runs_over(Th, dh, nm); L.append(f"| {lab} | {a:.3f} | {b_:.3f} | {c} |")
+            L.append("")
+            okh.append((r, sum(m(Th, x, JS, 1) <= 0.05 for x in dh), len(dh), ", ".join(f"{E.DS_NAME[x]} {m(Th, x, JS, 1):.3f} ({m(Th, x, JS, 0) - m(Th, x, SH, 0):+.3f})" for x in dh)))
+        for r, k_, n_, txt in okh:
+            H.append(f"- H37h ({r} % lỗ): segFAR TB của CST-JS ≤ 0.05 trên {k_}/{n_} (cần 6/6); segFAR (recall − SH): {txt}")
     if arg("--safevpr") and os.path.exists(arg("--safevpr")):
         S = json.load(open(arg("--safevpr")))
         L += ["### So sánh trực tiếp với SafeVPR'26 trên St Lucia (verifier DINOv2 ViT-L/14 như bài báo; 30 % lỗ; FDR / TPR của tập được chấp nhận)", "",

@@ -20,6 +20,7 @@ ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables
   đường tin ⇒ (S3-JF) sai ở mép. H37d chỉ đạt 5/7 (old town +14.5 m, Boreas +2.3 m so với SH).
 - **Cơ chế đã kiểm (ablation):** CST-JSL (cùng cấu trúc, hiện diện = phẫu thuật đầy đủ vòng 10) vỡ trên giữ ra (CMU 0.051) ⇒ hiện diện tiến
   là thứ sửa tính hợp lệ; CST-JS0 (không chứng nhận cửa sổ ngắn) mất 0.13 recall CMU ⇒ null đầu chuỗi là thứ giữ recall.
+- **H37h (độ bền tỷ lệ lỗ):** CST-JS hợp lệ 6/6 ở 10 % và 50 % lỗ, recall ≈ SH; CST-J\* vỡ ở 10 % (CMU 0.086); sai số điều hướng ở mép old town tăng theo tỷ lệ lỗ.
 - **Khuyến nghị:** SH ∧ CST-JS (thực dụng: mọi lớp vị trí ≤ 0.07); CST-F (cận chứng nhận theo đoạn); N = 40.
 - **Hạ tầng:** phép thử tuyến trên GPU trùng tuyệt đối numpy (L4), nhanh 1.3–1.8× dưới tải; 13 phiên L4 ~45 phút cho 300 run + 274 run N = 40.
 

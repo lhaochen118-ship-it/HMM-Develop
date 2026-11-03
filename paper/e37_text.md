@@ -13,6 +13,7 @@ eps_start_pos), `cms_torch.py` (GPU), `cms.py` (luật CST-JS), `e37_fwd.py`, `e
 | (2) Null chính xác cho đầu chuỗi (vấn đề CMU) | **Giải quyết:** khởi đầu ảo đủ chân trời + ngưỡng theo vị trí kể từ đầu chuỗi + ngưỡng log-odds κ′ cho cửa sổ ngắn; đoạn đầu chuỗi CMU có báo 0.016, recall CMU 0.758 (CST-F 0.603, SH 0.764). |
 | (3a) Boreas đủ 18 run | Xong (tập chính 18 run + giữ ra 24 run). |
 | (3b) N = 40 cho mọi descriptor | **H37f đạt:** recall gộp N = 40 > N = 20 trên 6/6 dataset, segFAR ≤ 0.015 mọi (dataset, descriptor). |
+| Bổ sung (3 acc mới): độ bền tỷ lệ lỗ 10 % / 50 % (216 run) | **H37h đạt:** CST-JS hợp lệ 6/6 ở cả hai tỷ lệ, recall ≈ SH; CST-J\* vỡ ở 10 % lỗ (CMU 0.086). |
 | (3c) St Lucia 6 descriptor | **H37g đạt:** CST-JS hợp lệ 6/6 descriptor; so trực tiếp SafeVPR'26 với verifier ViT-L/14 như bài báo: ta (không nhãn) recall cao hơn ở 6/6 descriptor, FDR thấp hơn. |
 
 **Khuyến nghị:** **SH ∧ CST-JS** là luật thực dụng (mọi lớp vị trí ≤ 0.07, recall trong 0.016 của SH); **CST-F** khi cần cận chứng nhận theo
@@ -59,5 +60,5 @@ chuỗi E37 và SafeVPR'26.
 ## 5. Việc tiếp theo
 
 1. Lỗ ảo có **hình học khối của bản đồ triển khai** (cắt theo khối thay vì Voronoi) để đoạn mép hoán đổi được; kiểm lại H37b trên tập giữ ra mới.
-2. H37h (độ bền tỷ lệ lỗ 10 % / 50 %, 216 run) — đang chạy khi viết báo cáo; kết quả bổ sung vào `RESEARCH_LOG.md`.
+2. Độ bền tỷ lệ lỗ (H37h) đã đạt: CST-JS hợp lệ 6/6 ở 10 % và 50 % lỗ; chi phí điều hướng ở mép lỗ old town tăng theo tỷ lệ lỗ (SH ∧ CST-JS giữ sai số của SH).
 3. Hoàn thiện bài báo: SH ∧ CST-JS + CST-F + N = 40; phụ lục chi phí GPU.

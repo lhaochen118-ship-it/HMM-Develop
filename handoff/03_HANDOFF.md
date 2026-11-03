@@ -8,7 +8,7 @@
 
 - **Làm xong:** Entry 37 đủ: đăng ký trước → đợt Kaggle (13 L4 + St Lucia + thăm dò) → đánh giá gộp trong kernel → kiểm toán theo vị trí →
   báo cáo `paper/BAO_CAO_E37.pdf`, theory §4g, Gate 16. Kết quả và kết luận: `RESEARCH_LOG.md` Entry 37 (H37a,c,d,e,f,g đạt; H37b không đạt).
-  Đợt độ bền tỷ lệ lỗ (H37h, 18 kernel `e37k-*` trên 9 acc) xem `RESEARCH_LOG.md` (bổ sung khi xong).
+  Đợt độ bền tỷ lệ lỗ (H37h, 18 kernel `e37k-*` trên 9 acc): **đạt** 6/6 ở 10 % và 50 % lỗ (`analysis/results/e37/oc_holes_e37.tgz`).
 - **Dữ liệu mới (public, nhatlong1103):** `stlucia-vpr-frames` (ảnh 10 m), `stlucia-vpr-dump` (6 descriptor), `hmm-fwd-null-e37` (null tiến
   có hiện diện, 342 run), `hmm-cms-cache-n40` (thống kê N = 40, 276 run), `hmm-e37-caches` (navcache/cms/topk/tao của Oxford + St Lucia).
 - **Quyết định đã chốt:** luật thực dụng SH ∧ CST-JS; CST-F khi cần chứng nhận; N = 40 mặc định.
