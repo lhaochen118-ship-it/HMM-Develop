@@ -33,6 +33,27 @@ reported); otherwise the Entry 37 recommendation stays.
   Nordland 1, 2, 5 frames), and the share of edge reports whose fix error is < off_d + 10 m. Explanation (ii) is supported if the edge
   rate falls to <= 0.07 at delta = 10 m on Boreas and old town.
 
+**Execution.** 3 L4 kernels (18 Boreas runs: preparation in the kernel 41-55 min per run, the critical path) + 36 CPU kernels (90 runs),
+every job rc = 0, 108/108 runs evaluated; two Kaggle API rate limits (12:31, 13:02) delayed the pulls by ~1 h (computation was finished).
+The navcaches made inside the kernels had to be re-downloaded for the audit (102/108 at the time of writing; 6 Boreas runs of e39g-3 pending,
+the audit below is on 12/18 Boreas runs). Raw: `analysis/results/e39/` (oc_e39.tgz, audit39.json, diag39_new.json), tables `paper/e39_tables.md`.
+
+**Results (labels only to evaluate).**
+1. *H39a supported.* CST-JSU [both] mean segFAR: Boreas 0.007, CMU 0.008, Nordland 0.000, office 0.002, old town 0.008, countryside 0.002;
+   no run > alpha (worst 0.029, 108 runs). CST-JS 0.010 / 0.014 / 0.000 / 0.008 / 0.016 / 0.006 (2 % of runs > alpha, worst 0.074).
+2. *H39b NOT supported (4/6; criterion 5/6).* Position audit of CST-JSU [both] (start / edge / deep): old town 0.000 / **0.095** / 0.003,
+   Boreas 0.003 / **0.080** / 0.003 (12 runs), countryside 0.000 / 0.030 / 0.001, office 0.000 / 0.040 / 0.000, CMU 0.007, Nordland 0.004.
+   On these layouts even SH exceeds at the old town edge (0.107); SH AND CST-JS 5/6 (old town edge 0.083).
+3. *H39c supported (6/6 within 0.04 of SH)*, but the price is real: -0.023, -0.033, -0.014, -0.023, -0.009, -0.037.
+4. *H39d NOT supported (4/6).* Navigation error vs SH: Boreas +2.2 m, CMU -1.7, Nordland +0.3, office +0.3, old town +0.5, countryside +3.5.
+5. *Margin on the new layouts (D39-margin repeated):* with real off-map counted from off_d + 5 m the CST-JSU [both] edge rate is old town
+   0.095 -> 0.056, Boreas 0.080 -> 0.040, office 0.040 -> 0.007, countryside 0.030 -> 0.000: every class <= 0.07 on 6/6. pi = 0.56-0.74.
+**Verdict (pre-registered decision rule).** H39a holds, H39b fails: CST-JSU [both] is not promoted. The Entry 37 recommendation stays:
+SH AND CST-JS as the practical rule (on these layouts: every class <= 0.07 on 5/6, recall within 0.024 of SH, error within 0.6 m except
+CMU -1.5 m), CST-F as the certified per-segment bound, N = 40. The per-position guarantee at the hole edge is limited by the binary
+off_d definition of a false fix (D39-margin, confirmed on new layouts) and by the 1/pi factor of Proposition 19; neither is a defect of
+the calibration that a new null family can fix. Idea 1 is closed here; the follow-up research is on branch `hmm-2nd-idea`.
+
 **Diagnostics D39 (Entry 37 sets, corridor nulls, rules of the Entry 38 evaluation; raw `analysis/results/e39/diag39.*`, `analysis/e39_diag.py`).**
 - *D39-margin: SUPPORTED.* Edge report rate when a real segment counts as off-map only beyond off_d + delta (true distance to the nearest
   remaining place), CST-JS: Boreas 0.084 (delta 0) -> 0.030 (5 m) -> 0.016 (10 m) -> 0.005 (20 m); old town 0.109 -> 0.035 -> 0.021 ->

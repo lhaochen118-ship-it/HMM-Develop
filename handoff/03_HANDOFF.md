@@ -4,6 +4,14 @@
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
+## 0000000000. Vòng 13 (2026-11-03, Entry 39) — trạng thái
+
+- **Xong:** xác nhận CST-JSU [both] trên bố cục lỗ mới (seed 10–12, 108 run; 3 L4 + 36 CPU kernel) + chẩn đoán D39. H39a đạt (hợp lệ 6/6, không
+  run nào > α), H39b không đạt (mép old town 0.095, Boreas 0.080), H39c đạt (giá recall −0.01…−0.04), H39d không đạt (4/6). Khuyến nghị cuối
+  của ý tưởng 1: **SH ∧ CST-JS** (thực dụng), **CST-F** (chứng nhận), N = 40. Phần dư ở mép = biên định nghĩa off_d + hệ số 1/π.
+- **Ý tưởng 1 khép lại ở đây;** nghiên cứu tiếp trên branch `hmm-2nd-idea` (lời giải mới hoàn toàn).
+- Còn treo: navcache của 6 run Boreas (kernel `nguyenhoa99/e39g-3`) chưa tải lại được vì giới hạn API; kiểm toán Boreas dùng 12/18 run.
+
 ## 000000000. Vòng 12 (2026-11-03, Entry 38) — trạng thái
 
 - **Xong:** lỗ ảo hình khối + CST-JSB/CST-JSU, đăng ký trước, đợt 30 kernel (402 run), kiểm toán, báo cáo `paper/BAO_CAO_E38.pdf`, theory §4h,

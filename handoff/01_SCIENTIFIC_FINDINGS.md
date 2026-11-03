@@ -15,7 +15,9 @@ ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables
 - **Hệ số 1/π (D39-pi, một phần):** π = 0.55 (old town) – 0.70 (CMU) ⇒ cận a/π = 0.07–0.09; giải thích phần lớn chứ không hết khoảng cách.
 - **Đính chính Entry 38:** "old town nhảy xa ~1 km ở mép" là lỗi script (lấy 2 cột đầu của toạ độ 3-D 4Seasons thay vì trục phẳng `hz`).
   Sai số điều hướng +13–15 m của CST-JS trên old town đến từ 324 fix sai > 100 m (160 khi robot vẫn TRÊN bản đồ); SH chặn hết loại này.
-- **Xác nhận CST-JSU [both] trên bố cục lỗ mới (seed 10–12, 108 run):** kết quả ở `RESEARCH_LOG.md` Entry 39 và §00000000000 của `03`.
+- **Xác nhận CST-JSU [both] trên bố cục lỗ mới (seed 10–12, 108 run):** hợp lệ 6/6 (không run nào > α) nhưng kiểm toán mép không đạt (old town
+  0.095, Boreas 0.080; cả SH cũng 0.107 ở mép old town), giá recall −0.01…−0.04, sai số Boreas +2.2 m, countryside +3.5 m ⇒ không đề cử. Từ
+  off_d + 5 m mọi lớp ≤ 0.07 trên 6/6 (biên định nghĩa được xác nhận trên bố cục mới). Khuyến nghị cuối: SH ∧ CST-JS, CST-F, N = 40.
 
 ## N000000000. Vòng 12 (2026-11-03, Entry 38) — đọc trước §N00000000
 
