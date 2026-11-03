@@ -33,6 +33,22 @@ reported); otherwise the Entry 37 recommendation stays.
   Nordland 1, 2, 5 frames), and the share of edge reports whose fix error is < off_d + 10 m. Explanation (ii) is supported if the edge
   rate falls to <= 0.07 at delta = 10 m on Boreas and old town.
 
+**Diagnostics D39 (Entry 37 sets, corridor nulls, rules of the Entry 38 evaluation; raw `analysis/results/e39/diag39.*`, `analysis/e39_diag.py`).**
+- *D39-margin: SUPPORTED.* Edge report rate when a real segment counts as off-map only beyond off_d + delta (true distance to the nearest
+  remaining place), CST-JS: Boreas 0.084 (delta 0) -> 0.030 (5 m) -> 0.016 (10 m) -> 0.005 (20 m); old town 0.109 -> 0.035 -> 0.021 ->
+  0.014; office start segments 0.119 -> 0.000 (5 m); countryside 0.046 -> 0.011; Nordland 0.026 -> 0.009 (+1 frame). Edge reports whose fix
+  error is < off_d + 10 m (Nordland + 2 frames): Boreas 249/263 (95 %), old town 43/47 (91 %), countryside 20/23, office 22/27, Nordland 9/15.
+  The edge excess is a definitional margin: the robot is just past off_d and the system reports the nearest remaining place, 40-50 m off.
+  Every class is <= 0.07 for CST-JS, CST-JSU and CST-JSU [both] from delta = 5 m on, on 7/7.
+- *D39-pi: PARTLY.* pi (share of virtual exits with a truly on-map correct belief) = 0.55 (old town) - 0.70 (CMU); pi_edge the same; the
+  bound a/pi_edge = 0.073-0.091. Observed edge rates exceed it on Boreas (0.084 vs 0.077) and old town (0.109 vs 0.091): the 1/pi factor
+  explains most of the gap between 0.05 and the observed rates, not all of it.
+- *Correction of the Entry 38 diagnosis.* "Old town edge reports are far look-alikes (fix error median 1.03 km)" was WRONG: the diagnostic
+  script took the first two coordinates of the 3-D 4Seasons positions instead of the planar axes (`hz`). With the planar axes, 91 % of
+  old town edge reports are within off_d + 10 m. The navigation cost of CST-JS on old town comes from 324 reports with error > 100 m (160
+  of them while the robot is ON the map, 144 off-map deep), where SH has 56 (0 on-map): the hand-set shape tolerance of SH also rejects
+  wrong on-map fixes, which the calibrated tolerance of CST-JS lets through.
+
 ## Entry 38 (branch `hmm-navigation-5`) — block-shaped virtual holes for the edge of real holes (2026-11-03)
 
 **Context.** Entry 37: CST-JS is valid at the segFAR level (held-out seeds 6-9 included) but the position audit failed (H37b 4/7):

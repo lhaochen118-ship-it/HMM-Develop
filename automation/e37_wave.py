@@ -34,7 +34,7 @@ def parts(fr, ds):
 def main():
     fr = json.load(open(sys.argv[1])); C = json.load(open(sys.argv[2])); out = sys.argv[3]
     skip = set(l.strip() for l in open(sys.argv[sys.argv.index("--skip") + 1])) if "--skip" in sys.argv else set()
-    rest = [a for i, a in enumerate(sys.argv[4:], 4) if not a.startswith("--") and sys.argv[i - 1] != "--skip"]
+    rest = [a for i, a in enumerate(sys.argv[4:], 4) if not a.startswith("--") and sys.argv[i - 1] not in ("--skip", "--e39", "--only", "--exclude", "--holes")]
     nk = int(rest[0]) if rest else 13
     ms = lambda ds: C["ms"][ds]                                       # ms / frame of a forward part under full load, per dataset
     units = []                                                        # [(cost, job string)]
@@ -53,8 +53,10 @@ def main():
         units.append(u)
     if "--e39" in sys.argv:                                           # Entry 39: NEW hole layouts (seeds 10-12 of the hole generator)
         seeds39 = [int(x) for x in sys.argv[sys.argv.index("--e39") + 1].split(",")]
+        only = sys.argv[sys.argv.index("--only") + 1].split(",") if "--only" in sys.argv else HOLED
+        excl_ = sys.argv[sys.argv.index("--exclude") + 1].split(",") if "--exclude" in sys.argv else []
         for s in seeds39:
-            for ds in HOLED:
+            for ds in [x for x in HOLED if x in only and x not in excl_]:
                 for d in DESC:
                     n = parts(fr, ds); load = [0] * n; t = fr[ds.replace(":", "_")]
                     for L in sorted(t["seqs"], reverse=True): load[load.index(min(load))] += L
