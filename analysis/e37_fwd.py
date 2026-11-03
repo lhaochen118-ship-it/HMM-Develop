@@ -27,7 +27,7 @@ def main():
     ep = TKD.load(dump, ds, desc); q = ep.q; M = ep.m.astype(np.float32)[z["kidx"]]; assert len(q) == len(z["top"])
     tl = time.time() - t0
     R = CF.fwd_null(zz, b, q, M, c, stride="1x", horizon=20.0, presence=True, start_h=(None, "full"), ds=ds)
-    CF.save(of, R)
+    CF.save(of, R); open(of + ".done", "w").write("ok")                # complete-file marker for e37_eval.py --wait
     nf = R["n_frames"]; dt = time.time() - t0
     import resource, cms_torch as CT
     dev = CT.device() or "numpy"; gm = ""

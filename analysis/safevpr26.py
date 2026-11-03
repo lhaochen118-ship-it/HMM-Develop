@@ -11,7 +11,10 @@ Stage A (this script, CPU or GPU), per query frame t of every query traversal:
 Output: results/safevpr26_<ds>_<desc>.npz: per query frame cand (map row, -1 if no window), s, d (cosine score), q_rec.
 Stage B (calibration with labels: Mondrian Learn-Then-Test, B = 5 quantile bins of s, delta = 0.05, Bonferroni per bin, Clopper-Pearson;
 metrics FDR of accepted / TPR / validity) and our rules on the same frames: safevpr26_eval.py.
-Usage: safevpr26.py <dump> <img_root> <ds> <desc> <bundle_root> [--T 10]"""
+Usage: safevpr26.py <dump> <img_root> <ds> <desc> <bundle_root> [--T 10]
+Entry 37: --patch-dir D reads precomputed patch tokens D/patch_<ds>_<trav>.npy (the St Lucia kernel computes them with the paper's
+ViT-L/14 at 224 x 224, automation/make_stlucia_kernel.py; no model is loaded then) and --tag t names the outputs
+results/safevpr26_<ds>_<desc>_<t>[_s<seed>].npz (both stage A modes)."""
 import sys, os, time
 import numpy as np
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -49,8 +52,33 @@ def mnn_ratio(Fq, Fc, r=0.9):
     return float((mutual & ratio_ok).mean())
 
 
+def _opt(k):
+    return sys.argv[sys.argv.index(k) + 1] if k in sys.argv else None
+
+
 def main():
     dump, img_root, ds, desc, broot = sys.argv[1:6]; T = int(sys.argv[sys.argv.index("--T") + 1]) if "--T" in sys.argv else 10
+    PD, TAG = _opt("--patch-dir"), _opt("--tag")
+    if PD:                                                             # precomputed patch tokens (ViT-L/14): no model here
+        import topk_dump as TKD
+        ep = TKD.load(dump, ds, desc); md = ep.m.astype(np.float32); recs = np.asarray(ep.q_rec).astype(str)
+        MPt = np.load(os.path.join(PD, f"patch_{ds}_{ep.ref}.npy")); t0 = time.time()
+        cand = np.full(len(recs), -1); s = np.full(len(recs), np.nan); dsc = np.full(len(recs), np.nan)
+        for r in dict.fromkeys(recs):
+            rows = np.flatnonzero(recs == r); c, d = match(ep.q[rows].astype(np.float32), md, T); cand[rows], dsc[rows] = c, d
+            QP = np.load(os.path.join(PD, f"patch_{ds}_{r}.npy")); assert len(QP) == len(rows); memo = {}; rho = np.full(len(rows), np.nan)
+            for i in range(T - 1, len(rows)):
+                if c[i] < 0: continue
+                vals = []
+                for k in range(T):
+                    if c[i] - k < 0: continue
+                    key = (i - k, c[i] - k)
+                    if key not in memo: memo[key] = mnn_ratio(QP[i - k], MPt[c[i] - k])
+                    vals.append(memo[key])
+                rho[i] = float(np.mean(vals)) if vals else np.nan
+            s[rows] = rho; print(f"{r}: {len(rows)} queries, {time.time() - t0:.0f}s", flush=True)
+        os.makedirs("results", exist_ok=True)
+        np.savez(os.path.join("results", f"safevpr26_{ds}_{desc}" + (f"_{TAG}" if TAG else "") + ".npz"), cand=cand, s=s, d=dsc, q_rec=recs); return
     import torch, vprlib as V, topk_dump as TKD
     from PIL import Image
     import torchvision.transforms as TT
@@ -102,9 +130,10 @@ def holes():
     verifier on the saved patch tokens -> results/safevpr26_<ds>_<desc>_s<seed>.npz (cand = FULL-map row)"""
     dump, ds, desc, navdir = sys.argv[2:6]; T = 10
     import glob, topk_dump as TKD
+    PD, TAG = _opt("--patch-dir") or "results", _opt("--tag")
     ep = TKD.load(dump, ds, desc); recs = np.asarray(ep.q_rec).astype(str)
-    MPt = np.load(os.path.join("results", f"patch_{ds}_{ep.ref}.npy"))
-    QPs = {r: np.load(os.path.join("results", f"patch_{ds}_{r}.npy")) for r in dict.fromkeys(recs)}
+    MPt = np.load(os.path.join(PD, f"patch_{ds}_{ep.ref}.npy"))
+    QPs = {r: np.load(os.path.join(PD, f"patch_{ds}_{r}.npy")) for r in dict.fromkeys(recs)}
     for nf in sorted(glob.glob(os.path.join(navdir, f"navcache_{ds}_{desc}_s*.npz"))):
         seed = int(nf.rsplit("_s", 1)[1][:-4]); z = np.load(nf, allow_pickle=True); kidx = z["kidx"]
         md = ep.m.astype(np.float32)[kidx]; cand = np.full(len(recs), -1); s = np.full(len(recs), np.nan)
@@ -120,7 +149,9 @@ def holes():
                     vals.append(memo[key])
                 s[rows[i]] = float(np.mean(vals)) if vals else np.nan
             cand[rows] = np.where(c >= 0, kidx[np.maximum(c, 0)], -1)
-        np.savez(os.path.join("results", f"safevpr26_{ds}_{desc}_s{seed}.npz"), cand=cand, s=s, q_rec=recs); print(f"seed {seed} done", flush=True)
+        os.makedirs("results", exist_ok=True)
+        np.savez(os.path.join("results", f"safevpr26_{ds}_{desc}" + (f"_{TAG}" if TAG else "") + f"_s{seed}.npz"), cand=cand, s=s, q_rec=recs)
+        print(f"seed {seed} done", flush=True)
 
 
 if __name__ == "__main__":
