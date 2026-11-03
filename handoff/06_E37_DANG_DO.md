@@ -4,6 +4,28 @@
 thái, quyết định thiết kế, số liệu thiết kế đã thấy và các bước còn lại, đủ để một phiên mới chạy tiếp mà không cần lịch sử chat.
 Đọc kèm: `paper/BAO_CAO_E36.pdf`, `RESEARCH_LOG.md` Entry 36, `paper/cms_theory.md` §4f.*
 
+## 00. Cập nhật phiên 2026-11-03 (đang chạy; đọc trước)
+
+- Token 7 acc đã cài (`~/.kaggle/tok_<acc>`), `automation/active_accounts.txt` = thứ tự §2. Đăng ký trước Entry 37 đã commit
+  (`RESEARCH_LOG.md` Entry 37) TRƯỚC mọi đánh giá.
+- **Kernel thăm dò `nhatlong1103/e37p-1`** (L4, 62 job thật của đợt 1, 46 song song): mọi job rc = 0, 17 phút. Dưới tải đầy:
+  ms/frame (GPU cho phép thử tuyến) CMU 34–47, Nordland 89, office 96, old town 87 (numpy 158), countryside 83, Boreas 83–87 (numpy
+  153), NCLT 103, Oxford 113; GPU nhanh hơn numpy 1.3× (CMU) – 1.8× (Boreas); **GPU và numpy trùng tuyệt đối** (3/3 file); bản gộp từ
+  kernel trùng bản numpy cục bộ (chỉ `tau` lệch 8e-9, BLAS). RAM đỉnh ≤ 3.1 GB/job, GPU ≤ 0.23 GB/job.
+- **Đánh giá gộp vào đợt 1** (`analysis/e37_eval.py`): mỗi run là một đơn vị đóng gói (mọi phần + job đánh giá trong cùng kernel);
+  job đánh giá chờ `.done` của các phần, gộp (`results/fwd/fwd_*.npz`), chạy `oc_curves --fams @E36,@E37 --cms-groups cond,loco --cst
+  --navgate --gate-rate --dump-frames` → `oc_*_e37_s*.json` + `frames_*_e37_s*.npz`. Bỏ được một vòng đẩy/kéo.
+- **Đợt 1 = 13 kernel L4 `e37w-1..13`** (`automation/e37_wave.py automation/e37_frames.json automation/e37_costs.json <groups> 13 --skip`,
+  2 146 job: 1 527 phần, 300 run đánh giá, 45 chuẩn bị Oxford, 274 N = 40; ~27 phút/kernel ước tính) trên 7 acc theo thứ tự (2/acc;
+  `caotienminh1` 1). 12 run CMU seed 0–1 đã có null tiến từ e37p-1 → đánh giá cục bộ (xong).
+- **St Lucia:** frame (10 m, 6 lượt) đã đăng `nhatlong1103/stlucia-vpr-frames`; kernel L4 `stl37-1` (`automation/make_stlucia_kernel.py`:
+  6 descriptor + patch DINOv2 ViT-L/14 từ model Kaggle `metaresearch/dinov2/pyTorch/large/1` + chuỗi E37 cho 6 × seed 0–4 + SafeVPR'26
+  holes/no-hole); bản thử `stlt-1` (400 frame/lượt) đạt mọi bước.
+- Theo dõi: một `central_monitor.py` (state ở scratchpad); nếu container mất: kéo đầu ra bằng
+  `KAGGLE_API_TOKEN=$(cat ~/.kaggle/tok_<acc>) kaggle kernels output <acc>/e37w-<k> -p <dir>` (acc theo thứ tự đẩy trong §2).
+- Code mới: `analysis/e37_eval.py`, `analysis/e37_audit.py` (H37b), `analysis/e37_safevpr.py`, `analysis/envrun.py`, `paper/build_e37_report.py`,
+  `automation/make_stlucia_kernel.py`, `automation/e37_costs.json`; `paper/cms_theory.md` §4g (Mệnh đề 19); `LITERATURE_GATE.md` Gate 16.
+
 ## 0. Việc được giao (user, sau vòng 10)
 
 1. Phẫu thuật tiến cả **bằng chứng hiện diện**, để CST-J thành bảo đảm thật.
