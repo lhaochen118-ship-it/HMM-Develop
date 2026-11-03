@@ -17,6 +17,7 @@ ACCOUNTS = [a for a in ACCOUNTS if a not in RESERVED] + [a for a in ACCOUNTS if 
 DSARG = ["--ds", sys.argv[sys.argv.index("--ds") + 1]] if "--ds" in sys.argv else []   # extra dataset sources for every kernel
 DSARG += ["--par", sys.argv[sys.argv.index("--par") + 1]] if "--par" in sys.argv else []   # parallel jobs per session
 DSARG += ["--models", sys.argv[sys.argv.index("--models") + 1]] if "--models" in sys.argv else []   # Kaggle model sources
+DSARG += ["--nodumps"] if "--nodumps" in sys.argv else []                 # do not mount the descriptor dumps (cache-only jobs)
 KSRC = sys.argv[sys.argv.index("--kernel-sources") + 1] if "--kernel-sources" in sys.argv else ""   # kernel outputs mounted as inputs (e.g. a dump kernel)
 L4 = "--l4" in sys.argv                                                   # 4x L4 sessions (competition grant)
 _val = {i + 1 for i, a in enumerate(sys.argv) if a in ("--ds", "--par", "--accounts", "--machine", "--models", "--kernel-sources")}  # positions of option values

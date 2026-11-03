@@ -25,13 +25,14 @@ _tok = os.path.expanduser(f"~/.kaggle/tok_{OWNER}")                     # per-ac
 if os.path.isfile(_tok): os.environ["KAGGLE_API_TOKEN"] = open(_tok).read().strip()
 DUMPS = []
 DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps", "nhatlong1103/vpr-dumps-4seasons", "nhatlong1103/boreas-vpr-dump"]
+if "--nodumps" in sys.argv: DUMP_DS = []          # jobs that only read rule caches (e.g. hsi_eval.py AUTO): mount only --ds datasets
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 L4 = "--l4" in sys.argv; GPU = "--gpu" in sys.argv or L4 or "--t4" in sys.argv
 EXTRA_DS = sys.argv[sys.argv.index("--ds") + 1].split(",") if "--ds" in sys.argv else []   # extra dataset sources (images, weights)
 PAR = int(sys.argv[sys.argv.index("--par") + 1]) if "--par" in sys.argv else 0   # parallel jobs per session (0: auto from CPUs / GPUs)
 MODELS = sys.argv[sys.argv.index("--models") + 1].split(",") if "--models" in sys.argv else []   # Kaggle model sources (e.g. qwen-lm/qwen2.5-vl/transformers/7b-instruct/2)
 T4X2 = "--t4" in sys.argv   # explicit 2x T4 (internet allowed) instead of the default GPU
-argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--t4", "--acc2", "--acc3", "--owner", "--ds", "--par", "--models") and sys.argv[i - 1] not in ("--owner", "--ds", "--par", "--models")]
+argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--t4", "--acc2", "--acc3", "--owner", "--ds", "--par", "--models", "--nodumps") and sys.argv[i - 1] not in ("--owner", "--ds", "--par", "--models")]
 kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]
 dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
 
