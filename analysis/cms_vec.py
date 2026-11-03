@@ -91,7 +91,11 @@ def _lookup(TK, TS, FB, CNT, keys, tol=4.0):
 
 def _route_cost(S, J, hv, dl, ow, look, trim=0.75, delta=8.0, wapp=2.0, cmask=None):
     """route cost of hypotheses J (B, Kh) [valid mask hv] for both directions; returns cost (B,), winner (B,) map row,
-    winner anchors (B, n_w, d). cmask(q) -> bool (removed region): anchor traces entering it leave the chunk."""
+    winner anchors (B, n_w, d). cmask(q) -> bool (removed region): anchor traces entering it leave the chunk.
+    Entry 37: runs on the GPU (cms_torch.route_cost, float64, same arithmetic) when one is visible and the mask has a .torch method."""
+    import cms_torch as CT
+    if CT.device() is not None and (cmask is None or hasattr(cmask, "torch")):
+        return CT.route_cost(S, J, hv, dl, ow, look, trim, delta, wapp, cmask)
     P = S["P"]; cid, arc = S["cid"], S["arc"]; Bn, Kh = J.shape; n_w = dl.shape[1]; dd = P.shape[1]
     c, a0 = cid[J], arc[J]; lo, hi = S["lo_arc"][J], S["hi_arc"][J]
     pc = ow - ow.mean(1, keepdims=True)                                 # (B, n_w, d)
@@ -235,7 +239,8 @@ def cms_stats_vec(z, tkL, K=100, rho=None, ds=None, N=20, delta=8.0, trim=0.75, 
             out["cost"][t], out["j"][t] = C, jr
             memb = in_corridor(np.broadcast_to(S["P"][None], (len(t),) + S["P"].shape), A, rho)   # every map row vs the corridor
             val = ~memb[np.arange(len(t))[:, None, None], IL[W]]       # unmasked long-list entries of the window frames (same test)
-            removed = lambda q, A=A: in_corridor(q, A, rho)
+            import cms_torch as CT
+            removed = CT.CorridorMask(A, rho)                          # numpy: in_corridor(q, A, rho); GPU: the same distance test
             cf_from_mask(S, t, W, dl, ow, val, removed, K, out, None, trim, delta, wapp)
             if hook is not None: hook(S, t, W, dl, ow, A, anchor_dist2(S, W, A), out)
     out["rho"] = rho; out["KL"] = IL.shape[1]

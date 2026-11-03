@@ -58,6 +58,7 @@ FAM_PRESETS = {"@E28": "CPC-SC+CS(alpha=0.01),Xu21,Claxton24,TAO26,SafeVPR,certi
                "@E32S": "CPC-SC-T0.5+SH,CMS-CPC/H+SH+G,CMS-CPCW/H+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPC/H+SH+G(a=0.01),CMS-CPCW/H+SH(a=0.01),CMS-CPC/H+SH+G(a=0.01)+NGRr,CMS-CPCW/H+SH(a=0.01)+NGRr",   # Entry 32 sensitivity
                "@E34": "CPC-SC-T0.5+SH,CMS-CPC/H+SH+G,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPCW/H+SH[both]+NGRr,CMS-CPC/H+CST+G,CMS-CPC/H+CST+G+NGRr,CMS-CPCW/H+CST+NGRr,CMS-CPC/H+CST+G[both]+NGRr,CMS-CPCW/H+CST[both]+NGRr,CMS-CPC/H+CST2+G+NGRr,CMS-CPCW/H+CST2+NGRr,CMS-CPC/H+CSTt+G+NGRr,CMS-CPCW/H+CSTt+G+NGRr",   # Entry 34 counterfactual shape test
                "@E36": "CMS-CPC/H+CSTJs+G+NGRr,CMS-CPC/H+SH+CSTJs+G+NGRr,CMS-CPC/H+SH+CSTJs+G,CMS-CPC/H+SH+CSTJ+G,CMS-CPC/H+SH+CSTF+G,CMS-CPC/H+CSTJ+G+NGRr,CMS-CPC/H+SH+CSTJ+G+NGRr,CMS-CPC/H+CSTJ+G[both]+NGRr,CMS-CPC/H+CSTJ+G,CPC-SC-T0.5+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPC/H+CST+G+NGRr,CMS-CPC/H+SH+CST+G+NGRr,CMS-CPC/H+CSTF+G+NGRr,CMS-CPCW/H+CSTF+NGRr,CMS-CPC/H+SH+CSTF+G+NGRr,CMS-CPC/H+CST+CSTF+G+NGRr,CMS-CPCW/H+CST+CSTF+NGRr,CMS-CPC/H+CSTF+G,CMS-CPC/H+SH+G,CMS-CPC/H+CSTF+G[both]+NGRr,CMS-CPCW/H+CSTF[both]+NGRr",   # Entry 36 forward surgery
+               "@E37": "CMS-CPC/H+CSTJS+G+NGRr,CMS-CPC/H+SH+CSTJS+G+NGRr,CMS-CPC/H+CSTJS+G,CMS-CPC/H+SH+CSTJS+G,CMS-CPC/H+CSTJS0+G+NGRr,CMS-CPC/H+CSTJSL+G+NGRr,CMS-CPC/H+CSTJF0+G+NGRr,CMS-CPC/H+CSTJS+G[both]+NGRr,CMS-CPC/H+SH+CSTJS+G[both]+NGRr,CMS-CPC/H+CSTJs+G+NGRr,CMS-CPC/H+SH+CSTJs+G+NGRr,CMS-CPC/H+CSTJ+G+NGRr,CMS-CPC/H+CSTF+G+NGRr,CMS-CPC/H+SH+G+NGRr,CMS-CPC/H+SH+CST+G+NGRr,CMS-CPCW/H+SH+NGRr,CPC-SC-T0.5+SH,CMS-CPC/H+SH+G",   # Entry 37 forward presence surgery
                "@E35": "CPC-SC-T0.5+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPC/H+CST+G+NGRr,CMS-CPC/H+SH+CST+G+NGRr,CMS-CPCW/H+SH+CST+NGRr,CMS-CPC/H+SH+CST+G,CMS-CPC/H+SH+G",   # Entry 35 SH AND CST
                "@E33B": "Xu21,Claxton24,TAO26,max-sim,SU25,SUE24,SU25-seg,SUE24-seg,Carson23,CPC-SC+CS,CPC-SC-T0.5+SH,CMS-CPC/H+SH+G,CMS-CPCW/H+SH,CMS-CPC/H+SH+G+NGRr,CMS-CPCW/H+SH+NGRr,CMS-CPCW/H+SH[both]+NGRr,CMS-CPC/H+SH+G(a=0.01)+NGRr,CMS-CPC/H+SHcf+G,CMS-CPCW/H+SHcf,CMS-CPC/H+SHcf+G+NGRr,CMS-CPCW/H+SHcf+NGRr,CMS-CPC/H+SHcf+G(a=0.01)+NGRr,CMS-CPCW/H+SHcf(a=0.01)+NGRr",   # Entry 33 competitors
                "@RHO": "CMS-T,CMS-T(a=0.01),CMS-CPC/H+SH,CMS-CPC/H+SH(a=0.01),CMS-T/H+SH,CMS-T/H+SH(a=0.01),CMS-W/H+SH,CMS-W/H+SH(a=0.01),CMS-U/H+SH"}   # Entry 28 family lists (short job args)
@@ -236,7 +237,8 @@ def families(z, b):
         ff = os.path.join(FWDD, f"fwd_{b['ds_tag']}_s{int(z['seed'])}.npz") if FWDD else None
         if ff and os.path.exists(ff):                            # Entry 36: forward counterfactual null of the ghost track (cms_fwd.py)
             import cms_fwd as CF
-            rc_ = CF.load_recs(ff)[0]; stc["_fwd"] = (CF.fwd_segments(rc_, b["H"], 0), CF.fwd_segments(rc_, b["H"], 1))
+            rc_, fq_ = CF.load_recs(ff); stc["_fwd"] = (CF.fwd_segments(rc_, b["H"], 0), CF.fwd_segments(rc_, b["H"], 1))
+            stc["_fwdsh"] = np.atleast_1d(fq_["start_h"]) if "start_h" in fq_.files else np.array([3.0])   # Entry 37: virtual-start horizons
             if all(len(r_) > 6 and (r_[6] >= 0).all() for r_ in rc_[:5]): stc["_fwdrecs"] = rc_     # ghost places saved -> CST-J
         for al in CMS_ALPHAS:
             sfx = "" if al == 0.05 else f"(a={al:g})"
@@ -245,7 +247,7 @@ def families(z, b):
                     CMS.GROUP = "cond"; F.update({k + sfx: v for k, v in CMS.rules_online(z, b, stc, alpha=al).items()}); continue
                 CMS.GROUP = grp; Fc, _ = CMS.rules(z, b, stc, alpha=al)
                 F.update({k + ("" if grp == "cond" else f"[{grp}]") + sfx: v for k, v in Fc.items()})
-            for n0 in ("CMS-CPCW/H+SH", "CMS-CPCW/H+SH+G", "CMS-CPC/H+SH", "CMS-CPC/H+SH+G", "CMS-CPCW/H+CST2", "CMS-CPC/H+CST2+G", "CMS-CPC/H+CSTt+G", "CMS-CPCW/H+CSTt+G", "CMS-CPC/H+CST+G", "CMS-CPCW/H+CST", "CMS-CPC/H+CSTF+G", "CMS-CPCW/H+CSTF", "CMS-CPC/H+CSTJ+G"):   # [both]: report only if the session-calibrated
+            for n0 in ("CMS-CPCW/H+SH", "CMS-CPCW/H+SH+G", "CMS-CPC/H+SH", "CMS-CPC/H+SH+G", "CMS-CPCW/H+CST2", "CMS-CPC/H+CST2+G", "CMS-CPC/H+CSTt+G", "CMS-CPCW/H+CSTt+G", "CMS-CPC/H+CST+G", "CMS-CPCW/H+CST", "CMS-CPC/H+CSTF+G", "CMS-CPCW/H+CSTF", "CMS-CPC/H+CSTJ+G", "CMS-CPC/H+CSTJS+G", "CMS-CPC/H+SH+CSTJS+G"):   # [both]: report only if the session-calibrated
                 a_, b_ = F.get(n0 + sfx), F.get(n0 + "[loco]" + sfx)                         # AND the other-session-calibrated rule report
                 if a_ and b_ and a_[3] is not None and b_[3] is not None:
                     F[n0 + "[both]" + sfx] = (np.minimum(a_[0], b_[0]), a_[1], 0.0, a_[3] & b_[3])
@@ -285,7 +287,8 @@ def families(z, b):
                      "CMS-CPC/H+CST+G", "CMS-CPCW/H+CST", "CMS-CPC/H+CST2+G", "CMS-CPCW/H+CST2",
                      "CMS-CPC/H+CSTt+G", "CMS-CPCW/H+CSTt+G", "CMS-CPC/H+SH+CST+G", "CMS-CPCW/H+SH+CST",
                      "CMS-CPC/H+CSTF+G", "CMS-CPCW/H+CSTF", "CMS-CPC/H+SH+CSTF+G", "CMS-CPC/H+CST+CSTF+G", "CMS-CPCW/H+CST+CSTF",
-                     "CMS-CPC/H+CSTJ+G", "CMS-CPC/H+SH+CSTJ+G", "CMS-CPC/H+CSTJs+G", "CMS-CPC/H+SH+CSTJs+G") + JN
+                     "CMS-CPC/H+CSTJ+G", "CMS-CPC/H+SH+CSTJ+G", "CMS-CPC/H+CSTJs+G", "CMS-CPC/H+SH+CSTJs+G",
+                     "CMS-CPC/H+CSTJS+G", "CMS-CPC/H+SH+CSTJS+G", "CMS-CPC/H+CSTJS0+G", "CMS-CPC/H+CSTJSL+G", "CMS-CPC/H+CSTJF0+G") + JN
             bases = [n for n in mains + ("CMS-T/H+SH", "CPC-SC-T0.5+SH", "CPC-SC+CS") for n in ([n] + [n + f"(a={al:g})" for al in CMS_ALPHAS if al != 0.05])]
             bases += [n + tg + sf for n in mains for tg in ("[online]", "[both]", "[loco]") for sf in [""] + [f"(a={al:g})" for al in CMS_ALPHAS if al != 0.05]]
             for n0 in bases:

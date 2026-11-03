@@ -228,6 +228,35 @@ def chain_parts(z, b, st, w_route=None, alpha=0.05, use=("z", "cost")):
     return llq, llc, kap, nseg
 
 
+def chain_xform(z, b, st, w_route=None, use=("z", "cost")):
+    """Entry 37: the presence transform of chain_parts as a FUNCTION: ll(frames, {"cost": c, "z": z}) maps NEW statistics of these
+    frames (e.g. the system's statistics re-run on a virtual run's altered map) to the log-LR the system would compute -- rank in the
+    frame's calibration pool, Beta-EM exponent of the group, e-value power -- exactly as llq of chain_parts (check: ll(m, real) == llq)"""
+    H, seqs = b["H"], b["seqs"]; n = len(z["cond"]); w_route = SENS.get("wr", 0.5) if w_route is None else w_route
+    gid = np.full(n, -1); parts = []
+    for gi, (sqs, cqs) in enumerate(cal_groups(z, seqs)):
+        m = np.concatenate(sqs); mc = np.concatenate(cqs); comp = []
+        for key, low in (("cost", True), ("z", False)):
+            if key not in use: continue
+            real, cf = st[key][m], st[key + "_cf"][mc]
+            pq = np.clip(rank_p(cf, real, low), 1e-6, 1); a, _ = beta_em(pq); pw = w_route if key == "cost" else 1.0
+            fin = np.isfinite(cf); comp.append((key, low, np.sort(cf[fin] if low else -cf[fin]), a, pw))
+        gid[m] = gi; parts.append(comp)
+
+    def ll(frames, vals):
+        frames = np.asarray(frames); out = np.zeros(len(frames)); g = gid[frames]
+        for gi in np.unique(g):
+            if gi < 0: continue
+            sl = g == gi; es = []
+            for key, low, srt, a, pw in parts[gi]:
+                x = np.asarray(vals[key], float)[sl]; v = x if low else -x
+                p = np.clip((1 + np.searchsorted(srt, v, side="right")) / (1 + len(srt)), 1e-6, 1)
+                es.append((a * p ** (a - 1)) ** pw)
+            out[sl] = np.log(np.mean(es, 0))
+        return out
+    return ll
+
+
 def windowed_parts(z, b, st, alpha=0.05, W=None, w_route=None):
     """CMS-W: FINITE-MEMORY presence evidence -- the CMS presence chain restarted at odds 1 at t - W + 1 (W = H), so every
     report (not only an onset) depends on the last W frames: Theorem 6 covers every reported frame, any dependence.
@@ -435,6 +464,39 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
                 okJn = np.where(np.isnan(r_c_keep), nanok, r_c_keep <= epsJn)
                 F["CMS-CPC/H+CSTJs+G"] = (np.where(okJn & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & okJn & agree)
                 F["CMS-CPC/H+SH+CSTJs+G"] = (np.where(sh_c & okJn & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & okJn & agree)
+                if len(recs[0]) > 9 and any(r_[5] == 2 for r_ in recs):
+                    # Entry 37 CST-JF: the joint simulation with the system's PRESENCE evidence run forward on every virtual run's altered
+                    # map (cms_fwd.FwdStats: route cost / winner / z of the frames after the exit with windows on the same map; virtual
+                    # starts: windows truncated at the start), mapped to log-LR by the system's own transform (chain_xform), the gate on
+                    # the forward route winner, and virtual starts over the exits' full horizon (mode 2: the exact null of a sequence that
+                    # starts inside a hole). Frames within that horizon of their sequence start must pass the start null too; frames whose
+                    # shape window is < 1 excl pass iff the simulated starts allow it (as CST-J*). Ablations: JF0 (short windows never
+                    # certified), JF1 (forward presence, Entry 36 starts of 3 excl), JL (Entry 36 presence = full surgery, full starts).
+                    if GROUP != "loco":
+                        xf = chain_xform(z, b, st); cut = np.cumsum([len(r_[1]) for r_ in recs])[:-1]
+                        llF = np.split(xf(np.concatenate([r_[1] for r_ in recs]), {"cost": np.concatenate([r_[7] for r_ in recs]),
+                                                                                    "z": np.concatenate([r_[8] for r_ in recs])}), cut)
+                        jF = [r_[9] for r_ in recs]; llL = [llc_c[r_[1]] for r_ in recs]; jL = [jref[r_[1]] for r_ in recs]
+                        jc_ = lambda ll_, jr_, md, nn=False: CF.joint_crit(recs, b["H"], lo, kap, Hreal, Pl, excl, ll_, jr_, P_TR, gr, md, nn)
+                        st["_jointF"] = dict(F0=jc_(llF, jF, 0), F2=jc_(llF, jF, 2), L0=jc_(llL, jL, 0), L2=jc_(llL, jL, 2))
+                    JF = st["_jointF"]; ef = lambda k: CF.eps_fwd(z, b, JF[k], aF, fmode, groups=grp) if JF[k] else np.full(len(lo), -np.inf)
+                    near2 = np.zeros(len(lo), bool); Ds2 = float(st.get("_fwdsh", [3.0, 20.0])[-1]) * excl
+                    for sq in seqs:
+                        cu = np.r_[0, np.cumsum(np.linalg.norm(np.diff(oq_[sq], axis=0), axis=1))]; near2[sq] = cu <= Ds2
+                    nanr = np.isnan(r_c_keep); posf = np.zeros(len(lo), int)
+                    for sq in seqs: posf[sq] = np.arange(len(sq)) // b["H"]       # position since the sequence start (segments of H)
+                    exF, sF, exL = ef("F0"), ef("F2"), ef("L0")
+                    def ok_s(ex_, segs_, kap_nan):
+                        # CST-JS: exits min over position bins; starts per position since the sequence start; short windows by kappa'
+                        es_, ks_ = CF.eps_start_pos(z, b, segs_, aF, grp, posf)
+                        e_ = np.where(near2, np.minimum(es_, ex_), ex_)
+                        return np.where(nanr, (lo > ks_) if kap_nan else False, r_c_keep <= e_), es_, ks_
+                    okJS, esS, ksS = ok_s(exF, JF["F2"], True); okJS0 = ok_s(exF, JF["F2"], False)[0]; okJSL = ok_s(exL, JF["L2"], True)[0]
+                    okJF0 = np.where(nanr, False, r_c_keep <= np.where(near2, np.minimum(sF, exF), exF))   # starts: min over bins, no short windows
+                    st["_epsJS"] = (exF, esS, ksS, near2)
+                    for tg, okx in (("CSTJS", okJS), ("CSTJS0", okJS0), ("CSTJSL", okJSL), ("CSTJF0", okJF0)):
+                        F[f"CMS-CPC/H+{tg}+G"] = (np.where(okx & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & okx & agree)
+                    F["CMS-CPC/H+SH+CSTJS+G"] = (np.where(sh_c & okJS & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & okJS & agree)
         F["CMS-CPCW/H+CST2"] = (np.where(ok2, wq2 - kW2, -np.inf), xc, 0.0, CG.hyst_ok(wq2 > kW2, lo2 > 0, ok2, seqs))
     onWU = (sc_t > -kT2) | (wq2 > kW2)
     F["CMS-WU/H+SH"] = (np.where(sh_c, np.maximum(sc_t + kT2, wq2 - kW2), -np.inf), xc, 0.0, onWU & sh_c)

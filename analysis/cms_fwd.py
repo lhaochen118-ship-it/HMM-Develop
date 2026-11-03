@@ -84,6 +84,108 @@ class Emission:
         return (X - smax[None, :]) / (self.tau * sd[None, :])
 
 
+class FwdStats:
+    """Entry 37: the system's PRESENCE statistics on an altered map -- route cost C and winner j of the TAO route test over the last
+    N frames and the distinctiveness z = (s1 - s_far) / std of cms_exact / cms_vec -- with the hypotheses (top-K of the frame) and the
+    look-up tables of every window frame taken on the SAME altered map (first K remaining places of the full ranking, computed from
+    the full similarity row), and anchor traces leaving the route chunk where they enter the removed region (the convention of the
+    exact full surgery). With nothing removed it reproduces the real statistics (check: cms_fwd.py --check-presence)."""
+
+    def __init__(self, z, ds, K=100, N=20, trim=0.75, delta=8.0, wapp=2.0):
+        import cms_vec as CV
+        self.CV = CV
+        dummy = dict(idx=np.zeros((1, 1), np.int64), sim=np.zeros((1, 1), np.float32), std=np.ones(1, np.float32))
+        self.S = CV.setup(z, dummy, ds=ds); self.K, self.N, self.kw = K, N, (trim, delta, wapp)
+
+    def tables(self, X):
+        """X (E, n) similarities with -inf on removed places -> top-K idx (E, K), sims (E, K) sorted descending (-inf padded)"""
+        K = min(self.K, X.shape[1])
+        I = np.argpartition(-X, K - 1, axis=1)[:, :K]; V = np.take_along_axis(X, I, 1)
+        o = np.argsort(-V, 1, kind="stable")
+        return np.take_along_axis(I, o, 1).astype(np.int32), np.take_along_axis(V, o, 1).astype(np.float32)
+
+    def stats(self, J, V, TI, TV, dl, ow, sd, removed=None):
+        """J, V (B, K) top-K of the current frame on each run's map; TI, TV (B, n_w, K) tables of the window frames (current first)
+        on the same maps; dl (B, n_w) path lags; ow (B, n_w, d) odometry; sd (B,) row std of the full map row; removed(q) -> bool
+        (B, ...) (None: nothing removed). Returns cost (B,), winner j (B,) (-1 if no hypothesis), z (B,)"""
+        S, CV = self.S, self.CV; P = S["P"]; excl = S["excl"]; B = len(J); bi = np.arange(B)
+        hv = np.isfinite(V); Jc = np.where(hv, J, 0); cnt = hv.sum(1)
+        far = (np.linalg.norm(P[Jc] - P[Jc[:, :1]], axis=-1) > excl) & hv
+        sfar = np.where(far.any(1), np.where(far, V, -np.inf).max(1), V[bi, np.maximum(cnt - 1, 0)])
+        zz = np.where(cnt > 0, (V[:, 0].astype(np.float64) - sfar) / sd, -np.inf)
+        cost, jw = np.full(B, np.inf), np.full(B, -1)
+        if dl.shape[1] >= 3:
+            okp = np.isfinite(TV)
+            ks = np.where(okp, S["key_all"][np.where(okp, TI, 0)], np.inf); o = np.argsort(ks, -1, kind="stable")
+            TK = np.take_along_axis(ks, o, -1); TS = np.take_along_axis(np.where(okp, TV, -np.inf), o, -1)
+            CNT = okp.sum(-1); FB = np.where(CNT > 0, np.where(okp, TV, np.inf).min(-1), -1.0)
+            C, j_, _ = CV._route_cost(S, Jc, hv, dl, ow, (TK, TS, FB, CNT), *self.kw, cmask=removed)
+            cost = np.where(cnt > 0, C, np.inf); jw = np.where((cnt > 0) & np.isfinite(C), j_, -1)
+        return cost, jw, zz
+
+    def run_stats(self, Sq, sd, cum, o, keep, lo, lags, rem, B=None):
+        """presence statistics of every lag frame of ONE virtual run (local frame indices of its sequence): tables of the frames
+        max(lo, first lag - N + 1) .. last lag on the run's altered map (keep), windows truncated at lo (exits: 0, starts: the
+        start frame), anchor traces tested against the run's removed region rem. Returns cost, j, z per lag."""
+        import cms_torch as CT
+        B = B or (512 if CT.device() == "cuda" else 128)                 # GPU: larger batches
+        N = self.N; f0 = max(lo, int(lags.min()) - N + 1); f1 = int(lags.max())
+        TI, TV = self.tables(np.where(keep[None, :], Sq[f0:f1 + 1], -np.inf))
+        n = len(lags); C = np.full(n, np.inf); J = np.full(n, -1); Z = np.full(n, -np.inf)
+        nw = np.array([i - max(lo, i - N + 1) + 1 for i in lags])
+        for n_w in np.unique(nw):
+            sel = np.flatnonzero(nw == n_w)
+            for a in range(0, len(sel), B):
+                ss = sel[a:a + B]; ii = lags[ss]; W_ = ii[:, None] - np.arange(n_w)[None, :]
+                C[ss], J[ss], Z[ss] = self.stats(TI[ii - f0], TV[ii - f0], TI[W_ - f0], TV[W_ - f0], cum[ii][:, None] - cum[W_], o[W_],
+                                                 sd[ii], removed=rem)
+        return C, J, Z
+
+
+class HoleMask:
+    """removed region of a virtual run for anchor-trace points q (..., d): within rho of the believed path after the exit and closer
+    to it than to the path before (exits, Voronoi cut as for the map places), or within rho of the believed path (starts, Xm None).
+    __call__: numpy (KD-trees); torch(q): the same distance tests on the device (brute force over the path points, chunked)."""
+
+    def __init__(self, Xp, Xm, rho):
+        self.Xp = np.asarray(Xp, float); self.Xm = None if Xm is None or not len(Xm) else np.asarray(Xm, float); self.rho = float(rho)
+        self.tp = cKDTree(self.Xp); self.tm = cKDTree(self.Xm) if self.Xm is not None else None
+        self.blo, self.bhi = self.Xp.min(0) - rho - 1e-6, self.Xp.max(0) + rho + 1e-6   # bounding box: most points are far from the hole
+        self._t = None
+
+    def __call__(self, q):
+        pts = q.reshape(-1, q.shape[-1]); out = np.zeros(len(pts), bool)
+        cand = np.flatnonzero(((pts >= self.blo) & (pts <= self.bhi)).all(1))
+        if len(cand):
+            dp, _ = self.tp.query(pts[cand], distance_upper_bound=self.rho + 1e-9); ins = dp <= self.rho
+            if self.tm is not None and ins.any():
+                dm, _ = self.tm.query(pts[cand[ins]]); ins[ins] = dp[ins] < dm
+            out[cand] = ins
+        return out.reshape(q.shape[:-1])
+
+    def torch(self, q):
+        import torch
+        dev = q.device
+        if self._t is None or self._t[0].device != dev:
+            f = lambda x: None if x is None else torch.as_tensor(x, dtype=torch.float64, device=dev)
+            self._t = (f(self.Xp), f(self.Xm), f(self.blo), f(self.bhi))
+        Xp, Xm, blo, bhi = self._t
+        pts = q.reshape(-1, q.shape[-1]); out = torch.zeros(pts.shape[0], dtype=torch.bool, device=dev)
+        cand = torch.nonzero(((pts >= blo) & (pts <= bhi)).all(1)).flatten()
+        mind = lambda P, X: torch.cat([torch.sqrt(sum((P[a:a + 8192, None, d] - X[None, :, d]) ** 2 for d in range(P.shape[1])).min(1).values)
+                                       for a in range(0, P.shape[0], 8192)]) if P.shape[0] else P.new_zeros(0)
+        if cand.numel():
+            P = pts[cand]; dp = mind(P, Xp); ins = dp <= self.rho
+            if Xm is not None and bool(ins.any()):
+                ii = torch.nonzero(ins).flatten(); dm = mind(P[ii], Xm); ins[ii] = dp[ii] < dm
+            out[cand] = ins
+        return out.reshape(q.shape[:-1])
+
+
+def _hole_test(Xp, Xm, rho):
+    return HoleMask(Xp, Xm, rho)
+
+
 def chain_tau(M, MP, c):
     """emission scale of the place chain exactly as nav_demo: std of the map-null z_far of centred descriptors * sqrt(6) / pi"""
     import selfcal as SC
@@ -93,9 +195,14 @@ def chain_tau(M, MP, c):
     return float(zf.std() * np.sqrt(6) / np.pi)
 
 
-def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, tau=None, starts=True):
+def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, tau=None, starts=True, presence=False, start_h=None,
+             ds=None, N=20, K=100):
     """forward counterfactual ghost tracks of every virtual exit (one per `stride` frames) and their shape residuals.
-    q (n_q, d) query descriptors, M (n_map, d) reduced-map descriptors, c = sc_eval.CFG entry. Returns dict(recs, agree, tau)."""
+    q (n_q, d) query descriptors, M (n_map, d) reduced-map descriptors, c = sc_eval.CFG entry. Returns dict(recs, agree, tau).
+    Entry 37: presence=True also runs the system's PRESENCE statistics forward on each run's altered map (FwdStats: route cost,
+    winner, distinctiveness of every frame of the run, windows on the altered map; virtual starts: windows truncated at the start);
+    start_h = horizon of the virtual starts in excl of path (None: 3 excl as Entry 36; "full": the exits' horizon off_d + h excl,
+    hole = corridor rho around the whole believed path of the run)."""
     MP = np.asarray(z["MP"], float); MP2 = MP if MP.ndim > 1 else MP[:, None]; hz = list(z["hz"])
     Pl = MP2[:, hz] if MP2.shape[1] > 2 else MP2                        # planar positions (residuals, hole geometry)
     excl = float(z["excl"]); H = int(z["H"]); rho = c["off_d"] if rho is None else rho
@@ -108,9 +215,13 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
     o_all = z["o_q"]; o_all = (o_all[:, hz] if o_all.ndim > 1 and o_all.shape[1] > 2 else o_all).astype(float); o_all = o_all if o_all.ndim > 1 else o_all[:, None]
     est_c = np.asarray(z["est_c"]); xc = Pl[est_c]; Dpath = rho + horizon * excl
     tree = cKDTree(Pl); recs = []; n_ag = [0, 0]; t0 = time.time()
+    fs = FwdStats(z, ds, K=K, N=N) if presence else None
+    shs = list(start_h) if isinstance(start_h, (tuple, list)) else [start_h]   # one virtual-start family per horizon: modes 1, 2, ...
+    Dss = [3.0 * excl if h_ is None else (Dpath if h_ == "full" else float(h_) * excl) for h_ in shs]
     for si, idx in enumerate(b["seqs"]):
         L = len(idx); o = o_all[idx]; cum = np.r_[0, np.cumsum(np.linalg.norm(np.diff(o, axis=0), axis=1))]
         Sq = q[idx].astype(np.float32) @ M.T                            # (L, n_map) similarities (q may be kept in fp16: memory)
+        sdq = np.maximum(Sq.std(1, ddof=1), 1e-6) if presence else None  # row std of the full map row (as cms_exact.topk_long)
         # exact replica of the system's place chain on the unaltered map (beliefs at the exit frames)
         keep1 = np.ones((ch.n, 1), bool); bel = np.full((ch.n, 1), 1.0 / ch.n); exits = {}; rep = np.empty(L, int); last_ex = 0.0
         for i in range(L):
@@ -131,17 +242,24 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
                 hole = (dpost <= rho) & (dpost < dpre)
                 if hole.all() or not hole.any(): continue
                 Bv = np.where(hole, 0.0, exits[ie]); s_ = Bv.sum()
-                if s_ > 0: act.append(dict(ie=ie, keep=~hole, B=Bv / s_, last=post[-1], g={}, mode=0))
+                if s_ > 0:
+                    a0 = dict(ie=ie, keep=~hole, B=Bv / s_, last=post[-1], g={}, mode=0)
+                    if presence: a0.update(lo=0, rem=_hole_test(xc[idx[post]], xc[idx[pre]], rho))
+                    act.append(a0)
                 if starts:
                     # VIRTUAL START (truncated shape windows): the sequence starts at tau inside a hole -> the chain restarts from the
-                    # uniform belief on the map with the corridor of radius rho around the believed path of the next 3 excl removed
-                    # (no Voronoi cut: nothing before the start), residual windows truncated at tau (as at a real sequence start)
-                    ps_ = post[cum[post] <= cum[ie] + 3.0 * excl]
-                    if len(ps_) >= 3:
-                        dps, _ = cKDTree(xc[idx[np.r_[ie, ps_]]]).query(Pl); hs = dps <= rho
+                    # uniform belief on the map with the corridor of radius rho around the believed path of the next Ds removed
+                    # (Entry 36: Ds = 3 excl; Entry 37 "full": the exits' horizon), no Voronoi cut (nothing before the start), residual
+                    # windows truncated at tau (as at a real sequence start); Entry 37: presence windows truncated at tau too
+                    for md_, Ds in enumerate(Dss, 1):
+                        ps_ = post[cum[post] <= cum[ie] + Ds]
+                        if len(ps_) < 3: continue
+                        Xs_ = xc[idx[np.r_[ie, ps_]]]; dps, _ = cKDTree(Xs_).query(Pl); hs = dps <= rho
                         if not hs.all():
-                            Bs = np.where(hs, 0.0, 1.0); act.append(dict(ie=ie, keep=~hs, B=Bs / Bs.sum(), last=ps_[-1], g={ie: None}, mode=1))
-            live = [a for a in act if a["ie"] < i <= a["last"] or (a["mode"] == 1 and a["ie"] == i)]
+                            Bs = np.where(hs, 0.0, 1.0); a1 = dict(ie=ie, keep=~hs, B=Bs / Bs.sum(), last=ps_[-1], g={ie: None}, mode=md_)
+                            if presence: a1.update(lo=ie, rem=_hole_test(Xs_, None, rho))
+                            act.append(a1)
+            live = [a for a in act if a["ie"] < i <= a["last"] or (a["mode"] >= 1 and a["ie"] == i)]
             if live:
                 key_ = tuple(id(a) for a in live)
                 if key_ != cache_[0]:
@@ -163,7 +281,7 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
                 rr = np.full(len(lags), np.nan)
                 for q_, k in enumerate(lags):
                     w = window_points(o, cum, k, 3.0 * excl, 0.2 * excl)
-                    if a["mode"] == 1: w = w[w >= a["ie"]]                   # window truncated at the virtual start
+                    if a["mode"] >= 1: w = w[w >= a["ie"]]                   # window truncated at the virtual start
                     if len(w) < 3 or cum[k] - cum[w[0]] < excl: continue
                     if Pl.shape[1] == 1:
                         d = (track[w, 0] - track[w, 0].mean()) - (o[w, 0] - o[w, 0].mean()); rr[q_] = float(np.sqrt((d ** 2).mean()))
@@ -172,9 +290,14 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
                 rem = a["keep"]; nb_ = tree.query_ball_point(xc[idx[lags]], rho)
                 voff = np.array([not rem[np.asarray(l_, int)].any() for l_ in nb_])
                 gerr = np.linalg.norm(track[lags] - xc[idx[lags]], axis=1)   # ghost displacement from the belief
-                recs.append((idx[a["ie"]], idx[lags], rr, voff, gerr, a["mode"], np.array([a["g"][k] for k in lags], np.int32)))
+                rec = (idx[a["ie"]], idx[lags], rr, voff, gerr, a["mode"], np.array([a["g"][k] for k in lags], np.int32))
+                if presence:                                            # the system's presence statistics on this run's altered map
+                    C_, j_, z_ = fs.run_stats(Sq, sdq, cum, o, a["keep"], a["lo"], lags, a["rem"])
+                    rec = rec + (C_.astype(np.float32), z_.astype(np.float32), j_.astype(np.int32))
+                recs.append(rec)
         if verbose: print(f"  seq {si} {L} frames, {len(exits)} exits, {time.time() - t0:.0f}s", flush=True)
-    return dict(recs=recs, agree=n_ag[0] / max(n_ag[1], 1), tau=tau, rho=float(rho), stride=float(stride_path / excl) if stride_path else int(stride), horizon=horizon)
+    return dict(recs=recs, agree=n_ag[0] / max(n_ag[1], 1), tau=tau, rho=float(rho), stride=float(stride_path / excl) if stride_path else int(stride), horizon=horizon,
+                start_h=np.array([D_ / excl for D_ in Dss]), presence=bool(presence), n_frames=int(n_ag[1]))
 
 
 def fwd_segments(recs, H, mode=0):
@@ -207,7 +330,7 @@ def joint_segments(recs, H, lo, kap, llc, Hreal, jref, P, excl, p_tr=0.01, g_rad
     out = []
     for rc in recs:
         if rc[5] != mode: continue
-        ex, fr, rr, voff, _, _, gi = rc
+        ex, fr, rr, voff, _, _, gi = rc[:7]
         l, h = (float(lo[ex]), bool(Hreal[ex])) if mode == 0 else (None, False)
         cand = np.zeros(len(fr), bool)
         for q_, s_ in enumerate(fr):
@@ -223,6 +346,87 @@ def joint_segments(recs, H, lo, kap, llc, Hreal, jref, P, excl, p_tr=0.01, g_rad
             c = cand[k:k + H]; v = np.where(np.isfinite(rr[k:k + H]), rr[k:k + H], -np.inf)   # NaN window (< 1 excl): passes if nan_pass
             out.append((ex, fr[k:k + H], p_, float(v[c].min()) if c.any() else np.inf))
     return out
+
+
+def _pad(lst, fill, dt):
+    L = max(len(x) for x in lst); out = np.full((len(lst), L), fill, dt)
+    for i, x in enumerate(lst): out[i, :len(x)] = x
+    return out
+
+
+def joint_crit(recs, H, lo, kap, Hreal, P, excl, llv, jrv, p_tr=0.01, g_rad=1.0, mode=0, nan_pass=False):
+    """Entry 37: joint_segments vectorised over the virtual runs of one mode, with the presence log-LR llv[i] and the route winner
+    jrv[i] of record i given per lag (Entry 37 forward presence: the system's statistics re-run on the run's altered map, mapped to
+    log-LR by the system's own transform; or llc / j_cf of the full surgery at those frames, which reproduces joint_segments).
+    Same recursion: exits continue the REAL chain state at the exit (log-odds lo, hysteresis Hreal), starts begin at odds 1 (off);
+    onset when log-odds > kappa, persistence while > 0; report candidate iff chain on, gate |P[ghost] - P[winner]| <= g excl and a
+    finite residual (or any residual if nan_pass). Returns [(exit, frames, position, critical residual)] per virtual off-map segment."""
+    sel = [i for i, r in enumerate(recs) if r[5] == mode]
+    if not sel: return []
+    g = lambda l: np.log((1 / (1 + np.exp(-l)) * (1 - p_tr) + (1 - 1 / (1 + np.exp(-l))) * p_tr) /
+                         (1 - (1 / (1 + np.exp(-l)) * (1 - p_tr) + (1 - 1 / (1 + np.exp(-l))) * p_tr)))
+    FR = _pad([recs[i][1] for i in sel], -1, np.int64); valid = FR >= 0; FR0 = np.where(valid, FR, 0)
+    LL = _pad([np.asarray(llv[i], float) for i in sel], 0.0, float); RR = _pad([recs[i][2] for i in sel], np.nan, float)
+    GI = _pad([recs[i][6] for i in sel], -1, np.int64); JR = _pad([np.asarray(jrv[i]) for i in sel], -1, np.int64)
+    ex = np.array([recs[i][0] for i in sel]); KAP = np.asarray(kap, float)[FR0]
+    if mode == 0: l = np.asarray(lo, float)[ex].copy(); h = np.asarray(Hreal, bool)[ex].copy()
+    else: l = np.zeros(len(sel)); h = np.zeros(len(sel), bool)
+    cand = np.zeros(FR.shape, bool); candn = np.zeros(FR.shape, bool); LO = np.zeros(FR.shape)
+    for k in range(FR.shape[1]):
+        l = np.clip((0.0 if (k == 0 and mode != 0) else g(l)) + LL[:, k], -50, 50)   # a virtual start begins at odds 1
+        h = np.where(h, l > 0, l > KAP[:, k]); LO[:, k] = l
+        okg = (GI[:, k] >= 0) & (JR[:, k] >= 0)
+        ag = okg & (np.linalg.norm(P[np.where(okg, GI[:, k], 0)] - P[np.where(okg, JR[:, k], 0)], axis=1) <= excl * g_rad)
+        cand[:, k] = valid[:, k] & h & ag & (np.isfinite(RR[:, k]) | nan_pass)
+        candn[:, k] = valid[:, k] & h & ag & np.isnan(RR[:, k])
+    out = []
+    for r_, i in enumerate(sel):
+        fr, rr, voff = recs[i][1], recs[i][2], recs[i][3]; n_ = len(fr); a = 0
+        while a < n_ and not voff[a]: a += 1
+        e = a
+        while e < n_ and voff[e]: e += 1
+        for p_, k in enumerate(range(a, e - H + 1, H)):
+            c = cand[r_, k:k + H]; v = np.where(np.isfinite(rr[k:k + H]), rr[k:k + H], -np.inf); cn = candn[r_, k:k + H]
+            # (exit, frames, position, critical residual, Entry 37: max log-odds of the short-window report candidates, short-window flag)
+            out.append((recs[i][0], fr[k:k + H], p_, float(v[c].min()) if c.any() else np.inf,
+                        float(LO[r_, k:k + H][cn].max()) if cn.any() else -np.inf, bool(np.isnan(rr[k:k + H]).any())))
+    return out
+
+
+def eps_start_pos(z, b, segs, a, groups, pos_frame):
+    """Entry 37: thresholds of the VIRTUAL-START null per position since the sequence start (known without labels: frame index // H).
+    Per calibration group, positions are merged in order into bins of >= 2 / (a/2) segments; in a bin whose virtual segments contain
+    short-window frames (shape window < 1 excl) the budget is split: tolerance eps = floor(a/2 (n+1))-th smallest critical residual,
+    onset kappa' = ceil((1 - a/2)(n+1))-th smallest max log-odds of the short-window report candidates (report on a short window iff
+    log-odds > kappa'); other bins: eps at level a, no short-window frames. P(report in a virtual-start segment of the bin) <= a (union).
+    Frames beyond the last bin use the last (deepest) bin. Returns eps (n,), kappa' (n,) per frame."""
+    import cms as CMS
+    n = len(z["cond"]); eps = np.full(n, -np.inf); kap = np.full(n, np.inf)
+    if not segs: return eps, kap
+    ex = np.array([s_[0] for s_ in segs]); pos = np.array([s_[2] for s_ in segs]); cf = np.array([s_[3] for s_ in segs], float)
+    cn = np.array([s_[4] for s_ in segs], float); hn = np.array([s_[5] for s_ in segs], bool)
+    lo_q = lambda v, a_: (np.sort(v)[int(np.floor(a_ * (len(v) + 1))) - 1] if int(np.floor(a_ * (len(v) + 1))) >= 1 else -np.inf)
+    def hi_q(v, a_):
+        k = int(np.ceil((1 - a_) * (len(v) + 1))); return np.sort(v)[k - 1] if k <= len(v) else np.inf
+    nmin = int(np.ceil(2.0 / (a / 2)))
+    for sqs, cqs in (groups or CMS.cal_groups(z, b["seqs"])):
+        m = np.concatenate(sqs); s_ = np.isin(ex, np.concatenate(cqs)); P_, C_, N_, Hn = pos[s_], cf[s_], cn[s_], hn[s_]
+        if not len(P_): continue
+        bins, cur = [], []
+        for p_ in np.unique(P_):
+            cur.append(p_)
+            if (np.isin(P_, cur)).sum() >= nmin: bins.append(cur); cur = []
+        if cur:
+            if bins: bins[-1] = bins[-1] + cur
+            else: bins.append(cur)
+        th = []
+        for bp in bins:
+            sel = np.isin(P_, bp)
+            if Hn[sel].any(): th.append((max(bp), lo_q(C_[sel], a / 2), hi_q(N_[sel], a / 2)))
+            else: th.append((max(bp), lo_q(C_[sel], a), np.inf))
+        hi_p = np.array([t[0] for t in th]); bi = np.minimum(np.searchsorted(hi_p, pos_frame[m], side="left"), len(th) - 1)
+        eps[m] = np.array([t[1] for t in th])[bi]; kap[m] = np.array([t[2] for t in th])[bi]
+    return eps, kap
 
 
 def eps_fwd(z, b, segs, a, mode="pooled", groups=None):
@@ -265,7 +469,9 @@ def save(of, R, extra=None):
                         fr=cat(1).astype(np.int32), rr=cat(2).astype(np.float32), voff=cat(3).astype(bool), gerr=cat(4).astype(np.float32),
                         mode=np.array([r[5] for r in recs], np.int8), gidx=cat(6).astype(np.int32),
                         lens=np.array([len(r[1]) for r in recs], np.int32), agree=R["agree"], tau=R["tau"], rho=R["rho"], stride=R["stride"],
-                        horizon=R["horizon"], **(extra or {}))
+                        horizon=R["horizon"], start_h=np.atleast_1d(R.get("start_h", 3.0)), n_frames=R.get("n_frames", 0),
+                        **(dict(costf=cat(7).astype(np.float32), zf=cat(8).astype(np.float32), jf=cat(9).astype(np.int32))
+                           if recs and len(recs[0]) > 7 else {}), **(extra or {}))
 
 
 def load_recs(f):
@@ -273,10 +479,55 @@ def load_recs(f):
     sp_ = lambda k: np.split(q[k], cut)
     md = q["mode"] if "mode" in q.files else np.zeros(len(q["lens"]), np.int8)
     gi = sp_("gidx") if "gidx" in q.files else [np.full(len(x), -1, np.int32) for x in sp_("fr")]
-    return [(int(e[0]), f_, r_, v_, g_, int(m_), gg) for e, f_, r_, v_, g_, m_, gg in zip(sp_("ex"), sp_("fr"), sp_("rr"), sp_("voff"), sp_("gerr"), md, gi) if len(e)], q
+    base = [(int(e[0]), f_, r_, v_, g_, int(m_), gg) for e, f_, r_, v_, g_, m_, gg in zip(sp_("ex"), sp_("fr"), sp_("rr"), sp_("voff"), sp_("gerr"), md, gi)]
+    if "costf" in q.files:                                              # Entry 37: forward presence statistics per lag
+        base = [r + (c_, zz_, jj_) for r, c_, zz_, jj_ in zip(base, sp_("costf"), sp_("zf"), sp_("jf"))]
+    return [r for r in base if len(r[1])], q
+
+
+def merge(of, parts):
+    """merge the part files of one run (cms_fwd.py --part k/n): records concatenated, replica agreement weighted by frames"""
+    recs, agr, nf, R0 = [], 0.0, 0, None
+    for f in parts:
+        rc, q = load_recs(f); recs += rc; n_ = int(q["n_frames"]); agr += float(q["agree"]) * n_; nf += n_
+        R0 = R0 or {k: q[k] for k in ("tau", "rho", "stride", "horizon", "start_h")}
+    R = dict(recs=sorted(recs, key=lambda r: (r[5], r[0])), agree=agr / max(nf, 1), n_frames=nf, presence=len(recs[0]) > 7 if recs else False, **R0)
+    save(of, R); return R
+
+
+def part_seqs(seqs, k, n):
+    """sequences of part k of n: longest-first greedy balance of the frame counts (deterministic)"""
+    load = [0] * n; own = [[] for _ in range(n)]
+    for i in sorted(range(len(seqs)), key=lambda i: (-len(seqs[i]), i)):
+        j = int(np.argmin(load)); own[j].append(i); load[j] += len(seqs[i])
+    return [seqs[i] for i in sorted(own[k])]
+
+
+def check_presence(z, b, q, M, st, ds, nseq=None, N=20):
+    """FwdStats with nothing removed must reproduce the real cost / winner / z of the published exact cache (cms_exact)"""
+    fs = FwdStats(z, ds, N=N); o_all = fs.S["o"]; seqs = b["seqs"] if nseq is None else b["seqs"][:nseq]; t0 = time.time()
+    got = {k: [] for k in ("cost", "j", "z")}; ref = {k: [] for k in ("cost", "j", "z")}; nf = 0
+    for idx in seqs:
+        L = len(idx); o = o_all[idx]; cum = np.r_[0, np.cumsum(np.linalg.norm(np.diff(o, axis=0), axis=1))]
+        Sq = q[idx].astype(np.float32) @ M.T; sd = np.maximum(Sq.std(1, ddof=1), 1e-6); TI, TV = fs.tables(Sq)
+        for n_w in range(1, N + 1):
+            ii = [i for i in range(L) if len(range(max(0, i - N + 1), i + 1)) == n_w]
+            if not ii: continue
+            W_ = np.stack([np.arange(max(0, i - N + 1), i + 1)[::-1] for i in ii]); ii = np.array(ii)
+            C_, j_, z_ = fs.stats(TI[ii], TV[ii], TI[W_], TV[W_], cum[ii][:, None] - cum[W_], o[W_], sd[ii])
+            if n_w < 3: C_[:] = np.inf; j_[:] = -1                       # cms_vec: no route test on windows < 3 frames
+            for k, v in (("cost", C_), ("j", j_), ("z", z_)): got[k].append(v); ref[k].append(np.asarray(st[k])[idx[ii]])
+        nf += L
+    for k in got:
+        a, r_ = np.concatenate(got[k]).astype(float), np.concatenate(ref[k]).astype(float)
+        same = np.isclose(a, r_, rtol=1e-4, atol=1e-4) | (np.isinf(a) & np.isinf(r_))
+        print(f"{k:5s} equal {same.mean():.5f}  max|diff| {np.nanmax(np.abs(np.where(same, 0, a - r_))) if (~same).any() else 0:.3g}")
+    print(f"{nf} frames, {1e3 * (time.time() - t0) / max(nf, 1):.2f} ms/frame")
 
 
 def main():
+    if sys.argv[1] == "--merge":                                        # cms_fwd.py --merge <out.npz> <part files...>
+        R = merge(sys.argv[2], sys.argv[3:]); print(f"{sys.argv[2]}: {len(R['recs'])} runs from {len(sys.argv) - 3} parts"); return
     dump, zf, of = sys.argv[1:4]
     import nav_rules as NR, topk_dump as TKD
     from sc_eval import CFG
@@ -289,7 +540,14 @@ def main():
     hor = float(sys.argv[sys.argv.index("--horizon") + 1]) if "--horizon" in sys.argv else 6.0
     t0 = time.time(); ep = TKD.load(dump, ds, desc); q = ep.q; M = ep.m.astype(np.float32)[z["kidx"]]   # q stays fp16 (cast per sequence)
     assert len(q) == len(z["top"])
-    R = fwd_null(zz, b, q, M, c, stride=stride, horizon=hor, verbose="--verbose" in sys.argv)
+    if "--check-presence" in sys.argv:                                  # Entry 37: FwdStats on the unaltered map == the real statistics
+        st = dict(np.load(sys.argv[sys.argv.index("--check-presence") + 1])); check_presence(zz, b, q, M, st, ds); return
+    sh = sys.argv[sys.argv.index("--start-h") + 1] if "--start-h" in sys.argv else None   # e.g. "3,full": modes 1 (Entry 36) and 2
+    sh = None if sh is None else [None if h_ in ("3", "none") else (h_ if h_ == "full" else float(h_)) for h_ in sh.split(",")]
+    if "--part" in sys.argv:                                            # --part k/n: a balanced subset of the sequences (merge later)
+        k_, n_ = map(int, sys.argv[sys.argv.index("--part") + 1].split("/")); b = dict(b, seqs=part_seqs(b["seqs"], k_, n_))
+    R = fwd_null(zz, b, q, M, c, stride=stride, horizon=hor, verbose="--verbose" in sys.argv, presence="--presence" in sys.argv,
+                 start_h=sh, ds=ds)
     save(of, R)
     print(f"{of}: {len(R['recs'])} exits, replica agreement {R['agree']:.4f}, tau {R['tau']:.4f}, {time.time() - t0:.0f}s "
           f"({1e3 * (time.time() - t0) / len(q):.1f} ms/frame)", flush=True)

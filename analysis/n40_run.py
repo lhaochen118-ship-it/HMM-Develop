@@ -1,7 +1,8 @@
 """Entry 36 item 2: belief window N = 40 vs 20 on held-out seeds. For each (ds, desc, seed): exact top-300 from the dump, counterfactual
 statistics with N = 40 (cms_vec), then oc_curves (@E32S, group cond, alpha 0.05, +NGRr) with the N = 40 statistics and with the published
 N = 20 statistics -> results/oc_<tag>_<desc>_n40_s<seed>.json and ..._n20_s<seed>.json.
-Usage: n40_run.py <dump> <navcache_dir> <cms20_dir> <cms40_dir> <topk_dir> <tao_dir> --jobs jobs.txt --workers 3"""
+Usage: n40_run.py <dump> <navcache_dir> <cms20_dir> <cms40_dir> <topk_dir> <tao_dir> --jobs jobs.txt --workers 3
+       n40_run.py --one <dump> <navcache_dir> <cms20_dir> <cms40_dir> <topk_dir> <tao_dir> <ds> <desc> <seed>   (one run; Entry 37 kernels)"""
 import sys, os, time, subprocess
 import numpy as np
 from multiprocessing.pool import ThreadPool
@@ -34,6 +35,9 @@ def one(args):
 
 
 def main():
+    if sys.argv[1] == "--one":                                          # Entry 37 kernel job: one run, cms40 written to <cms40_dir>
+        a = sys.argv[2:11]; os.makedirs(a[3], exist_ok=True); os.makedirs("results", exist_ok=True); m = one(tuple(a)); print(m, flush=True)
+        sys.exit(1 if ("FAILED" in m or "rc 1" in m or "rc -" in m) else 0)
     fixed = sys.argv[1:7]; jf = sys.argv[sys.argv.index("--jobs") + 1]; nw = int(sys.argv[sys.argv.index("--workers") + 1])
     os.makedirs(fixed[3], exist_ok=True); os.makedirs("results", exist_ok=True)
     jobs = [tuple(fixed) + tuple(l.split()) for l in open(jf) if l.strip()]
