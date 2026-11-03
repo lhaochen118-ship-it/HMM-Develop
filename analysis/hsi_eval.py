@@ -13,17 +13,18 @@ import hsi
 
 # variant name -> online_v2 keyword arguments ('geo' = geometric self-verification only, 'anc' = causal anchors only)
 VARIANTS = {
-    "HSI": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", adaptive=True),
-    "HSI-fixtol": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint"),
-    "HSI-sess": dict(scope="session", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint"),
-    "HSI-nosc": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", train_all=True, calib="joint"),
-    "HSI-off": dict(scope="pooled", null_kind="off", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint"),
-    "HSI-regime": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True),
-    "HSI-v4": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend"),
-    "HSI-rigid": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="rigid", sc_lags=(5, 10, 20), train_all=True),
-    "HSI-nounl": dict(scope="pooled", null_kind="offwrong", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True),
-    "HSI-nogate": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="none", bridge="blend", sc_lags=(5, 10, 20), train_all=True),
-    "geo": None, "anc": None,
+    # main rule (frozen 2026-11-03 18:20 UTC on the seed-0 design runs, RESEARCH_LOG Entry 1)
+    "HSI": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5),
+    # ablations: one change each
+    "HSI-adapt": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, adaptive="max"),          # self-calibrated (loosen-only) consistency tolerances
+    "HSI-sess": dict(scope="session", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5),                           # calibration per session (Mondrian by condition) instead of pooled
+    "HSI-regime": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="regime", floor=0.5),                         # conditional calibration on the (c) regime only
+    "HSI-nosc": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", train_all=True, calib="joint", floor=0.5),                           # no short-track support for (c)
+    "HSI-nounl": dict(scope="pooled", null_kind="offwrong", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5),                          # null without never-verified frames
+    "HSI-nogate": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="none", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5),                         # no dead-reckoning contradiction gate for (c)
+    "HSI-rigid": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="rigid", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5),                          # one rigid bridge per gap instead of blended dead reckoning
+    "HSI-nofloor": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint"),                        # no MAP floor (conformal threshold only)
+    "geo": None, "anc": None,                       # geometric self-verification only (a|b); causal anchors only
 }
 
 
@@ -42,7 +43,7 @@ def parse_seeds(s):
 
 def main():
     a = sys.argv[1:]
-    vs = a[a.index("--variants") + 1].split(",") if "--variants" in a else ["HSI", "geo", "anc"]
+    vs = a[a.index("--variants") + 1].split(",") if "--variants" in a else list(VARIANTS)
     tag = ("_" + a[a.index("--tag") + 1]) if "--tag" in a else ""
     frames = "--frames" in a
     pos = [x for i, x in enumerate(a) if not x.startswith("--") and (i == 0 or a[i - 1] not in ("--variants", "--tag"))]

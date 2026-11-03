@@ -99,7 +99,7 @@ class Cfg:
         return T[k][frames] if T is not None and k in T else self.tol(k)
 
 
-def adaptive_tolerance(z, seqs, cfg, lags=(5, 10, 20, 40, 80), c=3.0, every=2000, min_n=500):
+def adaptive_tolerance(z, seqs, cfg, lags=(5, 10, 20, 40, 80), c=3.0, every=2000, min_n=500, mode="free"):
     """label-free, causal consistency tolerances: tol_k(t) = c x running median (deployment order, frames before t) of the
     lag-k residual |(MP[est_t] - MP[est_{t-k}]) - (o_t - o_{t-k})| of the place chain, clipped to [0.15 excl, 0.8 excl (1 + k/40)
     x 1.5]; the scalar default tau (1 + k/40) is used until min_n residuals exist. The median is dominated by frames where the
@@ -113,7 +113,9 @@ def adaptive_tolerance(z, seqs, cfg, lags=(5, 10, 20, 40, 80), c=3.0, every=2000
         ro = r[order]; tl = np.full(n, cfg.tol(k)); lo, hi = 0.15 * cfg.excl, 0.8 * cfg.excl * (1 + k / 40.0) * 1.5
         for c0 in range(every, n + every, every):
             pre = ro[:min(c0, n)]; pre = pre[np.isfinite(pre)]
-            if len(pre) >= min_n: tl[c0:c0 + every] = np.clip(c * np.median(pre), lo, hi)
+            if len(pre) >= min_n:
+                v = np.clip(c * np.median(pre), lo, hi)
+                tl[c0:c0 + every] = max(v, cfg.tol(k)) if mode == "max" else v          # 'max': only loosen the default
         out[k] = tl[rank]                                                   # back to frame index
     return out
 
@@ -435,7 +437,7 @@ def evaluate_mask(z, name, acc, seqs, cfg, nav=True):
 
 
 def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict", bridge="rigid", sc_lags=(), train_all=False,
-              calib="regime", adaptive=False, verbose=False, **kw):
+              calib="regime", adaptive=False, floor=-np.inf, verbose=False, **kw):
     """HSI v2 = geometric self-verification (a: trusted anchors, b: dead-reckoning agreement; trusted_geometry) OR
     (c) a hindsight-learned score above a conformal threshold calibrated on hindsight-null segments of the SAME regime
     (frames where a|b do not fire), held out from training. scope: 'pooled' (every session's held-out units) or 'session'.
@@ -443,7 +445,7 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     cfg = Cfg(z, name, **kw); t0 = time.time()
     MP, est, O = z["MP"], z["est_c"], z["o_q"]; n = len(est); cond = np.asarray(z["cond"]).astype(str); H = cfg.H
     seqs = deployment_seqs(z); order = np.concatenate(seqs)
-    if adaptive: cfg.tolarr = adaptive_tolerance(z, seqs, cfg)
+    if adaptive: cfg.tolarr = adaptive_tolerance(z, seqs, cfg, mode="max" if adaptive == "max" else "free")
     anc = causal_anchor(MP, est, O, seqs, cfg, n)
     ra, rb, hr, xdr, sdr, kap = trusted_geometry(z, seqs, cfg, anc)
     geo = ra | rb
@@ -452,7 +454,9 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     h = np.isfinite(xdr).all(1); dm[h] = tree.query(xdr[h])[0]; edr[h] = np.linalg.norm(MP[est[h]] - xdr[h], axis=1)
     X = np.c_[X, hr.astype(np.float32), np.log1p(edr), dm / cfg.off_d, np.log1p(sdr), geo.astype(np.float32)].astype(np.float32)
     names = names + ["has_ref", "e_ref", "dmap_ref", "sd_ref", "geo"]
-    ver = hindsight_verified(MP, est, O, seqs, cfg, n)
+    if adaptive == "max":                                       # hindsight labels keep the strict default tolerance
+        T_ = cfg.tolarr; cfg.tolarr = None; ver = hindsight_verified(MP, est, O, seqs, cfg, n); cfg.tolarr = T_
+    else: ver = hindsight_verified(MP, est, O, seqs, cfg, n)
     xt, sd, avail, kappa, s0, ncl = (hindsight_bridge if bridge == "blend" else hindsight)(z, seqs, cfg, ver)
     y, null_off, dmap = hindsight_labels(z, Cfg(z, name, null_kind="off", **kw), xt, sd)
     if null_kind in ("offwrong", "offwrong+unl"):
@@ -497,11 +501,12 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
         if clf is None: continue
         rs = [s for s, a, c in zip(segs, seg_av, seg_c) if a < T and (scope == "pooled" or c == cc)]
         if len(rs) >= cfg.min_seg:
-            ii = np.concatenate(rs); f = np.where(regime[ii], clf.predict_proba(X[ii])[:, 1], -np.inf); f[geo[ii]] = np.inf
+            ii = np.concatenate(rs); pp = clf.predict_proba(X[ii])[:, 1]
+            f = np.where(regime[ii] & (pp > floor), pp, -np.inf); f[geo[ii]] = np.inf
             thr = conformal_thr(f.reshape(len(rs), H).max(1), cfg.alpha)
         else: thr = np.inf
         score[cur] = clf.predict_proba(X[cur])[:, 1]; thr_at[cur] = thr
-    rc = (score > thr_at) & regime
+    rc = (score > np.maximum(thr_at, floor)) & regime          # MAP floor: never report a fix the model thinks is more likely wrong
     acc = geo | rc
     return dict(acc=acc, ra=ra, rb=rb, rc=rc, score=score, thr=thr_at, anc=anc, y=y, null=null, seqs=seqs, cfg=cfg, kappa=kap,
                 n_cal_seg=len(segs), names=names, secs=time.time() - t0)
