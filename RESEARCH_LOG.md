@@ -4,6 +4,20 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+## Entry 2 — cửa sổ theo mét quãng đường + bù hướng có giới hạn (HSI-rot-m) — đăng ký trước (2026-11-03 16:40 UTC)
+
+**Bối cảnh.** Viết TRƯỚC khi xem bất kỳ kết quả giữ ra nào của Entry 1 (đợt `hsi1` đang chạy). Hai lỗi đơn vị/giả định của cấu hình Entry 1 nhìn
+thấy trên tập thiết kế (seed 0, 28 run): (i) mọi cửa sổ (độ trễ neo 10–80, span 20, W 40, P_over 80, khối hiệu chuẩn 300) tính bằng FRAME —
+đúng ~1 m/frame nhưng Oxford / St Lucia có ~10 m/frame (cửa sổ 80 frame = 800 m > một lỗ 300 m); (ii) phép thử nhất quán giả định hướng
+odometry đúng — sai với Segway NCLT (trôi 10–25°/phiên) và VIO 4Seasons.
+**Thay đổi (một cấu hình chung):** mọi cửa sổ đổi sang mét quãng đường (giá trị cũ × 1 m, đổi ra frame bằng trung vị bước odometry của chính
+lần chạy, không nhãn; không mịn hơn 1 m/frame) — `metric_windows=True`; phép thử nhất quán sau phép quay tốt nhất của cửa sổ, |góc| ≤ 20°
+(`rot_max=0.35`). Tập thiết kế: HSI-rot-m +0.037 recall so với SH (thắng 17/28), segFAR TB 0.004 (max 0.037), sai số +0.6 m (tốt hơn 16/28);
+HSI-m +0.026 (17/28), max 0.033.
+**Đăng ký trước.** Luật ứng viên chính: **HSI-rot-m**; phụ: HSI-m. Cùng tập giữ ra, cùng tham chiếu, cùng H1–H5 như Entry 1 (§1.3). Thêm
+**H6:** HSI-rot-m ≥ HSI (Entry 1) về recall TB trên ≥ 6/9 dataset, và Oxford + St Lucia (10 m/frame) mỗi dataset recall HSI-rot-m ≥ HSI + 0.05.
+**Quyết định:** nếu H1 ∧ H2 đạt cho HSI-rot-m thì nó thay HSI làm luật khuyến nghị; nếu không, giữ quyết định của Entry 1.
+
 ## Entry 1 — HSI: tự giám sát hồi cứu bằng hình học (robot học khi nào tin "mắt" từ phán quyết hồi cứu của "chân") (2026-11-03)
 
 ### 1.1 Chẩn đoán dẫn tới ý tưởng (nhãn chỉ dùng để chẩn đoán; tập thiết kế = seed 0 của 7 dataset × 4 descriptor CosPlace/NetVLAD/MegaLoc/DINOv2 = 28 run)

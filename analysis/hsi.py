@@ -85,10 +85,17 @@ class Cfg:
         self.W = 40                                   # verified frames used on each side to align a bridge
         self.zm = 2.0                                 # label margin in hindsight standard deviations
         self.alpha = 0.05; self.chunk = 200; self.unit = 300; self.cal_mod = 2
+        self.P_over = 80                              # frames of continuous anchoring that override a conflicting reference
         self.null_kind = "wrong"                      # calibration null: possibly wrong fixes ('wrong') or possibly off-map ('off')
         self.scope = "session"                        # threshold from this session's held-out null ('session'), every session's ('pooled')
         self.min_seg = int(np.ceil(1 / self.alpha)) - 1
         for k, v in kw.items(): setattr(self, k, v)
+        if getattr(self, "metric_windows", False):   # windows in metres of path (the frame values above assume ~1 m per frame)
+            O = z["o_q"]; st = float(np.median(np.linalg.norm(np.diff(O, axis=0), axis=1)))
+            st = st if np.isfinite(st) and st > 0 else 1.0; f = lambda m: max(1, int(round(m / max(st, 1.0))))   # never finer than 1 m
+            self.step = st; self.lags_c = tuple(sorted({f(k) for k in self.lags_c})); self.lags_h = tuple(sorted({f(k) for k in self.lags_h}))
+            self.span = max(2, f(self.span)); self.W = max(4, f(self.W)); self.P_over = max(4, f(self.P_over)); self.unit = max(30, f(self.unit))
+            self.sc_scale = f
 
     def tol(self, k):
         return self.tau * (1 + k / 40.0)
@@ -413,7 +420,7 @@ if __name__ == "__main__":
 
 
 # ================================================================================ v2: trusted references + DR agreement
-def trusted_geometry(z, seqs, cfg, anc, kappa0=0.05, P_over=80, zz=2.0, seq_kappa=True):
+def trusted_geometry(z, seqs, cfg, anc, kappa0=0.05, P_over=None, zz=2.0, seq_kappa=True):
     """Causal geometric self-verification (no appearance threshold, no labels).
     Per sequence, a TRUSTED REFERENCE = rigid map<-odometry transform fitted (Kabsch) on the last W frames of a causal
     anchor. A new anchor refreshes the reference iff its fix agrees with the dead reckoning of the current reference
@@ -424,6 +431,7 @@ def trusted_geometry(z, seqs, cfg, anc, kappa0=0.05, P_over=80, zz=2.0, seq_kapp
     sd = s0 + kappa * path since the reference (the fix is correct and on-map under the drift model).
     Returns rep_a, rep_b, has_ref, x_dr, sd (nan without reference), kappa trace."""
     MP, est, O = z["MP"], z["est_c"], z["o_q"]; n = len(est); hz = horiz(MP); tree = cKDTree(MP); W = cfg.W
+    P_over = cfg.P_over if P_over is None else P_over
     rep_a = np.zeros(n, bool); rep_b = np.zeros(n, bool); has_ref = np.zeros(n, bool)
     xdr = np.full((n, MP.shape[1]), np.nan); sdv = np.full(n, np.nan); errs = []          # (path, DR error) pairs
     kap = kappa0
@@ -502,6 +510,7 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
         gate = ~hr | (np.nan_to_num(edr, nan=np.inf) - zz * np.nan_to_num(sdr, nan=0) <= cfg.off_d)
     else: gate = np.ones(n, bool)
     # (c) needs short-track support: the chain consistent with the odometry at every lag in sc_lags (causal)
+    if sc_lags and hasattr(cfg, "sc_scale"): sc_lags = tuple(sorted({cfg.sc_scale(k) for k in sc_lags}))
     sc = np.ones(n, bool)
     if sc_lags:
         for idx in seqs:

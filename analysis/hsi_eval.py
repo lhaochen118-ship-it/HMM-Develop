@@ -25,6 +25,8 @@ VARIANTS = {
     "HSI-rigid": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="rigid", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5),                          # one rigid bridge per gap instead of blended dead reckoning
     "HSI-nofloor": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint"),                        # no MAP floor (conformal threshold only)
     "HSI-rot": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35),               # (Entry 2 candidate) bounded heading offset (20 deg) in the consistency tests
+    "HSI-m": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, metric_windows=True),         # (Entry 2 candidate) windows in metres of path (Oxford / St Lucia: 10 m frames)
+    "HSI-rot-m": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True),
     "geo": None, "anc": None,                       # geometric self-verification only (a|b); causal anchors only
 }
 
