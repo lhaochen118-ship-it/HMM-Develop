@@ -4,6 +4,31 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+## Entry 5 — chứng nhận rồi hiệu chuẩn: chứng chỉ hình học làm điểm neo hồi cứu (HSI-V) — đăng ký trước (2026-11-03 18:45 UTC)
+
+*Viết TRƯỚC khi xem bất kỳ kết quả giữ ra nào của Entry 4 (đợt `hsi7` đang chạy) và của Entry 5.*
+**Chẩn đoán (tập thiết kế seed 0; nhãn chỉ để chẩn đoán; `paper/hsi_theory.md` Mệnh đề 6):** frame đúng bị bỏ lỡ chủ yếu vì điểm (c) > 0.5 nhưng
+dưới ngưỡng conformal (CMU 0.29, NCLT 0.16–0.18 frame on-map). Hiệu chuẩn với null oracle (off-map thật) nâng CMU NetVLAD 0.391 → 0.569 ⇒ null
+hồi cứu bị nhiễm. Nguồn nhiễm: (i) NCLT chỉ 6–13 % frame được xác minh hồi cứu (độ chính xác 1.000) trong khi chứng chỉ hình học G = (a|b) phủ
+28–42 % (độ chính xác ≥ 0.997) ⇒ cầu dead-reckoning dài, sai 30–180 m ⇒ 20 % frame null là fix đúng, và G báo ĐÚNG ở 52 % số đó; 18 % đoạn null
+hiệu chuẩn có G báo > α ⇒ ngưỡng (c) = +∞; (ii) CMU 48 % frame thuộc chuỗi không có đoạn xác minh nào. Tỉ lệ G báo trong null ∩ off-map thật =
+0.000 (Boreas, CMU, NCLT).
+**Thay đổi (một tham số, `anchors="ver+geo"`):** điểm neo của cầu hồi cứu = đoạn xác minh hồi cứu ∪ frame có chứng chỉ G (nhân quả). Hệ quả:
+cầu ngắn hơn, nhãn huấn luyện + null sạch hơn; G không còn trong null nên không bị tính vào α (bảo đảm thành ε_G + α, Mệnh đề 6).
+**Tập thiết kế (28 run, recall TB / chênh với SH / thắng / sai số chênh / segFAR max):** HSI-rot-m-sc 0.702 / +0.051 / 21 / −0.31 m / 0.035;
+**HSI-V 0.719 / +0.069 / 24 / −0.01 m / 0.044** (CMU 0.702 vs 0.659, NCLT 0.546 vs 0.481; CMU sai số 9.0 vs 7.0 m — thêm báo ở đầu chuỗi);
+HSI-VM (+ Mondrian theo chế độ) 0.707 / +0.057 / 23 / −0.36 / 0.037 (Boreas sai số 7.1 → 3.9 m); HSI-Gdrop (G không tính vào α, cầu cũ) 0.714 /
++0.063 / 23 / −0.67 / 0.035; HSI-Vc (cầu ver ∪ G nhưng G bị phán xét bằng cầu cũ) giữ lợi ích CMU, mất lợi ích NCLT; leave-one-run-out kém hơn
+mọi biến thể (chuỗi CMU ngắn không có đoạn neo lân cận).
+**Đăng ký trước.** Luật ứng viên chính **HSI-V**; phụ **HSI-VM**; ablation HSI-Vc, HSI-Gdrop; chẩn đoán **geo-rm** (chỉ G, hình học rot-m) để đo
+ε_G trực tiếp. Cùng tập giữ ra (413 run) + lỗ 10 % / 50 % (seed 0–2, 6 dataset × 6 descriptor) + off-map tự nhiên 4Seasons chéo cảnh (36 run),
+cùng tham chiếu SH / CST-JS, cùng H1–H5 (§1.3). Thêm:
+- **H9 (lợi ích):** recall gộp mọi run giữ ra của HSI-V ≥ HSI-rot-m-sc + 0.01, VÀ trên CMU và NCLT, mỗi dataset ≥ HSI-rot-m-sc + 0.03.
+- **H10 (chứng chỉ):** geo-rm có segFAR > 0.05 trên ≤ 2 % run giữ ra (ε_G nhỏ là giả định của Mệnh đề 6).
+- **H11 (bền):** HSI-V hợp lệ (H1) ở lỗ 10 %, 50 % và off-map tự nhiên (tỉ lệ run > 0.05 ≤ 10 % mỗi tập).
+**Quyết định:** H1 ∧ H2 ∧ H9 ∧ H10 ⇒ HSI-V thay HSI-rot-m-sc làm luật khuyến nghị (HSI-VM thay nếu nó đạt H1 ∧ H2 ∧ H9 mà HSI-V trượt H1);
+H10 trượt ⇒ giữ HSI-rot-m-sc (bảo đảm hợp), báo cáo HSI-V như điểm vận hành recall cao hơn với giả định chứng chỉ; H9 trượt ⇒ HSI-V là ablation.
+
 ## Entry 4 — hiệu chuẩn Mondrian theo chế độ quyết định (HSI-M) — đăng ký trước (2026-11-03 18:05 UTC)
 
 **Bối cảnh (từ kết quả giữ ra của Entry 3, chỉ CMU được dùng để chẩn đoán):** nới đầu chuỗi đưa các đoạn null đầu chuỗi (37/130 chuỗi CMU bắt đầu

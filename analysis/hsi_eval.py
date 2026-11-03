@@ -36,7 +36,18 @@ VARIANTS = {
     "HSI-sc@0.02": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, alpha=0.02),
     "HSI-sc@0.1": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, alpha=0.1),
     "HSI-sc@0.2": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, alpha=0.2),
-    "geo": None, "anc": None,                       # geometric self-verification only (a|b); causal anchors only
+    # (Entry 5 candidates) split budget: geometric reports charged their own rate (measured on hindsight-confident null segments)
+    "HSI-G": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, geo_budget="split"),
+    "HSI-Gw": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, geo_budget="split-w"),
+    "HSI-Gdrop": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, geo_budget="drop"),   # diagnostic: geometry not charged
+    "HSI-V": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, anchors="ver+geo"),
+    "HSI-Vc": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, anchors="ver+geo/charged"),
+    "HSI-Vl": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, anchors="ver+geo/loo"),
+    "HSI-Vle": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, anchors="ver+geo/loo-e"),
+    "HSI-VM": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, anchors="ver+geo", mondrian="ref"),
+    "HSI-VM-nos": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, null_cap=0.25, anchors="ver+geo", mondrian="ref"),
+    "HSI-V-nos": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, null_cap=0.25, anchors="ver+geo"),
+    "geo": None, "anc": None, "geo-rm": None,       # geo-rm: (a|b) with the rot-m geometry of Entry 2+ (diagnostic of the certificate alone)                       # geometric self-verification only (a|b); causal anchors only
     "Xu21": None, "oracle": None, "top1": None, "Claxton24": None,     # references from the cache: Xu'21 HMM off-map state (T, k tuned WITH labels on
 }                                                   # the 2 easiest conditions, nav_demo), oracle (correct top-1 only), accept-all top-1
 
@@ -86,6 +97,11 @@ def main():
                 if v == "anc": acc = anc
                 else: ra, rb, *_ = hsi.trusted_geometry(z, seqs, cfg, anc); acc = ra | rb
                 o = dict(acc=acc, seqs=seqs, cfg=cfg); diag = {}
+                cfg.tolarr = None
+            elif v == "geo-rm":
+                cg = hsi.Cfg(z, name, rot_max=0.35, metric_windows=True)
+                anc = hsi.causal_anchor(z["MP"], z["est_c"], z["o_q"], seqs, cg, n); ra, rb, *_ = hsi.trusted_geometry(z, seqs, cg, anc)
+                acc = ra | rb; o = dict(acc=acc, seqs=seqs, cfg=cg); diag = {}
             else:
                 o = hsi.online_v2(z, name, **VARIANTS[v]); acc = o["acc"]
                 diag = dict(n_cal_seg=o["n_cal_seg"], kappa=o["kappa"], frac_a=float(o["ra"].mean()), frac_b=float(o["rb"].mean()), frac_c=float(o["rc"].mean()))

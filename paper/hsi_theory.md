@@ -45,6 +45,22 @@ Báo khi ĝ_t = P̂(fix đúng | đặc trưng) > 1/2 là luật Bayes cho tổn
 Mệnh đề 4 (miền báo nhỏ hơn) và chặn trường hợp ngưỡng conformal suy biến (θ = −∞ khi phần lớn đoạn null không có frame đủ điều kiện) — nguồn
 của fix sai xa ở đầu phiên trong thiết kế (Nordland DINOv2: 11 fix sai > 20 frame, sai số điều hướng 17.5 → 0.7).
 
+## Mệnh đề 6 (chứng nhận rồi hiệu chuẩn — Entry 5)
+
+Gọi G_t = A_t ∨ B_t (chứng chỉ hình học) và N là tập null hồi cứu. Với mọi đoạn off-map thật U:
+P(R báo trong U) ≤ P(G báo trong U) + P(C báo trong U) ≤ ε_G + α_C, với ε_G = xác suất chứng chỉ sai trên một đoạn off-map (Mệnh đề 1–2: cần
+một tuyến SAI vừa khớp odometry ở mọi độ trễ 10–80 m vừa khớp dead-reckoning của tham chiếu trước) và α_C là mức conformal của nhánh học
+(Mệnh đề 4, áp cho điểm s_t = g_t nếu C_t, −∞ còn lại). Hiệu chuẩn hợp (Mệnh đề 4) thay ε_G bằng ước lượng thực nghiệm trên N — đúng khi N
+sạch, nhưng **khi N bị nhiễm các frame đúng (cầu hồi cứu dài trôi xa), chứng chỉ báo ĐÚNG ở các frame đó lại bị tính là vi phạm**: tập thiết
+kế, tỉ lệ G báo trong N ∩ off-map thật = 0.000 (Boreas, CMU, NCLT), trong N ∩ fix đúng = 0.52–0.58 (NCLT, Boreas); NCLT: 18 % đoạn null có G
+báo > α ⇒ ngưỡng của (c) = +∞. Lý do nhiễm: chỉ 6–13 % frame NCLT được xác minh hồi cứu (độ chính xác 1.000) trong khi chứng chỉ phủ 28–42 %
+(độ chính xác ≥ 0.997) ⇒ cầu Brown nối các đoạn xác minh thưa dài hàng trăm mét, sai số cầu 30–180 m vượt z σ.
+**Hệ quả / thiết kế:** dùng G làm điểm neo hồi cứu cùng với các đoạn xác minh (ver ∪ G): cầu ngắn hơn (Mệnh đề 3: σ ∝ d_l d_r/(d_l + d_r)) ⇒
+nhãn huấn luyện và null sạch hơn; G không còn trong N nên không tự chứng nhận mà cũng không bị tính trùng — bảo đảm trở thành ε_G + α. ε_G
+không hiệu chuẩn được bằng dữ liệu không nhãn mà là tính chất của phép thử hình học; nó được kiểm chứng trực tiếp trên tập giữ ra (biến thể
+geo-rm, Entry 5). Hai cách "giữ G trong hiệu chuẩn" đã thử trên tập thiết kế đều thua: (i) phán xét G bằng cầu không dùng G (HSI-Vc) — nhiễm
+như cũ; (ii) phán xét mỗi đoạn neo bằng các đoạn neo lân cận (leave-one-run-out) — chuỗi ngắn (CMU) không có lân cận ⇒ G thành "chưa xác minh".
+
 ## Vì sao khác ý tưởng 1
 
 Ý tưởng 1 sinh null bằng **can thiệp** lên bản đồ (phẫu thuật phản thực quanh niềm tin của hệ thống) và hiệu chuẩn một thống kê hiện diện cố

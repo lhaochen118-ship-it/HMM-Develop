@@ -341,6 +341,8 @@ def online(z, name, mode="session", verbose=False, **kw):
     segs = null_segments(seqs, null, cal, unit, H)
     seg_av = np.array([avail[s].max() for s in segs], np.int64) if segs else np.zeros(0, np.int64)
     seg_c = np.array([cond[s[0]] for s in segs]) if segs else np.zeros(0, str)
+    seg_cert = np.array([cert[s_].all() for s_ in segs], bool) if segs else np.zeros(0, bool)
+    seg_geo = np.array([geo[s_].any() for s_ in segs], bool) if segs else np.zeros(0, bool)
     geo = [i for i, nm in enumerate(names) if nm in ("r3", "r5", "r10", "r20", "r40", "r80", "anc", "dDR", "eDR", "since")]
     score = np.full(n, -np.inf); thr_at = np.full(n, np.inf); gscore = np.full(n, -np.inf); gthr_at = np.full(n, np.inf)
     clf = gclf = None; last_n = 0; thr = gthr = np.inf
@@ -472,7 +474,8 @@ def evaluate_mask(z, name, acc, seqs, cfg, nav=True):
 
 
 def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict", bridge="rigid", sc_lags=(), train_all=False,
-              calib="regime", adaptive=False, floor=-np.inf, start_relax=False, null_cap=None, mondrian=None, verbose=False, **kw):
+              calib="regime", adaptive=False, floor=-np.inf, start_relax=False, null_cap=None, mondrian=None, verbose=False,
+              null_oracle=None, geo_budget=None, anchors="ver", **kw):
     """HSI v2 = geometric self-verification (a: trusted anchors, b: dead-reckoning agreement; trusted_geometry) OR
     (c) a hindsight-learned score above a conformal threshold calibrated on hindsight-null segments of the SAME regime
     (frames where a|b do not fire), held out from training. scope: 'pooled' (every session's held-out units) or 'session'.
@@ -492,15 +495,38 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     if adaptive == "max":                                       # hindsight labels keep the strict default tolerance
         T_ = cfg.tolarr; cfg.tolarr = None; ver = hindsight_verified(MP, est, O, seqs, cfg, n); cfg.tolarr = T_
     else: ver = hindsight_verified(MP, est, O, seqs, cfg, n)
-    xt, sd, avail, kappa, s0, ncl = (hindsight_bridge if bridge == "blend" else hindsight)(z, seqs, cfg, ver)
-    y, null_off, dmap = hindsight_labels(z, Cfg(z, name, null_kind="off", **kw), xt, sd)
-    if null_cap is not None:                                    # cap the margin of the possibly-off-map null (NCLT: off_d 20 m)
-        null_off = np.isfinite(sd) & (np.nan_to_num(dmap, nan=-np.inf) > cfg.off_d - np.minimum(cfg.zm * sd, null_cap * cfg.off_d))
-    if null_kind in ("offwrong", "offwrong+unl"):
-        e = np.linalg.norm(MP[est] - np.nan_to_num(xt), axis=1); null = null_off | (np.isfinite(sd) & (e > cfg.excl + cfg.zm * sd))
-        if null_kind == "offwrong+unl":                       # never verified: a report there cannot be shown correct -> null
-            null = null | ~np.isfinite(sd)
-    else: null = null_off
+    def labels_null(ver_):
+        xt, sd, avail, kappa, s0, ncl = (hindsight_bridge if bridge == "blend" else hindsight)(z, seqs, cfg, ver_)
+        return (xt, sd, avail, kappa, s0, ncl) + null_from(xt, sd)
+    def null_from(xt, sd):
+        y, null_off, dmap = hindsight_labels(z, Cfg(z, name, null_kind="off", **kw), xt, sd)
+        if null_cap is not None:                                # cap the margin of the possibly-off-map null (NCLT: off_d 20 m)
+            null_off = np.isfinite(sd) & (np.nan_to_num(dmap, nan=-np.inf) > cfg.off_d - np.minimum(cfg.zm * sd, null_cap * cfg.off_d))
+        if null_kind in ("offwrong", "offwrong+unl"):
+            e = np.linalg.norm(MP[est] - np.nan_to_num(xt), axis=1); null = null_off | (np.isfinite(sd) & (e > cfg.excl + cfg.zm * sd))
+            if null_kind == "offwrong+unl":                   # never verified: a report there cannot be shown correct -> null
+                null = null | ~np.isfinite(sd)
+        else: null = null_off
+        return y, dmap, null
+    if anchors == "ver":
+        xt, sd, avail, kappa, s0, ncl, y, dmap, null = labels_null(ver)
+    else:                                                       # trusted causal geometry also anchors the hindsight bridges
+        xt, sd, avail, kappa, s0, ncl, y, dmap, null = labels_null(ver | geo)
+        if anchors == "ver+geo/charged":                        # ...but a geometric report is judged by the bridges WITHOUT the
+            _, sdA, avA, _, _, _, _, _, nullA = labels_null(ver)  # geometry (it cannot certify itself): charged as before
+            null = np.where(geo, nullA, null); avail = np.where(geo, avA, avail); sd = np.where(geo & ~np.isfinite(sdA), sdA, sd)
+        elif anchors in ("ver+geo/loo", "ver+geo/loo-e"):       # ...and each anchor run is cross-examined by its neighbours only
+            xl_, sl_, al_ = loo_bridge(z, seqs, cfg, ver | geo, kappa, s0)
+            _, _, nullL = null_from(xl_, sl_)
+            if anchors == "ver+geo/loo-e": nullL = nullL & np.isfinite(sl_)   # only EVIDENCE against a geometric report charges it
+            null = np.where(geo, nullL, null); avail = np.where(geo, np.where(np.isfinite(sl_), al_, avail), avail)
+            sd = np.where(geo & ~np.isfinite(sl_), np.inf, sd)
+    # hindsight-CONFIDENT null frames (bridge certain even at zm sd): certainly off-map, or (certwrong) certainly a wrong fix
+    e_b = np.linalg.norm(MP[est] - np.nan_to_num(xt), axis=1); dmap_ = np.nan_to_num(dmap, nan=-np.inf)
+    cert = np.isfinite(sd) & (dmap_ - cfg.zm * sd > cfg.off_d)
+    if geo_budget == "split-w": cert = cert | (np.isfinite(sd) & (e_b - cfg.zm * sd > cfg.excl))
+    if null_oracle == "off": null = z["offm"].copy()           # DIAGNOSTIC ONLY (uses ground truth): calibrate on the true off-map frames
+    elif null_oracle == "lab_or_off": null = (null & np.isfinite(sd)) | (~np.isfinite(sd) & z["offm"])   # truth only where unlabelled
     unit = np.zeros(n, np.int64); rank = np.empty(n, np.int64); rank[order] = np.arange(n)
     for si, idx in enumerate(seqs):
         unit[idx] = si * 100000 + np.arange(len(idx)) // cfg.unit
@@ -539,6 +565,8 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     seg_k = np.array([klass[s_[0]] for s_ in segs], np.int64) if segs else np.zeros(0, np.int64)
     seg_av = np.array([avail[s].max() for s in segs], np.int64) if segs else np.zeros(0, np.int64)
     seg_c = np.array([cond[s[0]] for s in segs]) if segs else np.zeros(0, str)
+    seg_cert = np.array([cert[s_].all() for s_ in segs], bool) if segs else np.zeros(0, bool)
+    seg_geo = np.array([geo[s_].any() for s_ in segs], bool) if segs else np.zeros(0, bool)
     score = np.full(n, -np.inf); thr_at = np.full(n, np.inf); clf = None; last_n = 0
     for c0 in range(0, n, cfg.chunk):
         T = c0; cur = order[c0:c0 + cfg.chunk]; cc = cond[cur[0]]
@@ -549,17 +577,54 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
         if clf is None: continue
         thr_k = {}
         for kk in np.unique(klass[cur]):
-            rs = [s for s, a, c, sk in zip(segs, seg_av, seg_c, seg_k) if a < T and (scope == "pooled" or c == cc) and sk == kk]
+            sel = [i_ for i_, (a, c, sk) in enumerate(zip(seg_av, seg_c, seg_k)) if a < T and (scope == "pooled" or c == cc) and sk == kk]
+            rs = [segs[i_] for i_ in sel]
             if len(rs) >= cfg.min_seg:
                 ii = np.concatenate(rs); pp = clf.predict_proba(X[ii])[:, 1]
-                f = np.where(regime[ii] & (pp > floor), pp, -np.inf); f[geo[ii]] = np.inf
-                thr_k[kk] = conformal_thr(f.reshape(len(rs), H).max(1), cfg.alpha)
+                f = np.where(regime[ii] & (pp > floor), pp, -np.inf); a_c = cfg.alpha
+                if geo_budget is None: f[geo[ii]] = np.inf                # joint: a geometric report in a null segment is a violation
+                else:                                                      # split: geometry charged its own (upper) rate, measured on
+                    f[geo[ii]] = -np.inf                                   # the hindsight-confident null segments; (c) gets the rest
+                    if geo_budget != "drop":
+                        cs = np.array(sel)[seg_cert[sel]]; m_ = len(cs); k_ = int(seg_geo[cs].sum()) if m_ else 0
+                        a_c = cfg.alpha - (k_ + 1) / (m_ + 1)
+                thr_k[kk] = conformal_thr(f.reshape(len(rs), H).max(1), a_c) if a_c > 0 else np.inf
             else: thr_k[kk] = np.inf
         score[cur] = clf.predict_proba(X[cur])[:, 1]; thr_at[cur] = np.array([thr_k[k_] for k_ in klass[cur]])
     rc = (score > np.maximum(thr_at, floor)) & regime          # MAP floor: never report a fix the model thinks is more likely wrong
     acc = geo | rc
     return dict(acc=acc, ra=ra, rb=rb, rc=rc, score=score, thr=thr_at, anc=anc, y=y, null=null, seqs=seqs, cfg=cfg, kappa=kap,
                 n_cal_seg=len(segs), names=names, secs=time.time() - t0)
+
+
+def loo_bridge(z, seqs, cfg, ver, kappa, s0, zz=2.0):
+    """leave-one-run-out cross-examination: hindsight positions of the frames of each anchor run predicted ONLY from its
+    neighbouring anchor runs (blended dead reckoning as in hindsight_bridge, with the same closure test, kappa and s0), so
+    an anchor never certifies itself. Frames of a run with no usable neighbour stay unlabelled (sd = inf)."""
+    MP, est, O = z["MP"], z["est_c"], z["o_q"]; n = len(est); hz = horiz(MP); W = cfg.W
+    order = np.concatenate(seqs); rank = np.empty(n, np.int64); rank[order] = np.arange(n)
+    fit = lambda ii, idx: kabsch(O[idx[ii]][:, hz], MP[est[idx[ii]]][:, hz])
+    xt = np.full((n, MP.shape[1]), np.nan); sd = np.full(n, np.inf); avail = np.full(n, BIG)
+    for idx in seqs:
+        L = len(idx); vi = np.flatnonzero(ver[idx])
+        if not len(vi): continue
+        path = np.r_[0, np.cumsum(np.linalg.norm(np.diff(O[idx], axis=0), axis=1))]
+        runs = np.split(vi, np.flatnonzero(np.diff(vi) > 1) + 1)
+        for j, r in enumerate(runs):
+            r0 = runs[j - 1] if j > 0 else None; r1 = runs[j + 1] if j + 1 < len(runs) else None
+            if r0 is None and r1 is None: continue
+            gi = r; base = MP[est[idx[gi]]].astype(float)
+            if r0 is not None: R0, t0 = fit(r0[-W:], idx); xl = base.copy(); xl[:, hz] = (R0 @ O[idx[gi]][:, hz].T).T + t0; dl = path[gi] - path[r0[-1]]
+            if r1 is not None: R1, t1 = fit(r1[:W], idx); xr = base.copy(); xr[:, hz] = (R1 @ O[idx[gi]][:, hz].T).T + t1; dr = path[r1[0]] - path[gi]
+            if r0 is not None and r1 is not None:
+                g = path[r1[0]] - path[r0[-1]]; prl = (R0 @ O[idx[r1[0]]][hz]) + t0
+                if np.linalg.norm(prl - MP[est[idx[r1[0]]]][hz]) > cfg.tau + zz * kappa * g: continue      # closure failed
+                w = (dl / np.maximum(dl + dr, 1e-9))[:, None]; x = (1 - w) * xl + w * xr
+                s_ = s0 + kappa * dl * dr / np.maximum(dl + dr, 1e-9); a = min(r1[0] + cfg.span, L - 1)
+            elif r0 is not None: x, s_, a = xl, s0 + kappa * dl, L - 1
+            else: x, s_, a = xr, s0 + kappa * dr, min(r1[0] + cfg.span, L - 1)
+            xt[idx[gi]] = x; sd[idx[gi]] = s_; avail[idx[gi]] = rank[idx[a]]
+    return xt, sd, avail
 
 
 def hindsight_bridge(z, seqs, cfg, ver, zz=2.0):
