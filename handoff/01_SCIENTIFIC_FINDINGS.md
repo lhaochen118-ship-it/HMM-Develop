@@ -6,6 +6,23 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
+## N00000000. Vòng 11 (2026-11-03, branch `hmm-navigation-5`, Entry 37) — đọc trước §N0000000
+
+- **Đóng góp:** phẫu thuật tiến cả **bằng chứng hiện diện** (mọi thống kê của hệ thống tính lại trên bản đồ của từng lần chạy ảo) + null chính
+  xác cho đầu chuỗi (khởi đầu ảo đủ chân trời, ngưỡng theo vị trí kể từ đầu chuỗi, κ′ cho cửa sổ ngắn) ⇒ luật **CST-JS**
+  (`CMS-CPC/H+CSTJS+G+NGRr`), Mệnh đề 19 (`paper/cms_theory.md` §4g). Báo cáo `paper/BAO_CAO_E37.pdf`.
+- **Tích cực (đăng ký trước):** H37a — segFAR TB ≤ 0.05 trên 7/7 + Oxford, **và trên tập giữ ra seed 6–9 (144 run) kể cả CMU (0.019;
+  CST-J\* vòng 10: 0.053, run tệ nhất 0.237)**; H37c — recall trong 0.006 của SH trên 7/7 (cao hơn 6/7), +0.15 so với CST-F trên CMU;
+  H37e — Oxford 0.738 vs SH 0.729 (giữ ra 0.711 vs 0.698); H37f — N = 40 tăng recall gộp 6/6 trên 5 descriptor mới; H37g — St Lucia 6
+  descriptor hợp lệ, recall = SH, cao hơn SafeVPR'26 (ViT-L/14, có nhãn) ở 6/6 descriptor.
+- **Tiêu cực:** H37b — kiểm toán theo vị trí 4/7: đoạn **mép** của lỗ thật Boreas 0.084, old town 0.109 (CST-J\*: 0.152 / 0.178), đầu chuỗi
+  office 0.119 (84 đoạn) ⇒ CST-JS **chưa** là bảo đảm theo từng vị trí. Nguyên nhân: lỗ thật là khối bản đồ, lỗ ảo là phần Voronoi của
+  đường tin ⇒ (S3-JF) sai ở mép. H37d chỉ đạt 5/7 (old town +14.5 m, Boreas +2.3 m so với SH).
+- **Cơ chế đã kiểm (ablation):** CST-JSL (cùng cấu trúc, hiện diện = phẫu thuật đầy đủ vòng 10) vỡ trên giữ ra (CMU 0.051) ⇒ hiện diện tiến
+  là thứ sửa tính hợp lệ; CST-JS0 (không chứng nhận cửa sổ ngắn) mất 0.13 recall CMU ⇒ null đầu chuỗi là thứ giữ recall.
+- **Khuyến nghị:** SH ∧ CST-JS (thực dụng: mọi lớp vị trí ≤ 0.07); CST-F (cận chứng nhận theo đoạn); N = 40.
+- **Hạ tầng:** phép thử tuyến trên GPU trùng tuyệt đối numpy (L4), nhanh 1.3–1.8× dưới tải; 13 phiên L4 ~45 phút cho 300 run + 274 run N = 40.
+
 ## N0000000. Vòng 10 (2026-11-02, branch `hmm-navigation-5`, Entry 36) — đọc trước §N000000
 
 **Báo cáo:** `paper/BAO_CAO_E36.pdf` (bảng `paper/e36_tables.md`); lý thuyết `paper/cms_theory.md` §4f (Mệnh đề 16–18); nhật ký Entry 36

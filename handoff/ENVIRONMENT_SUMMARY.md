@@ -164,6 +164,20 @@ Publish bằng `automation/publish_dataset.py <dir> <slug> "<title>" "<subtitle>
 
 Tải dataset public **không cần token**: `python3 automation/anon_download.py <owner/slug> <dir> --jobs 12 [--match regex]`.
 
+## 1f. Dataset mới vòng 11 (2026-11-03, Entry 37; PUBLIC dưới nhatlong1103)
+
+| Slug | Nội dung |
+|---|---|
+| `stlucia-vpr-frames` | St Lucia 6 lượt (bản đồ `100909_0845` + 5 truy vấn), ảnh 480 × 360 mỗi ~10 m (`img/<lượt>/<frame>.jpg`), `frames_meta/stlucia_<lượt>.npz` |
+| `stlucia-vpr-dump` | 6 descriptor (fp16, L2; trích trên L4 bf16) + `meta/` cho các frame trên; loader `vprlib.load_stlucia` |
+| `hmm-fwd-null-e37` | Null tiến có thống kê hiện diện (`fwd_<ds>_<desc>_s<seed>.npz`, mode 0/1/2) của 342 run: seed 0–2 (+ NCLT 0), 6–9, CMU 3–5, Oxford 0–9, St Lucia 0–4 |
+| `hmm-cms-cache-n40` | Thống kê CMS chính xác với N = 40 (276 run, seed 1–9) |
+| `hmm-e37-caches` | navcache / cms / topk / tao của Oxford (45 run) và St Lucia (30 run) tính trong kernel |
+
+Model Kaggle dùng: `metaresearch/dinov2/pyTorch/large/1` (DINOv2 ViT-L/14, HF format; verifier SafeVPR'26).
+**Acc vòng 11:** nhatlong1103, quynhle07, nguyenhoa99, synchan5704, yuan1103, quynhtran35, caotienminh1, anderson1202, loinguyentran (L4),
+yeshenhi (chỉ T4). Token ở `~/.kaggle/tok_<acc>` (không trong git), thứ tự dồn slot ở `automation/active_accounts.txt`.
+
 ## 1e. St Lucia Multiple Times of Day (vòng 10, Entry 36; CHƯA đăng Kaggle)
 
 - Nguồn: Hugging Face `medwa126/UQStLuciaMultipleToD` (mirror của QUT; 10 lượt chạy, video webcam 640 × 480, GPS mỗi frame), tải không cần

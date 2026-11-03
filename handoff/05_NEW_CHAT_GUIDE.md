@@ -2,6 +2,12 @@
 
 *2026-11-02, cập nhật từ branch `hmm-navigation-5` (vòng 10). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR.*
 
+**Vòng 11 (đọc trước tiên, 2026-11-03):** `paper/BAO_CAO_E37.pdf`, `RESEARCH_LOG.md` Entry 37, `paper/cms_theory.md` §4g, `handoff/03_HANDOFF.md`
+§00000000. Luật: **SH ∧ CST-JS** (`CMS-CPC/H+SH+CSTJS+G+NGRr`, thực dụng), CST-JS (`@E37`), CST-F (chứng nhận); N = 40. Một run đầu-cuối:
+`analysis/e37_fwd.py` (từng phần, `k/n`) → `analysis/e37_eval.py` (gộp + luật `@E36,@E37` + dump frame); kiểm toán vị trí `analysis/e37_audit.py`;
+St Lucia `automation/make_stlucia_kernel.py`, so sánh SafeVPR'26 `analysis/e37_safevpr.py`; đợt Kaggle `automation/e37_wave.py` (+ `--holes 10,50`),
+gom `automation/e37_collect.py`, bảng `paper/build_e37_report.py`. Null tiến công khai: `nhatlong1103/hmm-fwd-null-e37`.
+
 **Vòng 10 (đọc trước tiên):** `paper/BAO_CAO_E36.pdf`, `RESEARCH_LOG.md` Entry 36, `paper/cms_theory.md` §4f, `handoff/03_HANDOFF.md`
 §0000000. Đề xuất: **CMS-CPC/H+CSTF+G+NGRr** (N = 40) hoặc **SH ∧ CST-J\*** (`analysis/e36_run.py <dump> <navcache> <cms> <topk> <tao>
 <fwd> <ds> <desc> <seed>`: thống kê phản thực vector hoá + null tiến `cms_fwd.py` + `oc_curves.py --cst --fwd --fams @E36`); kiểm toán

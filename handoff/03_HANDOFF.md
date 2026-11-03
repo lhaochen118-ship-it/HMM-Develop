@@ -4,6 +4,18 @@
 `01_SCIENTIFIC_FINDINGS` (§N trước), vận hành ở `02_ENGINEERING_OPS_NOTES` (§0 trước). Cách đọc repo:
 `05_NEW_CHAT_GUIDE.md`. Bản cũ của tài liệu này: `git show 29970dd:handoff/03_HANDOFF.md`.*
 
+## 00000000. Vòng 11 (2026-11-03, branch `hmm-navigation-5`, Entry 37) — trạng thái
+
+- **Làm xong:** Entry 37 đủ: đăng ký trước → đợt Kaggle (13 L4 + St Lucia + thăm dò) → đánh giá gộp trong kernel → kiểm toán theo vị trí →
+  báo cáo `paper/BAO_CAO_E37.pdf`, theory §4g, Gate 16. Kết quả và kết luận: `RESEARCH_LOG.md` Entry 37 (H37a,c,d,e,f,g đạt; H37b không đạt).
+  Đợt độ bền tỷ lệ lỗ (H37h, 18 kernel `e37k-*` trên 9 acc) xem `RESEARCH_LOG.md` (bổ sung khi xong).
+- **Dữ liệu mới (public, nhatlong1103):** `stlucia-vpr-frames` (ảnh 10 m), `stlucia-vpr-dump` (6 descriptor), `hmm-fwd-null-e37` (null tiến
+  có hiện diện, 342 run), `hmm-cms-cache-n40` (thống kê N = 40, 276 run), `hmm-e37-caches` (navcache/cms/topk/tao của Oxford + St Lucia).
+- **Quyết định đã chốt:** luật thực dụng SH ∧ CST-JS; CST-F khi cần chứng nhận; N = 40 mặc định.
+- **Việc tiếp theo:** (1) lỗ ảo theo hình học khối của bản đồ triển khai để đóng khoảng trống mép (H37b); (2) kiểm lại trên tập giữ ra mới;
+  (3) bài báo.
+- **Acc:** 10 acc user cấp (7 + anderson1202, loinguyentran, yeshenhi — yeshenhi chỉ T4); token KHÔNG trong git.
+
 ## 0000000. Vòng 10 (2026-11-02, branch `hmm-navigation-5`, Entry 36) — trạng thái
 
 - **Làm xong:** (1) phẫu thuật tiến CST-F + hiệu chuẩn đầu-cuối CST-J/CST-J\* (`analysis/cms_fwd.py`, `oc_curves.py --fwd`, preset `@E36`),

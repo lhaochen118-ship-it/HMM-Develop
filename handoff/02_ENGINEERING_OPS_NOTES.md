@@ -5,6 +5,22 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 00000000. Vòng 11 (2026-11-03, Entry 37): vận hành
+
+- **Kernel thăm dò trước đợt lớn** (`e37p-1`, job THẬT của đợt): đo ms/frame dưới tải đầy (46 job/phiên L4), RAM đỉnh, GPU, và so GPU với
+  numpy (cùng job, `analysis/envrun.py CMS_DEVICE=numpy @results/np ...`). Không có API xem log kernel đang chạy ⇒ thăm dò ngắn là cách duy nhất.
+- **Đánh giá gộp trong kernel:** `analysis/e37_eval.py --wait` (chờ `.done` của các phần do `e37_fwd.py` ghi), mỗi run là một đơn vị đóng gói
+  (`automation/e37_wave.py`, chi phí đo ở `automation/e37_costs.json`); job chờ xếp cuối hàng FIFO ⇒ không deadlock. Lưu ý thứ tự: job bọc
+  trong `envrun.py` phải nhận diện theo tên script ở 3 từ đầu (lỗi đã sửa).
+- **Token runner mới:** `DIR:<tiền tố>@<tên thư mục>` (chọn đúng `d10`/`d50`/`hcms_d10` khi nhiều dataset có cùng tiền tố file).
+- **central_monitor:** khi còn kernel chờ slot thì đẩy liên tục (bỏ qua hỏi trạng thái); `MAX_ACC = 10` (user cấp 10 acc). Dừng monitor bằng
+  PID của tiến trình **python**, không phải vỏ bash (pgrep -f khớp cả vỏ bash ⇒ đã có lúc hai monitor chạy cùng state).
+- **Tải dataset:** tải nguyên dataset một lệnh (`kaggle datasets download <slug>`) thay vì hàng trăm lệnh từng file song song (tránh giới hạn API);
+  tải file trong thư mục con bằng `-f d10/x.npz` sẽ ghi vào `<p>/d10/`.
+- **St Lucia:** ảnh cắt cục bộ (video HF, cv2), đăng `stlucia-vpr-frames`; kernel L4 offline `automation/make_stlucia_kernel.py` (model Kaggle
+  `metaresearch/dinov2/pyTorch/large/1` cho ViT-L); đọc lần đầu từ `/kaggle/input` chậm ⇒ 16 worker DataLoader.
+- **Thời gian thật:** đợt 1 41–46 phút/kernel (ước 27: job đánh giá và N = 40 Boreas 8448 chiều nặng hơn ước).
+
 ## 0000000. Vòng 10 (2026-11-02, Entry 36): vận hành
 
 - **Không có token Kaggle trong phiên:** dữ liệu công khai tải bằng `automation/anon_download.py` (navcache-v2, hmm-cms-cache-exact, hmm-topk,
