@@ -41,6 +41,14 @@ segFAR 0.035; HSI-M-nos (không nới đầu chuỗi) +0.038.
 recall gộp mọi run giữ ra ≥ HSI-rot-m-sc − 0.005. **Quyết định:** H1 ∧ H2 ∧ H8 ⇒ HSI-M thay HSI-rot-m-sc; nếu không, giữ HSI-rot-m-sc và báo cáo
 HSI-M như ablation (đổi recall lấy điều hướng / bảo đảm theo chế độ).
 
+**Kết quả giữ ra Entry 4 (đợt `hsi7`, 441 run, 413 giữ ra; nguồn cache đã kiểm: 366 `hmm-navcache-v2` + 75 `hmm-e37-caches`; 2026-11-03 18:40 UTC).**
+Recall / segFAR TB / run > α / sai số (TB theo run, gộp 413): HSI-rot-m-sc 0.772 / 0.0026 / 0 / 15.0 m; **HSI-M 0.764 / 0.0019 / 0 / 13.9 m**; HSI-M-nos
+0.770 / 0.0026 / 0 / 13.9 m; SH 0.731 / 0.0029 / 2 / 15.6 m. CMU: HSI-M 0.654 (+0.002 so với HSI-rot-m-sc), HSI-M-nos 0.695 (+0.043). **H8 không đạt**
+(CMU +0.002 < +0.03; gộp −0.008 < −0.005). H1 đạt (0/413), H2 đạt (≥ SH trên 7/9; gộp +0.033), H4 đạt (7/9; kém old town +2.8 m, NCLT +1.3 m).
+Mondrian theo chế độ cải thiện điều hướng rõ (Boreas 6.9 → 4.4 m, old town 31.6 → 28.7, countryside 26.8 → 24.8) và giảm segFAR, đổi lại −0.008 recall.
+**Quyết định (theo quy tắc đăng ký trước):** giữ HSI-rot-m-sc; HSI-M báo cáo như điểm vận hành ưu tiên điều hướng (bảo đảm theo chế độ). Quan sát
+hậu nghiệm (không dùng để quyết định): HSI-M-nos đạt điều kiện số của H8 (CMU +0.043, gộp −0.002) với sai số 13.9 m.
+
 ## Entry 3 — đầu chuỗi và biên null (HSI-rot-m-sc) — đăng ký trước (2026-11-03 17:00 UTC, chưa xem kết quả giữ ra nào của Entry 1–2)
 
 **Chẩn đoán trên tập thiết kế (seed 0) với HSI-rot-m:** (i) CMU: 97–100 % frame on-map bị bỏ lỡ (chuỗi đúng) nằm TRƯỚC điểm neo đầu tiên của

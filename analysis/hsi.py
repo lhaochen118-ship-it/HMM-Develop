@@ -475,7 +475,7 @@ def evaluate_mask(z, name, acc, seqs, cfg, nav=True):
 
 def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict", bridge="rigid", sc_lags=(), train_all=False,
               calib="regime", adaptive=False, floor=-np.inf, start_relax=False, null_cap=None, mondrian=None, verbose=False,
-              null_oracle=None, geo_budget=None, anchors="ver", **kw):
+              null_oracle=None, geo_budget=None, anchors="ver", sc_mode="window", **kw):
     """HSI v2 = geometric self-verification (a: trusted anchors, b: dead-reckoning agreement; trusted_geometry) OR
     (c) a hindsight-learned score above a conformal threshold calibrated on hindsight-null segments of the SAME regime
     (frames where a|b do not fire), held out from training. scope: 'pooled' (every session's held-out units) or 'session'.
@@ -542,7 +542,27 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     # (c) needs short-track support: the chain consistent with the odometry at every lag in sc_lags (causal)
     if sc_lags and hasattr(cfg, "sc_scale"): sc_lags = tuple(sorted({cfg.sc_scale(k) for k in sc_lags}))
     sc = np.ones(n, bool)
-    if sc_lags:
+    if sc_lags and sc_mode == "jump":                          # support measured only SINCE the last jump of the chain (re-acquisition):
+        hz_ = horiz(MP); rm = getattr(cfg, "rot_max", None); K = tuple(sorted(sc_lags))   # the longest lag inside the current
+        for idx in seqs:                                       # stretch decides (with its own window rotation); >= the shortest lag
+            L = len(idx); g = np.zeros(L, bool); ar = np.arange(L)
+            jmp = np.zeros(L, bool); jmp[1:] = lag_res(MP[est], O, idx, 1) > cfg.excl
+            since = ar - np.maximum.accumulate(np.where(jmp, ar, 0))
+            kmax = np.full(L, -1)
+            for k in K: kmax[since >= k] = k
+            for Kx in K:
+                sel = kmax == Kx
+                if not sel.any(): continue
+                ang = window_rotation(MP[est], O, idx, Kx, hz_) if rm is not None else None
+                gg = np.ones(L, bool)
+                if rm is not None and len(hz_) == 2: gg &= np.abs(np.nan_to_num(ang, nan=np.inf)) <= rm
+                for k in K:
+                    if k > Kx: break
+                    r = lag_res(MP[est], O, idx, k) if rm is None else lag_res_rot(MP[est], O, idx, k, ang, hz_)
+                    okk = np.zeros(L, bool); okk[k:] = r <= cfg.tolv(k, idx[k:]); gg &= okk
+                g[sel] = gg[sel]
+            sc[idx] = g
+    elif sc_lags:
         for idx in seqs:
             L = len(idx); g = np.ones(L, bool); g[:max(sc_lags)] = False; hz_ = horiz(MP); rm = getattr(cfg, "rot_max", None)
             if rm is not None:
@@ -593,7 +613,7 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
         score[cur] = clf.predict_proba(X[cur])[:, 1]; thr_at[cur] = np.array([thr_k[k_] for k_ in klass[cur]])
     rc = (score > np.maximum(thr_at, floor)) & regime          # MAP floor: never report a fix the model thinks is more likely wrong
     acc = geo | rc
-    return dict(acc=acc, ra=ra, rb=rb, rc=rc, score=score, thr=thr_at, anc=anc, y=y, null=null, seqs=seqs, cfg=cfg, kappa=kap,
+    return dict(acc=acc, ra=ra, rb=rb, rc=rc, score=score, thr=thr_at, anc=anc, y=y, null=null, seqs=seqs, cfg=cfg, kappa=kap, sc=sc, gate=gate,
                 n_cal_seg=len(segs), names=names, secs=time.time() - t0)
 
 
