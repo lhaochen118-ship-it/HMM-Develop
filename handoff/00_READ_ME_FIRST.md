@@ -1,20 +1,17 @@
-# 00 — READ ME FIRST
+# 00 — READ ME FIRST (branch `hmm-2nd-idea`)
 
-*Cập nhật 2026-11-02 (branch `hmm-navigation-5`). Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR. Báo cáo mới nhất: `paper/BAO_CAO_E36.pdf` (phẫu thuật tiến CST-F / CST-J, N = 40, St Lucia + SafeVPR'26); trước đó `paper/BAO_CAO_E32.pdf`.*
+*2026-11-03. Repo `lhaochen118-ship-it/hmm-develop`. Không tạo PR. Branch này dành cho **ý tưởng thứ hai**: một lời giải A\* hoàn toàn
+mới cho cùng bài toán (HMM, định vị thị giác trên chuỗi ảnh camera đơn; nền tảng Sattler et al. CVPR 2018). Ý tưởng 1 (phẫu thuật bản đồ
+phản thực) ở branch `hmm-navigation-5`; ở đây chỉ còn bản tóm tắt + số liệu baseline.*
 
-**MỚI NHẤT (2026-11-03, Entry 38 xong):** `paper/BAO_CAO_E38.pdf`, `RESEARCH_LOG.md` Entry 38, `03_HANDOFF.md` §000000000.
-**MỚI NHẤT (2026-11-03, Entry 37 xong):** báo cáo `paper/BAO_CAO_E37.pdf`; kết quả + kết luận `RESEARCH_LOG.md` Entry 37; trạng thái
-`03_HANDOFF.md` §00000000. Mục "DANG DỞ" bên dưới là lịch sử của phiên trước.
-
-**DANG DỞ (2026-11-03): đọc `handoff/06_E37_DANG_DO.md` trước tiên — Entry 37 đã code + kiểm, đợt Kaggle đã dựng nhưng chưa chạy.** Khung chat mới: bắt đầu từ `handoff/05_NEW_CHAT_GUIDE.md` (thứ tự đọc, bản đồ code, khởi động nhanh, việc tiếp theo).
+**Bắt đầu: `05_NEW_CHAT_GUIDE.md`** (nhiệm vụ, thứ tự đọc, vòng lặp, bản đồ code, nguyên tắc tối ưu).
 
 | File | Nội dung |
 |---|---|
-| `06_E37_DANG_DO.md` (.pdf) | Entry 37 dang dở: việc đã làm, số liệu thiết kế, các bước còn lại |
-| `05_NEW_CHAT_GUIDE.md` | Cách đọc repo và việc tiếp theo (đọc đầu tiên) |
-| `03_HANDOFF.md` (.pdf) | Mục tiêu, tiến độ, quyết định đã chốt, vị trí mọi thứ, các bước tiếp theo |
-| `01_SCIENTIFIC_FINDINGS.md` (.pdf) | Đóng góp, kết quả tích cực/tiêu cực, bằng chứng, điều kiện kiểm chứng (§N mới nhất) |
-| `02_ENGINEERING_OPS_NOTES.md` (.pdf) | Code, Kaggle, lỗi đã gặp, bài học (§0 mới nhất) |
-| `04_RESEARCH_WORKFLOW.md` (.pdf) | Quy trình theo phase và trạng thái; bản gốc `RESEARCH_WORKFLOW_original.pdf` |
-| `ENVIRONMENT_SUMMARY.md` (.pdf) | Dataset, cache công khai, tài khoản Kaggle, cách chạy |
-| `RUNNING_KERNELS.md` (.pdf) | Danh sách kernel của khung chat 2026-10-29 (lịch sử; hiện không có kernel nào chạy) |
+| `05_NEW_CHAT_GUIDE.md` | Đọc đầu tiên: nhiệm vụ, vòng lặp nghiên cứu, code giữ lại, nguyên tắc tối ưu tài nguyên |
+| `07_IDEA1_SUMMARY.md` | Ý tưởng 1: giao thức, số liệu cần đánh bại, giới hạn, bài học |
+| `04_RESEARCH_WORKFLOW.md` (.pdf) + `RESEARCH_WORKFLOW_original.pdf` | Quy trình theo phase, nguyên tắc |
+| `01_SCIENTIFIC_FINDINGS.md` (.pdf) | Phát hiện khoa học tích lũy (của ý tưởng 1 và các hướng trước) |
+| `02_ENGINEERING_OPS_NOTES.md` (.pdf) | §00 nguyên tắc tối ưu; Kaggle, lỗi đã gặp, bài học |
+| `03_HANDOFF.md` (.pdf) | Trạng thái branch, cái gì giữ / bỏ, cách khôi phục code cũ |
+| `ENVIRONMENT_SUMMARY.md` (.pdf) | Dataset, cache công khai, tài khoản, hạn mức GPU |

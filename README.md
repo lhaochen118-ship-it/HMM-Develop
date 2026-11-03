@@ -1,16 +1,16 @@
-# HMM-navigation — sequence-based visual localization with a monocular camera (research repo)
+# HMM sequence-based visual localization — idea 2 (branch `hmm-2nd-idea`)
 
-**Start here:** `handoff/05_NEW_CHAT_GUIDE.md` (latest round: Entry 37, `paper/BAO_CAO_E37.pdf`; rule SH AND CST-JS, `analysis/e37_eval.py`) (reading order, code map, next steps; index in `handoff/00_READ_ME_FIRST.md`). Latest branch: `hmm-navigation-5`. Latest round (Entry 36): forward counterfactual surgery (`analysis/cms_fwd.py`), report `paper/BAO_CAO_E36.pdf`. Current method: **CMS-CPC/H+SH+G+NGR** -- Counterfactual Map Surgery (the decision threshold is calibrated on the deployment stream itself, with the map corridor around the system's own belief removed; exact null `analysis/cms_exact.py`) plus a counterfactual innovation gate for navigation risk (`analysis/navrisk.py`); theory `paper/cms_theory.md`; report `paper/BAO_CAO_E29.pdf`, audit `paper/AUDIT_E29.md` (previous: `paper/BAO_CAO_E28.pdf`).
+**Start here:** `handoff/05_NEW_CHAT_GUIDE.md`. This branch searches for a NEW A\*-level solution to sequence-based visual localization
+with an HMM on monocular image sequences (foundation: Sattler et al., CVPR 2018). Idea 1 (counterfactual map surgery, branch
+`hmm-navigation-5`) is the baseline to beat: `handoff/07_IDEA1_SUMMARY.md`, numbers in `analysis/results/baselines_idea1/`.
 
 | Path | What |
 |---|---|
-| `handoff/` | `00_READ_ME_FIRST.md` (guide + next tasks), `02_ENGINEERING_OPS_NOTES` (Kaggle ops), `04_RESEARCH_WORKFLOW` (process; original prompt in `RESEARCH_WORKFLOW_original.pdf`), `ENVIRONMENT_SUMMARY` (datasets, dumps, accounts). md sources with PDFs alongside. |
-| `analysis/` | `vprlib.py` (dump loaders, metrics, `frame_order` for sequences), `selfcal.py` + `sc_eval.py` (label-free map-calibrated off-map test and per-dataset config, reusable as an HMM component). `results/` is empty for the new direction. |
-| `automation/` | Kaggle: `fanout.py` (all accounts' GPU slots), `make_eval_kernel.py`, `run_kernel.py`; dump notebooks: `build_nb.py`, `make_meta.py`, `vpr_extra.py`; `md2pdf.py`. |
-| `nb15_src/` | Descriptor-dump notebook sources (data public: Kaggle `nhatlong1103/vpr-descriptor-dumps`). |
-| `literature/` | Paper-only review of visual localization (`VISUAL_LOCALIZATION_REVIEW.md/.pdf`). |
-| `LITERATURE_GATE.md`, `RESEARCH_LOG.md` | Novelty gates 1–5 and experiment log of the earlier directions (history and lessons). |
+| `handoff/` | 00 index, 01 scientific findings, 02 engineering / Kaggle ops (§00 resource-optimisation rules), 03 status, 04 research workflow, 05 new-chat guide, 07 idea-1 summary, ENVIRONMENT_SUMMARY (md + pdf) |
+| `analysis/` | shared platform: loaders (`vprlib.py`), holes + odometry + HMM + metrics (`nav_demo.py`), evaluation (`nav_rules.py`, `oc_summary.py`, `e26_summary.py`, `position_audit.py`), 2026 baselines (`tao.py`, `trail.py`, `safevpr26*.py`, `vlm_*.py`) |
+| `automation/` | Kaggle: `make_eval_kernel.py`, `fanout.py`, `central_monitor.py`, `e37_collect.py`, `publish_dataset.py`, dump builders, `md2pdf.py` |
+| `nb15_src/` | descriptor-extraction notebook sources |
+| `literature/`, `LITERATURE_GATE.md` | related work and novelty gates (new gates from Gate 17) |
+| `RESEARCH_LOG.md` | log of idea 2 (idea 1: `history/RESEARCH_LOG_idea1.md`) |
 
-Earlier work is kept on other branches: SelfCal paper, results and experiments on `claude/selfcal-aa`; sequence SelfCal
-and the Kalman localisation demo (`exp11`, `exp12`) on `claude/selfcal-seq`; the first HMM/CCBF notebooks and docs on
-`main`. Restore any file with `git checkout <branch> -- <path>`.
+Removed idea-1 code and reports can be restored with `git checkout hmm-navigation-5 -- <path>`.

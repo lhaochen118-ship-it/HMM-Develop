@@ -1,5 +1,7 @@
 # Datasets & Environment Summary
 
+*Branch `hmm-2nd-idea`: dữ liệu và tài khoản dưới đây dùng chung cho ý tưởng 2. Các dataset cache có tiền tố `hmm-cms-*`, `hmm-fwd-null-*` là của ý tưởng 1 (baseline).*
+
 *Cập nhật 2026-11-02 (branch `hmm-navigation-5`; St Lucia ở §1e; dataset/acc mới ở §1d, §3). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
 cách đọc repo và việc tiếp theo ở `handoff/05_NEW_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Kết quả audit dữ liệu (Bước 1): `DATA_AUDIT.md`. Dataset mới
 cho hướng HMM (chuỗi dài + odometry thật): **§1b 4Seasons dump** và **§1c Boreas** bên dưới.*

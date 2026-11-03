@@ -5,6 +5,24 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 00. NGUYÊN TẮC TỐI ƯU TÀI NGUYÊN (đúc kết đến 2026-11-03; áp dụng cho mọi đợt của ý tưởng 2)
+
+| Tài nguyên | Thực tế đo được | Quy tắc |
+|---|---|---|
+| Phiên L4×4 (Kaggle, competition `gemma-4-developer-agent`) | 4 × L4 23 GB, 48 vCPU, 197 GB RAM, internet tắt | 46 job đơn luồng / phiên (`--par 46`, 1 luồng BLAS/job), GPU chia vòng theo chỉ số job |
+| GPU | 12 tiến trình/GPU bị chia thời gian; lời gọi nhỏ ⇒ GPU ≈ CPU. Gộp lô qua nhiều đơn vị: 35.5 → 18.3 ms/frame (1.94×); MPS 1.34× (code chưa gộp), 0× (đã gộp) | Thiết kế phần GPU theo lô lớn (≥ 1 000 hàng); float64 khi cần trùng numpy; lô tự chia đôi khi OOM; `expandable_segments` |
+| VRAM | Code cũ dùng ~11 % (0.2 GB/job); lô 2 048 hàng ~2 GB/job ⇒ OOM khi 12 job/GPU | ~1 GB/tiến trình |
+| CPU | Bão hoà; HT làm mỗi job chậm ~1.5× khi đủ tải | Đo ms/frame **dưới tải đầy**, không phải 1 job |
+| RAM | ≤ 3 GB/job phần lớn; Boreas 8448 chiều 3–6 GB | fp16 khi lưu, đổi kiểu theo chuỗi; ≤ ~12 job nặng/phiên |
+| Hạn mức GPU | 30 GPU-giờ/tuần/acc; L4×4 = 4 GPU-giờ/giờ (~7.5 giờ L4/tuần/acc) | Ước GPU-giờ trước đợt; báo user khi thiếu acc L4 |
+| Phiên CPU | 5/acc, 4 vCPU, ~30 GB, có internet, không tốn hạn mức GPU | Đơn vị nhỏ / job tải dữ liệu / đánh giá nhẹ |
+| API Kaggle | Giới hạn theo IP (~80 tiến trình hỏi trạng thái ⇒ bị chặn) | Một `central_monitor.py`, khoảng cách 20–30 s; đẩy liên tục khi còn slot; bỏ qua acc bị người khác chiếm / hết hạn mức |
+| Đĩa phiên chat | 30 GB | Giải nén đầu ra một lần, xoá tar; publish dataset rồi xoá bản cục bộ |
+
+Luồng chuẩn của một đợt: (1) smoke test cục bộ đầu-cuối trên dữ liệu nhỏ; (2) kernel thăm dò với job thật dưới tải đầy (ms/frame, RSS, VRAM,
+GPU = numpy); (3) chi phí đo ⇒ đóng gói LPT theo đơn vị phụ thuộc (job chuẩn bị đầu, job chờ cuối), gộp mọi giai đoạn trong kernel;
+(4) đồng bộ code dataset mọi acc, chờ "ready"; (5) một monitor đẩy và kéo; (6) gom kết quả ngay khi từng kernel xong.
+
 ## 000000000. Vòng 12 (2026-11-03, Entry 38): vận hành
 
 - **Hạn mức GPU:** mỗi acc 30 GPU-giờ/tuần; phiên L4×4 tính **4 GPU-giờ mỗi giờ** (≈ 7.5 giờ L4/acc/tuần). `nhatlong1103` hết quota trong vòng này

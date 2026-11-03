@@ -24,7 +24,11 @@ thuyết phục, câu chuyện ở mức paper.
 6. **Viết paper và bàn giao.** Bảng sinh tự động từ `analysis/results/`. Tài liệu bàn giao 00–04 cùng
    environment summary.
 
-## Trạng thái theo phase (hướng HMM-navigation, 2026-10-31)
+## Trạng thái theo phase — ý tưởng 2 (branch `hmm-2nd-idea`, 2026-11-03)
+
+Mọi phase bắt đầu lại từ phase 1 cho lời giải mới; dữ liệu (phase 4) và hạ tầng (phase 5) dùng lại. Bảng dưới là trạng thái của ý tưởng 1.
+
+## Trạng thái theo phase (hướng HMM-navigation, ý tưởng 1, 2026-10-31)
 
 | Phase | Trạng thái |
 |---|---|

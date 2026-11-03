@@ -6,6 +6,11 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
+## 0. Đọc cho ý tưởng 2 (branch `hmm-2nd-idea`)
+
+Các mục dưới đây là phát hiện của ý tưởng 1 và các hướng trước (SelfCal, CPC-HMM, CMS). Tóm tắt chuyển giao + số liệu cần đánh bại:
+`07_IDEA1_SUMMARY.md`. Phát hiện của ý tưởng 2 ghi thành mục mới ở đầu file này.
+
 ## N000000000. Vòng 12 (2026-11-03, Entry 38) — đọc trước §N00000000
 
 - **Thử:** họ lỗ ảo hình khối (lưới ngẫu nhiên mỗi lần chạy ảo) + luật giao CST-JSU (Mệnh đề 20: hợp lệ nếu lỗ thật giống MỘT họ). Báo cáo
