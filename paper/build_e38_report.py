@@ -12,6 +12,8 @@ import e26_summary as E
 from build_e28_report import tab_def
 
 arg = lambda k: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else None
+NEW_SEEDS = [int(x) for x in (arg("--new-seeds") or "3,4,5").split(",")]   # Entry 39: --new-seeds 10,11,12 (new hole layouts)
+OUT = arg("--out") or "e38_tables.md"
 MAIN = ["boreas", "nclt", "cmu", "nord", "4s:office_loop", "4s:old_town", "4s:countryside"]
 HOLED = ["boreas", "cmu", "nord", "4s:office_loop", "4s:old_town", "4s:countryside"]
 E.DS_NAME.update({"oxford": "Oxford RobotCar"})
@@ -36,7 +38,7 @@ def split(oc_dir):
     root = tempfile.mkdtemp(); sets = {}
     for f in sorted(glob.glob(os.path.join(oc_dir, "**", "oc_*_e38_s*.json"), recursive=True)):
         b = os.path.basename(f); seed = int(re.search(r"_s(\d+)\.json$", b).group(1))
-        s = "oxford" if b.startswith("oc_oxford_") else ("new" if 3 <= seed <= 5 else "e37")
+        s = "oxford" if b.startswith("oc_oxford_") else ("new" if seed in NEW_SEEDS else "e37")
         d = os.path.join(root, s); os.makedirs(d, exist_ok=True); shutil.copy(f, d); sets[s] = d
     return sets
 
@@ -102,7 +104,7 @@ def main():
             La, ok = audit(arg(key), dss, title, need); L += La
             H.append(f"- H38b ({title}): CST-JSU ≤ 0.07 ở mọi lớp ≥ 50 đoạn trên {ok}/{len(dss)} (cần ≥ {need}/{len(dss)})")
     tables = "\n".join(L + H) + "\n"
-    open(os.path.join(HERE, "e38_tables.md"), "w").write(tables); print(tables)
+    open(os.path.join(HERE, OUT), "w").write(tables); print(tables)
 
 
 if __name__ == "__main__":

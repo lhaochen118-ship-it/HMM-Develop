@@ -5,6 +5,20 @@ thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trư�
 2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
 `ENVIRONMENT_SUMMARY.md`.*
 
+## 0000000000. Vòng 13 (2026-11-03, Entry 39): vận hành
+
+- **Giới hạn API lần 2 (12:31 và 13:02):** sau một đợt kéo hàng chục đầu ra (mỗi lệnh `kernels output` tải results.tar ~0.3–0.6 GB) cộng các vòng
+  `datasets status` song song trên 9 acc. Giới hạn theo IP, cửa sổ dài (lần 2 bị chặn lại ngay khi hết 30 phút nghỉ). Quy tắc: không chạy vòng
+  kiểm tra song song nhiều acc; sau khi đợt lớn xong kéo với khoảng cách ≥ 45 s; chỉ một tiến trình gọi API.
+- **Lỗi lập lịch của central_monitor (đã sửa):** "ưu tiên acc của lần gọi trước" làm các acc khác bị bỏ đói khi một acc có nhiều kernel đến hạn
+  hơn số lần gọi trong một chu kỳ run-poll (21 kernel không được hỏi trong 50 phút). Nay: kernel quá hạn lâu nhất trước.
+- **Bộ gom phải giữ mọi file trung gian cần cho phân tích sau** (navcache của run sinh trong kernel): lần này phải tải lại 39 results.tar.
+- **Đường găng:** chuẩn bị Boreas trong kernel (`nav_demo --cache-only` + top-300 + thống kê chính xác, CPU) 41–55 phút; 26 phần null chờ nó ⇒
+  kernel L4 ~85–90 phút. Phiên CPU 4 vCPU: ~6 000 worker-giây ước ⇒ 50–55 phút thật. Lần sau: chuẩn bị Boreas ở một đợt riêng trước (hoặc
+  chuyển map null / qm_stats của `nav_demo` sang GPU), ước chi phí CPU ×1.3 so với L4-GPU.
+- **Toạ độ:** luôn dùng trục phẳng `z["hz"]` cho vị trí 3-D (4Seasons, NCLT); lỗi này đã làm sai một chẩn đoán (Entry 38).
+- **Không force-push:** sửa commit lỡ đưa worktree vào bằng một commit mới (`git rm --cached`, `.gitignore`).
+
 ## 000000000. Vòng 12 (2026-11-03, Entry 38): vận hành
 
 - **Hạn mức GPU:** mỗi acc 30 GPU-giờ/tuần; phiên L4×4 tính **4 GPU-giờ mỗi giờ** (≈ 7.5 giờ L4/acc/tuần). `nhatlong1103` hết quota trong vòng này

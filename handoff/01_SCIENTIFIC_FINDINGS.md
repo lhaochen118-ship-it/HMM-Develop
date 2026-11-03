@@ -6,6 +6,17 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
+## N0000000000. Vòng 13 (2026-11-03, Entry 39) — đọc trước §N000000000
+
+- **Phần dư ở mép lỗ là biên định nghĩa (D39-margin, được ủng hộ):** tính off-map từ off_d + 5 m thì tỷ lệ báo ở mép giảm Boreas 0.084 → 0.030,
+  old town 0.109 → 0.035, đầu chuỗi office 0.119 → 0.000; từ off_d + 5 m mọi lớp ≤ 0.07 trên 7/7 (CST-JS, CST-JSU, CST-JSU [both]).
+  91–97 % báo ở mép có sai số < off_d + 10 m: robot vừa qua 40 m, hệ thống báo nơi còn lại gần nhất. Ngưỡng nhị phân off_d của metric phạt
+  các fix "gần đúng" như fix sai hẳn.
+- **Hệ số 1/π (D39-pi, một phần):** π = 0.55 (old town) – 0.70 (CMU) ⇒ cận a/π = 0.07–0.09; giải thích phần lớn chứ không hết khoảng cách.
+- **Đính chính Entry 38:** "old town nhảy xa ~1 km ở mép" là lỗi script (lấy 2 cột đầu của toạ độ 3-D 4Seasons thay vì trục phẳng `hz`).
+  Sai số điều hướng +13–15 m của CST-JS trên old town đến từ 324 fix sai > 100 m (160 khi robot vẫn TRÊN bản đồ); SH chặn hết loại này.
+- **Xác nhận CST-JSU [both] trên bố cục lỗ mới (seed 10–12, 108 run):** kết quả ở `RESEARCH_LOG.md` Entry 39 và §00000000000 của `03`.
+
 ## N000000000. Vòng 12 (2026-11-03, Entry 38) — đọc trước §N00000000
 
 - **Thử:** họ lỗ ảo hình khối (lưới ngẫu nhiên mỗi lần chạy ảo) + luật giao CST-JSU (Mệnh đề 20: hợp lệ nếu lỗ thật giống MỘT họ). Báo cáo
