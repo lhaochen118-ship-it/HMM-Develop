@@ -43,8 +43,11 @@ N = 40 (cửa sổ niềm tin) tăng recall 0.01–0.03 so với N = 20 trên m�
 ## 4. Giới hạn đã biết của ý tưởng 1 (cơ hội cho ý tưởng 2)
 
 - Recall bị chặn bởi bộ lọc vị trí và descriptor: countryside 0.51, NCLT 0.61, old town 0.69; DINOv2/NetVLAD thấp (0.2–0.6).
-- Old town: báo sai ở **mép lỗ** sang nơi giống nhau ở xa (~1 km) → sai số điều hướng +13–15 m với luật không có SH.
-- Bảo đảm theo từng vị trí (mép, đầu chuỗi) chưa đạt: tỷ lệ báo ở mép Boreas 0.08, old town 0.11; lỗ ảo hình khối không sửa được (Entry 38).
+- Old town: luật không có SH (CST-JS) để lọt 324 fix sai > 100 m (160 khi robot vẫn TRÊN bản đồ — sai nơi; SH chặn hết loại này) → sai số
+  điều hướng +13–15 m. (Chẩn đoán "nhảy xa ~1 km ở mép" trong Entry 38 là lỗi script — sai trục toạ độ; đã đính chính ở Entry 39.)
+- Tỷ lệ báo ở mép lỗ vượt 0.07 (Boreas 0.08, old town 0.11) chủ yếu là **biên định nghĩa**: robot vừa qua off_d = 40 m, hệ thống báo nơi còn
+  lại gần nhất (sai 40–50 m); tính off-map từ off_d + 5 m thì mọi lớp ≤ 0.035 (Entry 39, D39-margin). Lỗ ảo hình khối không đổi gì (Entry 38).
+  Bài học cho thiết kế metric: báo cáo sai số liên tục (không chỉ nhị phân off-map) và biên định nghĩa.
 - Chi phí hiệu chuẩn lớn: mô phỏng tiến ~18–45 ms/frame/lõi (đã gộp lô GPU), cần chạy trên cả luồng của phiên.
 - Mọi luật đều quyết định "báo / không báo" trên fix của một bộ lọc có sẵn; không học, không dùng hình học 6DOF / local feature (dump chỉ có
   global descriptor; ảnh gốc có cho Boreas, 4Seasons, NCLT, St Lucia — xem `ENVIRONMENT_SUMMARY.md`).
