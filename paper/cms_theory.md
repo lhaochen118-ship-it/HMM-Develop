@@ -349,6 +349,26 @@ thật có báo theo lớp vị trí (`analysis/e37_audit.py`, giả thuyết H3
 1.3–1.8 × nhanh hơn khi phép thử tuyến chạy trên GPU (`analysis/cms_torch.py`, float64, trùng tuyệt đối với numpy trên L4). Đây là chi phí
 hiệu chuẩn (chạy một lần trên luồng của phiên, song song theo chuỗi), không phải chi phí quyết định trực tuyến (~1–2 ms / frame).
 
+## 4h. Lỗ ảo HÌNH KHỐI và luật giao CST-JSU (Entry 38)
+
+**Chẩn đoán.** Kiểm toán Entry 37 (H37b) thất bại ở đoạn MÉP của lỗ thật trên Boreas (0.084) và old town (0.109). Lỗ thật của benchmark là
+các ô vuông 300 m của bản đồ (mọi nơi trong ô bị xoá, kể cả phố song song và phố cắt ngang); lỗ ảo của §4f–4g là ống bán kính ρ dọc đường
+tin. Các báo sai ở mép thật: robot chỉ vừa qua off_d (khoảng cách tới nơi còn lại ≈ 42 m), fix = nơi còn lại gần nhất (Boreas, sai ≈ 43 m)
+hoặc một nơi giống ở xa (old town, ≈ 1 km).
+
+**Họ lỗ ảo hình khối.** Mỗi lần chạy ảo có một lưới vuông ngẫu nhiên G (cạnh = block của cấu hình × {½, 1, 2}, xoay U[0, π/2), dịch U[0, 1)
+ô; tất định theo (frame, họ)). Lối thoát tại τ: V^B_τ = { m : ô_G(m) ∋ một nơi trong bán kính ρ của X⁺_τ } ∩ { m : d(m, X⁺_τ) < d(m, X⁻_τ) };
+khởi đầu: các ô trong bán kính ρ của đường tin, không cắt Voronoi. Phần còn lại giống hệt CST-JS (hiện diện tiến, mô phỏng toàn quyết định,
+ngưỡng theo vị trí, κ′). Đây là một **tiên nghiệm về hình dạng vùng thiếu bản đồ** (khối có bề ngang), không dùng lưới sinh lỗ của benchmark
+(cố định 300 m, thẳng trục, dịch 0).
+
+**Luật giao.** CST-JSU báo frame t iff nó qua ngưỡng của cả họ hành lang (CST-JS) và họ khối (CST-JSB). *Mệnh đề 20.* Gọi (S3-JF-C), (S3-JF-B)
+là điều kiện hoán đổi của Mệnh đề 19 với họ hành lang, họ khối. Với mọi đoạn off-map thật G₀: nếu **ít nhất một** trong hai điều kiện đúng cho G₀
+thì P(CST-JSU báo trong G₀) ≤ a(n_b + 1)/(π_b n_b + 1). *Chứng minh.* {CST-JSU báo trong G₀} ⊆ {CST-JS báo trong G₀} ∩ {CST-JSB báo trong G₀};
+xác suất của giao ≤ xác suất của biến cố thuộc họ có điều kiện đúng, áp dụng Mệnh đề 19 cho họ đó. ∎ Nghĩa là bảo đảm chỉ cần lỗ thật "giống"
+một trong các hình dạng lỗ ảo; thêm họ hình dạng làm luật chặt hơn (giá bằng recall), không bao giờ làm mất bảo đảm của họ cũ. Cũng vậy cho
+mọi họ hình dạng khác (giao của K họ: hợp lệ nếu một họ đúng). Kiểm thực nghiệm: `RESEARCH_LOG.md` Entry 38, H38a–H38b.
+
 ## 5. Điểm mới so với tài liệu (tóm tắt; Gate 12 trong `LITERATURE_GATE.md`)
 
 - Null bản đồ (SelfCal, certified, CPC-SC; SAFEVPR'26 và Quantile Transfer dùng nhãn trên traversal hiệu chuẩn): null đến

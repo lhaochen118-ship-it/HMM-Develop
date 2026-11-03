@@ -7,7 +7,7 @@ Segments are the disjoint H-frame off-map segments of nav_demo.rule_metrics (the
   deep  = later segments of an excursion (not start).
 A segment is "reported" iff the rule accepts at least one of its frames (= a false fix in an off-map segment).
 Inputs: oc_curves --dump-frames files (results/frames_<tag>_<desc>_e37_s<seed>.npz: names, acc) + the run's navcache.
-Usage: e37_audit.py <navcache_dir> <frames_dir> <out.json> [--rules a,b] [--runs regex] [--jobs 4]
+Usage: e37_audit.py <navcache_dir> <frames_dir> <out.json> [--rules a,b] [--runs regex] [--jobs 4] [--lab e37|e38]
 Prints per dataset (pooled over runs, counts summed): n segments and report rate per class for every rule."""
 import sys, os, json, glob, re
 import numpy as np
@@ -15,7 +15,8 @@ from multiprocessing import Pool
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from cms_fwd import OFF_D
 
-RULES = ["CMS-CPC/H+CSTJS+G+NGRr", "CMS-CPC/H+SH+CSTJS+G+NGRr", "CMS-CPC/H+CSTJS+G[both]+NGRr", "CMS-CPC/H+CSTJs+G+NGRr",
+RULES = ["CMS-CPC/H+CSTJSU+G+NGRr", "CMS-CPC/H+CSTJSB+G+NGRr", "CMS-CPC/H+SH+CSTJSU+G+NGRr", "CMS-CPC/H+CSTJSU+G[both]+NGRr",
+         "CMS-CPC/H+CSTJS+G+NGRr", "CMS-CPC/H+SH+CSTJS+G+NGRr", "CMS-CPC/H+CSTJS+G[both]+NGRr", "CMS-CPC/H+CSTJs+G+NGRr",
          "CMS-CPC/H+SH+CSTJs+G+NGRr", "CMS-CPC/H+CSTJ+G+NGRr", "CMS-CPC/H+CSTF+G+NGRr", "CMS-CPC/H+SH+G+NGRr", "CMS-CPC/H+SH+CST+G+NGRr",
          "CMS-CPC/H+CSTJS0+G+NGRr", "CMS-CPC/H+CSTJSL+G+NGRr", "CMS-CPC/H+CSTJF0+G+NGRr"]
 CLASSES = ("start", "edge", "deep")
@@ -40,10 +41,13 @@ def seg_classes(z, off_d):
     return out
 
 
+LAB = sys.argv[sys.argv.index("--lab") + 1] if "--lab" in sys.argv else "e37"   # Entry 38: --lab e38 (frames_*_e38_s*.npz)
+
+
 def one(args):
     nf, fdir, rules = args
     tag = os.path.basename(nf)[len("navcache_"):-4]; base, seed = tag.rsplit("_s", 1)
-    ff = os.path.join(fdir, f"frames_{base}_e37_s{seed}.npz")
+    ff = os.path.join(fdir, f"frames_{base}_{LAB}_s{seed}.npz")
     if not os.path.exists(ff): return tag, None
     z = np.load(nf, allow_pickle=True); fr = np.load(ff, allow_pickle=True); names = list(fr["names"]); acc = fr["acc"]
     segs = seg_classes(z, OFF_D[dataset_of(tag).split("_")[0]]); res = {"n": {c: sum(1 for _, c_ in segs if c_ == c) for c in CLASSES}}
