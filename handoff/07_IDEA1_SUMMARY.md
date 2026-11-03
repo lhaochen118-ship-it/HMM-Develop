@@ -59,3 +59,12 @@ N = 40 (cửa sổ niềm tin) tăng recall 0.01–0.03 so với N = 20 trên m�
   thời gian của đoạn off-map dài; null sinh từ chính luồng (can thiệp lên bản đồ) khớp điều kiện ảnh tốt hơn null bản đồ.
 - Mọi bảo đảm thực nghiệm phải được kiểm theo **vị trí** (mép, đầu chuỗi), không chỉ trung bình.
 - Lỗi dữ liệu thật (Boreas dmi, 4/13 chuỗi) đã làm hỏng một vòng: luôn chẩn đoán từng frame trước khi kết luận.
+
+## 6. Kết luận cuối của ý tưởng 1 (Entry 39, bố cục lỗ mới seed 10–12, 108 run)
+
+- CST-JSU [both] (luật nhân quả, hai họ lỗ ảo) hợp lệ 6/6 (không run nào > α) nhưng kiểm toán mép không đạt (old town 0.095, Boreas 0.080);
+  giá recall −0.01…−0.04 so với SH. Trên bố cục mới, ngay cả SH cũng 0.107 ở mép old town.
+- Số liệu SH trên bố cục mới (recall / segFAR / sai số m): Boreas 0.767 / 0.000 / 3.7, CMU 0.801 / 0.011 / 5.3, Nordland 0.771 / 0.000 / 5.9,
+  office 0.819 / 0.000 / 8.6, old town 0.705 / 0.010 / 31.0, countryside 0.501 / 0.000 / 32.2 (`analysis/results/baselines_idea1/e39/`).
+- Phần dư ở mép là biên định nghĩa off_d (từ off_d + 5 m mọi lớp ≤ 0.07, xác nhận trên cả bố cục cũ và mới) + hệ số 1/π (π = 0.55–0.74).
+- Khuyến nghị cuối của ý tưởng 1 (baseline cho ý tưởng 2): **SH ∧ CST-JS** (thực dụng), **CST-F** (chứng nhận), cửa sổ niềm tin N = 40.

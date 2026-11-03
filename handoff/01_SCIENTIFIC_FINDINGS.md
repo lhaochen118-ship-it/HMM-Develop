@@ -20,7 +20,8 @@ Các mục dưới đây là phát hiện của ý tưởng 1 và các hướng 
   bất kỳ giải pháp mới nào cũng phải kiểm loại lỗi "trên bản đồ nhưng sai nơi", không chỉ "ngoài bản đồ".
 - **Hình dạng lỗ ảo (ống hay khối) gần như không đổi kết quả hiệu chuẩn** (Entry 38): đừng đầu tư vào hình học lỗ.
 - **Hệ số 1/π:** khi hiệu chuẩn từ mô phỏng trên chính luồng, phần mô phỏng xuất phát từ trạng thái đã sai (π ≈ 0.55–0.70) làm cận lỏng ra a/π.
-- **Bố cục lỗ mới (seed 10–12):** kết quả xác nhận ở `07_IDEA1_SUMMARY.md` §6 (bổ sung khi xong).
+- **Bố cục lỗ mới (seed 10–12):** ngay cả luật tốt nhất cũng vượt 0.07 ở mép old town (SH 0.107); hiệu chuẩn thêm họ null không sửa được.
+  Kết luận cuối và số liệu baseline trên bố cục mới: `07_IDEA1_SUMMARY.md` §6.
 
 ## N000000000. Vòng 12 (2026-11-03, Entry 38) — đọc trước §N00000000
 
