@@ -3,6 +3,18 @@
 *2026-11-03. Trạng thái, cái đã giữ / bỏ khi tách branch, và việc tiếp theo. Bản handoff đầy đủ của ý tưởng 1:
 `git show hmm-navigation-5:handoff/03_HANDOFF.md`.*
 
+
+## 0. Trạng thái ý tưởng 2 (cập nhật 2026-11-03 17:20 UTC, vòng tự động của phiên `session_01Xy89bX34L6MPEcAxmjRJWt`)
+
+- **Phương pháp:** HSI — tự giám sát hồi cứu bằng hình học (`analysis/hsi.py`, đánh giá `analysis/hsi_eval.py`, tổng hợp `analysis/hsi_summary.py`,
+  lý thuyết `paper/hsi_theory.md`, nhật ký `RESEARCH_LOG.md` Entry 1–3, novelty `LITERATURE_GATE.md` Gate 17).
+- **Luật khuyến nghị hiện tại: HSI-rot-m (Entry 2)** — giữ ra 413 run: hợp lệ 413/413 (segFAR ≤ 0.05), kiểm toán theo vị trí ≤ 0.07 trên 9/9 dataset,
+  recall +0.039 so với SH của ý tưởng 1 (DINOv2/NetVLAD +0.089), sai số điều hướng trong +1 m của SH trên 7/9. Yếu: CMU (−0.14, khởi động lạnh +
+  đầu chuỗi ngắn), NCLT (−0.11), old town sai số +4.6 m.
+- **Đang chạy / chờ gom:** đợt `hsi1` (Entry 1 + 11 ablation), `hsi4` (Entry 3: HSI-rot-m-sc), `hsi5` (lỗ 10 % / 50 %), `hsi6` (off-map tự nhiên 4Seasons
+  chéo cảnh); thư mục làm việc `<scratchpad>/runs/hsi*`; gom bằng `automation/hsi_collect.py`, bảng bằng `analysis/hsi_summary.py` với baseline
+  `analysis/results/baselines_idea1/e37|e38/*.tgz`.
+
 ## 1. Trạng thái
 
 - Branch tách từ `hmm-navigation-5` (sau Entry 38 + đăng ký trước Entry 39). Chưa có ý tưởng 2: phase 1 (literature + gap) bắt đầu từ đầu.
