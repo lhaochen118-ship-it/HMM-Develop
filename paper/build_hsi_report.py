@@ -1,0 +1,39 @@
+"""Build paper/BAO_CAO_HSI.md (+ PDF) from the collected HSI results and the idea-1 baselines.
+Usage: build_hsi_report.py <hsi_results_dir> <idea1_oc_dir> [<idea1_oc_dir> ...]
+Writes paper/hsi_tables_e1.md (main rule HSI, Entry 1), paper/hsi_tables_e2.md (HSI-rot-m, Entry 2) and stitches them with
+paper/hsi_report_text.md (narrative, written by hand) into paper/BAO_CAO_HSI.md, then md2pdf."""
+import sys, os, subprocess, json, shutil, tempfile, glob
+
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+def summary(rdir, bases, main, out_md):
+    """run analysis/hsi_summary.py with `main` renamed to HSI (the summary script reports the variant called HSI)"""
+    tmp = tempfile.mkdtemp()
+    for f in glob.glob(os.path.join(rdir, "hsi_*.json")):
+        j = json.load(open(f)); v = j["variants"]
+        if main not in v: continue
+        if main != "HSI":
+            v = {("HSI" if k == main else ("HSI-e1" if k == "HSI" else k)): x for k, x in v.items()}; j["variants"] = v
+        json.dump(j, open(os.path.join(tmp, os.path.basename(f)), "w"))
+    subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "hsi_summary.py"), tmp] + bases + ["--md", out_md, "--json", out_md[:-3] + ".json"], check=True,
+                   stdout=subprocess.DEVNULL)
+    shutil.rmtree(tmp)
+
+
+def main():
+    rdir, bases = sys.argv[1], sys.argv[2:]
+    P = os.path.join(ROOT, "paper")
+    summary(rdir, bases, "HSI", os.path.join(P, "hsi_tables_e1.md"))
+    summary(rdir, bases, "HSI-rot-m", os.path.join(P, "hsi_tables_e2.md"))
+    text = open(os.path.join(P, "hsi_report_text.md")).read()
+    t1 = open(os.path.join(P, "hsi_tables_e1.md")).read().replace("# HSI wave summary", "### Bảng A — Entry 1 (luật HSI đóng băng)")
+    t2 = open(os.path.join(P, "hsi_tables_e2.md")).read().replace("# HSI wave summary", "### Bảng B — Entry 2 (HSI-rot-m)")
+    md = text.replace("{{TABLES_E1}}", t1).replace("{{TABLES_E2}}", t2)
+    out = os.path.join(P, "BAO_CAO_HSI.md"); open(out, "w").write(md)
+    subprocess.run([sys.executable, os.path.join(ROOT, "automation", "md2pdf.py"), out, out[:-3] + ".pdf"])
+    print("wrote", out)
+
+
+if __name__ == "__main__":
+    main()

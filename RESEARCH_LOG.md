@@ -4,6 +4,18 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+## Entry 3 — đầu chuỗi và biên null (HSI-rot-m-sc) — đăng ký trước (2026-11-03 17:00 UTC, chưa xem kết quả giữ ra nào của Entry 1–2)
+
+**Chẩn đoán trên tập thiết kế (seed 0) với HSI-rot-m:** (i) CMU: 97–100 % frame on-map bị bỏ lỡ (chuỗi đúng) nằm TRƯỚC điểm neo đầu tiên của
+chuỗi, 72–82 % trong 50 frame đầu — chuỗi CMU ngắn (trung vị 186 frame), 37/130 chuỗi bắt đầu off-map; (c) không được báo ở đó vì đòi hỏi nhất
+quán ngắn hạn 20 m; (ii) NCLT: ngưỡng hợp của (c) = +∞ vì null "có thể off-map" (biên 2σ với off_d chỉ 20 m) chứa nhiều frame thật ra ở vùng
+giữa (in_d < d ≤ off_d) nơi hình học báo đúng ⇒ phần hình học chiếm > α đoạn null.
+**Thay đổi:** (1) `start_relax`: trong max(độ trễ nhất quán ngắn) frame đầu của chuỗi, (c) được phép không cần nhất quán ngắn hạn (vẫn: sàn MAP
+0.5, hiệu chuẩn biên chung); (2) `null_cap=0.25`: biên của null "có thể off-map" = min(2σ, off_d/4). Tập thiết kế: HSI-rot-m-sc +0.051 recall so
+với SH (thắng 21/28), sai số −0.3 m (tốt hơn 19/28), segFAR TB 0.004 (max 0.035); CMU 0.659 vs SH 0.652.
+**Đăng ký trước:** luật ứng viên **HSI-rot-m-sc**, cùng tập giữ ra / tham chiếu / H1–H5 như Entry 1; **H7:** HSI-rot-m-sc ≥ HSI-rot-m (Entry 2)
+về recall TB trên ≥ 6/9 dataset mà không có dataset nào segFAR TB > 0.05. **Quyết định:** H1 ∧ H2 ∧ H7 ⇒ thay HSI-rot-m làm luật khuyến nghị.
+
 ## Entry 2 — cửa sổ theo mét quãng đường + bù hướng có giới hạn (HSI-rot-m) — đăng ký trước (2026-11-03 16:40 UTC)
 
 **Bối cảnh.** Viết TRƯỚC khi xem bất kỳ kết quả giữ ra nào của Entry 1 (đợt `hsi1` đang chạy). Hai lỗi đơn vị/giả định của cấu hình Entry 1 nhìn

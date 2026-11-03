@@ -27,8 +27,12 @@ VARIANTS = {
     "HSI-rot": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35),               # (Entry 2 candidate) bounded heading offset (20 deg) in the consistency tests
     "HSI-m": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, metric_windows=True),         # (Entry 2 candidate) windows in metres of path (Oxford / St Lucia: 10 m frames)
     "HSI-rot-m": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True),
+    "HSI-rot-m-s": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True),            # (Entry 3 candidates) starts relaxed
+    "HSI-rot-m-c": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, null_cap=0.25),              # null margin capped at off_d / 4
+    "HSI-rot-m-sc": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25),
     "geo": None, "anc": None,                       # geometric self-verification only (a|b); causal anchors only
-}
+    "Xu21": None, "oracle": None, "top1": None,     # references from the cache: Xu'21 HMM off-map state (T, k tuned WITH labels on
+}                                                   # the 2 easiest conditions, nav_demo), oracle (correct top-1 only), accept-all top-1
 
 
 def find(cdir, fn):
@@ -60,7 +64,11 @@ def main():
         cfg = hsi.Cfg(z, name); seqs = hsi.deployment_seqs(z); n = len(z["est_c"])
         for v in vs:
             t0 = time.time()
-            if v in ("geo", "anc"):
+            if v in ("Xu21", "oracle", "top1"):
+                MP_ = z["MP"]
+                acc, xf = {"Xu21": (z["acc_h"], z["x_hmm"]), "oracle": (z["good"], MP_[z["top"]]), "top1": (np.ones(n, bool), MP_[z["top"]])}[v]
+                o = dict(acc=acc, seqs=seqs, cfg=cfg, xf=xf); diag = {}
+            elif v in ("geo", "anc"):
                 cfg.tolarr = hsi.adaptive_tolerance(z, seqs, cfg)
                 anc = hsi.causal_anchor(z["MP"], z["est_c"], z["o_q"], seqs, cfg, n)
                 if v == "anc": acc = anc

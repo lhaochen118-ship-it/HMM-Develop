@@ -372,7 +372,7 @@ def evaluate(z, name, out, nav=True):
     Ground truth is used here only."""
     import nav_demo as N
     MP, est, q, inm, offm = z["MP"], z["est_c"], z["q_pos"], z["inm"], z["offm"]; cfg = out["cfg"]; H = cfg.H
-    seqs = out["seqs"]; acc = out["acc"]; ok = np.linalg.norm(MP[est] - q, axis=1) <= cfg.excl
+    seqs = out["seqs"]; acc = out["acc"]; ok = np.linalg.norm(out.get("xf", MP[est]) - q, axis=1) <= cfg.excl
     r = N.rule_metrics(acc, ok & inm, inm, offm, seqs, H)
     O = z["o_q"]; start_h = cfg.off_d + 20 * cfg.excl                          # as position_audit.py: path from the start
     cls = {"start": [0, 0], "edge": [0, 0], "deep": [0, 0]}
@@ -393,7 +393,8 @@ def evaluate(z, name, out, nav=True):
     if nav:
         cx = dict(q_pos=q, o_q=O, real=bool(z["real"]), q_seqs=seqs, hz=list(z["hz"]), seed=int(z["seed"]), excl=cfg.excl,
                   head=name.startswith("nclt"))
-        e = N.track(acc, MP[est], cx["q_pos"], cx["o_q"], cx["real"], cx["q_seqs"], cx["hz"], cx["seed"], cx["head"])
+        xf = out.get("xf", MP[est])                                             # fix positions (default: the place chain's MAP)
+        e = N.track(acc, xf, cx["q_pos"], cx["o_q"], cx["real"], cx["q_seqs"], cx["hz"], cx["seed"], cx["head"])
         r["err_mean"] = float(np.nanmean(e)); r["err_p95"] = float(np.nanpercentile(e, 95))
     return r
 
@@ -470,7 +471,7 @@ def evaluate_mask(z, name, acc, seqs, cfg, nav=True):
 
 
 def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict", bridge="rigid", sc_lags=(), train_all=False,
-              calib="regime", adaptive=False, floor=-np.inf, verbose=False, **kw):
+              calib="regime", adaptive=False, floor=-np.inf, start_relax=False, null_cap=None, verbose=False, **kw):
     """HSI v2 = geometric self-verification (a: trusted anchors, b: dead-reckoning agreement; trusted_geometry) OR
     (c) a hindsight-learned score above a conformal threshold calibrated on hindsight-null segments of the SAME regime
     (frames where a|b do not fire), held out from training. scope: 'pooled' (every session's held-out units) or 'session'.
@@ -492,6 +493,8 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     else: ver = hindsight_verified(MP, est, O, seqs, cfg, n)
     xt, sd, avail, kappa, s0, ncl = (hindsight_bridge if bridge == "blend" else hindsight)(z, seqs, cfg, ver)
     y, null_off, dmap = hindsight_labels(z, Cfg(z, name, null_kind="off", **kw), xt, sd)
+    if null_cap is not None:                                    # cap the margin of the possibly-off-map null (NCLT: off_d 20 m)
+        null_off = np.isfinite(sd) & (np.nan_to_num(dmap, nan=-np.inf) > cfg.off_d - np.minimum(cfg.zm * sd, null_cap * cfg.off_d))
     if null_kind in ("offwrong", "offwrong+unl"):
         e = np.linalg.norm(MP[est] - np.nan_to_num(xt), axis=1); null = null_off | (np.isfinite(sd) & (e > cfg.excl + cfg.zm * sd))
         if null_kind == "offwrong+unl":                       # never verified: a report there cannot be shown correct -> null
@@ -522,6 +525,10 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
                 r = lag_res(MP[est], O, idx, k) if rm is None else lag_res_rot(MP[est], O, idx, k, ang, hz_)
                 okk = np.zeros(L, bool); okk[k:] = r <= cfg.tolv(k, idx[k:]); g &= okk
             sc[idx] = g
+    if start_relax and sc_lags:                                 # sequence starts: short-track support is undefined there
+        st = np.zeros(n, bool)
+        for idx in seqs: st[idx[:max(sc_lags)]] = True
+        sc = sc | st
     regime = ~geo & gate & sc
     # calibration units: JOINT (default) = every held-out null segment, scored by the whole rule (+inf where the geometry
     # reports, the learned score where (c) may report, -inf elsewhere) -> P(any report in a new null segment) <= alpha for
