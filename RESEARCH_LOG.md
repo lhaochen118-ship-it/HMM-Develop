@@ -39,6 +39,15 @@ cùng tham chiếu SH / CST-JS, cùng H1–H5 (§1.3). Thêm:
 **Quyết định:** H1 ∧ H2 ∧ H9 ∧ H10 ⇒ HSI-V thay HSI-rot-m-sc làm luật khuyến nghị (HSI-VM thay nếu nó đạt H1 ∧ H2 ∧ H9 mà HSI-V trượt H1);
 H10 trượt ⇒ giữ HSI-rot-m-sc (bảo đảm hợp), báo cáo HSI-V như điểm vận hành recall cao hơn với giả định chứng chỉ; H9 trượt ⇒ HSI-V là ablation.
 
+**Bổ sung đăng ký trước — TẬP XÁC NHẬN MỚI (2026-11-03 19:10 UTC, trước mọi kết quả giữ ra của Entry 5).** Tập giữ ra 413 run đã được dùng
+cho 5 vòng quyết định ⇒ nguy cơ quá khớp thích nghi. Tập mới chưa từng tồn tại: bố cục lỗ **seed 10–12** (sinh lại bằng `nav_demo --cache
+--cache-only --seed0 10` từ dump descriptor công khai; mã tái tạo đúng từng bit cache công khai seed 0 — đã kiểm Nordland DINOv2), 6 dataset có
+lỗ × 6 descriptor = **108 run**; không có SH (luật ý tưởng 1 cần GPU) ⇒ chỉ so các luật của ý tưởng 2 + tham chiếu trong cache (Xu'21, Claxton'24,
+oracle). Đánh giá: HSI-rot-m-sc, HSI-M, HSI-V, HSI-VM, HSI-Gdrop, geo-rm. **Giả thuyết xác nhận:** **C1** luật được chọn bởi quyết định Entry 5
+(HSI-V hoặc HSI-rot-m-sc) có ≤ 5 % run segFAR > 0.05 và segFAR TB ≤ 0.05 trên 6/6 dataset; **C2** recall gộp HSI-V − HSI-rot-m-sc ≥ +0.01 (dấu
+của H9 lặp lại trên dữ liệu mới); **C3** geo-rm ≤ 2 % run > 0.05. Kết quả xác nhận được báo cáo dù thuận hay nghịch; nếu C2 trái dấu với H9
+thì báo cáo lợi ích của HSI-V là không ổn định.
+
 ## Entry 4 — hiệu chuẩn Mondrian theo chế độ quyết định (HSI-M) — đăng ký trước (2026-11-03 18:05 UTC)
 
 **Bối cảnh (từ kết quả giữ ra của Entry 3, chỉ CMU được dùng để chẩn đoán):** nới đầu chuỗi đưa các đoạn null đầu chuỗi (37/130 chuỗi CMU bắt đầu
