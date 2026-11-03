@@ -27,6 +27,22 @@ xác minh, Mệnh đề 4 (i)); ở α nhỏ (0.01) vài run vượt do số đo
 oracle 0.845). Tham chiếu **Claxton'24** (MLP giám sát bằng nhãn của 2 điều kiện dễ nhất, kiểu RA-L'24): recall 0.729 nhưng **287/413 run vượt
 α**, sai số 46 m — một bộ giám sát học có nhãn không được hiệu chuẩn cho off-map không thay được hiệu chuẩn trên excursion thật; Xu'21: 202/413.
 
+## Entry 6 — khi null đã sạch, bỏ phần lớn cổng heuristic (HSI-V-sc5) — đăng ký trước (2026-11-03 19:55 UTC)
+
+*Viết TRƯỚC khi xem bất kỳ kết quả nào của tập xác nhận mới (đợt `hsi10` đang chạy) và của Entry 6.*
+**Chẩn đoán (tập thiết kế, HSI-V):** frame đúng bị bỏ lỡ = 0.138 frame on-map, trong đó **nhất quán ngắn hạn (cổng sc 5/10/20 m) chiếm 0.089**,
+khởi động lạnh 0.021, sàn MAP 0.013, ngưỡng conformal chỉ 0.010 (ở 3/4 run kiểm tra, θ = −∞: < α đoạn null có frame được phép báo). Cổng sc được
+đặt ở Entry 1 vì hiệu chuẩn không đủ tin (ablation Entry 1: bỏ sc ⇒ 13/413 run vi phạm với null cũ). Với null sạch của Entry 5 (cầu neo bằng chứng
+chỉ), hiệu chuẩn có thể gánh phần an toàn đó. NCLT: frame đúng trượt sc nằm ngay sau lúc chuỗi bắt lại đúng chỗ (cửa sổ 20 m vắt qua cú nhảy).
+**Tập thiết kế (28 run; recall / chênh SH / thắng / sai số chênh SH / segFAR max):** HSI-V 0.719 / +0.069 / 24 / −0.01 / 0.044; **HSI-V-sc5 (chỉ độ trễ
+5 m) 0.736 / +0.085 / 26 / −1.26 m / 0.044**; HSI-V-nosc (bỏ sc) 0.750 / +0.100 / 26 / −0.61 / 0.039 — nhưng Nordland MegaLoc sai số 0.6 → 22.4 (vài fix
+sai xa); HSI-VM-nosc 0.736 / +0.086 / 24 / −0.90 / 0.031; HSI-VJd (sc tính từ lần nhảy cuối, chỉ khi khớp DR của tham chiếu) 0.725 / +0.074 / 24 / −0.11.
+**Đăng ký trước.** Luật ứng viên chính **HSI-V-sc5**; phụ **HSI-V-nosc**; ablation HSI-VJd, HSI-VM-nosc. Cùng 413 run giữ ra + lỗ 10 % / 50 % + tự nhiên;
+H1–H5 như §1.3; **H12:** recall gộp ≥ HSI-rot-m-sc + 0.02 VÀ sai số điều hướng gộp ≤ HSI-rot-m-sc + 0.5 m; **H11** (lỗ / tự nhiên ≤ 10 % run > α mỗi
+tập). **Quyết định:** H1 ∧ H2 ∧ H11 ∧ H12 cho HSI-V-sc5 ⇒ HSI-V-sc5 thay HSI-rot-m-sc làm luật khuyến nghị; nếu HSI-V-sc5 trượt mà HSI-V-nosc đạt
+cả bốn ⇒ HSI-V-nosc. **Xác nhận (C4, tập mới seed 10–12, 108 run, cùng bố cục lỗ với C1–C3):** luật được chọn có ≤ 5 % run > 0.05 và recall gộp ≥
+HSI-rot-m-sc + 0.01 trên tập mới; báo cáo dù thuận hay nghịch.
+
 ## Entry 5 — chứng nhận rồi hiệu chuẩn: chứng chỉ hình học làm điểm neo hồi cứu (HSI-V) — đăng ký trước (2026-11-03 18:45 UTC)
 
 *Viết TRƯỚC khi xem bất kỳ kết quả giữ ra nào của Entry 4 (đợt `hsi7` đang chạy) và của Entry 5.*

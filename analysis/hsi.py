@@ -541,11 +541,11 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     else: gate = np.ones(n, bool)
     # (c) needs short-track support: the chain consistent with the odometry at every lag in sc_lags (causal)
     if sc_lags and hasattr(cfg, "sc_scale"): sc_lags = tuple(sorted({cfg.sc_scale(k) for k in sc_lags}))
-    sc = np.ones(n, bool)
-    if sc_lags and sc_mode == "jump":                          # support measured only SINCE the last jump of the chain (re-acquisition):
-        hz_ = horiz(MP); rm = getattr(cfg, "rot_max", None); K = tuple(sorted(sc_lags))   # the longest lag inside the current
-        for idx in seqs:                                       # stretch decides (with its own window rotation); >= the shortest lag
-            L = len(idx); g = np.zeros(L, bool); ar = np.arange(L)
+    def sc_jump():
+        sc = np.ones(n, bool)
+        hz_ = horiz(MP); rm = getattr(cfg, "rot_max", None); K = tuple(sorted(sc_lags))   # support measured only SINCE the last jump of
+        for idx in seqs:                                       # the chain (re-acquisition): the longest lag inside the current stretch
+            L = len(idx); g = np.zeros(L, bool); ar = np.arange(L)   # decides (with its own window rotation); >= the shortest lag
             jmp = np.zeros(L, bool); jmp[1:] = lag_res(MP[est], O, idx, 1) > cfg.excl
             since = ar - np.maximum.accumulate(np.where(jmp, ar, 0))
             kmax = np.full(L, -1)
@@ -562,7 +562,9 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
                     okk = np.zeros(L, bool); okk[k:] = r <= cfg.tolv(k, idx[k:]); gg &= okk
                 g[sel] = gg[sel]
             sc[idx] = g
-    elif sc_lags:
+        return sc
+    def sc_window():
+        sc = np.ones(n, bool)
         for idx in seqs:
             L = len(idx); g = np.ones(L, bool); g[:max(sc_lags)] = False; hz_ = horiz(MP); rm = getattr(cfg, "rot_max", None)
             if rm is not None:
@@ -572,6 +574,13 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
                 r = lag_res(MP[est], O, idx, k) if rm is None else lag_res_rot(MP[est], O, idx, k, ang, hz_)
                 okk = np.zeros(L, bool); okk[k:] = r <= cfg.tolv(k, idx[k:]); g &= okk
             sc[idx] = g
+        return sc
+    if not sc_lags: sc = np.ones(n, bool)
+    elif sc_mode == "jump": sc = sc_jump()
+    elif sc_mode == "jump-dr":                                 # after a jump, the shorter support counts only if the new fix agrees
+        e_ = np.nan_to_num(edr, nan=np.inf); s_ = np.nan_to_num(sdr, nan=np.inf)   # with dead reckoning from a trusted reference
+        sc = sc_window() | (sc_jump() & hr & (e_ <= cfg.excl + zz * s_) & (s_ <= cfg.excl))
+    else: sc = sc_window()
     if start_relax and sc_lags:                                 # sequence starts: short-track support is undefined there
         st = np.zeros(n, bool)
         for idx in seqs: st[idx[:max(sc_lags)]] = True
