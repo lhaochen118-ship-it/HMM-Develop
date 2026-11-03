@@ -186,6 +186,82 @@ def _hole_test(Xp, Xm, rho):
     return HoleMask(Xp, Xm, rho)
 
 
+BLOCK_SCALES = (0.5, 1.0, 2.0)                                          # Entry 38: block side = scale x the map-null block of the config
+
+
+class BlockGrid:
+    """Entry 38: a square grid of side `size`, rotated by th and shifted by off (in cells), over the planar map coordinates (d = 2;
+    d = 1: intervals). keys(X) -> int64 cell key per point, numpy and torch with the same float64 operations in the same order."""
+
+    def __init__(self, size, th, off, d):
+        self.size, self.c, self.s, self.off, self.d = float(size), float(np.cos(th)), float(np.sin(th)), [float(o) for o in off], int(d)
+
+    def keys(self, X):
+        X = np.asarray(X, float)
+        if self.d == 1: return np.floor(X[..., 0] / self.size + self.off[0]).astype(np.int64)
+        u0 = (X[..., 0] * self.c + X[..., 1] * self.s) / self.size + self.off[0]
+        u1 = (X[..., 1] * self.c - X[..., 0] * self.s) / self.size + self.off[1]
+        return np.floor(u0).astype(np.int64) * (1 << 31) + np.floor(u1).astype(np.int64)
+
+    def keys_t(self, X):
+        import torch
+        if self.d == 1: return torch.floor(X[..., 0] / self.size + self.off[0]).to(torch.int64)
+        u0 = (X[..., 0] * self.c + X[..., 1] * self.s) / self.size + self.off[0]
+        u1 = (X[..., 1] * self.c - X[..., 0] * self.s) / self.size + self.off[1]
+        return torch.floor(u0).to(torch.int64) * (1 << 31) + torch.floor(u1).to(torch.int64)
+
+
+def block_grid(key, B, d):
+    """the random grid of one virtual run (deterministic in key = (global frame index of the exit / start, family)): side B x a scale
+    of BLOCK_SCALES, rotation U[0, pi/2), offset U[0, 1) cells -- a prior over block-shaped holes, NOT the benchmark's hole grid"""
+    rng = np.random.default_rng([int(k) for k in key] + [38])
+    sc = BLOCK_SCALES[int(rng.integers(len(BLOCK_SCALES)))]; th = float(rng.uniform(0.0, np.pi / 2)); off = rng.uniform(0.0, 1.0, 2)
+    return BlockGrid(B * sc, th if d == 2 else 0.0, off[:d], d)
+
+
+class BlockHoleMask:
+    """Entry 38: removed region of a BLOCK-shaped virtual run for anchor-trace points q (..., d): inside one of the removed cells of the
+    run's grid AND (exits) closer to the believed path after the exit than to the path before (the same Voronoi cut as the map places;
+    starts: Xm None). The map places removed by the run are exactly {m : key(m) in removed and d(m, X+) < d(m, X-)}."""
+
+    def __init__(self, grid, removed, Xp, Xm, P_removed):
+        self.g, self.rem = grid, np.unique(np.asarray(removed, np.int64))
+        self.Xp = np.asarray(Xp, float); self.Xm = None if Xm is None or not len(Xm) else np.asarray(Xm, float)
+        self.tp = cKDTree(self.Xp); self.tm = cKDTree(self.Xm) if self.Xm is not None else None
+        P_removed = np.asarray(P_removed, float); pad = grid.size * 1.5 + 1e-6      # cells reach <= sqrt(2) side beyond their places
+        self.blo, self.bhi = P_removed.min(0) - pad, P_removed.max(0) + pad
+        self._t = None
+
+    def __call__(self, q):
+        pts = q.reshape(-1, q.shape[-1]); out = np.zeros(len(pts), bool)
+        cand = np.flatnonzero(((pts >= self.blo) & (pts <= self.bhi)).all(1)) if len(self.rem) else np.zeros(0, int)
+        if len(cand):
+            k = self.g.keys(pts[cand]); pos = np.clip(np.searchsorted(self.rem, k), 0, len(self.rem) - 1); ins = self.rem[pos] == k
+            if self.tm is not None and ins.any():
+                P = pts[cand[ins]]; dp, _ = self.tp.query(P); dm, _ = self.tm.query(P); ins[ins] = dp < dm
+            out[cand] = ins
+        return out.reshape(q.shape[:-1])
+
+    def torch(self, q):
+        import torch
+        dev = q.device
+        if self._t is None or self._t[0].device != dev:
+            f = lambda x, dt=torch.float64: None if x is None else torch.as_tensor(x, dtype=dt, device=dev)
+            self._t = (f(self.Xp), f(self.Xm), f(self.blo), f(self.bhi), f(self.rem, torch.int64))
+        Xp, Xm, blo, bhi, rem = self._t
+        pts = q.reshape(-1, q.shape[-1]); out = torch.zeros(pts.shape[0], dtype=torch.bool, device=dev)
+        if not len(self.rem): return out.reshape(q.shape[:-1])
+        cand = torch.nonzero(((pts >= blo) & (pts <= bhi)).all(1)).flatten()
+        mind = lambda P, X: torch.cat([torch.sqrt(sum((P[a:a + 8192, None, d] - X[None, :, d]) ** 2 for d in range(P.shape[1])).min(1).values)
+                                       for a in range(0, P.shape[0], 8192)]) if P.shape[0] else P.new_zeros(0)
+        if cand.numel():
+            P = pts[cand]; k = self.g.keys_t(P); pos = torch.searchsorted(rem, k).clamp(max=rem.shape[0] - 1); ins = rem[pos] == k
+            if Xm is not None and bool(ins.any()):
+                ii = torch.nonzero(ins).flatten(); ins[ii] = mind(P[ii], Xp) < mind(P[ii], Xm)
+            out[cand] = ins
+        return out.reshape(q.shape[:-1])
+
+
 def chain_tau(M, MP, c):
     """emission scale of the place chain exactly as nav_demo: std of the map-null z_far of centred descriptors * sqrt(6) / pi"""
     import selfcal as SC
@@ -196,13 +272,17 @@ def chain_tau(M, MP, c):
 
 
 def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, tau=None, starts=True, presence=False, start_h=None,
-             ds=None, N=20, K=100):
+             ds=None, N=20, K=100, shape="corridor"):
     """forward counterfactual ghost tracks of every virtual exit (one per `stride` frames) and their shape residuals.
     q (n_q, d) query descriptors, M (n_map, d) reduced-map descriptors, c = sc_eval.CFG entry. Returns dict(recs, agree, tau).
     Entry 37: presence=True also runs the system's PRESENCE statistics forward on each run's altered map (FwdStats: route cost,
     winner, distinctiveness of every frame of the run, windows on the altered map; virtual starts: windows truncated at the start);
     start_h = horizon of the virtual starts in excl of path (None: 3 excl as Entry 36; "full": the exits' horizon off_d + h excl,
-    hole = corridor rho around the whole believed path of the run)."""
+    hole = corridor rho around the whole believed path of the run).
+    Entry 38: shape="block" -- every virtual run removes whole CELLS of its own random grid (block_grid: side c["block"] x {0.5, 1, 2},
+    random rotation and offset): the cells holding a map place within rho of the run's believed path (exits: then the Voronoi cut
+    against the path before the exit, so the map before the exit point stays), i.e. holes with the lateral extent of a missing map
+    area (parallel and crossing streets of those cells removed too) instead of a tube of radius rho along the path."""
     MP = np.asarray(z["MP"], float); MP2 = MP if MP.ndim > 1 else MP[:, None]; hz = list(z["hz"])
     Pl = MP2[:, hz] if MP2.shape[1] > 2 else MP2                        # planar positions (residuals, hole geometry)
     excl = float(z["excl"]); H = int(z["H"]); rho = c["off_d"] if rho is None else rho
@@ -239,12 +319,18 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
                 pre = np.flatnonzero((cum <= cum[ie]) & (cum >= cum[ie] - Dpath))
                 if len(post) < H: continue
                 dpost, _ = cKDTree(xc[idx[post]]).query(Pl); dpre, _ = cKDTree(xc[idx[pre]]).query(Pl)
-                hole = (dpost <= rho) & (dpost < dpre)
+                if shape == "block":                                    # Entry 38: whole cells of the run's own random grid
+                    G = block_grid((idx[ie], 0), c["block"], Pl.shape[1]); cid = G.keys(Pl); rc = np.unique(cid[dpost <= rho])
+                    hole = np.isin(cid, rc) & (dpost < dpre)
+                else:
+                    hole = (dpost <= rho) & (dpost < dpre)
                 if hole.all() or not hole.any(): continue
                 Bv = np.where(hole, 0.0, exits[ie]); s_ = Bv.sum()
                 if s_ > 0:
                     a0 = dict(ie=ie, keep=~hole, B=Bv / s_, last=post[-1], g={}, mode=0)
-                    if presence: a0.update(lo=0, rem=_hole_test(xc[idx[post]], xc[idx[pre]], rho))
+                    if presence:
+                        a0.update(lo=0, rem=(BlockHoleMask(G, rc, xc[idx[post]], xc[idx[pre]], Pl[hole]) if shape == "block"
+                                             else _hole_test(xc[idx[post]], xc[idx[pre]], rho)))
                     act.append(a0)
                 if starts:
                     # VIRTUAL START (truncated shape windows): the sequence starts at tau inside a hole -> the chain restarts from the
@@ -255,9 +341,12 @@ def fwd_null(z, b, q, M, c, stride=None, horizon=6.0, rho=None, verbose=False, t
                         ps_ = post[cum[post] <= cum[ie] + Ds]
                         if len(ps_) < 3: continue
                         Xs_ = xc[idx[np.r_[ie, ps_]]]; dps, _ = cKDTree(Xs_).query(Pl); hs = dps <= rho
+                        if shape == "block":
+                            Gs = block_grid((idx[ie], md_), c["block"], Pl.shape[1]); cs_ = Gs.keys(Pl); rcs = np.unique(cs_[hs]); hs = np.isin(cs_, rcs)
                         if not hs.all():
                             Bs = np.where(hs, 0.0, 1.0); a1 = dict(ie=ie, keep=~hs, B=Bs / Bs.sum(), last=ps_[-1], g={ie: None}, mode=md_)
-                            if presence: a1.update(lo=ie, rem=_hole_test(Xs_, None, rho))
+                            if presence: a1.update(lo=ie, rem=(BlockHoleMask(Gs, rcs, Xs_, None, Pl[hs] if hs.any() else Xs_) if shape == "block"
+                                                               else _hole_test(Xs_, None, rho)))
                             act.append(a1)
             live = [a for a in act if a["ie"] < i <= a["last"] or (a["mode"] >= 1 and a["ie"] == i)]
             if live:

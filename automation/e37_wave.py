@@ -51,7 +51,32 @@ def main():
             u.append((load[k] * ms(ds) / 1e3 + 60, f"e37_fwd.py {src} {ds} {desc} {seed} {k}/{n}" + (" --wait" if ds == "oxford" else "")))
         u.append((C["eval"].get(ds.split(":")[0], 300), f"e37_eval.py {ev} {ds} {desc} {seed} {n} --wait"))
         units.append(u)
-    if "--holes" in sys.argv:                                         # H37h: 10 % / 50 % holes, seeds 0-2 (separate wave)
+    if "--e38" in sys.argv:                                           # Entry 38: block-shaped virtual holes
+        NV, CM, TK, TA, FW = ("DIR:navcache_@hmm-navcache-v2", "DIR:cms_@hmm-cms-cache-exact", "DIR:topk_@hmm-topk", "DIR:tao_@hmm-route-cache",
+                              "DIR:fwd_@hmm-fwd-null-e37")
+        OXC = "@hmm-e37-caches"
+        def unit38(ds, d, s, corridor):
+            if ds == "oxford":
+                n = NOX; load = [OX_FRAMES / NOX] * n; nv = "DIR:navcache_" + OXC; ev = f"DUMP {nv} DIR:cms_{OXC} DIR:topk_{OXC} DIR:tao_{OXC}"
+            else:
+                n = parts(fr, ds); load = [0] * n; t = fr[ds.replace(":", "_")]; nv = NV; ev = f"DUMP {NV} {CM} {TK} {TA}"
+                for L in sorted(t["seqs"], reverse=True): load[load.index(min(load))] += L
+            u = [(load[k] * ms(ds) / 1e3 + 60, f"e37_fwd.py DUMP {nv} {ds} {d} {s} {k}/{n} --shape block") for k in range(n)]
+            if corridor: u += [(load[k] * ms(ds) / 1e3 + 60, f"e37_fwd.py DUMP {nv} {ds} {d} {s} {k}/{n}") for k in range(n)]
+            u.append((C["eval"].get(ds.split(":")[0], 300) * 1.3, f"e37_eval.py {ev} {ds} {d} {s} {n} --wait --block" + ("" if corridor else f" --corr {FW}")))
+            units.append(u)
+        for s in (0, 1, 2, 6, 7, 8, 9):                                 # design: the Entry 37 main + held-out runs (corridor nulls published)
+            for ds in HOLED:
+                for d in DESC: unit38(ds, d, s, False)
+        for d in DESC: unit38("nclt", d, 0, False)
+        for s, d in [(s, d) for s in range(5) for d in DESC] + [(s, d) for s in range(5, 10) for d in ("salad", "mixvpr", "dinov2")]:
+            unit38("oxford", d, s, False)
+        for s in (3, 4, 5):                                             # fresh held-out: seeds 3-5, never used for an Entry 37/38 rule
+            for ds in HOLED:
+                for d in DESC:
+                    if ds == "cmu" and d in ("cosplace", "netvlad", "megaloc"): continue   # Entry 37 design runs
+                    unit38(ds, d, s, True)
+    elif "--holes" in sys.argv:                                       # H37h: 10 % / 50 % holes, seeds 0-2 (separate wave)
         for r in sys.argv[sys.argv.index("--holes") + 1].split(","):
             for s in (0, 1, 2):
                 for ds in HOLED:

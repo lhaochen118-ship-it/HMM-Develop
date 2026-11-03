@@ -497,6 +497,25 @@ def rules(z, b, st, alpha=0.05, delta=0.1):
                     for tg, okx in (("CSTJS", okJS), ("CSTJS0", okJS0), ("CSTJSL", okJSL), ("CSTJF0", okJF0)):
                         F[f"CMS-CPC/H+{tg}+G"] = (np.where(okx & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & okx & agree)
                     F["CMS-CPC/H+SH+CSTJS+G"] = (np.where(sh_c & okJS & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & okJS & agree)
+                    recsB = st.get("_fwdrecsB")
+                    if recsB is not None and len(recsB) and len(recsB[0]) > 9 and any(r_[5] == 2 for r_ in recsB):
+                        # Entry 38 CST-JSB: the same construction (forward presence, exact start null per position, kappa') on BLOCK-shaped
+                        # virtual holes (cms_fwd shape="block": whole cells of a random grid per virtual run); CST-JSU: a frame must pass
+                        # both the corridor (CST-JS) and the block null (thresholds of both families)
+                        if GROUP != "loco":
+                            xfB = chain_xform(z, b, st); cutB = np.cumsum([len(r_[1]) for r_ in recsB])[:-1]
+                            llB = np.split(xfB(np.concatenate([r_[1] for r_ in recsB]), {"cost": np.concatenate([r_[7] for r_ in recsB]),
+                                                                                      "z": np.concatenate([r_[8] for r_ in recsB])}), cutB)
+                            jB = [r_[9] for r_ in recsB]
+                            jcB = lambda md: CF.joint_crit(recsB, b["H"], lo, kap, Hreal, Pl, excl, llB, jB, P_TR, gr, md, False)
+                            st["_jointFB"] = dict(F0=jcB(0), F2=jcB(2))
+                        JFB = st["_jointFB"]
+                        exB = CF.eps_fwd(z, b, JFB["F0"], aF, fmode, groups=grp) if JFB["F0"] else np.full(len(lo), -np.inf)
+                        okJSB = ok_s(exB, JFB["F2"], True)[0]; okJSU = okJS & okJSB
+                        st["_epsJSB"] = exB
+                        for tg, okx in (("CSTJSB", okJSB), ("CSTJSU", okJSU)):
+                            F[f"CMS-CPC/H+{tg}+G"] = (np.where(okx & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & okx & agree)
+                            F[f"CMS-CPC/H+SH+{tg}+G"] = (np.where(sh_c & okx & agree, lo - kap, -np.inf), xc, 0.0, CG.hyst_ok(lo > kap, lo > 0, one, seqs) & sh_c & okx & agree)
         F["CMS-CPCW/H+CST2"] = (np.where(ok2, wq2 - kW2, -np.inf), xc, 0.0, CG.hyst_ok(wq2 > kW2, lo2 > 0, ok2, seqs))
     onWU = (sc_t > -kT2) | (wq2 > kW2)
     F["CMS-WU/H+SH"] = (np.where(sh_c, np.maximum(sc_t + kT2, wq2 - kW2), -np.inf), xc, 0.0, onWU & sh_c)
