@@ -30,6 +30,17 @@ HSI-m +0.026 (17/28), max 0.033.
 **H6:** HSI-rot-m ≥ HSI (Entry 1) về recall TB trên ≥ 6/9 dataset, và Oxford + St Lucia (10 m/frame) mỗi dataset recall HSI-rot-m ≥ HSI + 0.05.
 **Quyết định:** nếu H1 ∧ H2 đạt cho HSI-rot-m thì nó thay HSI làm luật khuyến nghị; nếu không, giữ quyết định của Entry 1.
 
+**Kết quả giữ ra Entry 2 (đợt `hsi2`, 441 run, 413 run giữ ra có SH trên cùng run; nhãn chỉ để đánh giá; 2026-11-03 17:10 UTC).**
+H1 **đạt** (segFAR TB ≤ 0.05 trên 9/9 dataset; 0/413 run > 0.05 — SH: 2); H2 **đạt** (HSI-rot-m ≥ SH trên 6/9 dataset; gộp +0.039);
+H3 **đạt** (DINOv2 + NetVLAD: +0.089, 133 run); H4 **đạt** (sai số trong +1 m của SH trên 7/9); H5 **đạt** (mọi lớp vị trí ≤ 0.07 trên 9/9 — điều
+ý tưởng 1 chưa đạt; lớp tệ nhất: St Lucia start 0.058 trên 120 đoạn). H6 chờ đợt `hsi1`.
+Theo dataset (recall HSI-rot-m / SH, thắng / tổng): Boreas 0.889 / 0.777 (56/56), office 0.867 / 0.803 (54/56), countryside 0.638 / 0.492
+(56/56; sai số −6.1 m), St Lucia 0.904 / 0.761 (30/30; −6.7 m), Oxford 0.758 / 0.719 (33/45), old town 0.710 / 0.708 (29/56; sai số +4.6 m),
+Nordland 0.769 / 0.770 (22/56), **CMU 0.692 / 0.835 (0/56)**, NCLT 0.577 / 0.690 (0/2). Theo descriptor: DINOv2 +0.116, NetVLAD +0.059, MixVPR
++0.027, CosPlace +0.023, SALAD +0.015, MegaLoc −0.007. Tham chiếu: Xu'21 (nhãn) recall 0.689 nhưng 202/413 run vượt α.
+**Kết luận Entry 2:** HSI-rot-m là luật khuyến nghị (H1 ∧ H2); điểm yếu còn lại là đầu chuỗi ngắn (CMU) và NCLT — đúng mục tiêu của Entry 3
+(đăng ký trước 17:00, đợt `hsi4` đang chạy).
+
 ## Entry 1 — HSI: tự giám sát hồi cứu bằng hình học (robot học khi nào tin "mắt" từ phán quyết hồi cứu của "chân") (2026-11-03)
 
 ### 1.1 Chẩn đoán dẫn tới ý tưởng (nhãn chỉ dùng để chẩn đoán; tập thiết kế = seed 0 của 7 dataset × 4 descriptor CosPlace/NetVLAD/MegaLoc/DINOv2 = 28 run)
