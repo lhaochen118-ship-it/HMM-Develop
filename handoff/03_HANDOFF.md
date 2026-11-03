@@ -4,16 +4,17 @@
 `git show hmm-navigation-5:handoff/03_HANDOFF.md`.*
 
 
-## 0. Trạng thái ý tưởng 2 (cập nhật 2026-11-03 17:20 UTC, vòng tự động của phiên `session_01Xy89bX34L6MPEcAxmjRJWt`)
+## 0. Trạng thái ý tưởng 2 (cập nhật 2026-11-03 19:40 UTC, vòng tự động của phiên `session_01Xy89bX34L6MPEcAxmjRJWt`)
 
-- **Phương pháp:** HSI — tự giám sát hồi cứu bằng hình học (`analysis/hsi.py`, đánh giá `analysis/hsi_eval.py`, tổng hợp `analysis/hsi_summary.py`,
-  lý thuyết `paper/hsi_theory.md`, nhật ký `RESEARCH_LOG.md` Entry 1–3, novelty `LITERATURE_GATE.md` Gate 17).
-- **Luật khuyến nghị hiện tại: HSI-rot-m (Entry 2)** — giữ ra 413 run: hợp lệ 413/413 (segFAR ≤ 0.05), kiểm toán theo vị trí ≤ 0.07 trên 9/9 dataset,
-  recall +0.039 so với SH của ý tưởng 1 (DINOv2/NetVLAD +0.089), sai số điều hướng trong +1 m của SH trên 7/9. Yếu: CMU (−0.14, khởi động lạnh +
-  đầu chuỗi ngắn), NCLT (−0.11), old town sai số +4.6 m.
-- **Đang chạy / chờ gom:** đợt `hsi1` (Entry 1 + 11 ablation), `hsi4` (Entry 3: HSI-rot-m-sc), `hsi5` (lỗ 10 % / 50 %), `hsi6` (off-map tự nhiên 4Seasons
-  chéo cảnh); thư mục làm việc `<scratchpad>/runs/hsi*`; gom bằng `automation/hsi_collect.py`, bảng bằng `analysis/hsi_summary.py` với baseline
-  `analysis/results/baselines_idea1/e37|e38/*.tgz`.
+- **Phương pháp:** HSI — tự giám sát hồi cứu bằng hình học (`analysis/hsi.py`, đánh giá `analysis/hsi_eval.py`, so sánh `analysis/hsi_compare.py`,
+  tổng hợp `analysis/hsi_summary.py`, quét α `analysis/hsi_alpha.py`, tập mới `analysis/hsi_fresh.py`; lý thuyết `paper/hsi_theory.md` Mệnh đề 1–6;
+  nhật ký `RESEARCH_LOG.md` Entry 1–5; novelty `LITERATURE_GATE.md` Gate 17; báo cáo `paper/BAO_CAO_HSI.pdf`, dựng lại bằng `paper/build_hsi_report.py`).
+- **Luật khuyến nghị: HSI-rot-m-sc (Entry 3)** — 413/413 hợp lệ, vị trí 9/9, +0.041 so với SH. **HSI-V** (Entry 5, chứng nhận rồi hiệu chuẩn) có
+  recall cao nhất (0.786, 0 vi phạm) nhưng trượt H9 ở CMU; **HSI-VM** tốt nhất về điều hướng (13.6 m). Cả hai là biến thể trong `VARIANTS`.
+- **Đang chạy:** đợt `hsi10` — tập xác nhận mới (bố cục lỗ seed 10–12, 108 run; C1–C3 đăng ký trước). Gom: `automation/hsi_collect.py <out>
+  <scratchpad>/runs/hsi10 --tagre '_fr[.]'`, bảng: `analysis/hsi_compare.py <out> <variants> --all`, báo cáo: `build_hsi_report.py ... --confirm <out>`.
+- **Kết quả thô:** `analysis/results/hsi/*.tgz` (JSON mỗi run + mặt nạ báo theo frame). Lưu ý: kết quả lỗ 10/50 % và kết quả chính có CÙNG khoá
+  (dataset, descriptor, seed) ⇒ gom tách bằng `--tagre` (`_e5[.]`, `_d10e5[.]`, `_d50e5[.]`, `_nate5[.]`).
 
 ## 1. Trạng thái
 

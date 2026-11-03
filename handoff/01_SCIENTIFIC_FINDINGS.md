@@ -6,7 +6,7 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
-## I2. Ý tưởng 2 — HSI (2026-11-03, branch `hmm-2nd-idea`, Entry 1–4) — đọc trước mọi mục khác
+## I2. Ý tưởng 2 — HSI (2026-11-03, branch `hmm-2nd-idea`, Entry 1–5) — đọc trước mọi mục khác
 
 **Báo cáo:** `paper/BAO_CAO_HSI.pdf`; lý thuyết `paper/hsi_theory.md`; nhật ký `RESEARCH_LOG.md`; số liệu `analysis/results/hsi/`.
 
@@ -22,9 +22,18 @@ ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables
    off-map tự nhiên 1/36. ~1 ms/frame trên 1 lõi CPU (ý tưởng 1: 18–45 ms/frame GPU).
 5. **Ablation quyết định:** hiệu chuẩn biên chung (+0.09 recall so với có điều kiện), gộp phiên (+0.044), cửa sổ theo mét (+0.12, Oxford/St Lucia
    10 m/frame), nhất quán ngắn hạn và null "chưa từng xác minh" cần cho tính hợp lệ (bỏ đi: 13 và 7 run vi phạm).
-6. **Âm / mở:** CMU 0.652 vs SH 0.835 (chuỗi ngắn, khởi động lạnh phiên đầu, đầu chuỗi chiếm ngân sách hiệu chuẩn) — Entry 4 (Mondrian theo chế độ)
-   đang kiểm; NCLT −0.11 (off-map sát bản đồ, off_d 20 m); sai số điều hướng old town +5.7 m, Boreas +2.5 m; bảo đảm dựa trên hoán đổi giữa đoạn
-   null hồi cứu và đoạn sai thật (gộp phiên ⇒ hoán đổi giữa điều kiện chỉ xấp xỉ).
+6. **Chứng nhận rồi hiệu chuẩn (Entry 5, Mệnh đề 6):** hiệu chuẩn hợp tính báo của chứng chỉ trong null hồi cứu là vi phạm; khi cầu
+   dead-reckoning dài trôi (NCLT: 6–13 % frame xác minh hồi cứu vs 28–42 % có chứng chỉ, độ chính xác ≥ 0.997) null bị nhiễm fix đúng, chứng chỉ
+   báo đúng ở đó và khoá nhánh học (NCLT 18 % đoạn null > α). Chứng chỉ báo trong null ∩ off-map thật = 0.000; chỉ chứng chỉ: 0/665 run vi phạm.
+   Dùng chứng chỉ làm điểm neo hồi cứu (HSI-V): 413 giữ ra 0.786 (+0.014 so với HSI-rot-m-sc, NCLT +0.068), 0 vi phạm; H9 trượt ở CMU (+0.024 <
+   0.03) nên KHÔNG thay luật khuyến nghị. Thử thất bại: phán xét chứng chỉ bằng cầu không dùng nó (Vc) hoặc bằng đoạn neo lân cận (LOO) — mất lợi ích;
+   nhất quán ngắn hạn tính từ lần nhảy cuối (VJ) +0.013 recall nhưng sai số +2 m và 1 run > α (bác trên tập thiết kế).
+7. **Mondrian theo chế độ (Entry 4, HSI-M):** recall −0.008, sai số điều hướng −1.1 m (Boreas 6.9 → 4.4); H8 trượt ⇒ ablation. HSI-VM (V + M):
+   recall +0.003, sai số 13.6 m (tốt nhất).
+8. **Hiệu chuẩn:** quét α 0.01–0.2 trên 413 run: segFAR thực ≤ α mọi mức, bảo thủ 5–25× (null là tập cha của off-map); recall 0.707 → 0.811.
+   Claxton'24 (giám sát có nhãn) 287/413 run > α — bộ giám sát học không thay được hiệu chuẩn trên excursion thật.
+9. **Âm / mở:** CMU 0.65–0.68 vs SH 0.835 (48 % frame thuộc chuỗi không có đoạn nào xác minh được; đầu chuỗi off-map; khởi động lạnh); NCLT chỉ 2
+   run giữ ra; sai số old town; tập giữ ra đã dùng 5 vòng ⇒ tập xác nhận mới seed 10–12 (`hsi_fresh.py`, RESEARCH_LOG Entry 5 bổ sung).
 
 ## 0. Đọc cho ý tưởng 2 (branch `hmm-2nd-idea`)
 

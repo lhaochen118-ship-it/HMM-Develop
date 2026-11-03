@@ -1,6 +1,6 @@
 # BÁO CÁO — Ý tưởng 2: HSI, tự giám sát hồi cứu bằng hình học cho định vị chuỗi trên bản đồ có lỗ
 
-*Branch `hmm-2nd-idea`, 2026-11-03/04. Nhật ký: `RESEARCH_LOG.md` Entry 1–3; lý thuyết: `paper/hsi_theory.md`; novelty: `LITERATURE_GATE.md`
+*Branch `hmm-2nd-idea`, 2026-11-03/04 (cập nhật 19:40 UTC). Nhật ký: `RESEARCH_LOG.md` Entry 1–5; lý thuyết: `paper/hsi_theory.md`; novelty: `LITERATURE_GATE.md`
 Gate 17; code: `analysis/hsi.py`, `analysis/hsi_eval.py`, `analysis/hsi_summary.py`; kết quả thô: `analysis/results/hsi/`.*
 
 ## 1. Tóm tắt
@@ -15,13 +15,16 @@ chúng (định vị lại bằng dead-reckoning hai phía + vùng phủ đã bi
 sớm hơn, và để hiệu chuẩn ngưỡng báo bằng conformal trên các excursion THẬT của chính lần triển khai. Không nhãn, không can thiệp bản đồ, không GPU
 (~1 ms/frame trên một lõi CPU, gồm cả học lại).
 
-**Kết quả (413 run giữ ra, 9 dataset × 6 descriptor, so với ý tưởng 1 trên CÙNG run; luật HSI-rot-m-sc, Entry 3, đăng ký trước):**
-hợp lệ ở **413/413 run** (segFAR ≤ 0.05; SH của ý tưởng 1: 411/413), **kiểm toán theo vị trí (start / edge / deep) ≤ 0.07 trên 9/9 dataset** — điều ý
-tưởng 1 chưa đạt; recall gộp **+0.041** so với SH, cao hơn trên 7/9 dataset (Boreas +0.115, countryside +0.149, St Lucia +0.144, office +0.069,
-Oxford +0.045, old town +0.027, Nordland +0.016), descriptor yếu DINOv2 +0.123, NetVLAD +0.068; sai số điều hướng ≤ SH trên 6/9 dataset
-(countryside −6.7 m, St Lucia −6.7 m). Bền với tỷ lệ lỗ 10 % (0/84 run vượt α) và 50 % (4/84; SH 3/84), và với off-map tự nhiên (4Seasons chéo
-cảnh: 1/36). **Điểm yếu:** CMU (0.652 vs 0.835: chuỗi ngắn, khởi động lạnh, ngân sách hiệu chuẩn chung bị đầu chuỗi chiếm), NCLT (2 run giữ ra:
-0.577 vs 0.690), sai số điều hướng old town (+5.7 m) và Boreas (+2.5 m).
+**Kết quả (413 run giữ ra, 9 dataset × 6 descriptor, so với ý tưởng 1 trên CÙNG run; năm vòng, mỗi vòng đăng ký trước).** Luật khuyến nghị
+**HSI-rot-m-sc** (Entry 3): hợp lệ ở **413/413 run** (segFAR ≤ 0.05; SH của ý tưởng 1: 411/413), **kiểm toán theo vị trí (start / edge / deep) ≤ 0.07
+trên 9/9 dataset** — điều ý tưởng 1 chưa đạt; recall gộp **+0.041** so với SH, cao hơn trên 7/9 dataset (Boreas +0.115, countryside +0.149, St Lucia
++0.144, office +0.069, Oxford +0.045, old town +0.027, Nordland +0.016), descriptor yếu DINOv2 +0.123, NetVLAD +0.068. Biến thể **HSI-V** (Entry 5:
+chứng chỉ hình học làm điểm neo của nhãn hồi cứu — "chứng nhận rồi hiệu chuẩn") nâng recall gộp lên **0.786 (+0.054 so với SH; NCLT +0.068 so với
+HSI-rot-m-sc)** vẫn với 0/413 vi phạm, nhưng trượt tiêu chí đăng ký trước ở CMU (+0.024 < +0.03) nên không thay luật khuyến nghị; HSI-VM (thêm
+Mondrian theo chế độ) giảm sai số điều hướng 15.0 → 13.6 m. **Hiệu chuẩn:** quét α ∈ [0.01, 0.2] — segFAR thực luôn ≤ α (bảo thủ 5–25×), recall
+0.707 → 0.811; bộ giám sát có nhãn Claxton'24 vượt α ở 287/413 run. **Bền:** lỗ 10 % 0/108, lỗ 50 % 4/108 (đều CMU), off-map tự nhiên 4Seasons 1/36;
+chỉ riêng chứng chỉ hình học: 0 vi phạm trên cả 665 run. **Tập xác nhận mới** (bố cục lỗ chưa từng tồn tại, seed 10–12, 108 run): xem §5.4.
+**Điểm yếu:** CMU (0.652–0.676 vs SH 0.835: chuỗi ngắn, đầu chuỗi off-map, khởi động lạnh), NCLT (2 run giữ ra), sai số old town.
 
 ## 2. Bài toán (giữ nguyên giao thức của ý tưởng 1)
 
@@ -57,9 +60,16 @@ reckoning hai phía) trở thành nhãn tự sinh để học và hiệu chuẩn
 4. **Hiệu chuẩn biên của cả luật** — phân vị conformal (1 − α) trên các đoạn null hồi cứu giữ ra (có thể off-map ∪ fix chắc chắn sai ∪ chưa từng
    được xác minh) của các excursion THẬT, với điểm đoạn = +∞ nếu (a|b) báo, P̂ nếu (c) được phép, −∞ còn lại (Mệnh đề 4).
 5. **Entry 2:** cửa sổ theo mét quãng đường (Oxford / St Lucia có ~10 m/frame) và bù hướng odometry có giới hạn (|góc| ≤ 20°).
+6. **Entry 3:** đầu chuỗi được nới (nhất quán ngắn hạn chưa xác định ở đó) và biên null "có thể off-map" ≤ off_d/4.
+7. **Entry 4 (ablation):** ngưỡng conformal riêng theo chế độ (đã / chưa có tham chiếu tin cậy) — Mondrian.
+8. **Entry 5 — chứng nhận rồi hiệu chuẩn:** frame có chứng chỉ hình học (a|b) cũng là điểm neo của cầu hồi cứu. Chẩn đoán: NCLT chỉ 6–13 % frame
+   được xác minh hồi cứu nhưng chứng chỉ phủ 28–42 % (độ chính xác ≥ 0.997) ⇒ cầu dài trôi 30–180 m ⇒ 20 % frame null thật ra là fix đúng, và
+   chứng chỉ báo đúng ở một nửa số đó; hiệu chuẩn hợp tính các báo đúng ấy là vi phạm (18 % đoạn null > α ⇒ (c) bị khoá). Tỉ lệ chứng chỉ báo
+   trong null ∩ off-map thật = 0.000. Bảo đảm trở thành ε_G + α (Mệnh đề 6), ε_G đo trực tiếp bằng biến thể chỉ-hình-học.
 
-Lý thuyết (Mệnh đề 1–5, `paper/hsi_theory.md`): neo chứng nhận sai số hằng trên cửa sổ; tham chiếu tin cậy loại tuyến dịch cứng; sai số vị trí
-hồi cứu theo cầu Brown; hiệu chuẩn biên cho P(báo trong một đoạn null mới) ≤ α dưới hoán đổi; sàn MAP chặn ngưỡng suy biến.
+Lý thuyết (Mệnh đề 1–6, `paper/hsi_theory.md`): neo chứng nhận sai số hằng trên cửa sổ; tham chiếu tin cậy loại tuyến dịch cứng; sai số vị trí
+hồi cứu theo cầu Brown; hiệu chuẩn biên cho P(báo trong một đoạn null mới) ≤ α dưới hoán đổi; sàn MAP chặn ngưỡng suy biến; chứng nhận rồi
+hiệu chuẩn: P(báo trong đoạn off-map) ≤ ε_G + α khi chứng chỉ neo cầu hồi cứu.
 
 ## 5. Kết quả trên tập giữ ra
 
@@ -71,15 +81,99 @@ Tập giữ ra = mọi run ngoài tập thiết kế (seed 0 × 7 dataset × 4 d
 | Entry 1 | HSI (cửa sổ theo frame) | đạt (1/413 > α) | **không** (3/9; −0.069) | **không** (−0.032) | đạt (5/9) | đạt (9/9) | bác: Oxford/St Lucia (10 m/frame) sụp |
 | Entry 2 | HSI-rot-m (cửa sổ theo mét + bù hướng) | đạt (0/413) | đạt (6/9; +0.039) | đạt (+0.089) | đạt (7/9) | đạt (9/9) | luật khuyến nghị (vòng 2) |
 | Entry 3 | HSI-rot-m-sc (+ đầu chuỗi, biên null) | đạt (0/413) | đạt (7/9; +0.041) | đạt (+0.096) | đạt (6/9) | đạt (9/9) | **luật khuyến nghị** (H7: ≥ Entry 2 trên 8/9) |
+| Entry 4 | HSI-M (Mondrian theo chế độ) | đạt (0/413) | đạt (7/9; +0.033) | – | đạt (7/9) | đạt (9/9) | ablation (H8 trượt: CMU +0.002); sai số −1.1 m |
+| Entry 5 | HSI-V (chứng nhận rồi hiệu chuẩn) | đạt (0/413) | đạt (7/9; +0.054) | đạt (+0.110) | đạt (7/9) | đạt (9/9) | ablation (H9 trượt ở CMU +0.024 < 0.03; H10, H11 đạt) |
 
 **Ablation (giữ ra; recall / segFAR / số run > α / sai số điều hướng TB):** hiệu chuẩn biên chung thay vì có điều kiện +0.09 recall; gộp phiên thay
 vì theo phiên +0.044; bỏ nhất quán ngắn hạn → 13 run vi phạm; bỏ null "chưa từng xác minh" → 7 run vi phạm; chỉ neo nhân quả → 40 run vi phạm,
 thêm tham chiếu tin cậy (chỉ hình học) → 6; cửa sổ theo mét +0.12 (Oxford, St Lucia); bù hướng +0.01. Bảng đầy đủ ở Bảng A.
 
-**Độ bền.** Lỗ 10 %: HSI-rot-m-sc 0/84 run vượt α, recall ≥ SH trên 5/6 dataset (gộp +0.005; CMU 0.539 vs 0.845); lỗ 50 %: 4/84 run vượt (SH 3/84),
-≥ SH trên 4/6 (gộp +0.048; Nordland −0.10), sai số old town +20.6 m. Off-map tự nhiên (4Seasons, cảnh B hoàn toàn ngoài bản đồ, ảnh + VIO thật,
-36 run): recall cảnh A 0.743, segFAR 0.010 (1/36 run 0.053); Xu'21 (nhãn) 0.581 với 10/36 run vượt α. Chi phí: 10–90 s mỗi run (Boreas 74 k
-frame) trên một lõi CPU ⇒ ~1 ms/frame cho cả đặc trưng, học lại GBM và đánh giá; ý tưởng 1 cần 18–45 ms/frame trên GPU cho mô phỏng tiến.
+**Độ bền (giữ ra, so với SH trên cùng run — tập con không thuộc tập thiết kế).** Lỗ 10 %: HSI-rot-m-sc 0/84 run vượt α, recall ≥ SH trên 5/6
+dataset (gộp +0.005; CMU 0.539 vs 0.845); lỗ 50 %: 4/84 (SH 3/84), ≥ SH trên 4/6 (gộp +0.048; Nordland −0.10), sai số old town +20.6 m. Trên MỌI run
+(108 mỗi tỷ lệ lỗ, kể cả seed 0) xem §5.2: lỗ 10 % 0/108, lỗ 50 % 4/108 — đều ở CMU (HSI-V 5/108). Off-map tự nhiên (4Seasons, cảnh B hoàn toàn
+ngoài bản đồ, ảnh + VIO thật, 36 run): recall cảnh A 0.743, segFAR 0.010 (1/36 run 0.053); HSI-M / HSI-V / HSI-VM 0/36; Xu'21 (nhãn) 0.581 với
+10/36 run vượt α. Chi phí: 10–90 s mỗi run (Boreas 74 k frame) trên một lõi CPU ⇒ ~1 ms/frame cho cả đặc trưng, học lại GBM và đánh giá; ý tưởng
+1 cần 18–45 ms/frame trên GPU cho mô phỏng tiến.
+
+### 5.1 So sánh các biến thể (413 run giữ ra; recall / segFAR / số run > 0.05 / sai số điều hướng m)
+
+| dataset | n | HSI-rot-m-sc rec / seg / >α / err | HSI-V rec / seg / >α / err | HSI-VM rec / seg / >α / err | HSI-M rec / seg / >α / err | HSI-Gdrop rec / seg / >α / err | geo-rm rec / seg / >α / err | SH rec / seg / >α / err |
+|---|---|---|---|---|---|---|---|---|
+| 4s:countryside | 56 | 0.642 / 0.0050 / 0 / 26.8 | 0.666 / 0.0084 / 0 / 27.3 | 0.656 / 0.0025 / 0 / 23.1 | 0.633 / 0.0023 / 0 / 24.8 | 0.665 / 0.0072 / 0 / 26.7 | 0.594 / 0.0004 / 0 / 28.3 | 0.492 / 0.0006 / 0 / 33.5 |
+| 4s:office_loop | 56 | 0.872 / 0.0001 / 0 / 9.0 | 0.874 / 0.0003 / 0 / 8.9 | 0.855 / 0.0003 / 0 / 8.9 | 0.851 / 0.0001 / 0 / 8.9 | 0.876 / 0.0001 / 0 / 8.9 | 0.786 / 0.0000 / 0 / 9.7 | 0.803 / 0.0003 / 0 / 9.7 |
+| 4s:old_town | 56 | 0.735 / 0.0008 / 0 / 31.6 | 0.733 / 0.0013 / 0 / 32.7 | 0.721 / 0.0004 / 0 / 29.0 | 0.723 / 0.0003 / 0 / 28.7 | 0.737 / 0.0008 / 0 / 31.2 | 0.624 / 0.0000 / 0 / 40.9 | 0.708 / 0.0057 / 1 / 25.9 |
+| boreas | 56 | 0.892 / 0.0014 / 0 / 6.9 | 0.897 / 0.0014 / 0 / 7.1 | 0.886 / 0.0003 / 0 / 4.4 | 0.883 / 0.0002 / 0 / 4.4 | 0.897 / 0.0015 / 0 / 7.0 | 0.856 / 0.0000 / 0 / 3.3 | 0.777 / 0.0023 / 0 / 4.5 |
+| cmu | 56 | 0.652 / 0.0060 / 0 / 3.8 | 0.676 / 0.0061 / 0 / 3.8 | 0.669 / 0.0057 / 0 / 3.7 | 0.654 / 0.0057 / 0 / 3.7 | 0.661 / 0.0060 / 0 / 3.8 | 0.452 / 0.0014 / 0 / 3.3 | 0.835 / 0.0092 / 1 / 3.9 |
+| nclt | 2 | 0.577 / 0.0000 / 0 / 5.1 | 0.645 / 0.0000 / 0 / 3.2 | 0.629 / 0.0000 / 0 / 3.3 | 0.576 / 0.0000 / 0 / 4.5 | 0.648 / 0.0000 / 0 / 3.3 | 0.550 / 0.0000 / 0 / 5.2 | 0.690 / 0.0000 / 0 / 3.2 |
+| nord | 56 | 0.785 / 0.0000 / 0 / 5.0 | 0.785 / 0.0001 / 0 / 5.6 | 0.777 / 0.0000 / 0 / 5.0 | 0.777 / 0.0000 / 0 / 5.0 | 0.785 / 0.0000 / 0 / 5.0 | 0.668 / 0.0000 / 0 / 6.0 | 0.770 / 0.0000 / 0 / 6.0 |
+| oxford | 45 | 0.764 / 0.0059 / 0 / 21.4 | 0.807 / 0.0139 / 0 / 21.2 | 0.801 / 0.0115 / 0 / 20.3 | 0.760 / 0.0056 / 0 / 21.4 | 0.806 / 0.0122 / 0 / 21.3 | 0.722 / 0.0029 / 0 / 21.8 | 0.719 / 0.0039 / 0 / 21.9 |
+| stlucia | 30 | 0.905 / 0.0018 / 0 / 18.8 | 0.916 / 0.0013 / 0 / 18.5 | 0.912 / 0.0011 / 0 / 18.4 | 0.903 / 0.0011 / 0 / 18.7 | 0.916 / 0.0018 / 0 / 18.5 | 0.870 / 0.0011 / 0 / 19.8 | 0.761 / 0.0006 / 0 / 25.5 |
+| **pooled** | 413 | **0.772** / 0.0026 / 0 / 15.0 | **0.786** / 0.0040 / 0 / 15.3 | **0.775** / 0.0026 / 0 / 13.6 | **0.764** / 0.0019 / 0 / 13.9 | **0.784** / 0.0036 / 0 / 14.9 | **0.684** / 0.0007 / 0 / 16.2 | **0.731** / 0.0029 / 2 / 15.6 |
+
+
+### 5.2 Độ bền: lỗ 10 %, lỗ 50 %, off-map tự nhiên (mọi run; sai số của 4Seasons chéo cảnh không có nghĩa — gốc toạ độ khác)
+
+Lỗ 10 % (108 run):
+
+| dataset | n | HSI-rot-m-sc rec / seg / >α / err | HSI-V rec / seg / >α / err | HSI-VM rec / seg / >α / err | HSI-M rec / seg / >α / err | HSI-Gdrop rec / seg / >α / err | geo-rm rec / seg / >α / err |
+|---|---|---|---|---|---|---|---|
+| 4s:countryside | 18 | 0.672 / 0.0023 / 0 / 21.0 | 0.697 / 0.0009 / 0 / 18.3 | 0.689 / 0.0009 / 0 / 18.3 | 0.666 / 0.0023 / 0 / 21.0 | 0.700 / 0.0023 / 0 / 18.6 | 0.641 / 0.0000 / 0 / 23.4 |
+| 4s:office_loop | 18 | 0.860 / 0.0000 / 0 / 6.8 | 0.867 / 0.0004 / 0 / 6.7 | 0.853 / 0.0004 / 0 / 6.7 | 0.845 / 0.0000 / 0 / 6.8 | 0.870 / 0.0000 / 0 / 6.7 | 0.807 / 0.0000 / 0 / 7.3 |
+| 4s:old_town | 18 | 0.735 / 0.0005 / 0 / 32.1 | 0.731 / 0.0005 / 0 / 33.5 | 0.717 / 0.0000 / 0 / 31.6 | 0.713 / 0.0000 / 0 / 30.2 | 0.747 / 0.0005 / 0 / 30.2 | 0.674 / 0.0000 / 0 / 35.6 |
+| boreas | 18 | 0.903 / 0.0006 / 0 / 6.0 | 0.913 / 0.0006 / 0 / 5.8 | 0.903 / 0.0006 / 0 / 2.7 | 0.898 / 0.0006 / 0 / 2.8 | 0.912 / 0.0006 / 0 / 6.0 | 0.888 / 0.0006 / 0 / 2.9 |
+| cmu | 18 | 0.530 / 0.0007 / 0 / 2.9 | 0.542 / 0.0012 / 0 / 2.9 | 0.538 / 0.0012 / 0 / 2.9 | 0.533 / 0.0007 / 0 / 2.9 | 0.537 / 0.0007 / 0 / 2.9 | 0.469 / 0.0000 / 0 / 2.9 |
+| nord | 18 | 0.831 / 0.0000 / 0 / 3.8 | 0.828 / 0.0000 / 0 / 3.8 | 0.823 / 0.0000 / 0 / 3.8 | 0.825 / 0.0000 / 0 / 3.8 | 0.831 / 0.0000 / 0 / 3.8 | 0.762 / 0.0000 / 0 / 4.4 |
+| **pooled** | 108 | **0.755** / 0.0007 / 0 / 12.1 | **0.763** / 0.0006 / 0 / 11.8 | **0.754** / 0.0005 / 0 / 11.0 | **0.747** / 0.0006 / 0 / 11.2 | **0.766** / 0.0007 / 0 / 11.4 | **0.707** / 0.0001 / 0 / 12.7 |
+
+
+Lỗ 50 % (108 run):
+
+| dataset | n | HSI-rot-m-sc rec / seg / >α / err | HSI-V rec / seg / >α / err | HSI-VM rec / seg / >α / err | HSI-M rec / seg / >α / err | HSI-Gdrop rec / seg / >α / err | geo-rm rec / seg / >α / err |
+|---|---|---|---|---|---|---|---|
+| 4s:countryside | 18 | 0.601 / 0.0044 / 0 / 37.9 | 0.610 / 0.0062 / 0 / 38.8 | 0.600 / 0.0038 / 0 / 36.4 | 0.589 / 0.0035 / 0 / 37.7 | 0.609 / 0.0047 / 0 / 37.0 | 0.523 / 0.0007 / 0 / 40.6 |
+| 4s:office_loop | 18 | 0.862 / 0.0006 / 0 / 13.5 | 0.862 / 0.0012 / 0 / 13.6 | 0.839 / 0.0012 / 0 / 13.6 | 0.836 / 0.0006 / 0 / 13.5 | 0.862 / 0.0006 / 0 / 13.5 | 0.756 / 0.0002 / 0 / 14.3 |
+| 4s:old_town | 18 | 0.719 / 0.0007 / 0 / 56.7 | 0.723 / 0.0019 / 0 / 62.8 | 0.707 / 0.0005 / 0 / 41.8 | 0.705 / 0.0001 / 0 / 40.6 | 0.719 / 0.0007 / 0 / 56.6 | 0.579 / 0.0000 / 0 / 62.5 |
+| boreas | 18 | 0.883 / 0.0001 / 0 / 6.6 | 0.882 / 0.0000 / 0 / 5.2 | 0.869 / 0.0000 / 0 / 4.8 | 0.870 / 0.0000 / 0 / 4.5 | 0.883 / 0.0001 / 0 / 6.6 | 0.830 / 0.0000 / 0 / 4.1 |
+| cmu | 18 | 0.733 / 0.0318 / 4 / 12.0 | 0.755 / 0.0362 / 5 / 13.2 | 0.750 / 0.0331 / 4 / 12.2 | 0.743 / 0.0322 / 4 / 12.2 | 0.749 / 0.0350 / 5 / 12.9 | 0.352 / 0.0066 / 0 / 5.9 |
+| nord | 18 | 0.669 / 0.0000 / 0 / 8.8 | 0.682 / 0.0002 / 0 / 10.9 | 0.675 / 0.0001 / 0 / 8.9 | 0.663 / 0.0000 / 0 / 8.8 | 0.680 / 0.0000 / 0 / 8.8 | 0.532 / 0.0000 / 0 / 10.3 |
+| **pooled** | 108 | **0.744** / 0.0063 / 4 / 22.6 | **0.752** / 0.0076 / 5 / 24.1 | **0.740** / 0.0065 / 4 / 19.6 | **0.734** / 0.0061 / 4 / 19.5 | **0.750** / 0.0069 / 5 / 22.6 | **0.595** / 0.0013 / 0 / 23.0 |
+
+
+Off-map tự nhiên 4Seasons chéo cảnh (36 run):
+
+| dataset | n | HSI-rot-m-sc rec / seg / >α / err | HSI-V rec / seg / >α / err | HSI-VM rec / seg / >α / err | HSI-M rec / seg / >α / err | HSI-Gdrop rec / seg / >α / err | geo-rm rec / seg / >α / err |
+|---|---|---|---|---|---|---|---|
+| 4sx:countrysideoffice_loop | 6 | 0.683 / 0.0090 / 0 / 207477.5 | 0.679 / 0.0118 / 0 / 291190.2 | 0.677 / 0.0092 / 0 / 235086.3 | 0.680 / 0.0113 / 0 / 281435.0 | 0.686 / 0.0135 / 0 / 318819.6 | 0.656 / 0.0001 / 0 / 2834.2 |
+| 4sx:countrysideold_town | 6 | 0.683 / 0.0070 / 0 / 193878.9 | 0.681 / 0.0177 / 0 / 370778.3 | 0.678 / 0.0142 / 0 / 287816.2 | 0.681 / 0.0155 / 0 / 301149.0 | 0.686 / 0.0171 / 0 / 342320.4 | 0.656 / 0.0002 / 0 / 9165.4 |
+| 4sx:office_loopcountryside | 6 | 0.857 / 0.0039 / 0 / 219710.6 | 0.861 / 0.0037 / 0 / 215421.6 | 0.857 / 0.0028 / 0 / 171098.9 | 0.861 / 0.0028 / 0 / 159377.7 | 0.857 / 0.0039 / 0 / 219710.6 | 0.841 / 0.0000 / 0 / 95.8 |
+| 4sx:office_loopold_town | 6 | 0.865 / 0.0166 / 1 / 213423.4 | 0.867 / 0.0119 / 0 / 176347.6 | 0.864 / 0.0101 / 0 / 150285.2 | 0.863 / 0.0127 / 0 / 177583.9 | 0.866 / 0.0166 / 1 / 213423.4 | 0.854 / 0.0000 / 0 / 43.2 |
+| 4sx:old_towncountryside | 6 | 0.670 / 0.0043 / 0 / 250406.3 | 0.672 / 0.0048 / 0 / 269752.7 | 0.670 / 0.0037 / 0 / 219336.0 | 0.668 / 0.0032 / 0 / 192337.0 | 0.670 / 0.0043 / 0 / 250406.3 | 0.660 / 0.0000 / 0 / 115.1 |
+| 4sx:old_townoffice_loop | 6 | 0.702 / 0.0175 / 0 / 312010.8 | 0.688 / 0.0174 / 0 / 327866.2 | 0.687 / 0.0168 / 0 / 330769.4 | 0.700 / 0.0161 / 0 / 298338.7 | 0.702 / 0.0175 / 0 / 312010.8 | 0.684 / 0.0000 / 0 / 33.4 |
+| **pooled** | 36 | **0.743** / 0.0097 / 1 / 232817.9 | **0.741** / 0.0112 / 0 / 275226.1 | **0.739** / 0.0095 / 0 / 232398.7 | **0.742** / 0.0103 / 0 / 235036.9 | **0.744** / 0.0122 / 1 / 276115.2 | **0.725** / 0.0001 / 0 / 2047.8 |
+
+
+### 5.3 Hiệu chuẩn: quét α (HSI-rot-m-sc ở α khác nhau; 413 run giữ ra)
+
+![alpha](figures/hsi_alpha.png)
+
+| rule | nominal α | runs | segFAR mean of dataset means | max dataset mean | runs > α | runs > 0.05 | pooled recall | nav err (m) |
+|---|---|---|---|---|---|---|---|---|
+| HSI-sc@0.01 | 0.01 | 413 | 0.0008 | 0.0030 | 6 (1.5%) | 0 | 0.707 | 16.5 |
+| HSI-sc@0.02 | 0.02 | 413 | 0.0013 | 0.0035 | 4 (1.0%) | 0 | 0.733 | 15.9 |
+| HSI-rot-m-sc | 0.05 | 413 | 0.0023 | 0.0060 | 0 (0.0%) | 0 | 0.772 | 15.0 |
+| HSI-sc@0.1 | 0.1 | 413 | 0.0046 | 0.0143 | 0 (0.0%) | 4 | 0.799 | 15.0 |
+| HSI-sc@0.2 | 0.2 | 413 | 0.0083 | 0.0437 | 0 (0.0%) | 27 | 0.811 | 16.0 |
+| Claxton24 | 0.05 | 413 | 0.1699 | 0.2568 | 287 (69.5%) | 287 | 0.729 | 46.2 |
+| Xu21 | 0.05 | 413 | 0.1903 | 0.5679 | 202 (48.9%) | 202 | 0.670 | 51.0 |
+| oracle | 0.0 | 413 | 0.0000 | 0.0000 | 0 (0.0%) | 0 | 0.845 | 10.3 |
+
+
+Bảo đảm đúng ở mọi mức và bảo thủ (null hồi cứu là tập cha của off-map). Claxton'24 (MLP giám sát có nhãn) và Xu'21 (HMM có trạng thái off-map,
+chỉnh bằng nhãn) không có cơ chế hiệu chuẩn cho off-map nên vượt α ở 49–70 % run.
+
+### 5.4 Tập xác nhận mới (bố cục lỗ seed 10–12, sinh lại sau khi mọi quyết định đã chốt; 108 run, mọi run)
+
+{{CONFIRM}}
 
 ### Bảng A — luật khuyến nghị HSI-rot-m-sc (Entry 3), tập giữ ra; Ablation: mọi biến thể
 
@@ -132,6 +226,13 @@ runs: 441 (held-out 413, with idea-1 SH on the same run 413)
 | variant | recall | segFAR | runs seg>0.05 | nav err | worst-class rate |
 |---|---|---|---|---|---|
 | HSI | 0.758 | 0.0023 | 0 | 14.3 | 0.058 |
+| Claxton24 | 0.737 | 0.1699 | 287 | 43.0 | 0.330 |
+| HSI-Gdrop | 0.777 | 0.0033 | 0 | 14.0 | 0.058 |
+| HSI-M | 0.751 | 0.0017 | 0 | 13.3 | 0.033 |
+| HSI-M-nos | 0.755 | 0.0023 | 0 | 13.3 | 0.033 |
+| HSI-V | 0.778 | 0.0037 | 0 | 14.3 | 0.055 |
+| HSI-VM | 0.767 | 0.0024 | 0 | 12.9 | 0.033 |
+| HSI-Vc | 0.759 | 0.0027 | 0 | 14.6 | 0.042 |
 | HSI-adapt | 0.651 | 0.0043 | 7 | 18.8 | 0.045 |
 | HSI-e1 | 0.626 | 0.0016 | 1 | 20.1 | 0.012 |
 | HSI-m | 0.746 | 0.0027 | 1 | 14.6 | 0.067 |
@@ -145,10 +246,15 @@ runs: 441 (held-out 413, with idea-1 SH on the same run 413)
 | HSI-rot-m | 0.756 | 0.0027 | 0 | 14.0 | 0.058 |
 | HSI-rot-m-c | 0.761 | 0.0028 | 0 | 13.7 | 0.058 |
 | HSI-rot-m-s | 0.753 | 0.0022 | 0 | 14.5 | 0.058 |
+| HSI-sc@0.01 | 0.700 | 0.0008 | 0 | 15.6 | 0.033 |
+| HSI-sc@0.02 | 0.722 | 0.0013 | 0 | 15.1 | 0.033 |
+| HSI-sc@0.1 | 0.783 | 0.0046 | 4 | 14.2 | 0.071 |
+| HSI-sc@0.2 | 0.799 | 0.0083 | 27 | 14.9 | 0.087 |
 | HSI-sess | 0.582 | 0.0007 | 0 | 21.7 | 0.006 |
 | Xu21 | 0.689 | 0.1903 | 202 | 47.5 | 0.710 |
 | anc | 0.547 | 0.0147 | 40 | 22.2 | 0.175 |
 | geo | 0.564 | 0.0026 | 6 | 20.7 | 0.039 |
+| geo-rm | 0.680 | 0.0007 | 0 | 15.4 | 0.033 |
 | oracle | 0.842 | 0.0000 | 0 | 9.9 | 0.000 |
 | top1 | 0.842 | 1.0000 | 413 | 162.0 | 1.000 |
 | (idea 1) SH | 0.728 | 0.0025 | 2 | 14.9 | – |
@@ -205,6 +311,13 @@ runs: 441 (held-out 413, with idea-1 SH on the same run 413)
 | variant | recall | segFAR | runs seg>0.05 | nav err | worst-class rate |
 |---|---|---|---|---|---|
 | HSI | 0.626 | 0.0016 | 1 | 20.1 | 0.012 |
+| Claxton24 | 0.737 | 0.1699 | 287 | 43.0 | 0.330 |
+| HSI-Gdrop | 0.777 | 0.0033 | 0 | 14.0 | 0.058 |
+| HSI-M | 0.751 | 0.0017 | 0 | 13.3 | 0.033 |
+| HSI-M-nos | 0.755 | 0.0023 | 0 | 13.3 | 0.033 |
+| HSI-V | 0.778 | 0.0037 | 0 | 14.3 | 0.055 |
+| HSI-VM | 0.767 | 0.0024 | 0 | 12.9 | 0.033 |
+| HSI-Vc | 0.759 | 0.0027 | 0 | 14.6 | 0.042 |
 | HSI-adapt | 0.651 | 0.0043 | 7 | 18.8 | 0.045 |
 | HSI-m | 0.746 | 0.0027 | 1 | 14.6 | 0.067 |
 | HSI-nofloor | 0.630 | 0.0032 | 1 | 20.1 | 0.023 |
@@ -218,10 +331,15 @@ runs: 441 (held-out 413, with idea-1 SH on the same run 413)
 | HSI-rot-m-c | 0.761 | 0.0028 | 0 | 13.7 | 0.058 |
 | HSI-rot-m-s | 0.753 | 0.0022 | 0 | 14.5 | 0.058 |
 | HSI-rot-m-sc | 0.758 | 0.0023 | 0 | 14.3 | 0.058 |
+| HSI-sc@0.01 | 0.700 | 0.0008 | 0 | 15.6 | 0.033 |
+| HSI-sc@0.02 | 0.722 | 0.0013 | 0 | 15.1 | 0.033 |
+| HSI-sc@0.1 | 0.783 | 0.0046 | 4 | 14.2 | 0.071 |
+| HSI-sc@0.2 | 0.799 | 0.0083 | 27 | 14.9 | 0.087 |
 | HSI-sess | 0.582 | 0.0007 | 0 | 21.7 | 0.006 |
 | Xu21 | 0.689 | 0.1903 | 202 | 47.5 | 0.710 |
 | anc | 0.547 | 0.0147 | 40 | 22.2 | 0.175 |
 | geo | 0.564 | 0.0026 | 6 | 20.7 | 0.039 |
+| geo-rm | 0.680 | 0.0007 | 0 | 15.4 | 0.033 |
 | oracle | 0.842 | 0.0000 | 0 | 9.9 | 0.000 |
 | top1 | 0.842 | 1.0000 | 413 | 162.0 | 1.000 |
 | (idea 1) SH | 0.728 | 0.0025 | 2 | 14.9 | – |
@@ -233,25 +351,36 @@ runs: 441 (held-out 413, with idea-1 SH on the same run 413)
 loop closure, không có trạng thái off-map, không có quyết định online có bảo đảm); TF-VPR, Carson'23, Claxton'24; ACI với phản hồi trễ. Mới: (i)
 nhãn của lớp OFF-MAP (lớp không bao giờ có nhãn khi triển khai) từ dead-reckoning + vùng phủ bản đồ; (ii) nhãn sinh và dùng online, nhân quả, trong
 cùng một lần triển khai để học và hiệu chuẩn quyết định báo; (iii) hiệu chuẩn biên của luật hợp gồm chứng chỉ hình học không cần hiệu chuẩn và
-điểm số học được, trên excursion thật (mép, đầu chuỗi có sẵn); (iv) chứng chỉ hình học bất biến điều kiện ảnh. Từng khối riêng có tiền lệ.
+điểm số học được, trên excursion thật (mép, đầu chuỗi có sẵn); (iv) chứng chỉ hình học bất biến điều kiện ảnh; (v) chứng nhận rồi hiệu chuẩn — chứng chỉ neo nhãn hồi cứu và không tiêu ngân sách α
+(Mệnh đề 6). Từng khối riêng có tiền lệ.
 
 **So với ý tưởng 1.** Ý tưởng 1 can thiệp lên bản đồ để sinh null và hiệu chuẩn một thống kê cố định (bất biến affine — bỏ thông tin); hệ số 1/π và
 lỗ ảo khác lỗ thật ở mép làm bảo đảm theo vị trí không đạt. HSI quan sát excursion thật qua hình học hồi cứu, học hàm điểm dùng cả similarity tuyệt
 đối, và đạt kiểm toán vị trí 9/9 với recall cao hơn — nhưng phải "học dần": phiên đầu tiên của một lần triển khai chỉ có chứng chỉ hình học (khởi
 động lạnh), và mỗi phiên chỉ có 5–7 lỗ thật nên hiệu chuẩn phải gộp phiên (hoán đổi giữa điều kiện chỉ xấp xỉ).
 
-**Hạn chế đã đo.** (1) CMU: chuỗi rất ngắn (trung vị 186 frame) và nhiều chuỗi bắt đầu off-map; ngưỡng chung bị các đoạn đầu chuỗi chiếm ⇒ hướng
-sửa: hiệu chuẩn Mondrian theo chế độ quyết định (đã/ chưa có tham chiếu tin cậy). (2) NCLT: off-map tự nhiên sát bản đồ (off_d 20 m) — vị trí hồi
-cứu ±3–5 m làm null mơ hồ. (3) Sai số điều hướng old town (VIO trôi 6 %/100 m; khoảng trống fix dài ở đầu phiên). (4) Bảo đảm dựa trên hoán đổi giữa
-đoạn null hồi cứu và đoạn sai thật; nhãn hồi cứu sai (tuyến dịch cứng được xác minh) làm thiếu null — đo được hiếm (≤ 0.7 % neo sai).
+**Phát hiện mới của Entry 5 (Mệnh đề 6).** Hiệu chuẩn hợp tính mọi báo của chứng chỉ trong null hồi cứu là vi phạm; khi null bị nhiễm (cầu
+dead-reckoning dài trôi xa — NCLT chỉ 6–13 % frame được xác minh hồi cứu), chứng chỉ báo ĐÚNG ở các frame nhiễm và khoá nhánh học. Dùng chứng chỉ
+làm điểm neo hồi cứu sửa cả hai: null sạch hơn và nhánh học được ngân sách. Đo được: chứng chỉ báo trong null ∩ off-map thật = 0.000; một mình
+chứng chỉ 0/665 run vi phạm. Đây là một nguyên lý chung cho giám sát toàn vẹn tự giám sát: **chứng nhận rồi hiệu chuẩn** (phần có chứng chỉ không
+tiêu ngân sách α và không bị phán xét bằng nhãn kém tin cậy hơn chính nó).
 
-**Việc tiếp theo.** Entry 4: Mondrian theo chế độ; mô hình ưu tiên (prior) mang từ các lần triển khai trước để giảm khởi động lạnh; bộ dữ liệu
-không gian (VPR-Space, gợi ý của user) cần pose + thứ tự chuỗi để áp giao thức bản đồ có lỗ; kiểm chứng robot thật vòng kín.
+**Hạn chế đã đo.** (1) CMU: chuỗi rất ngắn (trung vị 186 frame), 37/130 chuỗi bắt đầu off-map, 48 % frame thuộc chuỗi không có đoạn nào được
+xác minh hồi cứu ⇒ ít nhãn, khởi động lạnh; mọi biến thể vẫn dưới SH (0.65–0.70 vs 0.835). (2) NCLT: chỉ 2 run giữ ra (một bản đồ, off-map tự
+nhiên). (3) Sai số điều hướng old town (VIO trôi 6 %/100 m) — HSI-VM giảm nhưng chưa bằng SH. (4) Bảo đảm dựa trên hoán đổi giữa đoạn null hồi
+cứu và đoạn off-map thật; null là tập cha nên bảo thủ 5–25× (§5.3) — đúng mà tốn recall. (5) Tập giữ ra đã dùng cho 5 vòng quyết định ⇒ nguy cơ
+quá khớp thích nghi; vì vậy có tập xác nhận mới (§5.4) sinh SAU khi mọi quyết định đã chốt. (6) Tham số mặc định (α, H, độ trễ, 0.5) chung cho
+mọi dataset; không tinh chỉnh theo dataset.
+
+**Việc tiếp theo.** Thu hẹp null bằng ước lượng tỉ lệ nhiễm (giảm bảo thủ mà vẫn hợp lệ); mô hình ưu tiên mang từ các lần triển khai trước cho
+CMU (khởi động lạnh); bộ dữ liệu không gian (VPR-Space, gợi ý của user) cần pose + thứ tự chuỗi để áp giao thức; kiểm chứng robot thật vòng kín.
 
 ## 7. Tái lập
 
 - Dữ liệu: cache công khai `nhatlong1103/hmm-navcache-v2` (7 dataset × 6 descriptor × 10 seed), `nhatlong1103/hmm-e37-caches` (Oxford, St Lucia).
-- Một run: `python3 analysis/hsi_eval.py <cache_dir> <ds> <desc> <seeds> --variants HSI,HSI-rot-m,geo`.
+- Một run: `python3 analysis/hsi_eval.py <cache_dir> <ds> <desc> <seeds> --variants HSI-rot-m-sc,HSI-V,HSI-VM,geo-rm`.
+- Tập xác nhận mới (bố cục lỗ mới, sinh cache từ dump rồi đánh giá): `python3 analysis/hsi_fresh.py <dump_dir> <ds> <desc> 10 3 --variants ...`.
+- So sánh biến thể: `analysis/hsi_compare.py`; quét α + hình: `analysis/hsi_alpha.py --png`.
 - Đợt Kaggle: `automation/hsi_wave.py` → `automation/fanout.py --groups --build-only --cpu --nodumps --ds nhatlong1103/hmm-navcache-v2,nhatlong1103/hmm-e37-caches --par 4`
   → `automation/central_monitor.py`; gom: `automation/hsi_collect.py`; bảng: `analysis/hsi_summary.py`; báo cáo: `paper/build_hsi_report.py`.
 - Chi phí: ~2–25 s mỗi run mỗi biến thể trên 1 lõi CPU (không cần GPU); đợt 12 biến thể × 441 run ≈ 17 phút trên 10 phiên CPU Kaggle.
