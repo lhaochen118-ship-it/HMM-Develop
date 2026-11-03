@@ -4,6 +4,18 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+## Entry 4 — hiệu chuẩn Mondrian theo chế độ quyết định (HSI-M) — đăng ký trước (2026-11-03 18:05 UTC)
+
+**Bối cảnh (từ kết quả giữ ra của Entry 3, chỉ CMU được dùng để chẩn đoán):** nới đầu chuỗi đưa các đoạn null đầu chuỗi (37/130 chuỗi CMU bắt đầu
+off-map) vào cùng một ngân sách conformal ⇒ ngưỡng chung tăng, (c) báo ít hơn ở phần đang bám (frac_c trung vị 0.19 → 0.12), CMU giữ ra 0.692 →
+0.652. **Thay đổi:** ngưỡng conformal riêng cho từng chế độ (k = 1: chuỗi chưa có tham chiếu tin cậy — đầu chuỗi / mất dấu; k = 0: đã có), mỗi
+đoạn null cắt tại chỗ đổi chế độ; bảo đảm trở thành P(báo trong một đoạn null mới của chế độ k) ≤ α cho TỪNG k (Mệnh đề 4 áp riêng mỗi lớp) —
+khớp với tinh thần kiểm toán theo vị trí (đầu chuỗi có ngưỡng riêng). Tập thiết kế: HSI-M +0.044 so với SH (20/28), sai số −0.9 m (20/28), max
+segFAR 0.035; HSI-M-nos (không nới đầu chuỗi) +0.038.
+**Đăng ký trước:** luật ứng viên **HSI-M**; phụ HSI-M-nos. Cùng tập giữ ra, tham chiếu, H1–H5. **H8:** recall CMU của HSI-M ≥ HSI-rot-m-sc + 0.03 VÀ
+recall gộp mọi run giữ ra ≥ HSI-rot-m-sc − 0.005. **Quyết định:** H1 ∧ H2 ∧ H8 ⇒ HSI-M thay HSI-rot-m-sc; nếu không, giữ HSI-rot-m-sc và báo cáo
+HSI-M như ablation (đổi recall lấy điều hướng / bảo đảm theo chế độ).
+
 ## Entry 3 — đầu chuỗi và biên null (HSI-rot-m-sc) — đăng ký trước (2026-11-03 17:00 UTC, chưa xem kết quả giữ ra nào của Entry 1–2)
 
 **Chẩn đoán trên tập thiết kế (seed 0) với HSI-rot-m:** (i) CMU: 97–100 % frame on-map bị bỏ lỡ (chuỗi đúng) nằm TRƯỚC điểm neo đầu tiên của

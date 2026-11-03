@@ -30,6 +30,8 @@ VARIANTS = {
     "HSI-rot-m-s": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True),            # (Entry 3 candidates) starts relaxed
     "HSI-rot-m-c": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, null_cap=0.25),              # null margin capped at off_d / 4
     "HSI-rot-m-sc": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25),
+    "HSI-M": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, start_relax=True, null_cap=0.25, mondrian="ref"),   # (Entry 4) Mondrian by regime
+    "HSI-M-nos": dict(scope="pooled", null_kind="offwrong+unl", gate_kind="loose", bridge="blend", sc_lags=(5, 10, 20), train_all=True, calib="joint", floor=0.5, rot_max=0.35, metric_windows=True, null_cap=0.25, mondrian="ref"),                   # Entry 4 without start relax
     "geo": None, "anc": None,                       # geometric self-verification only (a|b); causal anchors only
     "Xu21": None, "oracle": None, "top1": None,     # references from the cache: Xu'21 HMM off-map state (T, k tuned WITH labels on
 }                                                   # the 2 easiest conditions, nav_demo), oracle (correct top-1 only), accept-all top-1

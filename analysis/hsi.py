@@ -280,15 +280,16 @@ def hindsight_labels(z, cfg, xt, sd):
     return y, null, dmap
 
 
-def null_segments(seqs, null, mask, unit, H):
-    """disjoint H-frame segments of runs of null frames (within one calibration unit), from the start of each run"""
-    segs = []
+def null_segments(seqs, null, mask, unit, H, klass=None):
+    """disjoint H-frame segments of runs of null frames (within one calibration unit and, if given, one regime class), from
+    the start of each run"""
+    segs = []; kl = np.zeros(len(unit), np.int64) if klass is None else klass
     for idx in seqs:
         mm = null[idx] & mask[idx]; i = 0; L = len(idx)
         while i < L:
             if mm[i]:
                 j = i
-                while j < L and mm[j] and unit[idx[j]] == unit[idx[i]]: j += 1
+                while j < L and mm[j] and unit[idx[j]] == unit[idx[i]] and kl[idx[j]] == kl[idx[i]]: j += 1
                 for kk in range(i, j - H + 1, H): segs.append(idx[kk:kk + H])
                 i = j
             else: i += 1
@@ -471,7 +472,7 @@ def evaluate_mask(z, name, acc, seqs, cfg, nav=True):
 
 
 def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict", bridge="rigid", sc_lags=(), train_all=False,
-              calib="regime", adaptive=False, floor=-np.inf, start_relax=False, null_cap=None, verbose=False, **kw):
+              calib="regime", adaptive=False, floor=-np.inf, start_relax=False, null_cap=None, mondrian=None, verbose=False, **kw):
     """HSI v2 = geometric self-verification (a: trusted anchors, b: dead-reckoning agreement; trusted_geometry) OR
     (c) a hindsight-learned score above a conformal threshold calibrated on hindsight-null segments of the SAME regime
     (frames where a|b do not fire), held out from training. scope: 'pooled' (every session's held-out units) or 'session'.
@@ -533,7 +534,9 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     # calibration units: JOINT (default) = every held-out null segment, scored by the whole rule (+inf where the geometry
     # reports, the learned score where (c) may report, -inf elsewhere) -> P(any report in a new null segment) <= alpha for
     # the union; 'regime' = only segments inside the (c) regime (conditional, more conservative)
-    segs = null_segments(seqs, null if calib == "joint" else null & regime, cal, unit, H)
+    klass = (~hr).astype(np.int64) if mondrian == "ref" else np.zeros(n, np.int64)   # 1 = no trusted reference yet (start / lost)
+    segs = null_segments(seqs, null if calib == "joint" else null & regime, cal, unit, H, klass)
+    seg_k = np.array([klass[s_[0]] for s_ in segs], np.int64) if segs else np.zeros(0, np.int64)
     seg_av = np.array([avail[s].max() for s in segs], np.int64) if segs else np.zeros(0, np.int64)
     seg_c = np.array([cond[s[0]] for s in segs]) if segs else np.zeros(0, str)
     score = np.full(n, -np.inf); thr_at = np.full(n, np.inf); clf = None; last_n = 0
@@ -544,13 +547,15 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
         if n1 >= 50 and n0 >= 50 and (clf is None or m.sum() > 1.1 * last_n):
             clf = fit_model(X[m], y[m]); last_n = int(m.sum())
         if clf is None: continue
-        rs = [s for s, a, c in zip(segs, seg_av, seg_c) if a < T and (scope == "pooled" or c == cc)]
-        if len(rs) >= cfg.min_seg:
-            ii = np.concatenate(rs); pp = clf.predict_proba(X[ii])[:, 1]
-            f = np.where(regime[ii] & (pp > floor), pp, -np.inf); f[geo[ii]] = np.inf
-            thr = conformal_thr(f.reshape(len(rs), H).max(1), cfg.alpha)
-        else: thr = np.inf
-        score[cur] = clf.predict_proba(X[cur])[:, 1]; thr_at[cur] = thr
+        thr_k = {}
+        for kk in np.unique(klass[cur]):
+            rs = [s for s, a, c, sk in zip(segs, seg_av, seg_c, seg_k) if a < T and (scope == "pooled" or c == cc) and sk == kk]
+            if len(rs) >= cfg.min_seg:
+                ii = np.concatenate(rs); pp = clf.predict_proba(X[ii])[:, 1]
+                f = np.where(regime[ii] & (pp > floor), pp, -np.inf); f[geo[ii]] = np.inf
+                thr_k[kk] = conformal_thr(f.reshape(len(rs), H).max(1), cfg.alpha)
+            else: thr_k[kk] = np.inf
+        score[cur] = clf.predict_proba(X[cur])[:, 1]; thr_at[cur] = np.array([thr_k[k_] for k_ in klass[cur]])
     rc = (score > np.maximum(thr_at, floor)) & regime          # MAP floor: never report a fix the model thinks is more likely wrong
     acc = geo | rc
     return dict(acc=acc, ra=ra, rb=rb, rc=rc, score=score, thr=thr_at, anc=anc, y=y, null=null, seqs=seqs, cfg=cfg, kappa=kap,
