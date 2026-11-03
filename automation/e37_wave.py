@@ -51,7 +51,20 @@ def main():
             u.append((load[k] * ms(ds) / 1e3 + 60, f"e37_fwd.py {src} {ds} {desc} {seed} {k}/{n}" + (" --wait" if ds == "oxford" else "")))
         u.append((C["eval"].get(ds.split(":")[0], 300), f"e37_eval.py {ev} {ds} {desc} {seed} {n} --wait"))
         units.append(u)
-    if "--e38" in sys.argv:                                           # Entry 38: block-shaped virtual holes
+    if "--e39" in sys.argv:                                           # Entry 39: NEW hole layouts (seeds 10-12 of the hole generator)
+        seeds39 = [int(x) for x in sys.argv[sys.argv.index("--e39") + 1].split(",")]
+        for s in seeds39:
+            for ds in HOLED:
+                for d in DESC:
+                    n = parts(fr, ds); load = [0] * n; t = fr[ds.replace(":", "_")]
+                    for L in sorted(t["seqs"], reverse=True): load[load.index(min(load))] += L
+                    pc = 60 + t["n"] * C.get("prep_ms", 12) / 1e3          # nav_demo cache + top-300 + exact statistics of the run
+                    u = [(pc, f"e37_prep.py DUMP {ds} {d} {s} --no-fwd")]
+                    for sh in (" --shape block", ""):
+                        u += [(load[k] * ms(ds) * C.get("batch_speed", 0.55) / 1e3 + 60, f"e37_fwd.py DUMP results {ds} {d} {s} {k}/{n} --wait{sh}") for k in range(n)]
+                    u.append((C["eval"].get(ds.split(":")[0], 300) * 1.3, f"e37_eval.py DUMP results results/cms results/topk results/tao {ds} {d} {s} {n} --wait --block"))
+                    units.append(u)
+    elif "--e38" in sys.argv:                                         # Entry 38: block-shaped virtual holes
         NV, CM, TK, TA, FW = ("DIR:navcache_@hmm-navcache-v2", "DIR:cms_@hmm-cms-cache-exact", "DIR:topk_@hmm-topk", "DIR:tao_@hmm-route-cache",
                               "DIR:fwd_@hmm-fwd-null-e37")
         OXC = "@hmm-e37-caches"
@@ -120,7 +133,15 @@ def pack(units, nk, out, C):
         b = min(bins, key=lambda x: x[0]); b[0] += sum(c for c, _ in u); b[1] += u
     jobs = [j for u in units for j in u]
     has = lambda j, p_: p_ in j.split()[:3]                           # script name, possibly behind envrun.py VAR=... @dir
-    rank = lambda j: (0 if has(j[1], "e37_prep.py") else 2 if has(j[1], "e37_eval.py") else 1, -j[0])
+    prep_of = {}
+    for c_, j_ in jobs:
+        if has(j_, "e37_prep.py"): w_ = j_.split(); prep_of[tuple(w_[2:5])] = c_
+    def rank(j):
+        w_ = j[1].split()
+        if has(j[1], "e37_prep.py"): return (0, 0, -j[0])
+        if has(j[1], "e37_eval.py"): return (2, 0, -j[0])
+        i_ = w_.index("e37_fwd.py") if "e37_fwd.py" in w_ else 0
+        return (1, prep_of.get(tuple(w_[i_ + 3:i_ + 6]), 0) if "--wait" in w_ else 0, -j[0])
     with open(out, "w") as f:
         for _, js in bins: f.write(";".join(j for _, j in sorted(js, key=rank)) + "\n")
     tot = sum(c for c, _ in jobs); par = C.get("par", 46)

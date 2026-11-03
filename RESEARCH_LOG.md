@@ -7,6 +7,32 @@ và script SelfCal được nhắc tới nằm ở branch `claude/selfcal-aa` / 
 Newest entry at the top. Each entry: hypothesis, experiment, honest verdict. Compute runs on Kaggle (see
 `handoff/02_ENGINEERING_OPS_NOTES.md`).
 
+## Entry 39 (branch `hmm-navigation-5`) — confirmation of CST-JSU [both] on new hole layouts; two explanations of the edge excess (2026-11-03)
+
+**Context.** Entry 38: block-shaped virtual holes do not close the edge gap (H38b fails); the causal intersection CST-JSU [both] (secondary)
+met <= 0.07 in every position class on 6/6 fresh held-out datasets. User: confirm it on NEW hole layouts and test the two remaining
+explanations of the edge excess.
+
+**Pre-registration (written and committed before any run of this entry; nothing below has been computed).**
+*Confirmation set:* seeds 10-12 of the hole generator (`nav_demo.py --cache`, 30 % of the 300 m cells removed: map layouts never used) x
+6 holed datasets x 6 descriptors = 108 runs; everything recomputed inside the kernels (navcache, exact statistics, corridor and block
+forward nulls, rules @E36,@E37,@E38). alpha = 0.05, groups cond + loco. **Rule under confirmation: CMS-CPC/H+CSTJSU+G[both]+NGRr.**
+References SH, SH AND CST-JS, CST-JS, CST-JSU, CST-F.
+- **H39a:** CST-JSU [both] mean segFAR <= 0.05 on 6/6.
+- **H39b:** report rate of real off-map segments <= 0.07 in every position class with >= 50 segments (start / edge / deep, `e37_audit.py`)
+  on >= 5/6.
+- **H39c:** recall within 0.04 of SH on >= 4/6 (Entry 38 price: -0.02 to -0.034).
+- **H39d:** navigation error within 1 m of SH on >= 5/6.
+Decision: if H39a and H39b hold, CST-JSU [both] becomes the recommended label-free rule with a per-position guarantee (with its recall price
+reported); otherwise the Entry 37 recommendation stays.
+*Diagnostics (no hypothesis decides a rule; labels only to evaluate; on the Entry 37 sets, corridor null):*
+- **D39-pi (the 1/pi factor of Proposition 19):** pi = share of the virtual exits of a calibration group whose exit frame is truly on-map
+  with a correct belief (error <= excl); predicted ceiling of the edge rate a / pi_edge (pi of position-0 bins) compared with the observed
+  edge rate per dataset. Explanation (i) is supported if the observed rate <= a / pi_edge on the datasets where it exceeds 0.07.
+- **D39-margin (off_d margin):** the edge rate recomputed with real off-map segments redefined at off_d + delta (delta = 5, 10, 20 m;
+  Nordland 1, 2, 5 frames), and the share of edge reports whose fix error is < off_d + 10 m. Explanation (ii) is supported if the edge
+  rate falls to <= 0.07 at delta = 10 m on Boreas and old town.
+
 ## Entry 38 (branch `hmm-navigation-5`) — block-shaped virtual holes for the edge of real holes (2026-11-03)
 
 **Context.** Entry 37: CST-JS is valid at the segFAR level (held-out seeds 6-9 included) but the position audit failed (H37b 4/7):
