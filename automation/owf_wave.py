@@ -87,6 +87,10 @@ def main():
         a, b = which.split(":")[1].split("-"); modes = opt("--modes", "xms0.9_8:HSI-VN"); pool = opt("--pool", "r40")
         hf = " --hsiframes" if "--hsiframes" in sys.argv else ""
         cfgs = [(f"r{a}", "", 1.0)] + ([(f"r{a}S", " --qx 0.005,0.02 --scales 0.97,1.0,1.03", 2.5)] if "--bank" in sys.argv else [])
+        if "--banks" in sys.argv:          # e.g. --banks "S:0.97,1.0,1.03;S5:0.94,0.97,1.0,1.03,1.06" (tag suffix:scales; qx 0.005,0.02)
+            cfgs = [] if "--noplain" in sys.argv else cfgs[:1]
+            for bk in opt("--banks", "").split(";"):
+                suf, _, sc = bk.partition(":"); cfgs.append((f"r{a}{suf}", f" --qx 0.005,0.02 --scales {sc}", 0.85 * len(sc.split(","))))
         for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town", "oxford", "stlucia"):
             for desc in DESCS:
                 for sd in range(int(a), int(b) + 1):
