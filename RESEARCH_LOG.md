@@ -91,6 +91,28 @@ nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo
 
 ## Entry 11 — OWF-H: bộ ước lượng thế giới mở + lớp quyết định HSI, giao chuỗi khi đã "ổn định" — đăng ký trước (2026-11-04 15:40 UTC; AUTOLOOP vòng 1)
 
+**KẾT QUẢ TẬP KIỂM TRA (seed 40–42, 144 run mới, đợt `t40`; ghi 17:31 UTC). Quyết định: OWF-H THAY HSI-VN làm luật khuyến nghị.**
+
+| Dataset | runs | OWF-H recall / segFAR / run > α | HSI-VN | Δ recall (wins) | sai số OWF-H / HSI-VN (m) | OWF một mình (recall / segFAR / > α / err) | OWF-H-VMN (recall / err) | HSI-VMN |
+|---|---|---|---|---|---|---|---|---|
+| Boreas | 18 | 0.970 / 0.0006 / 0 | 0.890 / 0.0004 / 0 | +0.081 (16/18) | **2.8** / 7.5 | 0.958 / 0.0035 / 0 / 3.6 | 0.964 / 2.6 | 0.883 / 7.4 |
+| CMU | 18 | 0.756 / 0.0072 / 0 | 0.756 / 0.0072 / 0 | +0.000 (0/18) | 3.3 / 3.3 | 0.727 / 0.0245 / 4 / 4.8 | 0.739 / 3.3 | 0.739 / 3.3 |
+| Nordland | 18 | 0.919 / 0.0000 / 0 | 0.807 / 0.0000 / 0 | +0.112 (18/18) | **2.8** / 3.1 | 0.947 / 0.0265 / 1 / 18.0 | 0.909 / 2.8 | 0.799 / 3.1 |
+| office | 18 | 0.933 / 0.0004 / 0 | 0.864 / 0.0004 / 0 | +0.069 (17/18) | 10.4 / **9.4** | 0.918 / 0.0000 / 0 / 10.5 | 0.915 / 10.2 | 0.844 / 9.1 |
+| old town | 18 | 0.852 / 0.0022 / 0 | 0.747 / 0.0038 / 0 | +0.105 (15/18) | **31.1** / 36.8 | 0.901 / 0.0000 / 0 / 21.1 | 0.841 / 26.3 | 0.736 / 27.2 |
+| countryside | 18 | 0.755 / 0.0007 / 0 | 0.677 / 0.0004 / 0 | +0.077 (10/18) | 30.4 / **23.6** | 0.651 / 0.0000 / 0 / 44.9 | 0.745 / 30.3 | 0.668 / 23.5 |
+| Oxford | 18 | 0.924 / 0.0082 / 1 | 0.820 / 0.0082 / 1 | +0.104 (18/18) | **22.7** / 25.6 | 0.905 / 0.0005 / 0 / 20.5 | 0.918 / 22.3 | 0.814 / 25.4 |
+| St Lucia | 18 | 0.970 / 0.0000 / 0 | 0.929 / 0.0000 / 0 | +0.040 (15/18) | **12.2** / 13.4 | 0.984 / 0.0000 / 0 / 11.9 | 0.967 / 12.2 | 0.927 / 13.3 |
+
+Gộp: recall OWF-H **0.885** vs HSI-VN 0.811 (**+0.074**, CI 95 % [+0.060, +0.088]); run > α 1/144 vs 1/144 (cùng một run Oxford); sai số gộp
+**14.46 vs 15.35 m**. **F1 đạt** (8/8, 1 ≤ 2 run), **F2 đạt**, **F3 đạt** (gộp −0.9 m; trong +1 m trên 6/8 — trượt countryside +6.8 m và office
++1.0 m). ⇒ theo quy tắc đã đăng ký: **OWF-H là luật khuyến nghị mới**; HSI-VN là tham chiếu. CMU không đổi (vùng đầu chuỗi phủ gần hết chuỗi CMU);
+countryside là chỗ điều hướng còn kém.
+*Phát triển thêm sau khi chốt (vòng 2 / 4 trên tập A, không thuộc quyết định này):* lân cận (t, D) phẳng (Score 0.866–0.871, mọi biến thể hợp lệ);
+đặc trưng độ tin OWF cho HSI (`xmsc`) +0.0006; luật HỢP U(ε2, D2) = OWF-H ∨ (khối lượng OWF ≥ 1 − ε2 và ≥ D2·excl từ đầu chuỗi): U(1e-5, 16)
+Score 0.892 (0 run > α, sai số 13.74 m), U(1e-4, 16) 0.896 (2 run), U(1e-3, 16) 0.901 (5 run) — ứng viên Entry 12.
+
+
 **Bối cảnh.** Entry 10: OWF có recall cao nhất nhưng 19/404 run > α và điều hướng kém; HSI-VN hợp lệ từng run nhưng dùng chuỗi vị trí topo kém hơn.
 AUTOLOOP (`handoff/AUTOLOOP.md`): Score = recall gộp với ràng buộc V1 (TB mọi dataset ≤ 0.05), V2 (≤ 2 % run > α), N1 (sai số gộp ≤ HSI-VN + 0.5 m).
 

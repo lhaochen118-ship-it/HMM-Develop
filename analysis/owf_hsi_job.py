@@ -13,6 +13,7 @@ def main():
         if k in rest: i = rest.index(k); v = rest[i + 1]; del rest[i:i + 2]; return v
         return d
     tag = pop("--tag", "r40"); modes = pop("--modes", "xm0.5:HSI-VN,HSI-VMN")
+    hfr = ["--hsiframes"] if "--hsiframes" in rest else []; rest = [a for a in rest if a != "--hsiframes"]   # HSI report masks (owf_union.py)
     t = f"{ds.replace(':', '_')}_{desc}_s{seed}_{tag}"; os.makedirs("results", exist_ok=True)
     r = subprocess.run([sys.executable, os.path.join(HERE, "owf.py"), cdir, dump, ds, desc, seed, "--out", f"results/owf_{t}.json",
                         "--frames", f"results/fr_{t}"] + rest)
@@ -21,7 +22,7 @@ def main():
     for m in modes.replace(";", "+").split("+"):                       # modes separated by "+" (";" separates jobs in a groups file)
         mode, _, var = m.partition(":")
         r = subprocess.run([sys.executable, os.path.join(HERE, "owf_hybrid.py"), "results", cdir, f"w_{t}_{mode}", ds, desc, seed, "--mode", mode,
-                            "--variants", var, "--tag", f"{tag}{mode.replace('.', '')}", "--ftag", f"_{tag}"])
+                            "--variants", var, "--tag", f"{tag}{mode.replace('.', '')}", "--ftag", f"_{tag}"] + hfr)
         rc = rc or r.returncode
     sys.exit(rc)
 

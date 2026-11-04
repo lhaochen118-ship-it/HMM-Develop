@@ -53,6 +53,7 @@ def main():
     opt = lambda k, d: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else d
     mode, variants, tag = opt("--mode", "x"), opt("--variants", "HSI-VN,HSI-VMN"), opt("--tag", "hyb")
     ftag = opt("--ftag", "")                                   # frames file suffix (e.g. _r40)
+    hfr = ["--frames"] if "--hsiframes" in sys.argv else []     # also write hsi_eval's per-frame report masks (hsifr_*.npz)
     os.makedirs(work, exist_ok=True); base = ds.replace(":", "_"); done = []
     for s in seeds_of(seeds):
         ff = os.path.join(fdir, f"fr_{base}_{desc}_s{s}{ftag}_b1.npz")
@@ -60,7 +61,7 @@ def main():
         if not os.path.exists(ff) or cf is None: print("missing", ff, cf, flush=True); continue
         build(ff, cf, os.path.join(work, f"navcache_{base}_{desc}_s{s}.npz"), mode); done.append(s)
     if not done: sys.exit(1)
-    r = subprocess.run([sys.executable, os.path.join(HERE, "hsi_eval.py"), work, ds, desc, ",".join(map(str, done)), "--variants", variants, "--tag", tag])
+    r = subprocess.run([sys.executable, os.path.join(HERE, "hsi_eval.py"), work, ds, desc, ",".join(map(str, done)), "--variants", variants, "--tag", tag] + hfr)
     for s in done:
         try: os.remove(os.path.join(work, f"navcache_{base}_{desc}_s{s}.npz"))
         except OSError: pass
