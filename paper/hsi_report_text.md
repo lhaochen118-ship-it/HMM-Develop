@@ -33,6 +33,23 @@ nghị, CMU +0.059 — trội Pareto trên cả ba thước đo kết quả, nh�
 chính thức vẫn là HSI-rot-m-sc cho tới nhân bản trên seed 16–18 (Entry 9). **Điểm yếu còn lại:** CMU (khoá do chuỗi ngắn hoàn toàn đúng nhưng không
 thể chứng nhận — giới hạn thông tin), NCLT (2 run giữ ra), sai số old town.
 
+## 1b. English abstract (draft for a paper)
+
+*Hindsight Self-supervised Integrity for sequence-based visual localization on maps with holes.* A robot localizing with a camera and odometry
+against an image map must decide, frame by frame, whether to trust the place estimate of its sequence filter; reporting while the robot is off the
+mapped area corrupts navigation. Prior integrity monitors either need labels from the deployment conditions or simulate the off-map case by editing
+the map. We show that the robot can label its own past: chain-to-odometry geometric self-consistency certifies correct fixes independently of image
+conditions, and dead-reckoning bridges between certified stretches, checked against the known coverage of the map, label every frame in hindsight —
+including the off-map class, which is never labelled at deployment time. These labels train an appearance-based score online and calibrate its
+threshold by split conformal prediction on the robot's own real excursions, bounding the per-segment false-report probability. Two structural
+findings make the scheme work: (i) *certify-then-calibrate* — certified frames must anchor the hindsight bridges and must not be charged against the
+false-alarm budget, otherwise long drifting bridges contaminate the calibration null; (ii) a *calibration lock-out cliff* — with saturated learned
+scores, a segment-level conformal threshold jumps from −∞ to ≈1 as soon as more than α of the null segments contain one eligible frame, silencing
+the learned branch for a whole deployment; training the score against the calibration null itself (Neyman–Pearson alignment) removes the cliff
+(locked runs 27 → 1 of 60 on CMU). On 9 datasets × 6 descriptors (413 held-out runs, synthetic holes of 10/30/50 % and natural off-map) and on two
+fresh test sets generated after every design decision was frozen, the method is valid in all runs at α = 0.05, passes a per-position audit that a
+map-surgery baseline fails, and improves recall over it by +0.04–0.05, at ~1 ms per frame on one CPU core.
+
 ## 2. Bài toán (giữ nguyên giao thức của ý tưởng 1)
 
 Robot camera đơn + odometry đi trên bản đồ ảnh có lỗ (30 % ô 300 m bị xoá; NCLT off-map tự nhiên). Mỗi frame: báo hay không báo fix vị trí
