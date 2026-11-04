@@ -4,19 +4,22 @@
 `git show hmm-navigation-5:handoff/03_HANDOFF.md`.*
 
 
-## 0. Trạng thái ý tưởng 2 (cập nhật 2026-11-04 02:15 UTC, kết thúc vòng tự động 12 giờ của phiên `session_01Xy89bX34L6MPEcAxmjRJWt`)
+## 0. Trạng thái ý tưởng 2 (cập nhật 2026-11-04 04:45 UTC, vòng tự động thứ hai của phiên `session_01Xy89bX34L6MPEcAxmjRJWt`)
 
-- **Phương pháp:** HSI — tự giám sát hồi cứu bằng hình học (`analysis/hsi.py`, đánh giá `analysis/hsi_eval.py`, so sánh `analysis/hsi_compare.py`,
-  tổng hợp `analysis/hsi_summary.py`, quét α `analysis/hsi_alpha.py`, tập mới `analysis/hsi_fresh.py`; lý thuyết `paper/hsi_theory.md` Mệnh đề 1–6;
-  nhật ký `RESEARCH_LOG.md` Entry 1–7 + tập xác nhận; novelty `LITERATURE_GATE.md` Gate 17; báo cáo `paper/BAO_CAO_HSI.pdf` (12 trang), dựng lại bằng
-  `paper/build_hsi_report.py <main> <oc dirs> --cmp d10=.. d50=.. nat=.. --confirm <fresh>`).
-- **Luật khuyến nghị (cuối cùng): HSI-rot-m-sc (Entry 3)** — 0/413 vi phạm giữ ra, 0/108 trên tập mới, vị trí 9/9, +0.041 so với SH. Điểm vận hành
-  thay thế (hợp lệ, không vượt ngưỡng đăng ký trước): HSI-V (recall), HSI-VM (điều hướng), HSI-VM-nosc (cả hai, Entry 7).
-- **Không còn kernel nào chạy.** Kết quả thô: `analysis/results/hsi/*.tgz` (main / lỗ / tự nhiên / tập mới; mặt nạ báo theo frame). Gom tách theo
-  tag bằng `hsi_collect.py --tagre` (kết quả chính, lỗ và tập mới có thể trùng khoá dataset/descriptor/seed).
-- **Việc tiếp theo hợp lý:** (1) CMU — chuỗi không bao giờ xác minh được (48 % frame): mô hình ưu tiên từ lần triển khai trước, hoặc hiệu chuẩn có
-  trọng số theo xác suất off-map; (2) giảm tính bảo thủ của null (5–25×) mà vẫn hợp lệ; (3) mọi biến thể mới chỉ được quyết định trên một tập
-  mới khác (seed 13+), vì tập giữ ra đã dùng 6 vòng.
+- **Phương pháp:** HSI (`analysis/hsi.py` `online_v2`, biến thể trong `analysis/hsi_eval.py` VARIANTS). Lý thuyết `paper/hsi_theory.md` Mệnh đề 1–7;
+  nhật ký `RESEARCH_LOG.md` Entry 1–9; báo cáo `paper/BAO_CAO_HSI.pdf` (14 trang).
+- **Luật khuyến nghị chính thức: HSI-rot-m-sc** (Entry 3). **Ứng viên mạnh nhất: HSI-VN** (Entry 8: chứng chỉ neo cầu hồi cứu + căn chỉnh
+  Neyman–Pearson `train_null=True`) — trội Pareto trên tập kiểm tra seed 13–15 (0/108 vi phạm, recall +0.016, điều hướng −0.58 m) nhưng trượt tiêu
+  chí cơ chế T3; **Entry 9** (nhân bản đúng quy tắc trên seed 16–18) quyết định cuối cùng. HSI-VMN = điểm vận hành ưu tiên điều hướng.
+- **Phân chia dữ liệu:** seed 0 × 4 descriptor = thiết kế; seed 0–9 (413 run) = phát triển; seed 10–12 = xác nhận cũ (đã dùng); seed 13–15 =
+  kiểm tra Entry 8 (`caotienminh1/hmm-navcache-f13`, public); seed 16–18 = kiểm tra Entry 9 (`caotienminh1/hmm-navcache-f16`, sinh bởi đợt
+  `hsi17`). Mọi quyết định mới cần một tập mới nữa (seed 19+).
+- **Công cụ mới:** `analysis/hsi_fresh.py --keep` (sinh cache bố cục lỗ mới, giữ trong output kernel), `automation/fetch_outputs.py` (kéo file từ
+  kernel nhiều tài khoản), `automation/publish_dataset.py --owner`, `central_monitor.py --pull-pattern` (chỉ kéo results.tar + log),
+  `analysis/hsi_entry8_test.py` (T1–T4), `analysis/hsi_compare.py`, `analysis/hsi_alpha.py`.
+- **Hướng đã thử và loại (đều đo trước khi chạy lớn):** đặc trưng hubness theo nơi, chứng chỉ cửa sổ ngắn "học từ chuỗi dài" (thầy đánh giá thấp lỗi
+  thật), chứng chỉ tự đồng dạng bản đồ (K = 0 gần như không có ở ℓ ≤ 30 m), Mondrian theo trạng thái bằng chứng, bỏ cổng nhất quán (điều hướng),
+  hiệu chuẩn chụm lỗi ngắn (fix sai xa nằm trong chuỗi sai dài, không phải chụm ngắn), hạ ngưỡng nhãn tối thiểu.
 
 ## 1. Trạng thái
 

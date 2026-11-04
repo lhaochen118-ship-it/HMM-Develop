@@ -1,6 +1,6 @@
 # BÁO CÁO — Ý tưởng 2: HSI, tự giám sát hồi cứu bằng hình học cho định vị chuỗi trên bản đồ có lỗ
 
-*Branch `hmm-2nd-idea`, 2026-11-03/04 (cập nhật 2026-11-04 02:15 UTC). Nhật ký: `RESEARCH_LOG.md` Entry 1–7 + tập xác nhận mới; lý thuyết: `paper/hsi_theory.md`; novelty: `LITERATURE_GATE.md`
+*Branch `hmm-2nd-idea`, 2026-11-03/04 (cập nhật 2026-11-04 04:45 UTC). Nhật ký: `RESEARCH_LOG.md` Entry 1–9 + hai tập mới; lý thuyết: `paper/hsi_theory.md`; novelty: `LITERATURE_GATE.md`
 Gate 17; code: `analysis/hsi.py`, `analysis/hsi_eval.py`, `analysis/hsi_summary.py`; kết quả thô: `analysis/results/hsi/`.*
 
 ## 1. Tóm tắt
@@ -25,8 +25,13 @@ segFAR thực luôn ≤ α (bảo thủ 5–25×), recall 0.707 → 0.811. **Ph�
 chứng chỉ hình học làm điểm neo nhãn hồi cứu làm sạch null (NCLT +0.068); chứng chỉ một mình 0/773 run vi phạm trên mọi tập. Các biến thể sau
 (HSI-V, HSI-VM, HSI-VM-nosc) đều hợp lệ và lặp lại về dấu trên dữ liệu mới (+0.007…+0.008 recall, có CI dương với HSI-V; HSI-VM −1.0 m điều
 hướng) nhưng không vượt ngưỡng đăng ký trước ⇒ là các điểm vận hành thay thế, không thay luật. Bỏ cổng nhất quán ngắn hạn tăng recall
-(+0.02…+0.03) nhưng tốn 1.7–3 m điều hướng (fix sai xa) — lộ trên giữ ra và tập mới, không lộ trên tập thiết kế. **Điểm yếu:** CMU (0.65–0.68 vs SH
-0.835), NCLT (2 run giữ ra), sai số old town.
+(+0.02…+0.03) nhưng tốn 1.7–3 m điều hướng (fix sai xa) — lộ trên giữ ra và tập mới, không lộ trên tập thiết kế. **Phát hiện mới nhất (Entry 8, Mệnh đề 7 — vách khoá hiệu chuẩn):** ở CMU nhánh học TẮT HẲN ở 27/60 run vì ngưỡng conformal (phân vị của max
+điểm theo đoạn, điểm bão hoà) nhảy từ −∞ lên ≈ 1 khi > α đoạn null có một frame được phép báo; thủ phạm là frame chưa từng xác minh mà mô hình chưa
+từng thấy là âm. **Căn chỉnh Neyman–Pearson** (học điểm với âm = chính null hiệu chuẩn) — HSI-VN: run bị khoá 27 → 1, CMU +0.11 (phát triển); trên
+**tập kiểm tra seed 13–15** (108 run chưa từng thấy): 0/108 vi phạm, recall +0.016 (CI 95 % [+0.009, +0.024]), điều hướng −0.58 m so với luật khuyến
+nghị, CMU +0.059 — trội Pareto trên cả ba thước đo kết quả, nhưng trượt tiêu chí cơ chế đăng ký trước (số run khoá 7 → 4, cần ≤ 3.5) nên luật khuyến nghị
+chính thức vẫn là HSI-rot-m-sc cho tới nhân bản trên seed 16–18 (Entry 9). **Điểm yếu còn lại:** CMU (khoá do chuỗi ngắn hoàn toàn đúng nhưng không
+thể chứng nhận — giới hạn thông tin), NCLT (2 run giữ ra), sai số old town.
 
 ## 2. Bài toán (giữ nguyên giao thức của ý tưởng 1)
 
@@ -87,6 +92,8 @@ Tập giữ ra = mọi run ngoài tập thiết kế (seed 0 × 7 dataset × 4 d
 | Entry 5 | HSI-V (chứng nhận rồi hiệu chuẩn) | đạt (0/413) | đạt (7/9; +0.054) | đạt (+0.110) | đạt (7/9) | đạt (9/9) | ablation (H9 trượt ở CMU +0.024 < 0.03; H10, H11 đạt) |
 | Entry 6 | HSI-V-sc5 (cổng nhất quán chỉ 5 m) | đạt (9/413 > α) | đạt (+0.063) | – | – | – | ablation (H12 trượt: điều hướng +1.7 m) |
 | Entry 7 | HSI-VM-nosc (quyết định trên tập mới) | đạt (0/108) | – | – | đạt (−0.7 m) | – | ablation (E2: +0.008 < 0.01) |
+| Entry 8 | HSI-VN (căn chỉnh Neyman–Pearson), kiểm tra seed 13–15 | đạt (0/108) | đạt (+0.016) | – | đạt (−0.58 m) | – | trội Pareto; trượt T3 cơ chế (khoá 7 → 4) |
+| Entry 9 | nhân bản Entry 8 trên seed 16–18 | đang chạy | | | | | |
 
 **Ablation (giữ ra; recall / segFAR / số run > α / sai số điều hướng TB):** hiệu chuẩn biên chung thay vì có điều kiện +0.09 recall; gộp phiên thay
 vì theo phiên +0.044; bỏ nhất quán ngắn hạn → 13 run vi phạm; bỏ null "chưa từng xác minh" → 7 run vi phạm; chỉ neo nhân quả → 40 run vi phạm,
@@ -192,6 +199,44 @@ C2 (HSI-V ≥ +0.01) **không đạt**: +0.0074, bootstrap 95 % [+0.0026, +0.012
 | **pooled** | 108 | **0.784** / 0.0029 / 0 / 13.9 | **0.792** / 0.0028 / 0 / 13.8 | **0.782** / 0.0026 / 0 / 12.8 | **0.792** / 0.0056 / 0 / 13.2 | **0.795** / 0.0073 / 1 / 16.4 | **0.675** / 0.0001 / 0 / 15.6 | **0.609** / 0.1497 / 33 / 48.3 | **0.716** / 0.1957 / 75 / 45.6 | **0.833** / 0.0000 / 0 / 8.8 |
 
 
+### 5.5 Entry 8 — vách khoá hiệu chuẩn và căn chỉnh Neyman–Pearson (HSI-VN)
+
+**Phát hiện.** Ở CMU, nhánh học tắt hẳn ở 27/60 run (HSI-rot-m-sc): ngưỡng conformal là phân vị của max điểm theo đoạn, điểm GBM bão hoà, nên
+khi tỉ lệ đoạn null có một frame được phép báo vượt α thì ngưỡng nhảy từ −∞ lên ≈ 1 (Mệnh đề 7). Đoạn gây khoá là frame CHƯA TỪNG XÁC MINH (đầu
+chuỗi bắt đầu trong lỗ, chuỗi ngắn) — thứ mô hình học trên nhãn có-nhãn chưa từng thấy là âm. **Sửa (một cờ):** học điểm (c) với âm = toàn bộ null
+hồi cứu, trên đơn vị huấn luyện ⇒ điểm ước lượng tỉ số hợp lý so với chính phân phối null dùng để hiệu chuẩn; bảo đảm split conformal giữ nguyên.
+Các hướng đã thử và loại (đều đo trước khi chạy lớn): đặc trưng hubness theo nơi, chứng chỉ cửa sổ ngắn "học từ chuỗi dài", chứng chỉ tự đồng
+dạng của bản đồ, Mondrian theo trạng thái bằng chứng (`RESEARCH_LOG.md` Entry 8).
+
+Phát triển (seed 0–9, tập con có SH):
+
+| dataset | n | HSI-rot-m-sc rec / seg / >α / err | HSI-V rec / seg / >α / err | HSI-N rec / seg / >α / err | HSI-VN rec / seg / >α / err | HSI-VMN rec / seg / >α / err | SH rec / seg / >α / err |
+|---|---|---|---|---|---|---|---|
+| 4s:countryside | 56 | 0.642 / 0.0050 / 0 / 26.8 | 0.666 / 0.0084 / 0 / 27.3 | 0.642 / 0.0045 / 0 / 27.8 | 0.665 / 0.0066 / 0 / 26.6 | 0.655 / 0.0019 / 0 / 23.5 | 0.492 / 0.0006 / 0 / 33.5 |
+| 4s:office_loop | 56 | 0.872 / 0.0001 / 0 / 9.0 | 0.874 / 0.0003 / 0 / 8.9 | 0.870 / 0.0000 / 0 / 9.0 | 0.873 / 0.0000 / 0 / 8.9 | 0.854 / 0.0000 / 0 / 8.9 | 0.803 / 0.0003 / 0 / 9.7 |
+| 4s:old_town | 56 | 0.735 / 0.0008 / 0 / 31.6 | 0.733 / 0.0013 / 0 / 32.7 | 0.733 / 0.0009 / 0 / 33.2 | 0.731 / 0.0014 / 0 / 32.5 | 0.720 / 0.0004 / 0 / 29.0 | 0.708 / 0.0057 / 1 / 25.9 |
+| boreas | 56 | 0.892 / 0.0014 / 0 / 6.9 | 0.897 / 0.0014 / 0 / 7.1 | 0.891 / 0.0013 / 0 / 6.6 | 0.896 / 0.0014 / 0 / 6.8 | 0.885 / 0.0002 / 0 / 3.9 | 0.777 / 0.0023 / 0 / 4.5 |
+| cmu | 56 | 0.652 / 0.0060 / 0 / 3.8 | 0.676 / 0.0061 / 0 / 3.8 | 0.741 / 0.0039 / 0 / 3.6 | 0.761 / 0.0043 / 0 / 3.6 | 0.753 / 0.0040 / 0 / 3.5 | 0.835 / 0.0092 / 1 / 3.9 |
+| nclt | 2 | 0.577 / 0.0000 / 0 / 5.1 | 0.645 / 0.0000 / 0 / 3.2 | 0.575 / 0.0000 / 0 / 5.1 | 0.645 / 0.0000 / 0 / 3.2 | 0.634 / 0.0000 / 0 / 3.2 | 0.690 / 0.0000 / 0 / 3.2 |
+| nord | 56 | 0.785 / 0.0000 / 0 / 5.0 | 0.785 / 0.0001 / 0 / 5.6 | 0.786 / 0.0000 / 0 / 5.0 | 0.786 / 0.0001 / 0 / 5.6 | 0.777 / 0.0000 / 0 / 5.0 | 0.770 / 0.0000 / 0 / 6.0 |
+| oxford | 45 | 0.764 / 0.0059 / 0 / 21.4 | 0.807 / 0.0139 / 0 / 21.2 | 0.767 / 0.0053 / 0 / 21.5 | 0.805 / 0.0089 / 0 / 21.1 | 0.799 / 0.0068 / 0 / 20.4 | 0.719 / 0.0039 / 0 / 21.9 |
+| stlucia | 30 | 0.905 / 0.0018 / 0 / 18.8 | 0.916 / 0.0013 / 0 / 18.5 | 0.905 / 0.0013 / 0 / 18.7 | 0.915 / 0.0013 / 0 / 18.5 | 0.912 / 0.0011 / 0 / 18.4 | 0.761 / 0.0006 / 0 / 25.5 |
+| **pooled** | 413 | **0.772** / 0.0026 / 0 / 15.0 | **0.786** / 0.0040 / 0 / 15.3 | **0.784** / 0.0021 / 0 / 15.3 | **0.796** / 0.0029 / 0 / 15.1 | **0.786** / 0.0017 / 0 / 13.6 | **0.731** / 0.0029 / 2 / 15.6 |
+
+
+Tập kiểm tra seed 13–15 (sinh sau đăng ký trước Entry 8; 108 run, không có SH):
+
+| dataset | n | HSI-rot-m-sc rec / seg / >α / err | HSI-V rec / seg / >α / err | HSI-N rec / seg / >α / err | HSI-VN rec / seg / >α / err | HSI-VMN rec / seg / >α / err | geo-rm rec / seg / >α / err | Xu21 rec / seg / >α / err | Claxton24 rec / seg / >α / err | oracle rec / seg / >α / err |
+|---|---|---|---|---|---|---|---|---|---|---|
+| 4s:countryside | 18 | 0.608 / 0.0014 / 0 / 28.5 | 0.640 / 0.0020 / 0 / 26.8 | 0.610 / 0.0006 / 0 / 28.2 | 0.641 / 0.0031 / 0 / 27.3 | 0.630 / 0.0008 / 0 / 26.6 | 0.573 / 0.0000 / 0 / 30.5 | 0.257 / 0.0837 / 5 / 102.6 | 0.593 / 0.1787 / 16 / 49.9 | 0.728 / 0.0000 / 0 / 17.6 |
+| 4s:office_loop | 18 | 0.871 / 0.0000 / 0 / 7.2 | 0.878 / 0.0000 / 0 / 7.1 | 0.870 / 0.0000 / 0 / 7.2 | 0.877 / 0.0000 / 0 / 7.1 | 0.860 / 0.0000 / 0 / 7.2 | 0.800 / 0.0000 / 0 / 7.7 | 0.705 / 0.0462 / 7 / 12.7 | 0.808 / 0.1988 / 12 / 19.5 | 0.910 / 0.0000 / 0 / 6.8 |
+| 4s:old_town | 18 | 0.719 / 0.0007 / 0 / 46.4 | 0.708 / 0.0003 / 0 / 47.9 | 0.718 / 0.0007 / 0 / 44.5 | 0.713 / 0.0003 / 0 / 44.6 | 0.707 / 0.0003 / 0 / 36.5 | 0.648 / 0.0000 / 0 / 46.2 | 0.697 / 0.3736 / 9 / 110.5 | 0.749 / 0.1575 / 10 / 101.8 | 0.846 / 0.0000 / 0 / 22.9 |
+| boreas | 18 | 0.883 / 0.0007 / 0 / 7.7 | 0.888 / 0.0007 / 0 / 7.6 | 0.882 / 0.0007 / 0 / 7.7 | 0.886 / 0.0007 / 0 / 7.5 | 0.875 / 0.0002 / 0 / 4.3 | 0.843 / 0.0002 / 0 / 3.6 | 0.702 / 0.1435 / 7 / 28.0 | 0.730 / 0.1439 / 7 / 33.0 | 0.871 / 0.0000 / 0 / 2.1 |
+| cmu | 18 | 0.612 / 0.0047 / 0 / 3.4 | 0.598 / 0.0035 / 0 / 3.3 | 0.661 / 0.0029 / 0 / 3.3 | 0.671 / 0.0030 / 0 / 3.2 | 0.662 / 0.0028 / 0 / 3.2 | 0.479 / 0.0006 / 0 / 2.8 | 0.692 / 0.0985 / 7 / 12.4 | 0.899 / 0.2299 / 14 / 12.4 | 0.948 / 0.0000 / 0 / 2.6 |
+| nord | 18 | 0.821 / 0.0000 / 0 / 5.0 | 0.820 / 0.0000 / 0 / 5.1 | 0.821 / 0.0000 / 0 / 5.0 | 0.821 / 0.0000 / 0 / 5.0 | 0.809 / 0.0000 / 0 / 5.0 | 0.713 / 0.0000 / 0 / 6.3 | 0.751 / 0.0537 / 9 / 78.4 | 0.526 / 0.2749 / 18 / 94.9 | 0.671 / 0.0000 / 0 / 5.4 |
+| **pooled** | 108 | **0.752** / 0.0012 / 0 / 16.4 | **0.756** / 0.0011 / 0 / 16.3 | **0.760** / 0.0008 / 0 / 16.0 | **0.768** / 0.0012 / 0 / 15.8 | **0.757** / 0.0007 / 0 / 13.8 | **0.676** / 0.0001 / 0 / 16.2 | **0.634** / 0.1332 / 44 / 57.4 | **0.717** / 0.1973 / 77 / 51.9 | **0.829** / 0.0000 / 0 / 9.6 |
+
+
 ### Bảng A — luật khuyến nghị HSI-rot-m-sc (Entry 3), tập giữ ra; Ablation: mọi biến thể
 
 runs: 441 (held-out 413, with idea-1 SH on the same run 413)
@@ -247,12 +292,15 @@ runs: 441 (held-out 413, with idea-1 SH on the same run 413)
 | HSI-Gdrop | 0.777 | 0.0033 | 0 | 14.0 | 0.058 |
 | HSI-M | 0.751 | 0.0017 | 0 | 13.3 | 0.033 |
 | HSI-M-nos | 0.755 | 0.0023 | 0 | 13.3 | 0.033 |
+| HSI-N | 0.768 | 0.0019 | 0 | 14.5 | 0.042 |
 | HSI-V | 0.778 | 0.0037 | 0 | 14.3 | 0.055 |
 | HSI-V-nosc | 0.797 | 0.0071 | 9 | 16.1 | 0.123 |
 | HSI-V-sc5 | 0.786 | 0.0070 | 9 | 15.4 | 0.104 |
 | HSI-VJd | 0.781 | 0.0036 | 0 | 14.3 | 0.052 |
 | HSI-VM | 0.767 | 0.0024 | 0 | 12.9 | 0.033 |
 | HSI-VM-nosc | 0.783 | 0.0038 | 1 | 13.3 | 0.070 |
+| HSI-VMN | 0.776 | 0.0016 | 0 | 12.9 | 0.033 |
+| HSI-VN | 0.786 | 0.0027 | 0 | 14.1 | 0.043 |
 | HSI-Vc | 0.759 | 0.0027 | 0 | 14.6 | 0.042 |
 | HSI-adapt | 0.651 | 0.0043 | 7 | 18.8 | 0.045 |
 | HSI-e1 | 0.626 | 0.0016 | 1 | 20.1 | 0.012 |
@@ -336,12 +384,15 @@ runs: 441 (held-out 413, with idea-1 SH on the same run 413)
 | HSI-Gdrop | 0.777 | 0.0033 | 0 | 14.0 | 0.058 |
 | HSI-M | 0.751 | 0.0017 | 0 | 13.3 | 0.033 |
 | HSI-M-nos | 0.755 | 0.0023 | 0 | 13.3 | 0.033 |
+| HSI-N | 0.768 | 0.0019 | 0 | 14.5 | 0.042 |
 | HSI-V | 0.778 | 0.0037 | 0 | 14.3 | 0.055 |
 | HSI-V-nosc | 0.797 | 0.0071 | 9 | 16.1 | 0.123 |
 | HSI-V-sc5 | 0.786 | 0.0070 | 9 | 15.4 | 0.104 |
 | HSI-VJd | 0.781 | 0.0036 | 0 | 14.3 | 0.052 |
 | HSI-VM | 0.767 | 0.0024 | 0 | 12.9 | 0.033 |
 | HSI-VM-nosc | 0.783 | 0.0038 | 1 | 13.3 | 0.070 |
+| HSI-VMN | 0.776 | 0.0016 | 0 | 12.9 | 0.033 |
+| HSI-VN | 0.786 | 0.0027 | 0 | 14.1 | 0.043 |
 | HSI-Vc | 0.759 | 0.0027 | 0 | 14.6 | 0.042 |
 | HSI-adapt | 0.651 | 0.0043 | 7 | 18.8 | 0.045 |
 | HSI-m | 0.746 | 0.0027 | 1 | 14.6 | 0.067 |
