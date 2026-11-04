@@ -23,7 +23,7 @@ def summary(rdir, bases, main, out_md):
     shutil.rmtree(tmp)
 
 
-CMPV = "HSI-rot-m-sc,HSI-V,HSI-VM,HSI-VM-nosc,HSI-V-sc5,geo-rm"
+CMPV = "HSI-rot-m-sc,HSI-V,HSI-VN,HSI-VMN,HSI-VM,geo-rm"
 
 
 def compare(rdir, extra, out_md):
@@ -40,10 +40,10 @@ def main():
         a = a[:i] + a[j:]
     rdir, bases = a[0], a[1:]
     P = os.path.join(ROOT, "paper"); T = os.path.join(P, "tables")
-    summary(rdir, bases, "HSI-rot-m-sc", os.path.join(P, "hsi_tables_e1.md"))
+    summary(rdir, bases, "HSI-VN", os.path.join(P, "hsi_tables_e1.md"))
     summary(rdir, bases, "HSI", os.path.join(P, "hsi_tables_e2.md"))
     text = open(os.path.join(P, "hsi_report_text.md")).read()
-    t1 = open(os.path.join(P, "hsi_tables_e1.md")).read().replace("# HSI wave summary", "### Bảng A — luật khuyến nghị HSI-rot-m-sc (Entry 3), tập giữ ra; Ablation: mọi biến thể")
+    t1 = open(os.path.join(P, "hsi_tables_e1.md")).read().replace("# HSI wave summary", "### Bảng A — luật khuyến nghị HSI-VN (Entry 8–9), seed 0–9 (phát triển, so với SH trên cùng run); Ablation: mọi biến thể")
     t2 = open(os.path.join(P, "hsi_tables_e2.md")).read().replace("# HSI wave summary", "### Bảng B — cấu hình Entry 1 (cửa sổ theo frame), để đối chiếu")
     md = text.replace("{{TABLES_E1}}", t1).replace("{{TABLES_E2}}", t2)
     md = md.replace("{{CMP_MAIN}}", compare(rdir, ["--base"] + bases, os.path.join(T, "hsi_compare_main.md")))
@@ -55,7 +55,8 @@ def main():
             open(os.path.join(T, f"hsi_compare_{k}.md"), "w").write(r.stdout); md = md.replace("{{CMP_%s}}" % k, r.stdout)
         else: md = md.replace("{{CMP_%s}}" % k, compare(d_, extra, os.path.join(T, f"hsi_compare_{k}.md")))
     if confirm:
-        r = subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "hsi_compare.py"), confirm, CMPV + ",Xu21,Claxton24,oracle", "--all"], capture_output=True, text=True, check=True)
+        CV = "HSI-rot-m-sc,HSI-V,HSI-VM,HSI-VM-nosc,geo-rm,Xu21,Claxton24,oracle"   # variants evaluated on the seed 10-12 set (before HSI-VN existed)
+        r = subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "hsi_compare.py"), confirm, CV, "--all"], capture_output=True, text=True, check=True)
         open(os.path.join(T, "hsi_compare_confirm.md"), "w").write(r.stdout); md = md.replace("{{CONFIRM}}", r.stdout)
     al = os.path.join(T, "hsi_alpha.md")
     if os.path.isfile(al): md = md.replace("{{ALPHA}}", open(al).read().replace("### α sweep (held-out runs)\n\n", ""))

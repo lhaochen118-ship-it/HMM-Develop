@@ -1,6 +1,6 @@
 # BÁO CÁO — Ý tưởng 2: HSI, tự giám sát hồi cứu bằng hình học cho định vị chuỗi trên bản đồ có lỗ
 
-*Branch `hmm-2nd-idea`, 2026-11-03/04 (cập nhật 2026-11-04 04:45 UTC). Nhật ký: `RESEARCH_LOG.md` Entry 1–9 + hai tập mới; lý thuyết: `paper/hsi_theory.md`; novelty: `LITERATURE_GATE.md`
+*Branch `hmm-2nd-idea`, 2026-11-03/04 (cập nhật 2026-11-04 06:20 UTC). Nhật ký: `RESEARCH_LOG.md` Entry 1–9 + hai tập mới; lý thuyết: `paper/hsi_theory.md`; novelty: `LITERATURE_GATE.md`
 Gate 17; code: `analysis/hsi.py`, `analysis/hsi_eval.py`, `analysis/hsi_summary.py`; kết quả thô: `analysis/results/hsi/`.*
 
 ## 1. Tóm tắt
@@ -15,23 +15,17 @@ chúng (định vị lại bằng dead-reckoning hai phía + vùng phủ đã bi
 sớm hơn, và để hiệu chuẩn ngưỡng báo bằng conformal trên các excursion THẬT của chính lần triển khai. Không nhãn, không can thiệp bản đồ, không GPU
 (~1 ms/frame trên một lõi CPU, gồm cả học lại).
 
-**Kết quả.** Bảy vòng, mỗi vòng đăng ký trước khi xem kết quả; 413 run giữ ra (9 dataset × 6 descriptor, so với ý tưởng 1 trên CÙNG run) + lỗ
-10 %/50 % + off-map tự nhiên + **một tập xác nhận hoàn toàn mới** (bố cục lỗ seed 10–12, sinh SAU khi các quyết định đã chốt, 108 run).
-Luật khuyến nghị **HSI-rot-m-sc** (Entry 3): hợp lệ ở **413/413 run giữ ra và 108/108 run mới** (segFAR ≤ 0.05; SH của ý tưởng 1: 411/413),
-**kiểm toán theo vị trí (start / edge / deep) ≤ 0.07 trên 9/9 dataset** — điều ý tưởng 1 chưa đạt; recall gộp **+0.041** so với SH, cao hơn trên 7/9
-dataset (Boreas +0.115, countryside +0.149, St Lucia +0.144, office +0.069, Oxford +0.045, old town +0.027, Nordland +0.016), descriptor yếu DINOv2
-+0.123, NetVLAD +0.068. Các bộ giám sát có nhãn làm tham chiếu (Xu'21, Claxton'24) vượt α ở 31–70 % run. **Hiệu chuẩn:** quét α ∈ [0.01, 0.2] —
-segFAR thực luôn ≤ α (bảo thủ 5–25×), recall 0.707 → 0.811. **Phát hiện phương pháp (Entry 5, Mệnh đề 6 — chứng nhận rồi hiệu chuẩn):** dùng
-chứng chỉ hình học làm điểm neo nhãn hồi cứu làm sạch null (NCLT +0.068); chứng chỉ một mình 0/773 run vi phạm trên mọi tập. Các biến thể sau
-(HSI-V, HSI-VM, HSI-VM-nosc) đều hợp lệ và lặp lại về dấu trên dữ liệu mới (+0.007…+0.008 recall, có CI dương với HSI-V; HSI-VM −1.0 m điều
-hướng) nhưng không vượt ngưỡng đăng ký trước ⇒ là các điểm vận hành thay thế, không thay luật. Bỏ cổng nhất quán ngắn hạn tăng recall
-(+0.02…+0.03) nhưng tốn 1.7–3 m điều hướng (fix sai xa) — lộ trên giữ ra và tập mới, không lộ trên tập thiết kế. **Phát hiện mới nhất (Entry 8, Mệnh đề 7 — vách khoá hiệu chuẩn):** ở CMU nhánh học TẮT HẲN ở 27/60 run vì ngưỡng conformal (phân vị của max
-điểm theo đoạn, điểm bão hoà) nhảy từ −∞ lên ≈ 1 khi > α đoạn null có một frame được phép báo; thủ phạm là frame chưa từng xác minh mà mô hình chưa
-từng thấy là âm. **Căn chỉnh Neyman–Pearson** (học điểm với âm = chính null hiệu chuẩn) — HSI-VN: run bị khoá 27 → 1, CMU +0.11 (phát triển); trên
-**tập kiểm tra seed 13–15** (108 run chưa từng thấy): 0/108 vi phạm, recall +0.016 (CI 95 % [+0.009, +0.024]), điều hướng −0.58 m so với luật khuyến
-nghị, CMU +0.059 — trội Pareto trên cả ba thước đo kết quả, nhưng trượt tiêu chí cơ chế đăng ký trước (số run khoá 7 → 4, cần ≤ 3.5) nên luật khuyến nghị
-chính thức vẫn là HSI-rot-m-sc cho tới nhân bản trên seed 16–18 (Entry 9). **Điểm yếu còn lại:** CMU (khoá do chuỗi ngắn hoàn toàn đúng nhưng không
-thể chứng nhận — giới hạn thông tin), NCLT (2 run giữ ra), sai số old town.
+**Kết quả.** Chín vòng, mỗi vòng đăng ký trước khi xem kết quả; 413 run phát triển (9 dataset × 6 descriptor, so với ý tưởng 1 trên CÙNG run) +
+lỗ 10 %/50 % + off-map tự nhiên + **ba tập mới sinh SAU các quyết định** (seed 10–12, 13–15, 16–18; 108 run mỗi tập).
+**Luật khuyến nghị: HSI-VN** (Entry 8–9) = HSI + chứng chỉ hình học neo cầu hồi cứu (chứng nhận rồi hiệu chuẩn, Mệnh đề 6) + **căn chỉnh
+Neyman–Pearson** (điểm học được huấn luyện chống lại chính null hiệu chuẩn, Mệnh đề 7). Trên 413 run phát triển: hợp lệ 413/413 (SH của ý tưởng 1:
+411/413), kiểm toán theo vị trí ≤ 0.07 trên 9/9 dataset, recall **0.796 vs SH 0.731 (+0.065)**, DINOv2 + NetVLAD +0.118. Trên **hai tập kiểm tra
+mới** (seed 13–18, 216 run chưa từng thấy) so với luật trước (HSI-rot-m-sc): **0/216 vi phạm**, recall **+0.015** (CI 95 % [+0.010, +0.020]), CMU
++0.055 (số run nhánh học bị khoá 18 → 9), điều hướng −0.53 m; các bộ giám sát có nhãn (Xu'21, Claxton'24) vượt α ở 41–75 % run. Quy tắc đăng ký
+trước: seed 13–15 đạt 3/4 tiêu chí (trượt tiêu chí cơ chế), seed 16–18 đạt 4/4 ⇒ HSI-VN thay luật cũ. **Hiệu chuẩn:** quét α ∈ [0.01, 0.2] —
+segFAR thực ≪ α, recall HSI-VN cao hơn luật cũ ở mọi α. **Bền:** lỗ 10 % 0/108, lỗ 50 % 4/108 (CMU, như luật cũ), off-map tự nhiên 0/36; chứng chỉ
+một mình 0 vi phạm trên mọi tập. **Điều hướng:** HSI-VMN (thêm Mondrian theo chế độ) −2.6 m so với luật cũ với recall như cũ. **Điểm yếu:** CMU
+(0.76 vs SH 0.835; phần khoá còn lại do chuỗi ngắn hoàn toàn đúng nhưng không thể chứng nhận — giới hạn thông tin), NCLT (2 run), sai số old town.
 
 ## 1b. English abstract (draft for a paper)
 
@@ -47,8 +41,9 @@ false-alarm budget, otherwise long drifting bridges contaminate the calibration 
 scores, a segment-level conformal threshold jumps from −∞ to ≈1 as soon as more than α of the null segments contain one eligible frame, silencing
 the learned branch for a whole deployment; training the score against the calibration null itself (Neyman–Pearson alignment) removes the cliff
 (locked runs 27 → 1 of 60 on CMU). On 9 datasets × 6 descriptors (413 held-out runs, synthetic holes of 10/30/50 % and natural off-map) and on two
-fresh test sets generated after every design decision was frozen, the method is valid in all runs at α = 0.05, passes a per-position audit that a
-map-surgery baseline fails, and improves recall over it by +0.04–0.05, at ~1 ms per frame on one CPU core.
+fresh test sets generated after every design decision was frozen (216 runs), the method is valid in all runs at α = 0.05, passes a
+per-position audit that a map-surgery baseline fails, improves recall over it by +0.065, and the Neyman–Pearson alignment adds +0.015 recall
+(95 % CI [+0.010, +0.020]) and −0.5 m navigation error on the fresh sets, at ~1 ms per frame on one CPU core.
 
 ## 2. Bài toán (giữ nguyên giao thức của ý tưởng 1)
 
@@ -110,7 +105,7 @@ Tập giữ ra = mọi run ngoài tập thiết kế (seed 0 × 7 dataset × 4 d
 | Entry 6 | HSI-V-sc5 (cổng nhất quán chỉ 5 m) | đạt (9/413 > α) | đạt (+0.063) | – | – | – | ablation (H12 trượt: điều hướng +1.7 m) |
 | Entry 7 | HSI-VM-nosc (quyết định trên tập mới) | đạt (0/108) | – | – | đạt (−0.7 m) | – | ablation (E2: +0.008 < 0.01) |
 | Entry 8 | HSI-VN (căn chỉnh Neyman–Pearson), kiểm tra seed 13–15 | đạt (0/108) | đạt (+0.016) | – | đạt (−0.58 m) | – | trội Pareto; trượt T3 cơ chế (khoá 7 → 4) |
-| Entry 9 | nhân bản Entry 8 trên seed 16–18 | đang chạy | | | | | |
+| Entry 9 | nhân bản Entry 8 trên seed 16–18 | đạt (0/108) | đạt (+0.014) | – | đạt (−0.49 m) | – | **đạt 4/4 (T3: khoá 11 → 5) ⇒ HSI-VN là luật khuyến nghị** |
 
 **Ablation (giữ ra; recall / segFAR / số run > α / sai số điều hướng TB):** hiệu chuẩn biên chung thay vì có điều kiện +0.09 recall; gộp phiên thay
 vì theo phiên +0.044; bỏ nhất quán ngắn hạn → 13 run vi phạm; bỏ null "chưa từng xác minh" → 7 run vi phạm; chỉ neo nhân quả → 40 run vi phạm,

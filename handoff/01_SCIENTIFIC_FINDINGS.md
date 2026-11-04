@@ -41,7 +41,9 @@ ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables
     trong lỗ, chuỗi ngắn) mà mô hình chưa từng thấy là âm. Học điểm với âm = chính null hiệu chuẩn (đơn vị huấn luyện) ⇒ khoá 27 → 1 (phát triển),
     CMU +0.11; tập kiểm tra seed 13–15: recall +0.016 (CI dương), −0.58 m, 0/108. Hubness mạnh (1 % nơi hút 36–46 % fix sai) nhưng đặc trưng hubness
     không mở khoá; ở thang 20–40 m hình học đường không mang thông tin (mọi đoạn có bản sao đồng dạng trong bản đồ).
-11. **Âm / mở:** CMU 0.65–0.68 vs SH 0.835 (48 % frame thuộc chuỗi không có đoạn nào xác minh được; đầu chuỗi off-map; khởi động lạnh); NCLT chỉ 2
+11. **Entry 9 (nhân bản, seed 16–18):** HSI-VN đạt 4/4 tiêu chí ⇒ **luật khuyến nghị**. Gộp hai tập kiểm tra mới (216 run): 0 vi phạm, +0.015 recall
+    (CI dương), khoá CMU 18 → 9, −0.53 m.
+12. **Âm / mở:** CMU 0.65–0.68 vs SH 0.835 (48 % frame thuộc chuỗi không có đoạn nào xác minh được; đầu chuỗi off-map; khởi động lạnh); NCLT chỉ 2
    run giữ ra; sai số old town; tập giữ ra đã dùng 5 vòng ⇒ tập xác nhận mới seed 10–12 (`hsi_fresh.py`, RESEARCH_LOG Entry 5 bổ sung).
 
 ## 0. Đọc cho ý tưởng 2 (branch `hmm-2nd-idea`)

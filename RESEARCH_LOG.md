@@ -39,6 +39,19 @@ nếu không ⇒ HSI-rot-m-sc giữ nguyên, HSI-VN báo cáo như điểm vận
 *Ghi chú (Entry 8 phụ):* hạ ngưỡng nhãn tối thiểu của lần học đầu (50 → 20) không đổi kết quả trên 5 run CMU phát triển — khởi động lạnh bị giới hạn
 bởi độ trễ có nhãn hồi cứu, không bởi ngưỡng.
 
+**Kết quả KIỂM TRA Entry 9 (seed 16–18, 108 run chưa từng thấy, đợt `hsi19`, cache `caotienminh1/hmm-navcache-f16` đã kiểm 108/108; 2026-11-04
+06:15 UTC).** Gộp (recall / segFAR TB / run > α / sai số): HSI-rot-m-sc 0.750 / 0.0015 / 0 / 14.5; HSI-V 0.759 / 0.0021 / 1 / 13.9; HSI-N 0.754 / 0.0007 / 0 / 13.8;
+**HSI-VN 0.763 / 0.0014 / 0 / 14.0**; HSI-VMN 0.750 / 0.0007 / 0 / 11.9; geo-rm 0.660 / 0.0000 / 0 / 14.3; Xu'21 0.632 / 0.158 / **49** / 49.9; Claxton'24 0.710 /
+0.207 / **81** / 45.0; oracle 0.829. CMU: HSI-rot-m-sc 0.574, **HSI-VN 0.624**.
+- HSI-VN: **T1 đạt** (0/108; TB dataset tối đa 0.0059), **T2 đạt** (+0.0138, bootstrap 95 % [+0.0083, +0.0200], thắng 65/108), **T3 đạt** (CMU +0.050; khoá 11 → 5
+  ≤ 5.5), **T4 đạt** (−0.49 m) ⇒ **TẤT CẢ ĐẠT**.
+- HSI-VMN: T1, T4 đạt (−2.60 m), T2 không (+0.0003), T3 không (khoá 11 → 8).
+- Gộp hai tập mới (seed 13–18, 216 run, thứ cấp): HSI-VN 0/216 run > α; recall +0.0150 (bootstrap 95 % [+0.0103, +0.0201], thắng 129/216); CMU +0.055,
+  khoá 18 → 9; điều hướng −0.53 m. HSI-VMN: +0.0027, −2.59 m.
+**Quyết định (theo quy tắc đăng ký trước):** **HSI-VN thay HSI-rot-m-sc làm luật khuyến nghị của ý tưởng 2** (bằng chứng: 413 run phát triển, seed
+13–15 đạt 3/4 tiêu chí, seed 16–18 đạt 4/4). HSI-VMN là điểm vận hành ưu tiên điều hướng (−2.6 m, recall như HSI-rot-m-sc). Giả thuyết HSI-VN đã
+kiểm lần cuối như đã cam kết; mọi thay đổi sau này cần một tập mới (seed 19+).
+
 ## Entry 8 — vách khoá hiệu chuẩn và căn chỉnh Neyman–Pearson (HSI-VN) — đăng ký trước (2026-11-04 03:38 UTC)
 
 *Từ đây: seed 0–9 (413 run) = dữ liệu PHÁT TRIỂN (được chẩn đoán); seed 10–12 đã dùng cho C1–C4 / Entry 7; **seed 13–15 = tập KIỂM TRA**, sinh bởi
