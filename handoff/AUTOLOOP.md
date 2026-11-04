@@ -47,3 +47,7 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
   dead-reckoning của OWF); ghép CÓ ĐIỀU KIỆN (`--mode xm0.5`: chỉ thay chuỗi khi khối lượng OWF ≥ 0.5) trên CMU s1: recall 0.830 / segFAR 0.005
   (HSI-VN 0.572 / 0, OWF 0.812 / 0.008). Đợt phát triển đầy đủ `hybA` (2 phiên L4, 130 job: xm0.5 HSI-VN+VMN, xm0.9 HSI-VN; frame OWF tập A
   publish `synchan5704/hmm-owf-frames-a`) đã đẩy 14:59.
+- 15:45 UTC: **vòng 1 chọn được OWF-H** (`--mode xms0.9_16`: chuỗi OWF chỉ giao cho HSI-VN khi khối lượng ≥ 0.9 và đã đi ≥ 16·excl từ đầu
+  chuỗi): Score phát triển 0.870 (0 run > α, sai số 14.58 m) vs HSI-VN 0.791. **Entry 11 đăng ký trước** (F1–F3 trên seed 40–42, 144 run) đã push.
+  Đợt phát triển vòng 2 `hybC` (L4: đặc trưng độ tin OWF cho HSI `xmsc`, quét t / D) đã đẩy 15:48. Kho `fr40`: 7/34 kernel xong, cache kéo dần
+  bằng `automation/fetch_done.py` vào scratchpad `r40/`.
