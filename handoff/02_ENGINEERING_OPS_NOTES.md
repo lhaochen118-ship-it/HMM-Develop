@@ -107,3 +107,25 @@ monitor đẩy / kéo; (5) gom ngay khi từng kernel xong, kiểm `cache_path` 
 quyết định. (2) Một vòng thiết kế cục bộ trên seed 0 (CPU 4 lõi, ~2 giờ) đủ để chốt cấu hình; mọi tham số chọn bằng nguyên tắc (đơn vị excl,
 evidence trực tuyến) và ghi lại đường đi thiết kế. (3) Sai số điều hướng phải được đo ngay trong thiết kế: tập thiết kế cũ chỉ có Boreas có err,
 nên điểm yếu điều hướng chỉ lộ ra ở tập giữ ra.
+
+## 7. AUTOLOOP (Entry 11–15, 2026-11-04 14:15 → 02:15 UTC) — vận hành và bài học
+
+| Việc | Cách / số đo |
+|---|---|
+| kho seed mới | `owf_wave.py <groups> --set fresh:49-54` (`hsi_fresh.py --keep navcache_r49`, kèm HSI-VN / VMN / oracle) → 34 kernel CPU, ~2.5 giờ → `fetch_done.py <state> <dest> '^fr49-' --pattern '^navcache_.*\.npz$'` (kéo dần cache của kernel đã xong) → `publish_dataset.py <dir> hmm-navcache-r49 ... --owner synchan5704` (lỗi "499 Client Error" vô hại; đếm file bằng `kaggle datasets files ... --page-size 200 --page-token`) |
+| đợt kiểm tra | `owf_wave.py <groups> --set fresh_owf:49-51 --pool r49 [--bank \| --banks "S:0.97,1.0,1.03;S5:0.94,...,1.06" --noplain] --hsiframes --modes xms0.9_16:HSI-VN --kernels 32` → `fanout.py ... --groups --cpu --build-only --par 4 --nocopy --ds synchan5704/hmm-navcache-r49,<oxford>,<stlucia>`; mỗi job `owf_hsi_job.py` = OWF → OWF-H (+ mặt nạ `hsifr_*`) trong cùng kernel; 288 job / 32 kernel CPU ~1.3 giờ (ngân hàng 6 bộ lọc), ~2.5 giờ (6 + 10 bộ lọc) |
+| quyết định | gom `results/` của `<slug>_out` → `owf_union.py <fr> <hfr> <navcache> out.json --tag <tag>xms09_16 --ftag _<tag> --variants "H\|m(1e-5,16)\|m(1e-8,2)\|t(3e-4,0.5)"` → `autoloop_board.py --group 49-51 --rule NAME=kind:path@variant ...` (bảng Score V1/V2/N1) + bootstrap theo run |
+| phiên L4 | `--l4 --par 46` (L4 có ~48 vCPU): 48–50 job / kernel chạy song song một lượt; NHƯNG L4 tốn quota GPU tuần (30 giờ / acc): hết ở synchan5704, quynhle07, nguyenhoa99, caotienminh1 trong ngày 2026-11-04; yeshenhi không có L4 (kernel L4 rơi về máy yếu, 50 job chạy > 3 giờ) |
+
+**Lỗi / sự cố.**
+- `md2pdf.py` nhận ĐÚNG hai đối số `<in.md> <out.pdf>`; gọi với ba file `.md` đã ghi đè `01_SCIENTIFIC_FINDINGS.md` bằng PDF (đã khôi phục từ
+  commit trước). Luôn gọi từng file với đường ra `.pdf`.
+- `pkill -f "<chuỗi>"` giết luôn shell đang chạy lệnh (dòng lệnh của shell chứa chuỗi đó) ⇒ dừng monitor bằng PID (`ps aux | grep "[c]entral_monitor"`).
+- Vòng chờ grep "error|failed" khớp dòng vô hại "GPU quota spent -> next account" ⇒ chỉ grep `NEEDS_FIX|STALL_GIVEUP|rc!=0: [1-9]` trên log hiện tại.
+- Biến vòng lặp `b` trong `owf_wave.py --banks` che biến `b` (seed cuối) ⇒ đổi tên; tag phân tích `split("_s")` sai với salad / stlucia ⇒ `rpartition("_s")`.
+- Thời điểm ghi trong nhật ký phải lấy từ `date -u` / thời điểm commit, không ước lượng.
+
+**Bài học.** (1) Đánh giá ngoại tuyến từ khung đã lưu (`fr_*_b1.npz` + mặt nạ HSI `hsifr_*`) cho phép thử hàng chục luật quyết định trong vài phút;
+chỉ đổi BỘ ƯỚC LƯỢNG mới cần chạy lại trên Kaggle. (2) Chẩn đoán oracle (chuỗi đúng ở đâu, báo thiếu ở đâu, theo quãng đường từ đầu chuỗi) chỉ ra
+ngay nút thắt (CMU đầu chuỗi; countryside tỉ lệ VIO). (3) Chạy luật đương nhiệm và luật mới trong CÙNG đợt, trên CÙNG run ⇒ so sánh cặp có CI hẹp
+(±0.002–0.006).

@@ -11,6 +11,8 @@
 5. `paper/BAO_CAO_HSI.pdf` (15 trang) — câu chuyện đầy đủ, bảng, hình; `paper/hsi_theory.md` — Mệnh đề 1–7.
 6. Khi cần chi tiết một vòng: `RESEARCH_LOG.md` (Entry mới ở trên cùng; Entry 1–9 = HSI, Entry 10 = OWF).
 6b. Ý tưởng 2b (OWF): `paper/BAO_CAO_OWF.pdf`, `paper/owf_theory.md` (Mệnh đề 1–3), `LITERATURE_GATE.md` Gate 18.
+6c. **Luật khuyến nghị hiện tại và cách tới đó:** `paper/BAO_CAO_AUTOLOOP.pdf` (vòng lặp 12 giờ, Entry 11–15), `handoff/AUTOLOOP.md` (nhật ký
+    trạng thái), `RESEARCH_LOG.md` Entry 11–15.
 7. Yêu cầu gốc của user: `HMM_Navigation_Yeu_Cau_Nghien_Cuu_Cap_Nhat.docx`; quy trình: `handoff/04_RESEARCH_WORKFLOW.pdf`.
 
 ## 2. Bản đồ repository (chỉ phần dùng cho ý tưởng 2)
@@ -28,7 +30,12 @@ analysis/results/hsi/      kết quả thô (JSON mỗi run + mặt nạ báo th
 analysis/owf.py            ý tưởng 2b: bộ lọc thế giới mở (OpenWorldFilter + main: một run từ navcache + dump)
 analysis/owf_summary.py    so sánh cặp với SH / CST-JS / HSI-VN, kiểm toán vị trí, giả thuyết H1–H9, tiêu chí D1–D3 (--decide)
 automation/owf_wave.py     nhóm job (main / abl / holes / design / r19 / r19hsi), owf_collect.py  gom JSON theo tập
-analysis/results/owf/      JSON mỗi run của Entry 10 (tập A, tập B + HSI-VN cùng run, ablation, lỗ)
+analysis/results/owf/      JSON mỗi run của Entry 10 (tập A, tập B + HSI-VN cùng run, ablation, lỗ) và Entry 11–15 (tgz phát triển / kiểm tra)
+analysis/owf_hybrid.py     chuỗi lai OWF → HSI (thay est_c của cache khi OWF tự tin + ổn định; --mode xms0.9_16) rồi chạy hsi_eval (--hsiframes: mặt nạ)
+analysis/owf_hsi_job.py    một job của tập mới: owf.py (khung) → owf_hybrid.py trong cùng kernel
+analysis/owf_union.py      lớp quyết định ngoại tuyến: H ∨ m(e,D) ∨ t(e,D) (đồng thuận ba nguồn) từ khung OWF + mặt nạ HSI + navcache
+analysis/owf_decide.py     biến thể quyết định riêng của OWF (âm tính: không đạt V2 / N1); owf_score.py, autoloop_board.py  bảng Score V1/V2/N1
+automation/owf_wave.py     + fresh:A-B (kho seed mới), fresh_owf:A-B --pool --bank/--banks --hsiframes (đợt kiểm tra); fetch_done.py (kéo dần cache)
 RESEARCH_LOG.md, LITERATURE_GATE.md (Gate 17 HSI, Gate 18 OWF), handoff/, history/ (tài liệu cũ, ý tưởng 1)
 ```
 
@@ -62,15 +69,14 @@ pip install -q kaggle markdown xhtml2pdf scipy scikit-learn matplotlib pypdf
 
 ## 5. Việc tiếp theo
 
-Chi tiết trong `03_HANDOFF.md` §6. Tóm tắt:
+Chi tiết trong `03_HANDOFF.md` §6. Luật khuyến nghị: **OWF-HWA-S** (Entry 14), hoặc OWF-HWA-S5 nếu Entry 15 đạt (xem `RESEARCH_LOG.md`). Kho seed
+mới đã dùng hết (40–54); quyết định tiếp theo cần sinh kho mới bằng `owf_wave.py --set fresh:55-60` (34 kernel CPU, ~2.5 giờ).
 
-0. **OWF (Entry 10):** recall cao nhất nhưng điều hướng kém trên Nordland / CMU / countryside. Hướng có số đo: cổng nhảy dead-reckoning giữa hai
-   lần báo (chẩn đoán trên tập A: Nordland sai số 15 → ~5 m, recall −0.01; vô ích trên CMU, hại countryside); fix chính xác hơn (báo theo khối
-   lượng trong bán kính nhỏ hơn excl); khởi đầu toàn cục (CMU, chuỗi bắt đầu trong lỗ). Ghép OWF (bộ ước lượng) với lớp quyết định của HSI là
-   hướng tự nhiên: HSI cần chuỗi vị trí đúng, OWF cho chuỗi vị trí đúng hơn (MAP của OWF trong excl ở 0.87–1.00 frame on-map trên tập A, so với 0.78–0.95 của chuỗi topo). Mọi quyết định mới cần tập mới
-   (19–21 / 22–24 hoặc sinh seed 28–30 bằng `hsi_fresh.py --keep`).
-
-1. **Đào sâu ba điểm yếu:** CMU (0.76 vs SH 0.835 — khoá còn lại do chuỗi ngắn đúng nhưng không thể chứng nhận), NCLT (mới 2 run — cần thêm cấu
-   hình đánh giá), sai số điều hướng old town (do thời điểm báo dưới VIO trôi, không do fix sai xa).
-2. **Áp dụng lên 16 bộ VPR-Space** (https://github.com/rfechner/VPR-Space): tải release → trích 6 descriptor (GPU, ước GPU-giờ trước) → loader +
-   odometry từ pose → giao thức bản đồ = db, truy vấn = query → cache → đánh giá HSI-VN.
+1. **Countryside:** chuỗi tốt nhất chỉ đúng ~0.87 khung (VIO trôi); sai số điều hướng 21.7 m (HSI-VN 20.0). Hướng tiếp: ước lượng tỉ lệ liên tục
+   (trạng thái tỉ lệ trong bộ lọc thay cho lưới), mô hình trôi tỉ lệ theo thời gian.
+2. **Nordland điều hướng:** 9.6 m vs HSI-VN 4.2 m trên seed 49–51. Các báo OWF tự tin nhưng lệch vài chục mét kéo bộ Kalman; thử báo với bán kính
+   đĩa nhỏ hơn cho fix điều hướng (điểm vận hành riêng, như HSI-VMN).
+3. **Điểm vận hành điều hướng:** luật hợp hai bậc trên mặt nạ HSI-VMN (phát triển 0.892 / 12.66 m) chưa được kiểm trên tập mới.
+4. **NCLT:** không có trong kho mới (off-map tự nhiên); cần cấu hình đánh giá riêng.
+5. **Áp dụng lên 16 bộ VPR-Space** (https://github.com/rfechner/VPR-Space): tải release → trích 6 descriptor (GPU, ước GPU-giờ trước) → loader +
+   odometry từ pose → giao thức bản đồ = db, truy vấn = query → cache → đánh giá luật khuyến nghị.
