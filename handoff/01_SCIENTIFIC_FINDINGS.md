@@ -5,6 +5,22 @@ Không chứa vận hành (→ `02`) hay kế hoạch (→ `03`). Nguồn đầy
 báo cáo `paper/BAO_CAO_HSI.pdf`. Phát hiện của ý tưởng 1 và của các hướng trước: `history/01_SCIENTIFIC_FINDINGS_idea1_and_idea2-early.md`,
 tóm tắt `07_IDEA1_SUMMARY.md`.*
 
+## 0000. AUTOLOOP Entry 14 — bậc đồng thuận ba nguồn (OWF-HWA-S, luật khuyến nghị hiện tại)
+
+**Chẩn đoán.** Trên tập A, chuỗi lai đúng 0.959 khung trong bản đồ nhưng chỉ báo đúng 0.899. CMU có ~130 chuỗi ngắn ~7.5·excl mỗi run, nên mọi khung
+thiếu đều ở đầu chuỗi, nơi không bậc nào có hiệu lực.
+
+**Cơ chế.** Ba bộ ước lượng có kiểu lỗi khác nhau:
+- OWF: thế giới mở, metric.
+- Chuỗi tô-pô: HMM thế giới đóng, bị ép chọn một nút.
+- Truy hồi top-1: một khung.
+
+Khi ngoài bản đồ, cả ba chỉ cùng một ảnh sai VÀ OWF tự tin là hiếm. Riêng bậc này có TB segFAR ≤ 0.003 trên mọi dataset phát triển. Đòi đồng
+thuận chỉ hai nguồn (bỏ top-1) thì kém an toàn hơn; đòi đồng thuận liên tục L khung không cải thiện biên ε.
+
+**Kết quả (đăng ký trước, seed 49–51).** 0.933 vs OWF-HW-S 0.921 (+0.012, CI [+0.010, +0.014]), thắng 144/144 run, 0 run > α, 13.64 vs 13.78 m.
+CMU 0.832 → 0.874; tăng trên cả 8/8 dataset.
+
 ## 000. AUTOLOOP Entry 12–13 — OWF-HU, rồi OWF-HW-S (luật khuyến nghị hiện tại)
 
 **Entry 12 — OWF-HU** = OWF-H ∨ (khối lượng OWF ≥ 1 − 1e-5 và đã đi ≥ 16·excl). Cơ chế: trên Nordland và old town, bộ lọc thế giới mở báo được nhiều

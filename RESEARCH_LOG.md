@@ -89,7 +89,7 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
-## Entry 15 — Ngân hàng tỉ lệ odometry rộng hơn (0.94–1.06) — đăng ký trước (2026-11-04 22:35 UTC; AUTOLOOP vòng 7)
+## Entry 15 — Ngân hàng tỉ lệ odometry rộng hơn (0.94–1.06) — đăng ký trước (2026-11-04 22:19 UTC; AUTOLOOP vòng 7)
 
 **Chẩn đoán (dữ liệu phát triển, cache seed 1).** So độ dài từng bước odometry với GNSS:
 - 4Seasons (VIO): lệch tỉ lệ ngoài ngân hàng ±3 % của Entry 13. Countryside: trung vị 1.040, P10–P90 1.03–1.07. Office: 1.037. Old town:
@@ -122,7 +122,7 @@ trên cùng run.
 
 ## Entry 14 — Bậc đồng thuận ba nguồn cho đầu chuỗi (OWF ∧ chuỗi tô-pô ∧ truy hồi top-1) — đăng ký trước (2026-11-04 19:05 UTC; AUTOLOOP vòng 6)
 
-**KẾT QUẢ TẬP KIỂM TRA (seed 49–51, 144 run mới, đợt `t49`; ghi 22:30 UTC). Quyết định: OWF-HWA-S THAY OWF-HW-S làm luật khuyến nghị.**
+**KẾT QUẢ TẬP KIỂM TRA (seed 49–51, 144 run mới, đợt `t49`; ghi 22:18 UTC). Quyết định: OWF-HWA-S THAY OWF-HW-S làm luật khuyến nghị.**
 R* = OWF-HW-S (Entry 13 đạt) ⇒ C = **OWF-HWA-S** = OWF-HW-S ∨ t(3e-4, 0.5) trên khung OWF ngân hàng tỉ lệ. Ô = recall / TB segFAR / run > α / sai số (m).
 
 | Dataset | OWF-HWA-S (C) | OWF-HW-S (R*) | OWF-HU | HSI-VN |

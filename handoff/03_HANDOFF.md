@@ -23,7 +23,9 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 
 ## 3. Quyết định đã thống nhất
 
-0. **Luật khuyến nghị (Entry 13, 2026-11-04 19:18 UTC): OWF-HW-S.** Các bước:
+0. **Luật khuyến nghị (Entry 14, 2026-11-04 22:18 UTC): OWF-HWA-S** = OWF-HW-S ∨ bậc đồng thuận ba nguồn
+   (`owf_union.py --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"`). Seed 49–51: 0.933 vs 0.921 vs HSI-VN 0.804, 0 run > α, 13.64 m.
+   *Luật trước đó (Entry 13, 2026-11-04 19:18 UTC): OWF-HW-S.* Các bước:
    - OWF ngân hàng tỉ lệ (`owf.py --qx 0.005,0.02 --scales 0.97,1.0,1.03`);
    - OWF-H (`owf_hybrid.py --mode xms0.9_16 --hsiframes`);
    - hợp hai bậc (`owf_union.py --variants "W(1e-5,16,1e-8,2)"`).
@@ -73,8 +75,8 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 40–42 | `synchan5704/hmm-navcache-r40` (AUTOLOOP) | Entry 11 (OWF-H: F1–F3 đạt) | đã dùng |
 | seed 43–45 | `synchan5704/hmm-navcache-r40` | Entry 12 (OWF-HU: G1–G3 đạt) | đã dùng |
 | seed 46–48 | `synchan5704/hmm-navcache-r40` | Entry 13 (OWF-HW-S: K1–K3 đạt) | đã dùng |
-| seed 49–51 | kho `fr49` (`synchan5704/hmm-navcache-r49`, đang sinh) | Entry 14 (đăng ký trước) | dành riêng |
-| seed 52–54 | kho `fr49` | — | trống |
+| seed 49–51 | `synchan5704/hmm-navcache-r49` (kho `fr49`) | Entry 14 (OWF-HWA-S: L1–L3 đạt) | đã dùng |
+| seed 52–54 | `synchan5704/hmm-navcache-r49` | Entry 15 (đăng ký trước, đợt `t52`) | dành riêng |
 | seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
 
 ## 6. Việc tiếp theo (khung chat mới)
