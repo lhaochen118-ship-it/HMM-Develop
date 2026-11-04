@@ -150,6 +150,11 @@ hồi cứu, trên đơn vị huấn luyện ⇒ điểm ước lượng tỉ s�
 Các hướng đã thử và loại (đều đo trước khi chạy lớn): đặc trưng hubness theo nơi, chứng chỉ cửa sổ ngắn "học từ chuỗi dài", chứng chỉ tự đồng
 dạng của bản đồ, Mondrian theo trạng thái bằng chứng (`RESEARCH_LOG.md` Entry 8).
 
+![lockout](figures/hsi_lockout.png)
+
+*Hình: 60 run CMU phát triển. Trái — tỉ lệ frame do nhánh học báo; cụm < 0.1 là các run bị khoá (cam). Phải — recall từng run: căn chỉnh
+Neyman–Pearson kéo cụm bị khoá lên mà không làm hại các run vốn không khoá.*
+
 Phát triển (seed 0–9, tập con có SH):
 
 {{CMP_dev8_ho}}
