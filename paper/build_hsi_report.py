@@ -47,7 +47,13 @@ def main():
     t2 = open(os.path.join(P, "hsi_tables_e2.md")).read().replace("# HSI wave summary", "### Bảng B — cấu hình Entry 1 (cửa sổ theo frame), để đối chiếu")
     md = text.replace("{{TABLES_E1}}", t1).replace("{{TABLES_E2}}", t2)
     md = md.replace("{{CMP_MAIN}}", compare(rdir, ["--base"] + bases, os.path.join(T, "hsi_compare_main.md")))
-    for k, v in cmp_.items(): md = md.replace("{{CMP_%s}}" % k, compare(v, ["--all"], os.path.join(T, f"hsi_compare_{k}.md")))
+    for k, v in cmp_.items():                                    # name=dir or name=dir@v1,v2,... (custom variant list); name ending
+        d_, _, vs_ = v.partition("@")                            # in "_ho" = held-out subset only (with SH), else every run
+        extra = (["--base"] + bases) if k.endswith("_ho") else ["--all"]
+        if vs_:
+            r = subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "hsi_compare.py"), d_, vs_] + extra, capture_output=True, text=True, check=True)
+            open(os.path.join(T, f"hsi_compare_{k}.md"), "w").write(r.stdout); md = md.replace("{{CMP_%s}}" % k, r.stdout)
+        else: md = md.replace("{{CMP_%s}}" % k, compare(d_, extra, os.path.join(T, f"hsi_compare_{k}.md")))
     if confirm:
         r = subprocess.run([sys.executable, os.path.join(ROOT, "analysis", "hsi_compare.py"), confirm, CMPV + ",Xu21,Claxton24,oracle", "--all"], capture_output=True, text=True, check=True)
         open(os.path.join(T, "hsi_compare_confirm.md"), "w").write(r.stdout); md = md.replace("{{CONFIRM}}", r.stdout)

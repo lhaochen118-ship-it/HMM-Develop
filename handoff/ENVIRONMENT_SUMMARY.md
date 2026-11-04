@@ -166,6 +166,12 @@ Publish bằng `automation/publish_dataset.py <dir> <slug> "<title>" "<subtitle>
 
 Tải dataset public **không cần token**: `python3 automation/anon_download.py <owner/slug> <dir> --jobs 12 [--match regex]`.
 
+## 1g. Dataset mới của ý tưởng 2 (2026-11-04, PUBLIC dưới caotienminh1 — không có token nhatlong1103 trong phiên)
+
+| Slug | Nội dung |
+|---|---|
+| `caotienminh1/hmm-navcache-f13` | **TẬP KIỂM TRA** của ý tưởng 2: cache `nav_demo --cache --cache-only` cho bố cục lỗ MỚI seed 13–15, 6 dataset có lỗ × 6 descriptor (108 file, 377 MB), sinh bằng `analysis/hsi_fresh.py --keep` (đợt `hsi13`), tất định (mã tái tạo đúng từng bit cache công khai seed 0). Dùng: `hsi_eval.py DIR:navcache_ <ds> <desc> 13-15 ...` với `--nodumps --ds caotienminh1/hmm-navcache-f13`. Chỉ dùng để XÁC NHẬN luật đã đăng ký trước (RESEARCH_LOG Entry 8). |
+
 ## 1f. Dataset mới vòng 11 (2026-11-03, Entry 37; PUBLIC dưới nhatlong1103)
 
 | Slug | Nội dung |
