@@ -118,6 +118,25 @@ ngược lại OWF-H), tính trên CÙNG 144 run (OWF thường + OWF-H + mặt 
 
 ## Entry 12 — OWF-HU: hợp của OWF-H với các báo OWF cực tự tin đã ổn định — đăng ký trước (2026-11-04 17:32 UTC; AUTOLOOP vòng 4)
 
+**KẾT QUẢ TẬP KIỂM TRA (seed 43–45, 144 run mới, đợt `t43`; ghi 18:49 UTC). Quyết định: OWF-HU THAY OWF-H làm luật khuyến nghị.**
+
+| Dataset | OWF-HU recall / segFAR / run > α / sai số | OWF-H | HSI-VN |
+|---|---|---|---|
+| Boreas | 0.970 / 0.0008 / 0 / 3.5 | 0.964 / 0.0006 / 0 / 3.5 | 0.889 / 0.0011 / 0 / 6.6 |
+| CMU | 0.736 / 0.0052 / 0 / 3.6 | 0.736 / 0.0052 / 0 / 3.6 | 0.736 / 0.0052 / 0 / 3.5 |
+| Nordland | 0.957 / 0.0031 / 0 / 4.3 | 0.911 / 0.0000 / 0 / 3.7 | 0.796 / 0.0003 / 0 / 6.2 |
+| office | 0.942 / 0.0008 / 0 / 11.6 | 0.932 / 0.0008 / 0 / 11.7 | 0.872 / 0.0008 / 0 / 10.5 |
+| old town | 0.911 / 0.0004 / 0 / 22.6 | 0.861 / 0.0004 / 0 / 27.7 | 0.746 / 0.0007 / 0 / 28.8 |
+| countryside | 0.750 / 0.0044 / 0 / 36.2 | 0.740 / 0.0044 / 0 / 36.7 | 0.666 / 0.0014 / 0 / 29.5 |
+| Oxford | 0.941 / 0.0057 / 0 / 20.5 | 0.935 / 0.0057 / 0 / 20.6 | 0.829 / 0.0075 / 0 / 22.8 |
+| St Lucia | 0.963 / 0.0092 / 1 / 17.3 | 0.947 / 0.0092 / 1 / 18.3 | 0.905 / 0.0084 / 1 / 19.6 |
+
+Gộp: OWF-HU **0.896**, OWF-H 0.878, HSI-VN 0.805; OWF-HU − OWF-H **+0.018** (CI 95 % [+0.014, +0.022]); run > α 1/144 cả ba luật (cùng một run St
+Lucia); sai số gộp **14.94** / 15.73 / 15.92 m. **G1, G2, G3 đạt** ⇒ **OWF-HU là luật khuyến nghị**. Kiểm nhất quán: biến thể "H" của `owf_union.py`
+trùng tuyệt đối OWF-H của `hsi_eval.py` (|Δ recall| max 0.0). Phụ (phát triển, tập A): hợp hai bậc trên nền HSI-VMN — Score 0.892, 0 run > α,
+sai số **12.66 m** (điểm vận hành điều hướng tốt nhất đã đo).
+
+
 **Bối cảnh.** Entry 11: OWF-H là luật khuyến nghị (tập mới 40–42: 0.885, 1/144 run > α, 14.46 m). Trên Nordland / old town / St Lucia, OWF một mình
 báo được nhiều fix đúng hơn OWF-H (tập 40–42: 0.947 / 0.901 / 0.984 vs 0.919 / 0.852 / 0.970).
 **Phát triển (tập A, 404 run, ngoại tuyến `analysis/owf_union.py` từ mặt nạ báo của OWF-H — đợt `hybE` — và frame OWF; biến thể "H" tái tạo

@@ -61,3 +61,6 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
 - 17:40 UTC: **Entry 12 đăng ký trước** (OWF-HU = OWF-H ∨ báo OWF ≥ 1 − 1e-5 sau 16·excl; phát triển Score 0.892, 0 run > α, 13.74 m); đợt kiểm tra
   `t43` (seed 43–45, 32 kernel CPU) đã đẩy. `devS` (ngân hàng tỉ lệ odometry, L4) đang chạy. Bảng điểm (tập mới, recall gộp / run > α / sai số):
   HSI-VN 0.811 / 1 / 15.35 → OWF-H 0.885 / 1 / 14.46 (seed 40–42).
+- 18:50 UTC: **Entry 12 ĐẠT trên seed 43–45**: OWF-HU 0.896 vs OWF-H 0.878 vs HSI-VN 0.805 (+0.018, CI [+0.014, +0.022]); 1/144 run > α như các luật kia;
+  sai số 14.94 vs 15.73 vs 15.92 m ⇒ **OWF-HU là luật khuyến nghị**. Entry 13 (OWF-HW-S, seed 46–48, R* = OWF-HU) đang chạy trên 6 phiên L4; kho seed
+  49–54 đang sinh trên CPU. Phụ phát triển: hợp hai bậc trên HSI-VMN 0.892 / 12.66 m.

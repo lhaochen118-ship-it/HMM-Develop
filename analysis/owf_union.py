@@ -16,7 +16,7 @@ DEFAULT = "H;U(1e-3,16);U(1e-4,16);U(1e-5,16);U(1e-4,32);U(1e-5,32)"
 
 
 def one(args):
-    ff, hdir, cdirs, variants, tag, ftag = args
+    ff, hdir, cdirs, variants, tag, ftag, hvar = args
     sys.argv = sys.argv[:1]; sys.path.insert(0, HERE)
     import nav_demo as N, position_audit as PA, owf_decide as OD
     t = os.path.basename(ff)[3:].rsplit("_b1.npz", 1)[0]
@@ -26,7 +26,7 @@ def one(args):
     hf = os.path.join(hdir, f"hsifr_{base}_s{seed}_{tag}.npz")
     if cf is None or not os.path.exists(hf): return t, None
     z = np.load(cf, allow_pickle=True); fr = np.load(ff, allow_pickle=True); hm = np.load(hf)
-    n = int(hm["n"]); accH = np.unpackbits(hm["HSI-VN"])[:n].astype(bool)
+    n = int(hm["n"]); accH = np.unpackbits(hm[hvar])[:n].astype(bool)
     excl = float(z["excl"]); MP = z["MP"]; qp = z["q_pos"]; sid, k = z["q_sid"], z["q_k"]
     seqs = [np.where(sid == s)[0][np.argsort(k[sid == s])] for s in np.unique(sid)]
     hz = list(z["hz"]); U = z["U"].astype(float); U = U if U.ndim > 1 else U[:, None]
@@ -56,8 +56,9 @@ def main():
     fdir, hdir, cdirs, outf = sys.argv[1], sys.argv[2], sys.argv[3].split(","), sys.argv[4]
     opt = lambda k, d: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else d
     variants = opt("--variants", DEFAULT).split(";"); tag = opt("--tag", "hfr0916"); ftag = opt("--ftag", ""); jobs = int(opt("--jobs", "4"))
+    hvar = opt("--hvar", "HSI-VN")                                  # HSI variant of the base masks (HSI-VN or HSI-VMN)
     fs = sorted(glob.glob(os.path.join(fdir, f"fr_*{ftag}_b1.npz")))
-    with Pool(jobs) as p: R = {k: v for k, v in p.imap_unordered(one, [(f, hdir, cdirs, variants, tag, ftag) for f in fs], chunksize=1) if v is not None}
+    with Pool(jobs) as p: R = {k: v for k, v in p.imap_unordered(one, [(f, hdir, cdirs, variants, tag, ftag, hvar) for f in fs], chunksize=1) if v is not None}
     json.dump(R, open(outf, "w"), indent=0); print(f"{len(R)} runs -> {outf}")
 
 
