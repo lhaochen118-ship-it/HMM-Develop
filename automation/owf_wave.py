@@ -74,6 +74,13 @@ def main():
             for desc in DESCS:
                 for sd in range(40, 49):
                     J.append((f"hsi_fresh.py {ds} {desc} {sd} 1 --keep navcache_r40 --variants HSI-VN,HSI-VMN,HSI-rot-m-sc,oracle --tag r40", c * 60 * DFAC[desc]))
+    if which.startswith("fresh_owf"):     # AUTOLOOP fresh test: OWF + OWF->HSI hybrid on the fresh pool (seeds of the group, e.g. fresh_owf:40-42)
+        a, b = which.split(":")[1].split("-"); modes = opt("--modes", "xms0.9_8:HSI-VN")
+        for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town", "oxford", "stlucia"):
+            for desc in DESCS:
+                for sd in range(int(a), int(b) + 1):
+                    J.append((f"owf_hsi_job.py DIR:navcache_@hmm-navcache-r40 DUMP {ds} {desc} {sd} --tag r{a} --modes {modes}",
+                              DS[ds][1] * DS[ds][2] * DFAC[desc] / 1e3 * 1.3))
     if which in ("holes", "all"):         # hole ratio 10 % / 50 % (hmm-navcache-holes, seeds 0-2, 6 datasets x 6 descriptors)
         for dr in ("d10", "d50"):
             for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town"):

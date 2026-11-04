@@ -89,6 +89,45 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 11 — OWF-H: bộ ước lượng thế giới mở + lớp quyết định HSI, giao chuỗi khi đã "ổn định" — đăng ký trước (2026-11-04 15:40 UTC; AUTOLOOP vòng 1)
+
+**Bối cảnh.** Entry 10: OWF có recall cao nhất nhưng 19/404 run > α và điều hướng kém; HSI-VN hợp lệ từng run nhưng dùng chuỗi vị trí topo kém hơn.
+AUTOLOOP (): Score = recall gộp với ràng buộc V1 (TB mọi dataset ≤ 0.05), V2 (≤ 2 % run > α), N1 (sai số gộp ≤ HSI-VN + 0.5 m).
+
+**Phát triển (tập A của Entry 10 = 404 run seed 1–9 / NCLT / Oxford / St Lucia; nhãn chỉ để đánh giá; ngoại tuyến từ frame OWF đã lưu).**
+- 13 biến thể lớp quyết định của chính OWF (`analysis/owf_decide.py`: lịch ε khởi đầu, tuổi track, cổng nhảy): không biến thể nào đạt V2 (11–19
+  run > α) hay N1 (16.7–17.1 m).
+- Ghép OWF → HSI (`analysis/owf_hybrid.py`: thay chuỗi `est_c` mà HSI đọc bằng ảnh fix của OWF, rồi chạy HSI-VN NGUYÊN BẢN):
+  thay toàn bộ (`x`): CMU s1 segFAR 0.089 — chứng chỉ hình học của HSI (chuỗi khớp odometry) bị lừa vì quỹ đạo OWF được dead-reckon nên luôn
+  khớp odometry, kể cả khi sai. Thay khi khối lượng OWF ≥ t (`xm`): hyb50 0.886 / 26 run > α, hyb90 0.880 / 18 run > α — mọi vi phạm ở CMU (đầu
+  chuỗi ngắn). Thay khi tự tin VÀ đã đi ≥ D·excl từ đầu chuỗi (`xms<t>_<D>`, chỉ dùng chuỗi topo tự do khi mới bắt đầu):
+
+| Biến thể (HSI-VN trên chuỗi ghép) | recall gộp | run > α | sai số (m) | Score |
+|---|---|---|---|---|
+| xms0.9_4 | 0.875 | 14 | 14.95 | – (V2) |
+| xms0.9_8 | 0.872 | 9 | 14.67 | – (V2) |
+| **xms0.9_16** | **0.870** | **0** | **14.58** | **0.870** |
+| xms0.5_8 | 0.878 | 9 | 15.11 | – (V2) |
+| xma0.9_8 (tuổi track thay quãng đường đầu chuỗi) | 0.850 | 0 | 14.91 | 0.850 |
+| HSI-VN (tham chiếu) | 0.791 | 0 | 15.15 | 0.791 |
+| HSI-VMN | 0.781 | 0 | 13.65 | 0.781 |
+
+  Theo dataset (xms0.9_16 vs HSI-VN, recall / sai số): Boreas 0.962 / 4.3 vs 0.893 / 7.0; NCLT 0.768 / 5.5 vs 0.570 / 4.4; CMU 0.756 / 3.6 vs 0.756 /
+  3.6 (đầu chuỗi chiếm gần hết chuỗi CMU ⇒ gần như HSI-VN); Nordland 0.887 / 4.8 vs 0.784 / 5.8; office 0.936 / 10.0 vs 0.870 / 9.0; old town
+  0.842 / 31.9 vs 0.723 / 33.0; countryside 0.750 / 29.2 vs 0.657 / 26.7; Oxford 0.924 / 18.2 vs 0.805 / 21.1; St Lucia 0.959 / 17.2 vs 0.915 / 18.5.
+  (Chọn D = 16 và t = 0.9 trên tập A ⇒ cần tập mới.)
+
+**Luật đăng ký: OWF-H** = OWF (cấu hình Entry 10, không đổi) → `owf_hybrid.py --mode xms0.9_16` → HSI-VN (không đổi). Lý do cơ chế: lớp quyết
+định HSI tự hiệu chuẩn trên excursion thật nhưng chứng chỉ của nó cần một chuỗi TỰ DO ở đầu chuỗi; OWF cho vị trí đúng hơn hẳn khi đã ổn định.
+
+**Tập kiểm tra (mới, sinh trong AUTOLOOP sau mọi lựa chọn trên):** seed 40–42 của kho riêng `hmm-navcache-r40` (đợt `fr40`), 8 dataset có lỗ
+(Boreas, CMU, Nordland, office, old town, countryside, Oxford, St Lucia) × 6 descriptor × 3 seed = 144 run; HSI-VN trên CÙNG cache (đợt `fr40`).
+- **F1 (hợp lệ):** segFAR TB ≤ 0.05 trên 8/8 dataset và ≤ 2/144 run > α.
+- **F2 (recall):** chênh recall gộp cặp OWF-H − HSI-VN > 0, cận dưới CI 95 % bootstrap (theo run) > 0.
+- **F3 (điều hướng):** sai số gộp ≤ HSI-VN + 0.5 m và theo dataset ≤ HSI-VN + 1 m trên ≥ 6/8.
+**Quy tắc quyết định:** F1 ∧ F2 ∧ F3 ⇒ OWF-H thay HSI-VN làm luật khuyến nghị. Ngược lại HSI-VN giữ nguyên; ghi tiêu chí trượt.
+*Phụ (không quyết định):* OWF một mình và HSI-VMN trên OWF-H (`xms0.9_16:HSI-VN,HSI-VMN`) trên cùng run.
+
 ## Entry 10 — the open-world filter (OWF, idea 2b): presence by position, not by test — đăng ký trước (2026-11-04 09:13 UTC)
 
 **Context.** Same problem and protocol (`handoff/07_IDEA1_SUMMARY.md` §1: maps with 30 % of the 300 m cells removed, label-free per-frame

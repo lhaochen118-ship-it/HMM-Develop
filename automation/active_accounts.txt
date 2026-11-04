@@ -1,11 +1,11 @@
 # Accounts that may receive NEW kernels, in packing order (user rules): fill one account (2 GPU + 5 CPU sessions) before the next.
 # 2026-11-03 (branch hmm-2nd-idea, idea 2): the 5 accounts given by the user for this round (tokens in ~/.kaggle/tok_<acc>, never in git).
 # 2026-11-04 (Entry 10): + synchan5704, yeshenhi given by the user (yeshenhi: T4-only for GPU; CPU sessions fine); listed first because the
-# other five are shared with the HSI chat that was active at the same time.
+# other five are shared with the HSI chat that was active at the same time. yeshenhi LAST: an L4 request there silently falls back to CPU.
 synchan5704
-yeshenhi
 quynhle07
 nguyenhoa99
 quynhtran35
 yuan1103
 caotienminh1
+yeshenhi
