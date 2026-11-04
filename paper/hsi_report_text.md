@@ -176,6 +176,12 @@ Phát triển (seed 0–9, tập con có SH):
 
 {{CMP_dev8_ho}}
 
+Quét α của HSI-VN (phát triển, 413 run): segFAR thực luôn ≪ α; ở mọi mức α HSI-VN có recall cao hơn HSI-rot-m-sc ở cùng α
+(0.01: 0.727 vs 0.707; 0.02: 0.758 vs 0.733; 0.05: 0.796 vs 0.772; 0.1: 0.808 vs 0.799; 0.2: 0.812 vs 0.811) — tức căn chỉnh dịch cả đường
+cong vận hành, không chỉ một điểm.
+
+![alpha-vn](figures/hsi_alpha_vn.png)
+
 Tập kiểm tra seed 13–15 (sinh sau đăng ký trước Entry 8; 108 run, không có SH):
 
 {{CMP_test8}}

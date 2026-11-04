@@ -75,6 +75,9 @@ HSI-VMN) ⇒ HSI-VMN; còn lại giữ HSI-rot-m-sc. Kết quả báo cáo dù t
 **trội Pareto** so với HSI-rot-m-sc ở cả ba thước đo kết quả đã đăng ký (hợp lệ như nhau 0/108, recall +0.016 với CI dương, điều hướng −0.58 m), chỉ
 trượt tiêu chí cơ chế (giảm một nửa số run bị khoá); lợi ích CMU lặp lại (+0.059, dev +0.106). Khoá còn lại ở CMU = nhiễm null bởi chuỗi ngắn hoàn
 toàn đúng (Mệnh đề 7 (iii)) — giới hạn thông tin, không phải lỗi cài đặt.
+**Quét α của HSI-VN (phát triển, đợt `hsi18`, mô tả):** segFAR TB các TB dataset / dataset tệ nhất / run > α / recall: α 0.01 — 0.0011 / 0.0038 / 9 / 0.727;
+0.02 — 0.0014 / 0.0055 / 1 / 0.758; 0.05 — 0.0027 / 0.0089 / 0 / 0.796; 0.1 — 0.0035 / 0.0099 / 0 / 0.808; 0.2 — 0.0046 / 0.0202 / 0 / 0.812. Ở mọi α, recall
+HSI-VN > HSI-rot-m-sc cùng α (0.707 / 0.733 / 0.772 / 0.799 / 0.811).
 **Bền (phát triển, mọi run; đợt `hsi15`):** lỗ 10 % — HSI-VN 0/108 run > α, recall 0.772 (HSI-rot-m-sc 0.755); lỗ 50 % — 4/108 (HSI-rot-m-sc 4/108, đều CMU),
 recall 0.754 vs 0.744, sai số 22.2 vs 22.6 m; off-map tự nhiên 4Seasons — 0/36 (HSI-rot-m-sc 1/36), segFAR TB 0.0037 vs 0.0097.
 
