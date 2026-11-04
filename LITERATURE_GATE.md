@@ -1,7 +1,77 @@
 # Literature Gate — novelty checks (paper text only, no code)
 
-*Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 3 lists HMM / sequence VPR papers that are directly
+*Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 17 = idea 2a (HSI), Gate 18 = idea 2b (OWF). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
+
+## Gate 18 (2026-11-04, branch `hmm-2nd-idea`, Entry 10): the open-world filter (OWF)
+
+**Gap measured before the search (navcache-v2, seeds 0–2, every descriptor; `RESEARCH_LOG.md` Entry 10 §1).** The place chain
+of the idea-1 systems (DiagFilter MAP) is within `excl` of the truth on 0.78–0.95 of the on-map frames, the best idea-1 rule
+reports 0.48–0.82 of them; label-oracle thresholds on per-frame scores (posterior mass, log-odds, max-sim, Xu'21 off-map
+posterior) reach only 0.10–0.77 at segFAR = 0.05. Re-entry and start windows hold 2–5 % of the on-map frames (CMU 24 %), so the
+loss is in long on-map stretches with weak appearance evidence: the decision layer cannot tell "on the map, weak evidence"
+from "in a hole", because in a topological HMM the belief of a robot that drives into a hole has nowhere to go but the
+remaining map nodes (transitions are renormalised over the nodes) — presence must then be detected statistically, which is
+what idea 1 spent its calibration machinery on.
+
+**Candidates (self-scored: novelty / soundness / expected effect / A\* potential, 1–5).**
+- (A) **Open-world filter**: Bayes filter on a METRIC grid covering the mapped AND the unmapped space (band around the map +
+  a position-less far state); presence is a function of the position, not a latent of its own; mass-conserving odometry
+  transitions (mass that drives into a hole stays in the hole and is dead-reckoned through it); likelihood-ratio emissions
+  against a common reference (unmapped cell LR = 1, mapped cell = self-normalised exponential tilt of the frame's own
+  similarity profile); decisions read off the posterior (excl-disc mass ≥ 1 − ε); odometry noise self-calibrated online by
+  cumulative evidence. Scores 4 / 4 / 5 (design run: recall +0.1…+0.25 over SH) / 4.
+- (B) Continue inside HSI (Gate 17, Entries 1–9: hindsight geometric self-supervision + conformal on real excursions; `03_HANDOFF` §6
+  "Việc 1": CMU, NCLT, old-town navigation). 2 / 4 / 2 — HSI keeps the topological chain, so its learned score still has to separate "on
+  the map, weak evidence" from "in a hole"; its own diagnosis (CMU lock-out of short correct sequences) is a limit of that frame.
+  Self-supervised emission learning by EM inside the topological HMM: same objection (Lajoie & Beltrame RA-L 2023, Chen & Barfoot).
+- (C) Sequential 6DOF localisation with local features on the Sattler'18 datasets. 2 / 3 / ? / 3; leaves the hole protocol,
+  heavy engineering (SfM models, local features offline on Kaggle), prior art Stenborg et al. 3DV 2020 (image sequences on CMU /
+  RobotCar Seasons), Toft et al. TPAMI 2020. Kept as a later extension (6DOF fixes from the OWF posterior).
+**Chosen: (A)** — differs in kind from idea 1 (topological filter + report test calibrated on counterfactual nulls) and from HSI
+(topological filter + report score learned from hindsight labels, conformal threshold): (A) changes the ESTIMATOR (state space and
+transitions) so that the hole is represented, and reads the decision off the posterior — no calibration data, no map surgery, no
+forward simulation, no learned score. Relation to HSI: HSI's hindsight off-map labels (C2: two-sided dead-reckoning bridges + the map's
+known coverage) are the retrospective, label-generating form of the same geometric fact that OWF uses forward, inside the filter.
+
+**Queries (web, 2026-11-04; paper text / abstracts only):** Markov localisation in partially mapped environments with explicit
+unmapped regions; HMM VPR "off-map" state with metric position / dead reckoning in map holes; self-supervised emission learning
+/ EM on the deployment stream; grid Bayes filter with map coverage / unknown area likelihood; topometric localisation with map
+gaps, coasting and re-entry; track-loss / integrity of map-based localisation through coverage gaps; Monte Carlo localisation
+with incomplete maps / unmapped areas; open-world visual localisation leaving the map; likelihood-ratio emissions normalised
+by the query's similarity distribution.
+**Closest work found.**
+- Xu, Fischer, Sünderhauf, Milford, RA-L/IROS 2021 (arXiv 2107.07707): topometric discrete Bayes filter with ONE off-map node O
+  (transitions to / from O; re-entry uniform); no metric position while off the map, so no dead reckoning through holes and no
+  predicted re-entry. Our labelled baseline "Xu'21".
+- Maddern, Milford, Wyeth, CAT-SLAM (IJRR 2012): Rao-Blackwellised particle filter along a continuous appearance trajectory with
+  a "new place" hypothesis (revisit vs explore). The new-place hypothesis has no metric position relative to the map; SLAM
+  setting (the map grows), no presence decision with a false-report target.
+- Classic Markov / Monte Carlo localisation (Fox, Burgard, Thrun; random-particle injection for kidnapping): metric beliefs with
+  range sensors on a complete map; unmapped regions appear only as an AMCL weakness ("poor performance in unmapped
+  environments"); Episodic non-Markov Localization (Nashed & Biswas) separates unmapped OBJECTS, not unmapped areas.
+- Jaenal et al. IJRR 2023 (sequential Monte Carlo localisation in topometric appearance maps, loss-of-tracking detection then VPR
+  relocalisation), Badino et al. topometric localisation (IV 2011/2012), HM4 (Doan et al.), Multi-Process Fusion (Hausler et
+  al. 2019), Hansen & Browning 2014, Guo et al. 2022 (HMM filter / smoother): all states on the map (or one off-map node).
+- Emission side: Bayesian Selective Fusion (Molloy et al. RA-L 2021, training-free likelihood from descriptor distances),
+  probabilistic VPR (Xu et al. 2021, arXiv 2105.03091), Multi-Process Fusion normalised scores. Our self-normalised
+  exponential tilt is in this family; it is not claimed as new.
+- Integrity: survey (Sensors 2025), map-aided dead reckoning with integrity monitoring (Li, Bonnifait et al.), "Beyond dead
+  reckoning" tunnel continuity (arXiv 2609.14748, viewpoint): analytic fault models, no appearance map with holes.
+- Idea-1 lineage (Gate 8): a single dead-reckoned "ghost" used as a GATE of the CPC presence chain (locks out on drift); here the
+  whole belief lives in the metric open world and the presence decision is the posterior itself.
+- Idea-2a (Gate 17, HSI): coverage + dead reckoning used in HINDSIGHT to label the past; OWF uses them FORWARD as the state.
+- arXiv 2608.06021 (topometric PF + feed-forward 3D): belief over places + odometry; abstract silent on unmapped space.
+**Differences.** (i) The unmapped space is part of the metric state; mass is conserved by the motion model, so leaving the map,
+traversing a hole and re-entering are predicted by dead reckoning rather than detected by a test; (ii) presence on the map is
+a deterministic function of the position (no separate presence chain, no off-map node); (iii) emissions are likelihood ratios
+with an exact unit mean over the frame's own map profile, so unmapped cells (LR = 1) are the natural null; (iv) the false-report
+risk reduces to seeds of mass that can grow into aliases (start prior, kidnap, far-state re-entry, motion tails), which the
+design makes explicit (kidnap rate ~ 0) and the position audit measures. **Verdict:** no prior work found with (i)+(ii) for
+appearance-based localisation on a map with holes; (iii) is a standard emission family; online evidence-based selection of the
+odometry noise is standard model selection. Claim: "open-world Bayes filtering for sequence-based visual localisation: hole-aware
+metric state, presence by position". A systematic Scholar + proceedings sweep (RA-L / ICRA / IROS / RSS 2024–2026, CAT-SLAM
+follow-ups, MCL with unknown space) remains before submission.
 
 ## Gate 17 (2026-11-03, branch `hmm-2nd-idea`, idea 2 Entry 1) — hindsight geometric self-supervision of the report decision (HSI)
 

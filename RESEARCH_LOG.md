@@ -4,6 +4,152 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+## Entry 10 — the open-world filter (OWF, idea 2b): presence by position, not by test — đăng ký trước (2026-11-04 09:13 UTC)
+
+**Context.** Same problem and protocol (`handoff/07_IDEA1_SUMMARY.md` §1: maps with 30 % of the 300 m cells removed, label-free per-frame
+report / no-report, recall at segFAR <= alpha = 0.05, navigation error, position audit). Baselines: idea 1 (SH, CST-JS, CST-F: topological
+place filter + decision calibrated on counterfactual nulls) and idea 2a HSI-VN (Entries 1–9: same topological filter + report score learned
+from hindsight geometric labels, conformal threshold on real excursions; recommended rule at the head of this branch).
+**Provenance (read first).** This entry was developed in a chat whose checkout started at the branch-creation commit `7502e2c` (the clone did
+not contain Entries 1–9); the HSI line was found only when pushing, and this entry was then rebased on top of it (Entry 10, Gate 18). The
+design (section 5) used only seed 0 and idea-1 baselines; no HSI result influenced it. Seeds 1–9 are HSI's development data but were never
+looked at for OWF; the project rule (`03_HANDOFF` §3.3: every new decision on an unused reserve group) is followed with seeds 25–27 (the last reserve group; 19–21 and 22–24 are left to the HSI line, whose chat was still active on this branch at 09:02 UTC).
+
+### 1. Where the topological filter loses recall (measured before any design; navcache-v2, seeds 0–2, all 6 descriptors; labels only to evaluate)
+
+| Dataset | chain MAP within excl (on-map frames) | top-1 within excl | SH recall |
+|---|---|---|---|
+| Boreas | 0.931 | 0.885 | 0.779 |
+| NCLT | 0.775 | 0.724 | 0.612 |
+| CMU | 0.940 | 0.914 | 0.764 |
+| Nordland | 0.928 | 0.661 | 0.752 |
+| office | 0.946 | 0.910 | 0.795 |
+| old town | 0.874 | 0.837 | 0.687 |
+| countryside | 0.800 | 0.733 | 0.513 |
+
+The place chain (DiagFilter MAP, the `est_c` that idea 1 and HSI both use) is right on 0.78–0.95 of the on-map frames; the decision reports
+0.51–0.80 of them (HSI-VN, development: 0.65–0.92). Label-ORACLE
+thresholds on per-frame scores (posterior mass, log-odds, max-sim, Xu'21 off-map posterior) give only 0.10–0.77 at segFAR = 0.05. Frames
+within 40 frames of a map entry or of the sequence start are 2–5 % of the on-map frames (CMU 24 %, short sequences), so the loss is in long
+on-map stretches with weak appearance evidence. Structural cause: in a topological HMM the transition kernel is renormalised over the
+remaining map nodes, so the belief of a robot that drives into a hole has nowhere to go but map nodes; the decision layer must then tell
+"on the map with weak evidence" from "in a hole" statistically (all of idea 1's calibration machinery), and fails at hole edges.
+
+### 2. Method — open-world filter (`analysis/owf.py`)
+
+- **State.** Robot position on a metric grid (cell g = excl / 5; Nordland 1 frame) covering the map's bounding box grown by a band B
+  (= the config's block, 300 m; Nordland 200 frames; NCLT 100 m), cells farther than B from every map image excluded, plus one
+  position-less far state Omega. A cell is *mapped* when it holds >= 1 map image. **Presence on the map is a function of the position**
+  (no presence chain, no off-map node).
+- **Motion (mass-conserving).** x_t = x_{t-1} + u_t + w_t, u_t the odometry increment (real VIO / wheel+gyro / FOG, or simulated, exactly as
+  every idea-1 rule and the Kalman evaluation use); per-axis process variance q |u_t| + drift^2 (2 L_s |u_t| + |u_t|^2), L_s = odometry path
+  since the last confident frame (largest disc mass >= 0.5), drift = 0.02 (systematic drift grows linearly with the path since the last fix).
+  The belief array is shifted only by whole cells (sub-cell odometry kept as a phase phi; world position of cell c = origin + g c + phi), so
+  deterministic motion adds no numerical diffusion; the noise is an exact Gaussian blur applied when the accumulated variance >= (g/2)^2.
+  Mass that leaves the band goes to Omega; Omega re-enters at rate p_in = 0.01 / frame through the prior. Kidnap (teleport) rate
+  p_kid = 1e-12 (a car does not teleport; every teleported unit of mass is a seed for an alias).
+- **Emission (likelihood ratios against one reference p0 = "the view is unrelated to this map image").** Unmapped cells and Omega: LR = 1.
+  Map image i: z_i = robust z-score of the frame's similarity to i within the frame's own profile over the whole map (median, 1.4826 MAD);
+  log L_i = beta z_i - log mean_j exp(beta z_j) (exponential tilt, beta = 1) so that mean_j L_j = 1 exactly: the frame's own profile is its
+  null, and a diffuse belief over the map gains or loses nothing on average (Proposition 1). Mapped cell: L_c = mean_{i in c} L_i.
+  Evidence per distance: log L is weighted by w_t = min(1, |u_t| / ell), ell = 0.4 excl (consecutive frames ~1 m apart see the same scene;
+  without it aliasing is counted once per frame — the first design run reported 80 % of the off-map frames).
+- **Prior.** p_map0 = 0.5 spread over the map images, p_Omega0 = 0.1, the rest uniform over the band.
+- **Odometry noise, self-calibrated online.** Three filters q in {0.005, 0.02, 0.08} excl run in parallel; at every frame the decision is
+  read from the filter with the largest cumulative log evidence sum_{s<=t} log p(z_s | z_<s) (causal model selection; the evidence is the
+  normaliser of each update).
+- **Decision.** The excl-disc with the largest posterior mass around one of the 12 heaviest mapped cells; the reported fix x_hat is the map
+  image nearest to the posterior MEAN inside that disc (MMSE snapped onto the map; design §5); report x_hat iff the disc mass >= 1 - eps. **Default eps = 1e-3**; the operating curve sweeps eps in {0.2 … 1e-5}.
+- **Cost.** One forward pass per filter; 2–13 ms/frame for the three filters on one shared CPU core (design runs), no map surgery, no
+  forward simulation, no calibration data, no labels.
+
+### 3. Theory (to be written out in the report)
+
+*Notation.* N = cells within excl of a map image, U = the other band cells + Omega (all with LR = 1); a report needs posterior mass >= 1 - eps
+on an excl-disc around a map image, hence P_t(N) >= 1 - eps. Unnormalised filter pi~_t = motion(pi~_{t-1}) * L_t (motion conserves mass).
+- **Proposition 1 (no net pull of a diffuse belief).** If the predicted belief restricted to the map images is uniform, sum_i pred(i) L_i =
+  pred(map) exactly at every frame (mean_j L_j = 1), whatever the frame: the mapped odds of a robot with no positional knowledge move only
+  through the shape of the profile, never through its level (contrast: topological HMMs renormalise onto the nodes).
+- **Proposition 2 (false reports in an off-map stretch; Ville).** Let a stretch start at t0 with mapped odds O_0 = P(N) / P(U) and let lambda
+  be the share of the U mass that motion and seeds (kidnap, Omega re-entry) move into N during the stretch. If (E1) the weighted LR of every
+  cell of N has conditional mean <= 1 given the past while the robot is off the map, then T_t = pi~_t(N) + pi~_t(U) is a nonnegative
+  supermartingale and P(any report in the stretch) <= eps (1 + O_0) / ((1 - eps)(1 - lambda)). For a robot tracked into a hole (its mass
+  dead-reckoned into U, O_0 ~ 0, lambda ~ motion tail + p_kid T) the bound is ~eps: **no edge term** (contrast idea 1, Entry 37 H37b). At
+  a sequence start O_0 = p_map0 / (1 - p_map0) ~ 1 and lambda can be large (diffuse U mass flows into N), so the start is the weak case.
+- **(E1) is violated by coherent aliasing** (consecutive off-map frames match the same look-alike stretch). The audit (observed segFAR /
+  bound, per position class) measures the inflation; the default eps = 1e-3 = alpha / 50 assumes an inflation <= 50 (design: Nordland
+  needs ~eps <= 0.01).
+
+### 4. Pre-registration (committed before any held-out OWF result is read; nothing below has been computed on these sets)
+
+**Set A — development-wide evaluation (all hypotheses H1–H9).** (a) seeds 1–9 x 6 descriptors x 6 holed datasets (Boreas, CMU, Nordland,
+office, old town, countryside; `hmm-navcache-v2`) = 324 runs; (b) NCLT (natural off-map, 1 layout) x the 5 descriptors not used in design;
+(c) Oxford RobotCar (45 runs, `hmm-e37-caches`) and St Lucia (30 runs). Total 404 runs (the six jobs of the probe kernel `owfp-1`, started
+before this commit and not read, belong to this set). Baselines on the SAME runs: SH = CMS-CPC/H+SH+G+NGRr, CST-JS, CST-F (idea-1 defaults,
+`analysis/results/baselines_idea1/`, Entry 38 files for seeds 0–9, Entry 37 for St Lucia) and HSI-VN / HSI-VMN (`analysis/results/hsi/
+hsi_results_json.tgz`, main). One configuration for every dataset and descriptor (section 2); `analysis/owf_summary.py` computes every number.
+- **H1 (validity):** at eps = 1e-3 the mean segFAR <= 0.05 on every one of the 9 datasets.
+- **H2 (recall vs idea 1):** at eps = 1e-3 the paired mean recall > SH's on >= 7 / 9 datasets; **H2b:** > CST-JS's on >= 7 / 9.
+- **H3 (per position):** report rate of the real off-map segments <= 0.07 in every position class (start / edge / deep,
+  `position_audit.seg_classes`) with >= 50 segments, on every dataset.
+- **H4 (navigation):** mean navigation error (Kalman with the reported fixes, `nav_demo.track`) <= SH's on >= 6 of the 7 main datasets.
+- **H5 (cost):** <= 15 ms/frame (three filters, one CPU core) on every dataset.
+- **H6 (matched operating point):** OWF recall on its eps curve at the run's SH segFAR >= SH recall on >= 8 / 9 datasets.
+- **H7 (secondary operating point eps = 0.01):** mean segFAR <= 0.05 on >= 8 / 9 datasets and recall > SH on >= 8 / 9.
+- **H8 (recall vs HSI-VN):** at eps = 1e-3 the paired mean recall > HSI-VN's on >= 7 / 9 datasets.
+- **H9 (navigation vs HSI-VN):** mean navigation error <= HSI-VN's on >= 5 / 9 datasets.
+
+**Set B — decision set: reserve seeds 25–27** (`caotienminh1/hmm-navcache-r19`, 6 holed datasets x 6 descriptors x 3 seeds = 108 runs;
+recorded in `03_HANDOFF` §5). OWF (eps = 1e-3) and HSI-VN / HSI-VMN (`hsi_eval.py`, unchanged code of the branch head)
+run on the same caches in the same wave; no SH (needs the idea-1 GPU pipeline).
+- **D1 (validity):** OWF mean segFAR <= 0.05 on 6 / 6 datasets and <= 5 % of the 108 runs above alpha.
+- **D2 (recall):** pooled paired recall difference OWF − HSI-VN > 0 with the lower end of the 95 % bootstrap CI (runs resampled) > 0.
+- **D3 (navigation):** OWF mean navigation error <= HSI-VN's + 1 m on >= 4 / 6 datasets.
+**Decision rule.** D1 ∧ D2 ∧ D3 ⇒ OWF becomes the recommended label-free rule of the branch (HSI-VN stays as the reference). Otherwise HSI-VN
+stays recommended and OWF is reported with the failing criteria; any change after this point needs a new reserve set (none left after 25–27: generate seeds 28–30 with `hsi_fresh.py --keep`).
+*Secondary (no decision): ablations on seeds 1–2, cosplace + megaloc, 7 datasets — closed world (unmapped LR ~ 0: the topological
+analogue), no distance weighting (ell = 0), fixed q = 0.02 excl, kidnap 1e-4; hole ratio 10 % / 50 % (`hmm-navcache-holes`, seeds 0–2,
+6 datasets x 6 descriptors); per-descriptor segFAR; worst run.*
+
+### 5. Design results (seed 0; tuned on these — not evidence)
+
+Design path (all on seed 0, cosplace unless stated; `owf.py` options in brackets): first run without distance weighting: FL 0.80 on CMU
+(aliasing counted per frame) -> ell = 0.4 excl; start prior uniform over the band too slow on CMU -> p_map0 = 0.5; Boreas false reports
+deep in holes from a look-alike 170 m behind the hole entry, seeded by the kidnap rate 1e-4 -> p_kid 1e-12 (Boreas segFAR 0.086 -> 0.023 at
+eps 0.05, NCLT 0.091 -> 0.000); band x2 / x4 and p_in 1e-3 change nothing on Nordland (its failures: sequences that START in a 400-frame
+hole, coherent railway aliasing); ell = 1.0 excl valid everywhere but loses recall (CMU 0.69, countryside 0.47) -> kept 0.4; fixed q in
+{0.005, 0.02} excl each fails somewhere -> online evidence selection over {0.005, 0.02, 0.08} excl (Nordland segFAR 0.064 -> 0.010 at
+eps 1e-3); profile-correlation weighting (1 - r^2) rejected (r = 0.98–0.998 everywhere: far stronger than ell, kills countryside).
+Final configuration (section 2), eps curve; SH / CST-JS = idea-1 defaults on the SAME runs (Entry 38 files):
+
+| Dataset | desc | chain MAP correct | OWF eps 0.05 (recall / segFAR) | eps 0.01 | **eps 1e-3 (default)** | SH | CST-JS | ms/frame (3 filters) |
+|---|---|---|---|---|---|---|---|---|
+| Boreas | cosplace | 0.993 | 0.978 / 0.038 | 0.973 / 0.018 | **0.967 / 0.009** | 0.874 / 0.018 | 0.875 / 0.020 | 9.7 |
+| NCLT | cosplace | 0.924 | 0.841 / 0.010 | 0.791 / 0.000 | **0.715 / 0.000** | 0.670 / 0.000 | 0.685 / 0.000 | 10.0 |
+| CMU | cosplace | 0.951 | 0.868 / 0.149 | 0.831 / 0.008 | **0.783 / 0.000** | 0.814 / 0.014 | 0.801 / 0.015 | 9.7 |
+| CMU | megaloc | 0.963 | 0.909 / 0.004 | 0.884 / 0.000 | **0.853 / 0.000** | 0.867 / 0.014 | 0.867 / 0.029 | 10.0 |
+| CMU | netvlad | 0.916 | 0.752 / 0.010 | 0.696 / 0.004 | **0.625 / 0.000** | 0.428 / 0.000 | 0.463 / 0.010 | 9.7 |
+| Nordland | cosplace | 0.992 | 0.984 / 0.145 | 0.975 / 0.028 | **0.960 / 0.010** | 0.826 / 0.000 | 0.835 / 0.000 | 2.1 |
+| Nordland | netvlad | 0.989 | 0.976 / 0.112 | 0.966 / 0.046 | **0.952 / 0.015** | 0.542 / 0.000 | 0.565 / 0.000 | 2.2 |
+| office | cosplace | 0.998 | 0.983 / 0.000 | 0.975 / 0.000 | **0.963 / 0.000** | 0.883 / 0.000 | 0.883 / 0.004 | 4.9 |
+| office | netvlad | 0.996 | 0.962 / 0.000 | 0.945 / 0.000 | **0.897 / 0.000** | 0.645 / 0.000 | 0.649 / 0.004 | 5.7 |
+| old town | cosplace | 0.976 | 0.954 / 0.000 | 0.948 / 0.000 | **0.936 / 0.000** | 0.701 / 0.003 | 0.711 / 0.003 | 10.5 |
+| old town | megaloc | 0.997 | 0.982 / 0.000 | 0.979 / 0.000 | **0.972 / 0.000** | 0.938 / 0.006 | 0.937 / 0.006 | 11.3 |
+| old town | netvlad | 0.921 | 0.855 / 0.000 | 0.828 / 0.000 | **0.792 / 0.000** | 0.514 / 0.003 | 0.526 / 0.009 | 10.4 |
+| countryside | cosplace | 0.786 | 0.684 / 0.006 | 0.611 / 0.000 | **0.553 / 0.000** | 0.659 / 0.000 | 0.664 / 0.000 | 12.7 |
+| countryside | megaloc | 0.959 | 0.927 / 0.050 | 0.907 / 0.006 | **0.883 / 0.000** | 0.854 / 0.000 | 0.865 / 0.006 | 14.3 |
+| countryside | netvlad | 0.777 | 0.594 / 0.000 | 0.518 / 0.000 | **0.459 / 0.000** | 0.226 / 0.000 | 0.258 / 0.000 | 11.4 |
+
+Design reading: at eps = 1e-3 every design run is valid (worst 0.015) and above SH on 12 / 15 runs; it is below SH where SH is already high
+and the OWF start / re-entry delay dominates (CMU short sequences: cosplace -0.031, megaloc -0.014; countryside cosplace -0.106). Position
+classes: no reported EDGE segment in any design run (Boreas 0/39, NCLT 0/26, Nordland 0/12, old town 0/9, office 0/10, countryside 0/9);
+the remaining false reports are starts (CMU at eps >= 0.05) and Nordland sequences that start inside a hole. The idea-1 weaknesses
+named in `07` §4 — edge reports, recall capped by the decision, cost — are the ones the design addresses.
+Fix position (design, eps = 1e-3, cosplace s0): the image nearest to the posterior mean of the disc vs the highest-LR image of the best
+cell — same recall, navigation error old town 21.1 vs 21.8 m, CMU 2.7 vs 2.9 m ⇒ posterior mean (`--xhat mean`, default).
+Probe kernel (`owfp-1`, Set-A jobs, started before this commit): only its timing / memory / mount checks are read before the wave;
+its six results are part of Set A and are evaluated with it.
+
 **Kết quả giữ ra Entry 5 (đợt `hsi9`, 441 + 216 lỗ + 36 tự nhiên run; nguồn cache đã kiểm; 2026-11-03 19:30 UTC).** Gộp 413 run (recall / segFAR TB /
 run > α / sai số): HSI-rot-m-sc 0.772 / 0.0026 / 0 / 15.0; **HSI-V 0.786 / 0.0040 / 0 / 15.3**; HSI-VM 0.775 / 0.0026 / 0 / **13.6**; HSI-Vc 0.775 / 0.0030 /
 0 / 15.4; HSI-Gdrop 0.784 / 0.0036 / 0 / 14.9; geo-rm (chỉ chứng chỉ) 0.684 / 0.0007 / 0 / 16.2; SH 0.731 / 0.0029 / 2 / 15.6. Theo dataset (HSI-V vs
