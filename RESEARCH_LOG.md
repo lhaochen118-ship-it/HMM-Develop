@@ -52,6 +52,18 @@ phụ **HSI-VMN**; ablation HSI-V, HSI-VM, HSI-N; chẩn đoán geo-rm, Xu'21, C
 **Quyết định:** T1 ∧ T2 ∧ T3 ∧ T4 ⇒ HSI-VN thay HSI-rot-m-sc làm luật khuyến nghị; nếu HSI-VN chỉ trượt T4 mà HSI-VMN đạt cả bốn (T2, T3 tính cho
 HSI-VMN) ⇒ HSI-VMN; còn lại giữ HSI-rot-m-sc. Kết quả báo cáo dù thuận hay nghịch.
 
+**Kết quả KIỂM TRA Entry 8 (seed 13–15, 108 run chưa từng thấy, đợt `hsi16`, cache `caotienminh1/hmm-navcache-f13` đã kiểm 108/108; 2026-11-04
+04:27 UTC).** Gộp (recall / segFAR TB / run > α / sai số): HSI-rot-m-sc 0.752 / 0.0012 / 0 / 16.4; HSI-V 0.756 / 0.0011 / 0 / 16.3; **HSI-VN 0.768 / 0.0012 / 0 /
+15.8**; HSI-VMN 0.757 / 0.0007 / 0 / 13.8; HSI-N 0.760 / 0.0008 / 0 / 16.0; geo-rm 0.676 / 0.0001 / 0 / 16.2; Xu'21 0.634 / 0.133 / **44** / 57.4; Claxton'24 0.717 /
+0.197 / **77** / 51.9; oracle 0.829. CMU: HSI-rot-m-sc 0.612, HSI-V 0.598, **HSI-VN 0.671**, HSI-VMN 0.662.
+- HSI-VN: **T1 đạt** (0/108; TB dataset tối đa 0.0031), **T2 đạt** (+0.0162, bootstrap 95 % [+0.0094, +0.0241], thắng 64/108), **T3 không đạt** — CMU +0.059 (≥ 0.03
+  đạt) nhưng số run CMU bị khoá 7 → 4 (cần ≤ 3.5), **T4 đạt** (−0.58 m).
+- HSI-VMN: T1 đạt, T2 không đạt (+0.0051, [−0.0017, +0.0134]), T3 không đạt (CMU +0.050; khoá 7 → 5), T4 đạt (−2.57 m).
+**Quyết định (theo quy tắc đăng ký trước):** giữ **HSI-rot-m-sc** làm luật khuyến nghị chính thức. Ghi nhận trung thực: trên dữ liệu mới, HSI-VN
+**trội Pareto** so với HSI-rot-m-sc ở cả ba thước đo kết quả đã đăng ký (hợp lệ như nhau 0/108, recall +0.016 với CI dương, điều hướng −0.58 m), chỉ
+trượt tiêu chí cơ chế (giảm một nửa số run bị khoá); lợi ích CMU lặp lại (+0.059, dev +0.106). Khoá còn lại ở CMU = nhiễm null bởi chuỗi ngắn hoàn
+toàn đúng (Mệnh đề 7 (iii)) — giới hạn thông tin, không phải lỗi cài đặt.
+
 ## Kết quả tập xác nhận mới (seed 10–12, 108 run; đợt `hsi10` + `hsi12`, kéo về 2026-11-04 02:09 UTC) — C1–C4, Entry 7
 
 Cache sinh lại hai lần độc lập (hai đợt) cho kết quả HSI-rot-m-sc giống hệt nhau trên 108/108 run (tất định). Không có SH (cần GPU). Gộp 108 run
