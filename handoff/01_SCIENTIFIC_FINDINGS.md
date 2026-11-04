@@ -6,7 +6,7 @@ tích cực và tiêu cực, kèm bằng chứng và điều kiện kiểm chứ
 ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables.md`, `paper/BAO_CAO_PhanBien.pdf`,
 `analysis/results/oc_*_entry25.tgz`.*
 
-## I2. Ý tưởng 2 — HSI (2026-11-03, branch `hmm-2nd-idea`, Entry 1–5) — đọc trước mọi mục khác
+## I2. Ý tưởng 2 — HSI (2026-11-03/04, branch `hmm-2nd-idea`, Entry 1–7 + tập xác nhận mới) — đọc trước mọi mục khác
 
 **Báo cáo:** `paper/BAO_CAO_HSI.pdf`; lý thuyết `paper/hsi_theory.md`; nhật ký `RESEARCH_LOG.md`; số liệu `analysis/results/hsi/`.
 
@@ -32,7 +32,11 @@ ghi đè. Nguồn số liệu: `RESEARCH_LOG.md` Entry 22–25, `paper/oc_tables
    recall +0.003, sai số 13.6 m (tốt nhất).
 8. **Hiệu chuẩn:** quét α 0.01–0.2 trên 413 run: segFAR thực ≤ α mọi mức, bảo thủ 5–25× (null là tập cha của off-map); recall 0.707 → 0.811.
    Claxton'24 (giám sát có nhãn) 287/413 run > α — bộ giám sát học không thay được hiệu chuẩn trên excursion thật.
-9. **Âm / mở:** CMU 0.65–0.68 vs SH 0.835 (48 % frame thuộc chuỗi không có đoạn nào xác minh được; đầu chuỗi off-map; khởi động lạnh); NCLT chỉ 2
+9. **Bỏ cổng nhất quán ngắn hạn (Entry 6) và tập xác nhận mới:** với null sạch, bỏ / thu nhỏ cổng tăng recall +0.02…+0.03 nhưng tốn 1.7–3 m điều
+   hướng (fix sai xa trong bản đồ) — tập thiết kế 28 run KHÔNG lộ cái giá này. Tập mới (seed 10–12, 108 run, sinh sau khi chốt quyết định, tất định
+   bit-exact): HSI-rot-m-sc 0/108 vi phạm, recall 0.784; HSI-V +0.0074 (CI 95 % [+0.003, +0.013]); HSI-VM-nosc +0.008, −0.7 m; Xu'21 33/108 và
+   Claxton'24 75/108 run vượt α. Lợi ích sau Entry 3 co lại trên dữ liệu mới (+0.014 → +0.007) — dấu hiệu quá khớp thích nghi nhẹ vào tập giữ ra.
+10. **Âm / mở:** CMU 0.65–0.68 vs SH 0.835 (48 % frame thuộc chuỗi không có đoạn nào xác minh được; đầu chuỗi off-map; khởi động lạnh); NCLT chỉ 2
    run giữ ra; sai số old town; tập giữ ra đã dùng 5 vòng ⇒ tập xác nhận mới seed 10–12 (`hsi_fresh.py`, RESEARCH_LOG Entry 5 bổ sung).
 
 ## 0. Đọc cho ý tưởng 2 (branch `hmm-2nd-idea`)

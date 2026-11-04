@@ -1,6 +1,6 @@
 # BÁO CÁO — Ý tưởng 2: HSI, tự giám sát hồi cứu bằng hình học cho định vị chuỗi trên bản đồ có lỗ
 
-*Branch `hmm-2nd-idea`, 2026-11-03/04 (cập nhật 19:40 UTC). Nhật ký: `RESEARCH_LOG.md` Entry 1–5; lý thuyết: `paper/hsi_theory.md`; novelty: `LITERATURE_GATE.md`
+*Branch `hmm-2nd-idea`, 2026-11-03/04 (cập nhật 2026-11-04 02:15 UTC). Nhật ký: `RESEARCH_LOG.md` Entry 1–7 + tập xác nhận mới; lý thuyết: `paper/hsi_theory.md`; novelty: `LITERATURE_GATE.md`
 Gate 17; code: `analysis/hsi.py`, `analysis/hsi_eval.py`, `analysis/hsi_summary.py`; kết quả thô: `analysis/results/hsi/`.*
 
 ## 1. Tóm tắt
@@ -15,16 +15,18 @@ chúng (định vị lại bằng dead-reckoning hai phía + vùng phủ đã bi
 sớm hơn, và để hiệu chuẩn ngưỡng báo bằng conformal trên các excursion THẬT của chính lần triển khai. Không nhãn, không can thiệp bản đồ, không GPU
 (~1 ms/frame trên một lõi CPU, gồm cả học lại).
 
-**Kết quả (413 run giữ ra, 9 dataset × 6 descriptor, so với ý tưởng 1 trên CÙNG run; năm vòng, mỗi vòng đăng ký trước).** Luật khuyến nghị
-**HSI-rot-m-sc** (Entry 3): hợp lệ ở **413/413 run** (segFAR ≤ 0.05; SH của ý tưởng 1: 411/413), **kiểm toán theo vị trí (start / edge / deep) ≤ 0.07
-trên 9/9 dataset** — điều ý tưởng 1 chưa đạt; recall gộp **+0.041** so với SH, cao hơn trên 7/9 dataset (Boreas +0.115, countryside +0.149, St Lucia
-+0.144, office +0.069, Oxford +0.045, old town +0.027, Nordland +0.016), descriptor yếu DINOv2 +0.123, NetVLAD +0.068. Biến thể **HSI-V** (Entry 5:
-chứng chỉ hình học làm điểm neo của nhãn hồi cứu — "chứng nhận rồi hiệu chuẩn") nâng recall gộp lên **0.786 (+0.054 so với SH; NCLT +0.068 so với
-HSI-rot-m-sc)** vẫn với 0/413 vi phạm, nhưng trượt tiêu chí đăng ký trước ở CMU (+0.024 < +0.03) nên không thay luật khuyến nghị; HSI-VM (thêm
-Mondrian theo chế độ) giảm sai số điều hướng 15.0 → 13.6 m. **Hiệu chuẩn:** quét α ∈ [0.01, 0.2] — segFAR thực luôn ≤ α (bảo thủ 5–25×), recall
-0.707 → 0.811; bộ giám sát có nhãn Claxton'24 vượt α ở 287/413 run. **Bền:** lỗ 10 % 0/108, lỗ 50 % 4/108 (đều CMU), off-map tự nhiên 4Seasons 1/36;
-chỉ riêng chứng chỉ hình học: 0 vi phạm trên cả 665 run. **Tập xác nhận mới** (bố cục lỗ chưa từng tồn tại, seed 10–12, 108 run): xem §5.4.
-**Điểm yếu:** CMU (0.652–0.676 vs SH 0.835: chuỗi ngắn, đầu chuỗi off-map, khởi động lạnh), NCLT (2 run giữ ra), sai số old town.
+**Kết quả.** Bảy vòng, mỗi vòng đăng ký trước khi xem kết quả; 413 run giữ ra (9 dataset × 6 descriptor, so với ý tưởng 1 trên CÙNG run) + lỗ
+10 %/50 % + off-map tự nhiên + **một tập xác nhận hoàn toàn mới** (bố cục lỗ seed 10–12, sinh SAU khi các quyết định đã chốt, 108 run).
+Luật khuyến nghị **HSI-rot-m-sc** (Entry 3): hợp lệ ở **413/413 run giữ ra và 108/108 run mới** (segFAR ≤ 0.05; SH của ý tưởng 1: 411/413),
+**kiểm toán theo vị trí (start / edge / deep) ≤ 0.07 trên 9/9 dataset** — điều ý tưởng 1 chưa đạt; recall gộp **+0.041** so với SH, cao hơn trên 7/9
+dataset (Boreas +0.115, countryside +0.149, St Lucia +0.144, office +0.069, Oxford +0.045, old town +0.027, Nordland +0.016), descriptor yếu DINOv2
++0.123, NetVLAD +0.068. Các bộ giám sát có nhãn làm tham chiếu (Xu'21, Claxton'24) vượt α ở 31–70 % run. **Hiệu chuẩn:** quét α ∈ [0.01, 0.2] —
+segFAR thực luôn ≤ α (bảo thủ 5–25×), recall 0.707 → 0.811. **Phát hiện phương pháp (Entry 5, Mệnh đề 6 — chứng nhận rồi hiệu chuẩn):** dùng
+chứng chỉ hình học làm điểm neo nhãn hồi cứu làm sạch null (NCLT +0.068); chứng chỉ một mình 0/773 run vi phạm trên mọi tập. Các biến thể sau
+(HSI-V, HSI-VM, HSI-VM-nosc) đều hợp lệ và lặp lại về dấu trên dữ liệu mới (+0.007…+0.008 recall, có CI dương với HSI-V; HSI-VM −1.0 m điều
+hướng) nhưng không vượt ngưỡng đăng ký trước ⇒ là các điểm vận hành thay thế, không thay luật. Bỏ cổng nhất quán ngắn hạn tăng recall
+(+0.02…+0.03) nhưng tốn 1.7–3 m điều hướng (fix sai xa) — lộ trên giữ ra và tập mới, không lộ trên tập thiết kế. **Điểm yếu:** CMU (0.65–0.68 vs SH
+0.835), NCLT (2 run giữ ra), sai số old town.
 
 ## 2. Bài toán (giữ nguyên giao thức của ý tưởng 1)
 
@@ -83,6 +85,8 @@ Tập giữ ra = mọi run ngoài tập thiết kế (seed 0 × 7 dataset × 4 d
 | Entry 3 | HSI-rot-m-sc (+ đầu chuỗi, biên null) | đạt (0/413) | đạt (7/9; +0.041) | đạt (+0.096) | đạt (6/9) | đạt (9/9) | **luật khuyến nghị** (H7: ≥ Entry 2 trên 8/9) |
 | Entry 4 | HSI-M (Mondrian theo chế độ) | đạt (0/413) | đạt (7/9; +0.033) | – | đạt (7/9) | đạt (9/9) | ablation (H8 trượt: CMU +0.002); sai số −1.1 m |
 | Entry 5 | HSI-V (chứng nhận rồi hiệu chuẩn) | đạt (0/413) | đạt (7/9; +0.054) | đạt (+0.110) | đạt (7/9) | đạt (9/9) | ablation (H9 trượt ở CMU +0.024 < 0.03; H10, H11 đạt) |
+| Entry 6 | HSI-V-sc5 (cổng nhất quán chỉ 5 m) | đạt (9/413 > α) | đạt (+0.063) | – | – | – | ablation (H12 trượt: điều hướng +1.7 m) |
+| Entry 7 | HSI-VM-nosc (quyết định trên tập mới) | đạt (0/108) | – | – | đạt (−0.7 m) | – | ablation (E2: +0.008 < 0.01) |
 
 **Ablation (giữ ra; recall / segFAR / số run > α / sai số điều hướng TB):** hiệu chuẩn biên chung thay vì có điều kiện +0.09 recall; gộp phiên thay
 vì theo phiên +0.044; bỏ nhất quán ngắn hạn → 13 run vi phạm; bỏ null "chưa từng xác minh" → 7 run vi phạm; chỉ neo nhân quả → 40 run vi phạm,
@@ -124,6 +128,10 @@ chỉnh bằng nhãn) không có cơ chế hiệu chuẩn cho off-map nên vư�
 
 ### 5.4 Tập xác nhận mới (bố cục lỗ seed 10–12, sinh lại sau khi mọi quyết định đã chốt; 108 run, mọi run)
 
+Sinh bằng `analysis/hsi_fresh.py` (nav_demo `--cache-only` trên dump descriptor công khai; mã tái tạo đúng từng bit cache công khai seed 0; hai lần
+sinh độc lập cho kết quả giống hệt). Không có SH (cần GPU). Đăng ký trước: C1 (luật được chọn hợp lệ) **đạt** 0/108; C3 (chứng chỉ) **đạt** 0/108;
+C2 (HSI-V ≥ +0.01) **không đạt**: +0.0074, bootstrap 95 % [+0.0026, +0.0127]; Entry 7 (HSI-VM-nosc) E1, E3 đạt, E2 không đạt (+0.0080).
+
 {{CONFIRM}}
 
 {{TABLES_E1}}
@@ -153,8 +161,8 @@ tiêu ngân sách α và không bị phán xét bằng nhãn kém tin cậy hơn
 **Hạn chế đã đo.** (1) CMU: chuỗi rất ngắn (trung vị 186 frame), 37/130 chuỗi bắt đầu off-map, 48 % frame thuộc chuỗi không có đoạn nào được
 xác minh hồi cứu ⇒ ít nhãn, khởi động lạnh; mọi biến thể vẫn dưới SH (0.65–0.70 vs 0.835). (2) NCLT: chỉ 2 run giữ ra (một bản đồ, off-map tự
 nhiên). (3) Sai số điều hướng old town (VIO trôi 6 %/100 m) — HSI-VM giảm nhưng chưa bằng SH. (4) Bảo đảm dựa trên hoán đổi giữa đoạn null hồi
-cứu và đoạn off-map thật; null là tập cha nên bảo thủ 5–25× (§5.3) — đúng mà tốn recall. (5) Tập giữ ra đã dùng cho 5 vòng quyết định ⇒ nguy cơ
-quá khớp thích nghi; vì vậy có tập xác nhận mới (§5.4) sinh SAU khi mọi quyết định đã chốt. (6) Tham số mặc định (α, H, độ trễ, 0.5) chung cho
+cứu và đoạn off-map thật; null là tập cha nên bảo thủ 5–25× (§5.3) — đúng mà tốn recall. (5) Tập giữ ra đã dùng cho 6 vòng quyết định ⇒ nguy cơ
+quá khớp thích nghi; tập xác nhận mới (§5.4) cho thấy lợi ích của các cải tiến sau Entry 3 co lại (+0.014 → +0.007). (6) Tham số mặc định (α, H, độ trễ, 0.5) chung cho
 mọi dataset; không tinh chỉnh theo dataset.
 
 **Việc tiếp theo.** Thu hẹp null bằng ước lượng tỉ lệ nhiễm (giảm bảo thủ mà vẫn hợp lệ); mô hình ưu tiên mang từ các lần triển khai trước cho

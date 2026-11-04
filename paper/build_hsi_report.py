@@ -23,7 +23,7 @@ def summary(rdir, bases, main, out_md):
     shutil.rmtree(tmp)
 
 
-CMPV = "HSI-rot-m-sc,HSI-V,HSI-VM,HSI-M,HSI-Gdrop,geo-rm"
+CMPV = "HSI-rot-m-sc,HSI-V,HSI-VM,HSI-VM-nosc,HSI-V-sc5,geo-rm"
 
 
 def compare(rdir, extra, out_md):

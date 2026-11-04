@@ -4,7 +4,8 @@
 mới cho cùng bài toán (HMM, định vị thị giác trên chuỗi ảnh camera đơn; nền tảng Sattler et al. CVPR 2018). Ý tưởng 1 (phẫu thuật bản đồ
 phản thực) ở branch `hmm-navigation-5`; ở đây chỉ còn bản tóm tắt + số liệu baseline.*
 
-**Kết quả ý tưởng 2 (HSI): `paper/BAO_CAO_HSI.pdf`, `01_SCIENTIFIC_FINDINGS.md` §I2, `03_HANDOFF.md` §0.**
+**Kết quả ý tưởng 2 (HSI): `paper/BAO_CAO_HSI.pdf`, `01_SCIENTIFIC_FINDINGS.md` §I2, `03_HANDOFF.md` §0. Luật khuyến nghị: HSI-rot-m-sc
+(0/413 giữ ra + 0/108 tập mới vi phạm, +0.041 recall so với ý tưởng 1).**
 
 **Bắt đầu: `05_NEW_CHAT_GUIDE.md`** (nhiệm vụ, thứ tự đọc, vòng lặp, bản đồ code, nguyên tắc tối ưu).
 

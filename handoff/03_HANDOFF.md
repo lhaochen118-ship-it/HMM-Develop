@@ -4,17 +4,19 @@
 `git show hmm-navigation-5:handoff/03_HANDOFF.md`.*
 
 
-## 0. Trạng thái ý tưởng 2 (cập nhật 2026-11-03 19:40 UTC, vòng tự động của phiên `session_01Xy89bX34L6MPEcAxmjRJWt`)
+## 0. Trạng thái ý tưởng 2 (cập nhật 2026-11-04 02:15 UTC, kết thúc vòng tự động 12 giờ của phiên `session_01Xy89bX34L6MPEcAxmjRJWt`)
 
 - **Phương pháp:** HSI — tự giám sát hồi cứu bằng hình học (`analysis/hsi.py`, đánh giá `analysis/hsi_eval.py`, so sánh `analysis/hsi_compare.py`,
   tổng hợp `analysis/hsi_summary.py`, quét α `analysis/hsi_alpha.py`, tập mới `analysis/hsi_fresh.py`; lý thuyết `paper/hsi_theory.md` Mệnh đề 1–6;
-  nhật ký `RESEARCH_LOG.md` Entry 1–5; novelty `LITERATURE_GATE.md` Gate 17; báo cáo `paper/BAO_CAO_HSI.pdf`, dựng lại bằng `paper/build_hsi_report.py`).
-- **Luật khuyến nghị: HSI-rot-m-sc (Entry 3)** — 413/413 hợp lệ, vị trí 9/9, +0.041 so với SH. **HSI-V** (Entry 5, chứng nhận rồi hiệu chuẩn) có
-  recall cao nhất (0.786, 0 vi phạm) nhưng trượt H9 ở CMU; **HSI-VM** tốt nhất về điều hướng (13.6 m). Cả hai là biến thể trong `VARIANTS`.
-- **Đang chạy:** đợt `hsi10` — tập xác nhận mới (bố cục lỗ seed 10–12, 108 run; C1–C3 đăng ký trước). Gom: `automation/hsi_collect.py <out>
-  <scratchpad>/runs/hsi10 --tagre '_fr[.]'`, bảng: `analysis/hsi_compare.py <out> <variants> --all`, báo cáo: `build_hsi_report.py ... --confirm <out>`.
-- **Kết quả thô:** `analysis/results/hsi/*.tgz` (JSON mỗi run + mặt nạ báo theo frame). Lưu ý: kết quả lỗ 10/50 % và kết quả chính có CÙNG khoá
-  (dataset, descriptor, seed) ⇒ gom tách bằng `--tagre` (`_e5[.]`, `_d10e5[.]`, `_d50e5[.]`, `_nate5[.]`).
+  nhật ký `RESEARCH_LOG.md` Entry 1–7 + tập xác nhận; novelty `LITERATURE_GATE.md` Gate 17; báo cáo `paper/BAO_CAO_HSI.pdf` (12 trang), dựng lại bằng
+  `paper/build_hsi_report.py <main> <oc dirs> --cmp d10=.. d50=.. nat=.. --confirm <fresh>`).
+- **Luật khuyến nghị (cuối cùng): HSI-rot-m-sc (Entry 3)** — 0/413 vi phạm giữ ra, 0/108 trên tập mới, vị trí 9/9, +0.041 so với SH. Điểm vận hành
+  thay thế (hợp lệ, không vượt ngưỡng đăng ký trước): HSI-V (recall), HSI-VM (điều hướng), HSI-VM-nosc (cả hai, Entry 7).
+- **Không còn kernel nào chạy.** Kết quả thô: `analysis/results/hsi/*.tgz` (main / lỗ / tự nhiên / tập mới; mặt nạ báo theo frame). Gom tách theo
+  tag bằng `hsi_collect.py --tagre` (kết quả chính, lỗ và tập mới có thể trùng khoá dataset/descriptor/seed).
+- **Việc tiếp theo hợp lý:** (1) CMU — chuỗi không bao giờ xác minh được (48 % frame): mô hình ưu tiên từ lần triển khai trước, hoặc hiệu chuẩn có
+  trọng số theo xác suất off-map; (2) giảm tính bảo thủ của null (5–25×) mà vẫn hợp lệ; (3) mọi biến thể mới chỉ được quyết định trên một tập
+  mới khác (seed 13+), vì tập giữ ra đã dùng 6 vòng.
 
 ## 1. Trạng thái
 
