@@ -4,6 +4,33 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+**Kết quả tập A (404 run chưa từng xem với OWF: seed 1–9 × 6 desc × 6 dataset có lỗ, NCLT × 5 desc, Oxford 45, St Lucia 30; đợt `owfa` +
+probe `owfp-1`; ghi 11:02 UTC).** ε = 1e-3; SH / CST-JS / HSI-VN trên CÙNG run.
+
+| Dataset | runs | OWF recall / segFAR | runs > α | SH recall / segFAR | CST-JS | HSI-VN recall / segFAR | Δ vs SH (wins) | Δ vs HSI-VN (wins) | err OWF / SH / HSI-VN (m) | OWF tại segFAR của SH | start / edge / deep | ms/frame (Kaggle) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Boreas | 54 | 0.954 / 0.0012 | 0 | 0.771 / 0.0023 | 0.776 | 0.893 / 0.0015 | +0.182 (54/54) | +0.060 (43/54) | **3.1** / 4.5 / 7.0 | 0.919 | 0.002 / 0.000 / 0.001 | 30.0 |
+| NCLT | 5 | 0.689 / 0.0013 | 0 | 0.601 / 0.0020 | 0.622 | 0.570 / 0.0007 | +0.088 (5/5) | +0.119 (5/5) | **4.0** / 4.6 / 4.4 | 0.786 | 0.000 / 0.000 / 0.002 | 27.8 |
+| CMU | 54 | 0.758 / 0.0307 | 14 | 0.834 / 0.0092 | 0.815 | 0.756 / 0.0042 | −0.076 (8/54) | +0.002 (26/54) | 6.2 / 4.0 / **3.6** | 0.609 | 0.037 / – / – | 21.0 |
+| Nordland | 54 | 0.938 / 0.0215 | 5 | 0.766 / 0.0000 | 0.779 | 0.784 / 0.0001 | +0.171 (54/54) | +0.154 (54/54) | 15.4 / 6.2 / **5.8** | 0.562 | 0.002 / 0.003 / 0.023 | 6.1 |
+| office | 54 | 0.925 / 0.0000 | 0 | 0.798 / 0.0003 | 0.810 | 0.870 / 0.0000 | +0.127 (52/54) | +0.054 (41/54) | 10.3 / 9.7 / **9.0** | 0.981 | 0.000 / 0.000 / 0.000 | 12.7 |
+| old town | 54 | 0.893 / 0.0007 | 0 | 0.701 / 0.0058 | 0.709 | 0.723 / 0.0014 | +0.192 (54/54) | +0.169 (54/54) | **21.6** / 26.1 / 33.0 | 0.949 | 0.005 / 0.000 / 0.000 | 28.0 |
+| countryside | 54 | 0.632 / 0.0006 | 0 | 0.483 / 0.0006 | 0.494 | 0.657 / 0.0067 | +0.149 (49/54) | −0.025 (25/54) | 45.6 / 33.8 / **26.7** | 0.733 | 0.000 / 0.000 / 0.001 | 36.4 |
+| Oxford | 45 | 0.898 / 0.0007 | 0 | 0.719 / 0.0039 | 0.729 | 0.805 / 0.0089 | +0.179 (45/45) | +0.093 (45/45) | **17.6** / 21.9 / 21.1 | 0.960 | 0.006 / 0.002 / 0.000 | 23.6 |
+| St Lucia | 30 | 0.975 / 0.0000 | 0 | 0.761 / 0.0006 | 0.763 | 0.915 / 0.0013 | +0.214 (30/30) | +0.060 (30/30) | **16.6** / 25.5 / 18.5 | 0.996 | 0.000 / 0.000 / 0.000 | 20.6 |
+
+Gộp 404 run: recall OWF **0.863**, SH 0.726, HSI-VN 0.791 (OWF − HSI-VN +0.072, CI 95 % [+0.061, +0.083]); run > α: OWF 19/404 (CMU 14,
+Nordland 5; tệ nhất 0.140), HSI-VN 0, SH 2; sai số điều hướng gộp OWF 16.9 m, SH 15.7, HSI-VN 15.1.
+**Giả thuyết:** H1 **đạt** (TB ≤ 0.05 trên 9/9; CMU 0.031); H2 **đạt** 8/9 (CMU −0.076); H2b **đạt**; H3 **đạt** (mọi lớp ≤ 0.07: mép ≤ 0.003
+mọi dataset — ý tưởng 1 không đạt ở đây; CMU start 0.037, Nordland deep 0.023); H4 **không đạt** (3/7: Boreas, NCLT, old town); H5 **không đạt**
+(6–36 ms/frame trên phiên CPU Kaggle 4 job / 4 vCPU; cục bộ 2–14 ms); H6 **không đạt** (7/9: Nordland và CMU — SH ở segFAR ≈ 0 ở đó, đường cong
+OWF tại segFAR đó thấp hơn); H7 (ε = 0.01) **không đạt** (hợp lệ 7/9: CMU 0.059, Nordland 0.060; recall > SH 8/9); H8 **đạt** 8/9 (countryside
+−0.025); H9 **đạt** 5/9 (Boreas, NCLT, old town, Oxford, St Lucia).
+**Đọc:** OWF đổi recall lấy đuôi: trung bình hợp lệ trên mọi dataset và recall cao nhất trên 8/9 (gộp +0.072 so với HSI-VN, +0.137 so với SH),
+nhưng (a) 4.7 % run vượt α, tập trung ở CMU (khởi đầu toàn cục trên chuỗi ngắn) và Nordland (chuỗi bắt đầu trong lỗ, aliasing đường ray)
+— đúng chỗ yếu Mệnh đề 2 dự báo (O₀ ≈ 1 ở đầu chuỗi); (b) sai số điều hướng kém hơn trên Nordland / CMU (vài fix sai xa sau khi hậu nghiệm nhảy)
+và countryside (fix thô, VIO trôi). Kết luận nhất quán với tập B.
+
 **Kết quả tập quyết định B (seed 25–27, 108 run, đợt `owfb` + `hsib`; ghi 10:43 UTC, trước khi đọc tập A).**
 
 | Dataset | runs | OWF recall | OWF segFAR | runs > α | HSI-VN recall | HSI-VN segFAR | Δ recall (wins) | OWF err (m) | HSI-VN err (m) | start / edge / deep (OWF) |
