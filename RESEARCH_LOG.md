@@ -27,7 +27,7 @@ xác minh, Mệnh đề 4 (i)); ở α nhỏ (0.01) vài run vượt do số đo
 oracle 0.845). Tham chiếu **Claxton'24** (MLP giám sát bằng nhãn của 2 điều kiện dễ nhất, kiểu RA-L'24): recall 0.729 nhưng **287/413 run vượt
 α**, sai số 46 m — một bộ giám sát học có nhãn không được hiệu chuẩn cho off-map không thay được hiệu chuẩn trên excursion thật; Xu'21: 202/413.
 
-## Entry 9 — nhân bản Entry 8 trên tập mới seed 16–18 — đăng ký trước (2026-11-04 04:40 UTC)
+## Entry 9 — nhân bản Entry 8 trên tập mới seed 16–18 — đăng ký trước (2026-11-04 04:30 UTC)
 
 *Viết khi tập seed 16–18 ĐANG được sinh (đợt `hsi17`), chưa có kết quả nào trên đó. Đây là lần kiểm CUỐI CÙNG của giả thuyết HSI-VN: dù kết quả thế
 nào, sẽ không kiểm lại trên tập khác.*
@@ -39,7 +39,7 @@ nếu không ⇒ HSI-rot-m-sc giữ nguyên, HSI-VN báo cáo như điểm vận
 *Ghi chú (Entry 8 phụ):* hạ ngưỡng nhãn tối thiểu của lần học đầu (50 → 20) không đổi kết quả trên 5 run CMU phát triển — khởi động lạnh bị giới hạn
 bởi độ trễ có nhãn hồi cứu, không bởi ngưỡng.
 
-## Entry 8 — vách khoá hiệu chuẩn và căn chỉnh Neyman–Pearson (HSI-VN) — đăng ký trước (2026-11-04 03:40 UTC)
+## Entry 8 — vách khoá hiệu chuẩn và căn chỉnh Neyman–Pearson (HSI-VN) — đăng ký trước (2026-11-04 03:38 UTC)
 
 *Từ đây: seed 0–9 (413 run) = dữ liệu PHÁT TRIỂN (được chẩn đoán); seed 10–12 đã dùng cho C1–C4 / Entry 7; **seed 13–15 = tập KIỂM TRA**, sinh bởi
 đợt `hsi13` (cache giữ lại, xuất bản công khai sau khi sinh), chưa có kết quả nào của bất kỳ luật nào trên đó. Viết TRƯỚC khi tập kiểm tra sinh xong.*
