@@ -27,6 +27,16 @@ xác minh, Mệnh đề 4 (i)); ở α nhỏ (0.01) vài run vượt do số đo
 oracle 0.845). Tham chiếu **Claxton'24** (MLP giám sát bằng nhãn của 2 điều kiện dễ nhất, kiểu RA-L'24): recall 0.729 nhưng **287/413 run vượt
 α**, sai số 46 m — một bộ giám sát học có nhãn không được hiệu chuẩn cho off-map không thay được hiệu chuẩn trên excursion thật; Xu'21: 202/413.
 
+## Entry 7 — HSI-VM-nosc, quyết định CHỈ trên tập xác nhận mới — đăng ký trước (2026-11-04 02:10 UTC)
+
+*Viết sau kết quả giữ ra của Entry 6 (bên dưới) và TRƯỚC khi xem bất kỳ kết quả nào của tập mới seed 10–12 (đợt `hsi10`, `hsi12` chưa được kéo về).*
+**Bối cảnh:** trên tập giữ ra (đã dùng 6 vòng), biến thể ablation HSI-VM-nosc (cầu neo bằng chứng chỉ + Mondrian theo chế độ + KHÔNG cổng nhất
+quán ngắn hạn) có recall 0.794 (+0.022), 1/413 run > α, sai số điều hướng 13.9 m (−1.1 m) — tốt nhất cả ba trục; lỗ 10 % 0/108, lỗ 50 % 4/108 (sai số
+20.6 vs 22.6 m), tự nhiên 1/36. Giả thuyết này sinh ra từ tập giữ ra nên chỉ được kiểm trên dữ liệu chưa thấy.
+**Đăng ký trước (tập mới seed 10–12, 108 run, đợt `hsi12`, so với HSI-rot-m-sc trên cùng run):** **E1** ≤ 5 % run segFAR > 0.05 và segFAR TB ≤ 0.05
+trên 6/6 dataset; **E2** recall gộp ≥ HSI-rot-m-sc + 0.01; **E3** sai số điều hướng gộp ≤ HSI-rot-m-sc + 0.5 m. **Quyết định:** E1 ∧ E2 ∧ E3 ⇒
+HSI-VM-nosc thay HSI-rot-m-sc làm luật khuyến nghị (bằng chứng: giữ ra + tập mới); nếu không ⇒ giữ HSI-rot-m-sc.
+
 ## Entry 6 — khi null đã sạch, bỏ phần lớn cổng heuristic (HSI-V-sc5) — đăng ký trước (2026-11-03 19:45 UTC)
 
 *Viết TRƯỚC khi xem bất kỳ kết quả nào của tập xác nhận mới (đợt `hsi10` đang chạy) và của Entry 6.*
@@ -42,6 +52,15 @@ H1–H5 như §1.3; **H12:** recall gộp ≥ HSI-rot-m-sc + 0.02 VÀ sai số �
 tập). **Quyết định:** H1 ∧ H2 ∧ H11 ∧ H12 cho HSI-V-sc5 ⇒ HSI-V-sc5 thay HSI-rot-m-sc làm luật khuyến nghị; nếu HSI-V-sc5 trượt mà HSI-V-nosc đạt
 cả bốn ⇒ HSI-V-nosc. **Xác nhận (C4, tập mới seed 10–12, 108 run, cùng bố cục lỗ với C1–C3):** luật được chọn có ≤ 5 % run > 0.05 và recall gộp ≥
 HSI-rot-m-sc + 0.01 trên tập mới; báo cáo dù thuận hay nghịch.
+
+**Kết quả giữ ra Entry 6 (đợt `hsi11`, 441 + 216 + 36 run; nguồn cache đã kiểm; kéo về 2026-11-03 20:50, phân tích 2026-11-04 02:08 UTC).** Gộp 413
+run (recall / segFAR TB / run > α / sai số): HSI-rot-m-sc 0.772 / 0.0026 / 0 / 15.0; HSI-V 0.786 / 0.0040 / 0 / 15.3; **HSI-V-sc5 0.794 / 0.0075 / 9 / 16.7**;
+HSI-V-nosc 0.805 / 0.0077 / 9 / 17.5; HSI-VJd 0.789 / 0.0040 / 0 / 15.3; HSI-VM-nosc 0.794 / 0.0043 / 1 / **13.9**; SH 0.731 / 0.0029 / 2 / 15.6. HSI-V-sc5:
+H1 đạt (9/413 = 2.2 % ≤ 10 %; TB dataset ≤ 0.012), H11 đạt (lỗ 10 % 2/108, 50 % 6/108, tự nhiên 3/36), **H12 không đạt** (recall +0.022 đạt nhưng
+sai số +1.7 m > +0.5: old town 31.6 → 45.0 m, Boreas 6.9 → 8.9 m). HSI-V-nosc: H12 không đạt (+2.5 m), H11 không đạt (tự nhiên 5/36).
+**Quyết định:** HSI-rot-m-sc vẫn là luật khuyến nghị. **Bài học:** tập thiết kế (28 run) không lộ cái giá điều hướng — cổng nhất quán ngắn hạn
+chủ yếu chặn fix SAI XA trong bản đồ (ảnh hưởng điều hướng, không ảnh hưởng segFAR); bỏ cổng cần một cơ chế khác giữ an toàn điều hướng
+(Mondrian theo chế độ làm được điều đó trên giữ ra: HSI-VM-nosc — kiểm ở Entry 7 trên dữ liệu mới).
 
 ## Entry 5 — chứng nhận rồi hiệu chuẩn: chứng chỉ hình học làm điểm neo hồi cứu (HSI-V) — đăng ký trước (2026-11-03 18:45 UTC)
 
