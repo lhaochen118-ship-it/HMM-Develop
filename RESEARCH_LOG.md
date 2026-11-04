@@ -27,7 +27,7 @@ xác minh, Mệnh đề 4 (i)); ở α nhỏ (0.01) vài run vượt do số đo
 oracle 0.845). Tham chiếu **Claxton'24** (MLP giám sát bằng nhãn của 2 điều kiện dễ nhất, kiểu RA-L'24): recall 0.729 nhưng **287/413 run vượt
 α**, sai số 46 m — một bộ giám sát học có nhãn không được hiệu chuẩn cho off-map không thay được hiệu chuẩn trên excursion thật; Xu'21: 202/413.
 
-## Entry 7 — HSI-VM-nosc, quyết định CHỈ trên tập xác nhận mới — đăng ký trước (2026-11-04 02:10 UTC)
+## Entry 7 — HSI-VM-nosc, quyết định CHỈ trên tập xác nhận mới — đăng ký trước (2026-11-04 02:05 UTC)
 
 *Viết sau kết quả giữ ra của Entry 6 (bên dưới) và TRƯỚC khi xem bất kỳ kết quả nào của tập mới seed 10–12 (đợt `hsi10`, `hsi12` chưa được kéo về).*
 **Bối cảnh:** trên tập giữ ra (đã dùng 6 vòng), biến thể ablation HSI-VM-nosc (cầu neo bằng chứng chỉ + Mondrian theo chế độ + KHÔNG cổng nhất
