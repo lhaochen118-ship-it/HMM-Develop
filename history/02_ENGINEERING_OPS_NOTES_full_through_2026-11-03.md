@@ -1,0 +1,507 @@
+# 02 — Engineering & Operations Lessons
+
+*Cập nhật 2026-10-31 (branch `hmm-navigation-3`). Chỉ về **kỹ thuật và vận hành**: code, môi trường, Kaggle, cách chạy
+thí nghiệm, lỗi đã gặp và cách sửa, bài học. **Đọc §0 trước** (vòng 2026-10-31, mới nhất), rồi §8 (vòng HMM-navigation
+2026-10-29). §1–§7 viết trong giai đoạn SelfCal, vẫn đúng trừ chỗ §0 ghi đè. Bảng tài khoản và dataset:
+`ENVIRONMENT_SUMMARY.md`.*
+
+## I2. Vòng ý tưởng 2 (2026-11-03, HSI): vận hành — đọc cùng §00
+
+- **Đánh giá HSI chỉ cần CPU** (từ cache `nav_demo --cache`): `analysis/hsi_eval.py <cache> <ds> <desc> <seeds> --variants ...`; đợt: `automation/hsi_wave.py`
+  (LPT theo frame × biến thể) → `fanout.py --groups --build-only --cpu --nodumps --ds <cache datasets> --par 4` → `central_monitor.py` → `automation/hsi_collect.py`.
+  441 run × 12 biến thể ≈ 17 phút trên 10 phiên CPU (2 acc × 5); không tốn hạn mức GPU.
+- **`--nodumps`** (make_eval_kernel): không mount dump descriptor; runner phải tạo `dump_all` rỗng (lỗi đã gặp: FileNotFoundError ở dòng in thư mục dump — mọi
+  kernel hỏng trong 1 phút; đã sửa).
+- **Token runner với nhiều dataset cache cùng tên file** (cache chính và cache lỗ 10/50 % có CÙNG tên `navcache_<ds>_<desc>_s<seed>.npz`): dùng
+  `DIR:navcache_@<tên thư mục>` tường minh (`@hmm-navcache-v2`, `@hmm-e37-caches`, `@d10`, `@d50`); `hsi_eval` ghi `cache_path` vào JSON để kiểm.
+- **OpenMP quá tải:** hai tiến trình HistGradientBoosting song song với OMP mặc định (4 luồng mỗi tiến trình trên 4 lõi) chậm ~10× — đặt
+  `OMP_NUM_THREADS` = lõi / số job (runner đã làm; cục bộ phải tự đặt).
+- **Băm đơn vị hiệu chuẩn:** `(unit * hằng) % 2` với unit chẵn cho mọi đơn vị cùng lớp (CMU: mọi chuỗi thành đơn vị hiệu chuẩn, mô hình không
+  bao giờ được huấn luyện) — dùng `calib_units` (ngẫu nhiên tất định theo đơn vị).
+- Phiên khác (ý tưởng 1) có thể đẩy commit lên cùng branch: `git fetch` + `git rebase origin/hmm-2nd-idea` trước khi push.
+
+## 00. NGUYÊN TẮC TỐI ƯU TÀI NGUYÊN (đúc kết đến 2026-11-03; áp dụng cho mọi đợt của ý tưởng 2)
+
+| Tài nguyên | Thực tế đo được | Quy tắc |
+|---|---|---|
+| Phiên L4×4 (Kaggle, competition `gemma-4-developer-agent`) | 4 × L4 23 GB, 48 vCPU, 197 GB RAM, internet tắt | 46 job đơn luồng / phiên (`--par 46`, 1 luồng BLAS/job), GPU chia vòng theo chỉ số job |
+| GPU | 12 tiến trình/GPU bị chia thời gian; lời gọi nhỏ ⇒ GPU ≈ CPU. Gộp lô qua nhiều đơn vị: 35.5 → 18.3 ms/frame (1.94×); MPS 1.34× (code chưa gộp), 0× (đã gộp) | Thiết kế phần GPU theo lô lớn (≥ 1 000 hàng); float64 khi cần trùng numpy; lô tự chia đôi khi OOM; `expandable_segments` |
+| VRAM | Code cũ dùng ~11 % (0.2 GB/job); lô 2 048 hàng ~2 GB/job ⇒ OOM khi 12 job/GPU | ~1 GB/tiến trình |
+| CPU | Bão hoà; HT làm mỗi job chậm ~1.5× khi đủ tải | Đo ms/frame **dưới tải đầy**, không phải 1 job |
+| RAM | ≤ 3 GB/job phần lớn; Boreas 8448 chiều 3–6 GB | fp16 khi lưu, đổi kiểu theo chuỗi; ≤ ~12 job nặng/phiên |
+| Hạn mức GPU | 30 GPU-giờ/tuần/acc; L4×4 = 4 GPU-giờ/giờ (~7.5 giờ L4/tuần/acc) | Ước GPU-giờ trước đợt; báo user khi thiếu acc L4 |
+| Phiên CPU | 5/acc, 4 vCPU, ~30 GB, có internet, không tốn hạn mức GPU | Đơn vị nhỏ / job tải dữ liệu / đánh giá nhẹ |
+| API Kaggle | Giới hạn theo IP (~80 tiến trình hỏi trạng thái ⇒ bị chặn) | Một `central_monitor.py`, khoảng cách 20–30 s; đẩy liên tục khi còn slot; bỏ qua acc bị người khác chiếm / hết hạn mức |
+| Đĩa phiên chat | 30 GB | Giải nén đầu ra một lần, xoá tar; publish dataset rồi xoá bản cục bộ |
+
+Luồng chuẩn của một đợt: (1) smoke test cục bộ đầu-cuối trên dữ liệu nhỏ; (2) kernel thăm dò với job thật dưới tải đầy (ms/frame, RSS, VRAM,
+GPU = numpy); (3) chi phí đo ⇒ đóng gói LPT theo đơn vị phụ thuộc (job chuẩn bị đầu, job chờ cuối), gộp mọi giai đoạn trong kernel;
+(4) đồng bộ code dataset mọi acc, chờ "ready"; (5) một monitor đẩy và kéo; (6) gom kết quả ngay khi từng kernel xong.
+
+## 0. Bài học vận hành mới nhất cho ý tưởng 2 (2026-11-03, sau Entry 39 của ý tưởng 1)
+
+- **API Kaggle (giới hạn theo IP, cửa sổ dài):** bị chặn 2 lần liên tiếp sau khi kéo hàng chục đầu ra lớn + vòng kiểm tra song song 9 acc. Chỉ một
+  tiến trình gọi API; kéo đầu ra cách nhau ≥ 45 s; không vòng `datasets status` song song; kernel vẫn chạy khi bị chặn, chỉ việc kéo bị trễ.
+- **central_monitor:** hỏi kernel quá hạn lâu nhất trước (bản cũ bỏ đói acc khác); bỏ qua acc bị người khác chiếm GPU (15 phút) và acc hết hạn
+  mức tuần (7 ngày); khi chuyển kernel sang acc khác thì đồng bộ code dataset của acc đó và chờ "ready".
+- **Đường găng thay vì tổng chi phí:** một bước chuẩn bị CPU dài (Boreas 41–55 phút) làm mọi job phụ thuộc chờ, kernel L4 kéo dài gấp đôi. Tách bước
+  chuẩn bị nặng thành đợt riêng trước, hoặc đưa lên GPU; xếp job phụ thuộc theo thời gian chuẩn bị tăng dần.
+- **Phiên CPU (4 vCPU):** chậm ~1.3× so với ước tính từ L4-GPU; dùng cho đơn vị nhỏ, không tốn hạn mức GPU.
+- **Gom kết quả:** giữ MỌI file trung gian cần cho phân tích sau (vd. cache sinh trong kernel) trước khi xoá tar; tải lại tốn 30 phút và rủi ro API.
+- **Toạ độ 3-D:** luôn dùng trục phẳng `z["hz"]` (4Seasons, NCLT); dùng 2 cột đầu đã làm sai một chẩn đoán.
+
+## 000000000. Vòng 12 (2026-11-03, Entry 38): vận hành
+
+- **Hạn mức GPU:** mỗi acc 30 GPU-giờ/tuần; phiên L4×4 tính **4 GPU-giờ mỗi giờ** (≈ 7.5 giờ L4/acc/tuần). `nhatlong1103` hết quota trong vòng này
+  ("Maximum weekly GPU quota of 30.00 hours reached"); central_monitor bỏ qua acc hết quota 7 ngày. Phiên CPU (5/acc) không tốn quota.
+- **Acc bị người khác chiếm GPU** ("Maximum batch GPU session count of 2 reached" dù monitor không chạy gì ở đó, ví dụ caotienminh1): monitor bỏ qua
+  acc đó 15 phút và đẩy sang acc kế tiếp (trước đây đẩy lặp vào cùng acc). Khi chuyển kernel sang acc khác, monitor đồng bộ code dataset của acc
+  đích trước khi đẩy (lỗi "can't open file mps_probe.py").
+- **Tăng tốc đã đo trên L4 (48 job CMU):** gộp lô phép thử tuyến (`FwdStats.multi_stats`) 35.5 → 18.3 ms/frame (1.94×), đầu ra trùng tuyệt đối;
+  MPS 1.34× với code cũ, không thêm khi đã gộp lô. Lô GPU 1 024 hàng (`CMS_BATCH`), tự chia đôi khi OOM; `PYTORCH_CUDA_ALLOC_CONF=expandable_segments`.
+- **Đĩa phiên 30 GB:** mỗi kernel kéo về results.tar + bản giải nén (~0.6 GB/kernel E38) ⇒ đầy đĩa giữa đợt, monitor chết khi ghi state. Dùng
+  `collect38.sh`-kiểu: giải nén một lần, chép oc/frames/fwd, xoá tar và bản giải nén ngay.
+- **Chia lại đợt khi thiếu slot:** đơn vị run nhỏ (4S, Nordland, CMU) → phiên CPU (`make_eval_kernel` không `--l4`, `--par 4`); run lớn (Boreas, Oxford)
+  → một kernel L4 chờ slot.
+
+## 00000000. Vòng 11 (2026-11-03, Entry 37): vận hành
+
+- **Kernel thăm dò trước đợt lớn** (`e37p-1`, job THẬT của đợt): đo ms/frame dưới tải đầy (46 job/phiên L4), RAM đỉnh, GPU, và so GPU với
+  numpy (cùng job, `analysis/envrun.py CMS_DEVICE=numpy @results/np ...`). Không có API xem log kernel đang chạy ⇒ thăm dò ngắn là cách duy nhất.
+- **Đánh giá gộp trong kernel:** `analysis/e37_eval.py --wait` (chờ `.done` của các phần do `e37_fwd.py` ghi), mỗi run là một đơn vị đóng gói
+  (`automation/e37_wave.py`, chi phí đo ở `automation/e37_costs.json`); job chờ xếp cuối hàng FIFO ⇒ không deadlock. Lưu ý thứ tự: job bọc
+  trong `envrun.py` phải nhận diện theo tên script ở 3 từ đầu (lỗi đã sửa).
+- **Token runner mới:** `DIR:<tiền tố>@<tên thư mục>` (chọn đúng `d10`/`d50`/`hcms_d10` khi nhiều dataset có cùng tiền tố file).
+- **central_monitor:** khi còn kernel chờ slot thì đẩy liên tục (bỏ qua hỏi trạng thái); `MAX_ACC = 10` (user cấp 10 acc). Dừng monitor bằng
+  PID của tiến trình **python**, không phải vỏ bash (pgrep -f khớp cả vỏ bash ⇒ đã có lúc hai monitor chạy cùng state).
+- **Tải dataset:** tải nguyên dataset một lệnh (`kaggle datasets download <slug>`) thay vì hàng trăm lệnh từng file song song (tránh giới hạn API);
+  tải file trong thư mục con bằng `-f d10/x.npz` sẽ ghi vào `<p>/d10/`.
+- **St Lucia:** ảnh cắt cục bộ (video HF, cv2), đăng `stlucia-vpr-frames`; kernel L4 offline `automation/make_stlucia_kernel.py` (model Kaggle
+  `metaresearch/dinov2/pyTorch/large/1` cho ViT-L); đọc lần đầu từ `/kaggle/input` chậm ⇒ 16 worker DataLoader.
+- **Thời gian thật:** đợt 1 41–46 phút/kernel (ước 27: job đánh giá và N = 40 Boreas 8448 chiều nặng hơn ước).
+
+## 0000000. Vòng 10 (2026-11-02, Entry 36): vận hành
+
+- **Không có token Kaggle trong phiên:** dữ liệu công khai tải bằng `automation/anon_download.py` (navcache-v2, hmm-cms-cache-exact, hmm-topk,
+  hmm-route-cache, các dump descriptor, Oxford dump, trọng số); mọi tính toán chạy trên 4 lõi CPU (15 GB RAM, ~30 GB đĩa của phiên).
+- **Script mới:** `analysis/cms_vec.py` (thống kê phản thực vector hoá; mặc định của `cms_exact.stats`, `CMS_LOOP=1` để dùng vòng lặp cũ),
+  `analysis/cms_fwd.py` (null tiến: lối thoát ảo + khởi đầu ảo; lưu `fwd_<ds>_<desc>_s<seed>.npz`), `analysis/cst_audit.py` (kiểm toán
+  tỷ lệ qua của đoạn off-map thật; `FWD_DIR` cho null tiến), `analysis/e36_run.py` (một run đầu-cuối: top-300 → thống kê → null tiến →
+  luật), `analysis/e36_queue.py` (hàng đợi N worker; đối số sau tên job viết dạng `+--sfx +_conf`), `analysis/n40_run.py`,
+  `analysis/topk_long_dump.py`, `analysis/safevpr26.py` (+ `--holes`), `analysis/safevpr26_eval.py`, `automation/make_stlucia.py`,
+  `automation/extract_desc_cpu.py`, `paper/build_e36_report.py`.
+- **Lỗi đã gặp:** (1) đường CPU của `cms_exact.topk_long` dùng std lệch (N) khác GPU (N − 1) — đã sửa; (2) OOM (15 GB) khi chạy song song
+  nhiều run Boreas 8448 chiều — `cms_fwd` giữ descriptor fp16 và đổi kiểu theo từng chuỗi; tối đa ~3 run Boreas cùng lúc; (3) `pkill -f`
+  / `kill` theo mẫu lại giết nhầm (dừng nhầm vỏ bash) — dùng PID cụ thể; (4) `list.remove(dict)` so sánh mảng ⇒ lỗi, dùng lọc theo `id`;
+  (5) vòng lặp tham chiếu `cms_stats_exact` lỗi khi một frame cửa sổ bị che hết danh sách (N = 40, KL = 100) — bản vector hoá xử lý được;
+  (6) đĩa đầy (30 GB) do patch token SafeVPR — xoá sau khi dùng.
+- **Thời gian (1 lõi, máy dùng chung tải ~5):** thống kê phản thực 3.9 ms/frame; null tiến 4–31 ms/frame (Boreas/NCLT lớn nhất; một run Boreas
+  ~40–60 phút); luật (`oc_curves --fams @E36`, cond + loco) 0.5–6 phút/run.
+
+## 000000. Vòng 9 (2026-11-01): vận hành
+
+- **Rate limit API Kaggle:** 59 tiến trình `run_kernel.py` hỏi trạng thái 30 s/lần (≈ 2 yêu cầu/s từ một IP) ⇒ mọi lệnh `kaggle`
+  trả "You have been rate limited" từ khoảng 11:45; kernel vẫn chạy trên Kaggle nhưng không ai phát hiện xong / tải output.
+  Sửa: `run_kernel.py` hỏi mỗi `RK_POLL` giây (mặc định 120, jitter +50 %) và lùi 5–6 phút khi gặp rate limit; khôi phục bằng
+  `reattach.py` (gắn lại theo thư mục kernel). Không chạy thêm lệnh `kaggle` thủ công khi đang có hàng chục monitor.
+- `pkill -f run_kernel.py` / `kill $(pgrep -f run_kernel.py)` cũng giết các vòng chờ bash có chuỗi đó trong dòng lệnh — dùng
+  `pgrep -f "[r]un_kernel.py"` và tránh viết nguyên chuỗi trong lệnh chờ (ghép chuỗi `run_""kernel.py`).
+- Khi mọi phiên GPU đều bận, `fanout.py` thử đẩy lại trên mọi acc rồi bỏ cuộc (`PUSH_FAILED`): ghi lại nhóm job để chạy lại sau.
+- Dataset mới phải được đăng lại dưới `nhatlong1103` (quy định user 2026-11-01): kernel dump tự đăng bằng token (kernel GPU có
+  internet, không phải L4). Kaggle bỏ "+" khỏi tên file trong dataset.
+
+## 00000. Vòng 8 (2026-11-01): vận hành
+
+- Script mới: `analysis/natural_eval.py` (benchmark off-map tự nhiên 4Seasons chéo cảnh, cả pipeline trong một job: nav_demo
+  `--cache-only` → top-300 → null chính xác → route cache → oc_curves; ~20 phút một job trên 4 nhân CPU), `analysis/holes_regate.py`
+  (chạy lại điểm mặc định của các run lỗ 10/50 % từ thống kê đã lưu, dataset `nhatlong1103/hmm-holes-cms-exact`),
+  `paper/build_e30_report.py`; `vprlib.load_4s_cross`; cờ `--nav-q`, `--nav-sig`, `--nav-init top1` (đọc ở import `nav_demo`);
+  `oc_curves.py --cms-groups cond,loco,online`, preset `@E30`, `@E30F`, `@E30H`; `cms_jobs.py --all-defaults --tag t`.
+- **Lại gặp:** sửa `analysis/*.py` trong lúc fanout đang tạo kernel → mỗi acc upload lại code (~1 phút/kernel, 70 kernel ≈ 50 phút
+  tạo). Viết hết script của đợt 2 **trước** khi chạy fanout đợt 1, hoặc đặt ở thư mục khác rồi copy vào sau khi tạo kernel xong.
+- Hạn mức phiên GPU (2/acc) dùng chung cho L4 và T4 ⇒ không thể chạy thêm một đợt GPU khi 20 phiên L4 đang chạy; đợt 2 (36 job
+  tự nhiên, 72 job lỗ) chạy trên CPU sau khi đợt CPU đầu xong.
+- `os.walk` không theo symlink: script tự tìm thư mục input phải dùng `followlinks=True` (thử local bằng symlink).
+- Thống kê CMS lưu float32 (`results/cms_*.npz`): luật α = 0.01 nhạy với làm tròn ở biên (CMS-CPCW α = 0.01 lệch tới 0.013 recall
+  so với bản float64 trong kernel) — mọi so sánh trong một bảng phải dùng cùng một nguồn.
+
+## 0000. Vòng 7 (2026-11-01): vận hành
+
+- Script mới: `analysis/cms_exact.py` (top-300 GPU + null chính xác), `analysis/navrisk.py` (cổng +NGR), `analysis/paired_stats.py`,
+  `paper/build_e29_report.py`; `oc_curves.py --navgate`, preset `@E29`, `@E29H`.
+- **Chính sách L4 (user):** QUEUED quá 5 phút → huỷ + đẩy lại, tối đa 5 lần; vẫn không được → 2×T4 (`fanout.py --l4` tự làm: xoá kernel
+  L4 kẹt, tạo lại `--t4` với `--par 3`, stall 10 phút).
+- 20 phiên L4 chạy đồng thời (thống kê chính xác 10 + lỗ 10) cộng 50 phiên CPU dự phòng; L4 xong trước (~30 phút) → lô CPU xoá.
+  Hai phiên CPU bị từ chối "Maximum batch CPU session count of 5" (acc đã đủ 5) — fanout tự thử acc khác.
+- Đánh giá cuối 366 run × ~70 họ luật (kể cả cổng): 10 phiên L4, ~15 phút.
+- Lỗ 10/50 % với null chính xác: 23 job/phiên L4 làm một job Boreas SALAD (8448 chiều) bị OOM (rc = −9) và hai phiên chạy ~90 phút;
+  chạy lại ở 12 job/phiên. Quy tắc: job Boreas 8448 chiều ≤ 12 job/phiên L4 (197 GB RAM).
+
+## 000. Vòng 6 (2026-11-01, branch `hmm-navigation-5`): bài học mới (đọc trước §00)
+
+### 000.1 Script mới
+
+| Script | Việc |
+|---|---|
+| `analysis/cms.py` | CMS (phẫu thuật bản đồ phản thực): `cms_stats` (chi phí tuyến TAO + độ khác biệt, thật và phản thực, một lượt), `rules` (CMS-T, CMS-T/H(+SH), CMS-CPC/H+SH, CMS-W/H(+SH), CMS-U/H+SH, CMS-F, -PAC), nhóm hiệu chuẩn `GROUP` = `cond` (Mondrian, điều kiện < 2/α đoạn được gộp) / `run` / `loco` (nhân quả: chỉ dùng phiên khác) |
+| `analysis/cms_dump.py` | Thống kê CMS cho mọi seed (`--rho-add k`: ρ = off_d + k·excl, mặc định 0) → `results/cms_*.npz`; dataset `nhatlong1103/hmm-cms-cache` (ρ = off_d), `hmm-cms-cache-r1` (ρ = off_d + excl, tiền tố `cmsr1_`) |
+| `analysis/cms_diag.py` | Kiểm Định lý 6 bằng nhãn (π, cận α(n+1)/(πn+1), tỷ lệ khởi phát sai thực tế, đuôi null phản thực so với off-map thật) |
+| `analysis/holes_eval.py` | Độ bền tỷ lệ lỗ 10/50 %: top-100 (GPU/CPU) + CMS + `oc_curves` trong một job (`hmm-navcache-holes`, token `DIR:navcache_`) |
+| `analysis/rho_eval.py` | Độ nhạy bán kính phẫu thuật (seed 0) |
+| `automation/cms_jobs.py` | File `--groups` cân bằng tải LPT theo số frame (`--script oc_curves.py` cho đánh giá: đường cong seed 0–2, mặc định seed 3–9) |
+| `paper/build_e28_report.py` | Bảng báo cáo vòng 6 |
+| `oc_curves.py` | Cờ mới: `--cms DIR`, `--cms-extra DIR --cms-extra-tag t` (bộ CMS thứ hai, hậu tố `{t}`), `--cms-alpha 0.05,0.01`, `--cms-groups cond,loco`, `--out-suffix`, `--light` (chỉ CPC-SC/CPC-SC+CS trong `--variants`), `--fams @E28` (preset họ luật: job ngắn) |
+
+### 000.2 Lỗi đã gặp và sửa
+
+| Lỗi | Hậu quả | Sửa / bài học |
+|---|---|---|
+| Danh sách họ luật dài trong tham số job → tên file log > 255 ký tự | 6 kernel L4 lỗi ngay (`OSError: File name too long`) | Runner cắt tên log (`%03d_` + 120 ký tự); preset `--fams @E28` |
+| `fanout.py` chỉ đếm `results/*.json` | "OK 0 results" với job chỉ ghi `.npz` | Bình thường khi `--nocopy`; kéo `.npz` từ `<run>/<slug>_out/results/` |
+| Sửa `analysis/*.py` trong lúc `fanout` đang tạo kernel | Mỗi acc kế tiếp upload lại code (~47 s mỗi lần) | Chỉ sửa code khi không có lô đang tạo kernel (code đang chạy không bị ảnh hưởng) |
+| Bán kính phẫu thuật ρ = off_d + excl (đăng ký trước) | Null phản thực ít giống bản đồ hơn off-map thật ⇒ vi phạm theo seed | ρ = off_d (đúng biên, S2); tính lại 366 run (~25 phút trên 50 kernel CPU) |
+| `publish_dataset.py` báo `499 Client Error` | Dataset vẫn tạo đủ (kiểm bằng `anon_download.list_files`) | Luôn kiểm số file sau khi publish |
+
+### 000.3 Kaggle vòng này
+
+- 10 acc được cấp (user, 2026-11-01): `nhatlong1103`, `quynhle07`, `quynhtran35`, `caotienminh1`, `nguyenhoa99`, `yuan1103`,
+  `synchan5704`, `anderson1202`, `loinguyentran`, `yeshenhi` (hai acc cuối thêm giữa phiên). `yuan1103`, `yeshenhi` không
+  còn trong `reserved_accounts.txt`.
+- 50 kernel CPU (10 acc × 5, lấp đầy từng acc) cho thống kê CMS: tạo ~10 phút, chạy ~25 phút (Boreas ~15 phút/seed/tiến
+  trình). L4×4 được cấp trong 1–2 phút ở hầu hết acc lần này (6/6 `holb`, 1/6 `holc` ngay, còn lại QUEUED rồi được cấp).
+- Thống kê CMS chỉ cần CPU: một lượt tính chung cho thật + phản thực (≈ 12 ms/frame/lõi).
+
+## 00. Vòng 2026-10-31 (`hmm-navigation-4`): bài học mới (đọc trước §0)
+
+### 00.1 Script mới
+
+| Script | Việc |
+|---|---|
+| `automation/anon_download.py` | Tải dataset **public** Kaggle không cần token, từng file, song song (`--match` regex). Tên file có thư mục con phải gửi `/` dạng `%2F` |
+| `analysis/topk_dump.py` | Top-K (K = 100) ứng viên mỗi frame cho mọi seed (một matmul với bản đồ đầy đủ, mask theo `kidx`); GPU nếu có. Kết quả public: `nhatlong1103/hmm-topk` |
+| `analysis/tao.py`, `trail.py`, `vlm_audit.py`, `vlm_eval.py` | Baseline TAO'26, TRAIL'26, VPR-auditing'26 (đặc tả: `literature/BASELINES_2026.md`) và đánh giá VLM trên cùng frame |
+| `analysis/cpc_geo.py`, `geo_cons.py`, `geo_place.py`, `gpc.py`, `dep_diag.py`, `e26_summary.py` | Luật Entry 26 (SH, CPC-W, SCJ, CPC-SC-T), chứng chỉ GPC, chẩn đoán phụ thuộc, tổng hợp |
+| `oc_curves.py` | Cờ mới: `--geo/--only-geo`, `--topk DIR` (TAO26, TAO-SC, CPC-SC-T…), `--mapdump DIR` (null top-K cho TAO-SC/CPC-SC-T), `--trail DIR`, `--fams a,b` (chỉ đánh giá các họ này), `--seeds` |
+| `make_eval_kernel.py` | `--models` (Kaggle model sources), `--t4`, token `TOPK`; `CACHE`/`TOPK` chỉ khớp file `.npz` |
+| `fanout.py` | Dùng **mọi** acc (acc dự trữ xếp cuối); `--cpu` dùng 5 phiên CPU/acc; `--models` |
+
+### 00.2 Lỗi đã gặp và sửa
+
+| Lỗi | Hậu quả | Sửa / bài học |
+|---|---|---|
+| Token `TOPK` khớp thư mục code (file `topk_dump.py` bắt đầu bằng `topk_`) | Lô TRAIL/TAO đầu tiên đọc nhầm thư mục, lỗi FileNotFound | Token chỉ khớp `topk_*.npz` (tương tự `navcache_*.npz`) |
+| Cờ `--dump` của `oc_curves` bị `nav_demo` (import trước) hiểu là cờ của nó | `DUMPD = None`, họ TAO-SC biến mất không báo | Đổi tên `--mapdump`; mỗi cờ mới phải smoke-test đầu-cuối |
+| 4 job VLM song song trong một phiên cùng tạo symlink vào `/tmp/qwen_vl_patched` | 3/4 job chết (FileExistsError) | `tempfile.mkdtemp()` riêng mỗi tiến trình |
+| Model Kaggle `qwen-lm/qwen2.5-vl/transformers/7b-instruct/2` ghi `image_processor_type: Qwen2_5_VLImageProcessor` (transformers mới không còn lớp này) | AutoProcessor lỗi | Thư mục symlink + vá `preprocessor_config.json` thành `Qwen2VLImageProcessor` |
+| Slug `tk-1` | "Title must be at least five characters" ở mọi acc (failover lặp vô ích) | Slug ≥ 5 ký tự |
+| Ba tiến trình `publish_dataset.py` song song cùng thư mục stage | Upload chồng nhau | Một chuỗi tự động duy nhất; giết hết rồi publish lại một lần |
+| `pkill -f <pattern>` (lại lần nữa) | Giết shell của chính mình (exit 144) | Chỉ `ps -eo pid,args | grep … | grep -v grep` + `kill <pid>` |
+| `cd X && cmd &` | `cd` chỉ có hiệu lực trong subshell nền | Dùng đường dẫn tuyệt đối cho lệnh nền |
+
+### 00.3 Kaggle vòng này
+
+- 19 acc (thêm `quynhtran35`). Hàng đợi **L4 và cả T4** tắc nhiều lần (QUEUED > 5 phút → `run_kernel` huỷ/đẩy lại tối đa 4
+  lần; sau STALL_GIVEUP kernel đẩy lần cuối có thể vẫn nằm hàng đợi → `reattach.py` hoặc xoá). Job nhẹ chuyển T4/CPU.
+- Phiên L4 thứ hai của một acc nhiều lần nằm QUEUED trong khi phiên thứ nhất chạy: khi cần nhiều L4, rải 1 phiên/acc
+  trước.
+- 84 kernel CPU (5/acc) chạy song song không xếp hàng: đánh giá từ cache nên đưa lên CPU; chuẩn bị 84 kernel mất ~15 phút
+  (mỗi `make_eval_kernel` ≈ 10 s).
+- Qwen2.5-VL-7B bf16 trên L4: ≈ 3 cặp ảnh/giây/GPU (prefill-only), nạp model ~2 phút từ `/kaggle/input`.
+
+## 0. Vòng 2026-10-31 (`hmm-navigation-3`): bài học mới
+
+### 0.1 Script và công cụ mới
+
+| Script | Việc |
+|---|---|
+| `analysis/cpc_sc.py` | Luật đề xuất CPC-SC+CS (`cpc_sc_cs`), `sc_evidence`, `consistency_ok`, `cs_cal` (thử nghiệm, âm) |
+| `analysis/oc_curves.py` | Đường cong vận hành mọi luật từ cache; `--variants` (biến thể), `--cs-sens` (độ nhạy), `--defaults-only` (nhanh) |
+| `analysis/oc_matched.py` | So khớp chính xác tại FL / recall của baseline (Kalman chạy thật); `--summary` |
+| `analysis/oc_summary.py`, `lodo_select.py` | Tổng hợp đường cong; chọn biến thể leave-one-dataset-out |
+| `analysis/recall_diag.py`, `pcr.py` | Phân rã recall; PCR (âm) |
+| `paper/build_oc_report.py` | Bảng `paper/oc_tables.md` + ghép `paper/phanbien_text.md` → `BAO_CAO_PhanBien.md` |
+| `nav_demo.py` | `--cache` có thêm `pof_h`, `e_h` (Xu'21), `conf_c`, `lo_c`, `est_n` (MAP chuỗi vị trí trên null), `mtop` (SafeVPR); `--pred`; `--cache-only` (bỏ fit baseline có nhãn và Kalman, nhanh hơn); `--drop f` (cache `navcache_dXX_*`) |
+| `automation/fanout.py` | `--groups` (mỗi dòng file job = 1 kernel), `--par N` (số job song song/phiên), `--nocopy` (không chép JSON vào repo) |
+| `automation/make_eval_kernel.py` | Token `CACHE` (thư mục cache được mount); gói `results/`+`logs/` thành `results.tar`; **bỏ qua upload code khi mã băm không đổi** (`~/.kaggle/codehash_<acc>`) |
+| `automation/run_kernel.py` | Giải nén `results.tar` khi kéo; **chỉ đọc `KernelWorkerStatus.*`** (lỗi mạng tạm thời không còn bị hiểu là kernel lỗi) |
+
+**Mẫu dùng nhiều nhất:** phân tích mọi luật mới hoàn toàn từ cache (không chạy lại `nav_demo`): thêm family vào
+`oc_curves.families`, chạy `oc_curves.py <cache_dir> <ds> <descs> --variants --defaults-only` cục bộ (Boreas 18 cache ≈ 10
+phút với 4 tiến trình) hoặc trên kernel CPU với token `CACHE`.
+
+### 0.2 Kaggle
+
+- **Token:** `~/.kaggle/tokens_raw` (danh sách gốc, chmod 600), `~/.kaggle/tok_<acc>`; tên acc của token lấy bằng
+  `KAGGLE_API_TOKEN=<tok> kaggle config view`. 18 acc (xem `ENVIRONMENT_SUMMARY` §3). Kiểm kết nối:
+  `kaggle competitions list`.
+- **Hàng đợi L4 tắc thường xuyên** (2026-10-31: QUEUED > 20 phút sau 4 lần huỷ/đẩy lại trên `caotienminh1`,
+  `phuongnehe`, `phatle1578`). Khi chạy được, một phiên L4 (48 CPU, 197 GB) làm 14 job `nav_demo` trong ≈ 60 phút.
+  Chiến lược: thử L4; nếu kẹt thì job chỉ cần CPU (đường cong, phân tích, dataset nhẹ) chạy **kernel CPU** (4 nhân, 5 phiên
+  mỗi acc, quota riêng với GPU), job nặng chạy T4.
+- **RAM T4 30 GB:** 2 job Boreas với descriptor 8448 chiều (SALAD, MegaLoc) trong một phiên bị OOM (rc = −9) khi bản đồ
+  lớn (khuyết 10 %). Quy tắc: Boreas ≤ 2 job/phiên T4 ở 30 % lỗ, 1 job/phiên với bản đồ lớn hơn.
+- **Tách job theo seed** (`--seed0 s`, 1 seed/job) để cắt đuôi dài (4S countryside 3 seed: 61 phút → ≈ 20 phút/job).
+- **Acc dùng chung với phiên khác:** `thnliu`, `linhmai24`, `lelynhan`, `huyenco`, `mucnokieu`, `mxuanquy` có kernel
+  `zc-*`, `vicoqa-*` không phải của dự án này — không đụng vào, chỉ dùng slot còn trống.
+- **Huỷ kernel:** `kaggle kernels delete -y`, từng lệnh một. Sau STALL_GIVEUP phải tự xoá kernel (nếu không nó có thể chạy
+  muộn và trùng lặp).
+
+### 0.3 Lỗi đã gặp vòng này
+
+| Lỗi | Hậu quả | Sửa / bài học |
+|---|---|---|
+| `hmm_fix` tự đọc và **xoá** `--drop` khỏi `sys.argv` khi import (trước `nav_demo`) | Lô 10 %/50 % đầu tiên (18 phiên T4) thực chất chạy 30 % | `nav_demo` đọc `hmm_fix.DROP`; **smoke-test đầu-cuối mọi cờ mới** (kiểm `n_map`, tên file) trước khi chạy hàng loạt. Cùng loại lỗi với `--safevpr` (Entry 23) |
+| Hai job cùng (ds, desc) khác tỷ lệ lỗ trong một kernel ghi cùng tên cache | Ghi đè | Tên cache mang hậu tố `_dXX` |
+| `pkill -f <pattern>` khớp cả lệnh shell của chính mình | Lệnh bị giết (exit 144) | Lấy PID bằng `ps -eo pid,args | grep … | grep -v grep` rồi `kill <pid>` |
+| Container khởi động lại giữa lúc fanout đang tạo kernel | Lô `dropB` chưa push được kernel nào; monitor chết | Gắn lại bằng `reattach.py`; lô dở dang thì chạy lại toàn bộ; ghi tên run vào `runs/active_runs.txt` (mỗi dòng **chỉ tên**, không kèm đường dẫn) |
+| `run_kernel` thấy chữ "error" trong traceback lỗi mạng | Báo nhầm kernel lỗi, ngừng theo dõi | Chỉ đọc `KernelWorkerStatus.*` |
+| Sai số điều hướng **nội suy** dọc đường cong | Số vô lý (sai số không đơn điệu theo ngưỡng) | `oc_matched.py`: Kalman tại đúng ngưỡng khớp |
+| Đếm "thắng" sai chiều vì khoá `d_FL@base_recall` chứa chữ "recall" | Bảng thắng/thua đảo ngược | So khớp tiền tố khoá |
+| Null của PCR che block của chính nó → ít ô cạnh tranh hơn query | p-value hạng-1 lệch thang | Không sửa (PCR đã loại); nếu dùng lại thì xếp hạng ngẫu nhiên hoá |
+
+### 0.4 Bài học tổ chức thí nghiệm
+
+- **Đăng ký trước** ứng viên, tiêu chí và tập giữ lại trong `RESEARCH_LOG.md` (có commit/push) **trước** khi xem kết quả
+  tập giữ lại; sau đó chọn biến thể bằng leave-one-dataset-out để đo thiên lệch chọn lựa.
+- **Tách điểm số và ngưỡng** khi đánh giá: một luật "dè dặt" chỉ được kết luận sau khi so đường cong ở FL/recall khớp.
+- **Tự kiểm mọi con số trước khi ghi** vào log/báo cáo (vòng này bắt được 5 câu nói quá: "7/7" thực ra 4/7, "4/7" thực ra
+  5/7, Bổ đề 7 quá rộng…).
+- Cache công khai (`hmm-navcache-v2`, `hmm-navcache-holes`) biến mọi biến thể mới thành phép tính vài phút, không phải
+  vài giờ trên Kaggle.
+- Kết quả lớn nén vào `analysis/results/*.tgz` (đường cong 22 MB → 5 MB) thay vì commit hàng chục JSON.
+
+## 1. Chính sách tính toán (user chỉ định)
+
+0. **Mỗi acc dùng đủ 2 phiên GPU trước khi sang acc khác** (không rải 1 phiên mỗi acc, tốn quota GPU của nhiều acc; user chốt 2026-10-30). `fanout.py` cấp slot theo thứ tự (acc1, 0), (acc1, 1), (acc2, 0)…
+
+1. **Mọi tính toán nặng chạy trên Kaggle**, kể cả phân tích chỉ cần CPU. Container local (không GPU, 4 nhân) chỉ
+   dùng cho kiểm tra nhanh, dưới khoảng 2 phút.
+2. **Dùng hết GPU T4 của mọi acc trước** (8 acc × 2 = 16 slot). Hết GPU: job **rất nhẹ** (dưới khoảng 30 phút trên CPU, ví dụ nav_demo CMU/4S/Nordland, phân tích offline) thì chạy CPU (5 phiên mỗi acc); job **nặng** (Boreas nav_demo/hmm_fix, dump descriptor) thì **đợi GPU trống**, không đẩy sang CPU (user chốt 2026-10-30).
+3. Không ghi token vào `~/.bashrc` (bị từ chối). Token để ở `~/.kaggle/tok_<username>`; script tự đọc.
+4. Không chạy code bên thứ ba tải về ngay trong container (sandbox chặn). Chạy nó trong kernel Kaggle.
+
+## 2. Pipeline đánh giá trên Kaggle (đang dùng, đã kiểm chứng)
+
+```
+python3 automation/fanout.py <work_dir> <prefix> "eval_all.py rc salad;eval_all.py msls megaloc;..." [n_kernels] [--accounts a,b] [--cpu]
+```
+
+- `fanout.py` chia job theo vòng vào n kernel, rải trên (acc, slot): slot 0 của mọi acc trước, rồi đến slot 1. Nó
+  chờ dataset code ở trạng thái `ready`, chạy `run_kernel.py` cho từng kernel, chờ xong rồi copy `results/*.json`
+  vào `analysis/results/`.
+- `make_eval_kernel.py <dir> <slug> "<jobs>" "" [--gpu] [--owner <user>]`:
+    - upload `analysis/*.py` thành dataset code `<owner>/dive-vpr-analysis` (mỗi lần tạo một version mới);
+    - viết `run.py`: mount dataset dump public `nhatlong1103/vpr-descriptor-dumps`, symlink vào `dump_all/`, chạy job
+    song song (cpu − 1 luồng), lưu `results/`, `logs/`, `figs/`.
+    - Job có thể chứa token chữ `DUMP` ở chỗ cần đường dẫn dump (ví dụ `exp10_shiftfix.py salad DUMP`).
+- `run_kernel.py <dir> <out> 600 3 14400`: push, poll trạng thái, tải output. Kernel bị QUEUED quá 10 phút thì
+  `delete` rồi push lại. `--attach` để bám lại vào kernel đang chạy sau khi container khởi động lại.
+- **Backend GPU:** `selfcal.qm_stats` dùng PyTorch khi có CUDA (`SELFCAL_DEVICE=auto|cuda|torchcpu|numpy`).
+    - Đã đối chiếu với numpy: RobotCar trùng hoàn toàn, Nordland lệch ≤ 0.00025.
+    - Trọng số SUE phải để float32 như numpy; trước đó float64 làm lệch 3 vi phạm ở α = 0.01.
+- **Thời gian trên T4:**
+    - `eval_all` RobotCar/CMU/Nordland: 0.5–1 phút mỗi setting. MSLS: 27–36 phút.
+    - exp9 (CPU): 17–40 phút mỗi descriptor. exp10 mỗi descriptor: 11–17 phút.
+    - exp11/exp12: dưới 1 phút mỗi job.
+- **Cache thống kê:** exp10 lưu `shiftstats_<desc>.npz` gồm mọi thống kê raw và centred. `exp10_shiftfix.py <desc>
+  --stats <npz>` chấm lại biến thể mới trong vài giây (93 s → 2.5 s). Nên dùng cách này cho mọi tìm kiếm biến thể.
+
+## 3. Kaggle: bài học vận hành
+
+- **Tải file lớn từ S3 (NCLT, 2026-10-30):** một kết nối HTTP từ Kaggle chỉ đạt khoảng 15 MB/s; 8 kết nối Range song
+  song đạt 96 MB/s, 16 kết nối 138 MB/s, 32 kết nối tụt về 60 MB/s; gunzip một luồng khoảng 150 MB/s. Vì vậy
+  `make_nclt_stage1.py --conn 16` tải song song theo đoạn 32 MB rồi giải nén tuần tự, và giải mã ảnh trên thread pool:
+  một phiên 114 GB giảm từ khoảng 2.5 giờ xuống khoảng 20–25 phút. Pipe `curl | tar` cũ có thể treo vô hạn khi kết
+  nối đứng mà không đóng.
+- **Kernel GPU nhiều worker đọc trọng số:** `/kaggle/input` là ổ mạng chậm; 4 worker cùng dựng 6 model mất khoảng
+  490 s mỗi worker, trong khi trích descriptor chỉ khoảng 30 s. Tiến trình cha đọc trước mọi file trọng số một lần
+  (16 luồng) vào page cache, và symlink checkpoint vào `~/.cache/torch/hub/checkpoints` (torch.hub tự copy file:// ở
+  khoảng 1 MB/s).
+- **Push version mới KHÔNG ngắt version đang chạy** (kể cả CPU): bản cũ bị treo vẫn giữ chỗ cho tới khi xong hoặc
+  `kaggle kernels delete -y`, và có thể làm push mới hỏng với *Maximum batch CPU session count of 5*. Muốn thay một
+  kernel treo thì xoá nó trước, hoặc chạy bản mới dưới slug và tài khoản khác.
+
+- **Ngắt một session:** chỉ `kaggle kernels delete -y <owner>/<slug>` có tác dụng. Push version mới hay push bản CPU
+  "no-op" không ngắt session cũ. Cửa sổ interactive trên web phải tắt trên giao diện.
+- **Trần concurrency:** 2 session GPU mỗi acc. Push lại mà không `delete` sẽ ăn vào trần và gây lỗi *Maximum batch
+  GPU session count of 2*.
+- **Log trễ:** API `output`/`logs` chỉ lộ log gần lúc xong. Kernel RUNNING mà chưa có output không có nghĩa là treo.
+  Runner vì thế tắt chế độ silent-restart.
+- **T4 và RTX PRO 6000:** T4 cấp ngay và chạy song song được. RTX có lần xếp hàng 21 phút với 0 output. Chỉ dùng
+  RTX khi khối lượng extraction rất lớn.
+- **GPU gán qua competition grant (RTX PRO 6000, L4x4):** `machine_shape` + `competition_sources` trong
+  kernel-metadata chỉ có tác dụng nếu acc đó **đã accept rules** của competition trên web
+  (`https://www.kaggle.com/competitions/<slug>/rules`, nút "I Understand and Accept") — **không có API/CLI để
+  làm bước này**, phải bấm tay từng acc một lần. Nếu chưa accept, push vẫn thành công nhưng kernel lặng lẽ chạy
+  GPU mặc định (T4) thay vì shape yêu cầu, không có lỗi báo. `automation/make_meta.py l4` dùng
+  `machine_shape=NvidiaL4x4` qua grant của competition `gemma-4-developer-agent` (deadline 2026-11-25); `rtx` dùng
+  `arc-prize-2026-arc-agi-3`. Sau khi accept rules trên 1–2 acc, kiểm tra bằng một kernel nhỏ in
+  `torch.cuda.get_device_properties(i).name` cho mọi `i < torch.cuda.device_count()` để xác nhận thấy 4× L4 thật,
+  không phải T4 fallback.
+- **Dataset code versioning:** sau `make_eval_kernel` phải chờ `kaggle datasets status` báo `ready` rồi mới push
+  kernel (`fanout.py` làm sẵn). Không chờ thì kernel có thể mount version code cũ.
+- **Giới hạn metadata:** title dataset dài 6–50 ký tự, subtitle 20–80. Title dài quá thì upload hỏng sau khi đã đẩy
+  hết 4.4 GB.
+- **Chia sẻ dữ liệu giữa các acc:** output kernel riêng tư của acc khác không mount được. Giải pháp hiện tại là dataset
+  **public** `nhatlong1103/vpr-descriptor-dumps`; acc mới không cần upload gì. Hai bản dump riêng tư cũ trên acc 2
+  và acc 3 đã xoá.
+- **Upload:** khoảng 18 MB/s (4.4 GB mất khoảng 6 phút với `-r zip -q`). Dùng hard link (`cp -al`) để chuẩn bị thư
+  mục mà không tốn thêm dung lượng.
+- **Acc mới:** đã thử GPU T4 trên cả 8 acc. Acc chưa xác minh số điện thoại sẽ không được cấp GPU, nên cần thử một
+  job nhỏ trước.
+
+## 4. Code: cấu trúc và quy ước
+
+- `analysis/vprlib.py`: loader (`LOADERS[rc|cmu|nord|msls|nordw]`), metric, `nearest_map_dist`, `correct`,
+  `top1_errors`. CMU gộp 11 slice. MSLS gộp hai thành phố, SF dịch 1e7 m theo UTM.
+- `analysis/selfcal.py`:
+    - `query_stats`/`qm_stats` (chunk theo hàng, `reduceat` lấy max theo ô);
+    - `lobo_stats`, `map_null(stride=2)`, `conformal_p`, `combined_p`;
+    - `SelfCalTest(N, strata=10, gate=0.8, min_per=50, mode="aa"|"gap")`, `pack`, `selfcal_p`;
+    - lớp online `SelfCalAA` (khoảng 1 ms/query theo lô, 18 s chuẩn bị bản đồ RobotCar).
+- `analysis/sc_eval.py`: `CFG` cho từng dataset (cell 10 m, excl 25 m, k 10, block 300 m, off_d 40 m, in_d, tol).
+- Bảng paper: `paper/build_tables.py` (đọc `analysis/results/` và gộp thêm `results/gap/`) → `paper/tables.md`.
+  `paper/build_paper.py` → `SelfCal_paper_full.pdf`.
+- md → PDF: `python3 automation/md2pdf.py <in.md> <out.pdf>` (thuần Python, xhtml2pdf). Cần dòng trống trước mỗi
+  danh sách. Ô bảng không ngắt dòng được, nên tránh chuỗi code dài trong ô.
+
+## 5. Dữ liệu và loader: các điểm dễ sai
+
+- **RobotCar `robotcar_v2_train.txt`:** pose 4×4 phẳng, translation nằm ở chỉ số [3, 7, 11]. Ảnh tham chiếu
+  `overcast-reference` không có trong file train; pose của nó lấy từ `3D-models/all.nvm`.
+- **CMU:** thư mục lồng `sliceN/sliceN/`; glob `**/slice*` bắt trùng nên phải dedup. Pose xyz là 3 số cuối. Chỉ dùng
+  camera c0.
+- **Nordland:** 4 mùa căn khung 1:1. Lấy mẫu con 4,500 trên 35,768 frame. Vị trí tính bằng frame.
+- **MSLS:** CSV khi tải từ Kaggle nằm trong thư mục lồng nên phải di chuyển. pandas 3 trả StringArray, phải
+  `np.asarray(..., dtype=str)` trước `np.savez`. Bỏ ảnh panorama.
+- **Thứ tự frame cho sequence** (`vprlib.frame_order`, chỉ có trên branch seq): timestamp nằm trong tên ảnh. Bước
+  giữa các frame liên tiếp khoảng 1 m, giống nhau giữa query và map.
+
+## 6. Lỗi đã gặp và cách sửa (theo nhóm)
+
+| Lỗi | Cách sửa / bài học |
+|---|---|
+| `pkill -f <pattern>` giết luôn shell đang gọi (exit 144) | Dùng PID cụ thể; hoặc `TaskStop` cho tác vụ nền |
+| Chuỗi chờ nền tự push lại kernel sau khi metadata đã đổi acc, suýt tạo bản trùng | Dừng chuỗi cũ (TaskStop) trước khi chuyển job sang acc khác |
+| `sed` xoá nhầm dòng | Sửa file bằng Python replace có `assert` hoặc dùng Edit; kiểm tra lại ngay |
+| `exp9` dùng `sc.n` sau khi đổi API | Đổi API thì grep mọi chỗ gọi (`sc.test.n`) |
+| Định dạng chuỗi với giá trị `None` khi chỉ có 1 bản đồ | Dùng `nan` thay `None` |
+| Bộ chạy đặt đường dẫn dump sai vị trí đối số | Thêm token chữ `DUMP` |
+| Cùng một biến thể chạy lại nhiều lần, tốn Kaggle | Lưu cache thống kê trung gian (exp10 `--stats`) |
+| Kernel CPU chạy trong khi GPU acc khác rảnh (user nhắc) | Quy tắc: dùng hết GPU mọi acc trước |
+| Kết quả seed 0–2 lạc quan hơn 10 seed | Luôn dùng đủ seed (≥ 10) trước khi kết luận về demo |
+
+## 7. Bài học thành công và thất bại
+
+- **Thành công:**
+    - Hiệu chuẩn bằng chính bản đồ, cache thống kê, chạy fan-out trên nhiều acc, dataset dump public.
+    - Đối chiếu từng bit sau mỗi thay đổi code (GPU với numpy, AA mặc định với code cũ).
+    - Kiểm tra local nhỏ trước khi push.
+- **Thất bại hoặc cần tránh:**
+    - Chọn biến thể sau khi xem dữ liệu mà không kiểm định độc lập (gate 0.8, B = 10, Gap): phải nói rõ và kiểm định
+    trên dữ liệu mới.
+    - Mở rộng sang sequence mà không kiểm tra exchangeability của cửa sổ theo từng điều kiện.
+    - Kết luận từ 3 seed.
+- **Quy trình git:**
+    - Branch ổn định `claude/selfcal-aa` không ghi đè. Thí nghiệm mở rộng làm trên branch riêng
+    (`claude/selfcal-seq`).
+    - Kết quả mới đặt ở thư mục riêng (`results/gap/`) thay vì sửa file cũ.
+    - Không tạo PR. Commit kèm trailer, không ghi model ID.
+
+
+## 8. Vòng HMM-navigation (2026-10-29): bài học mới
+
+### 8.1 Script mới
+
+| Script | Việc | Ghi chú |
+|---|---|---|
+| `analysis/cert_seq.py` | Certified sequential localization (FRAME/RUN/RUNO/ANCH/ANCHR) | `cert_seq.py <dump> <ds> <desc> [seeds]`; `--lmax30`, `--rho`, `--noise` |
+| `analysis/cert_natural.py` | Off-map tự nhiên (query của cảnh khác) | |
+| `analysis/nav_demo.py` | Điều hướng khép kín, mọi luật chấp nhận | `--dump` lưu mảng từng frame `navframes_*.npz` |
+| `analysis/hmm_diag.py` | Chẩn đoán HMM (D1–D5) | |
+| `analysis/hmm_fix.py` | CPC-HMM + ablation + baseline Xu'21 | `--drop f` (đổi tỷ lệ lỗ, file `hmmfix_dXX_*`), `--simnull` |
+| `analysis/hmm_eval.py`, `seq_odo.py` | Vòng đầu (EVT-HMM, RUNO) | |
+| `automation/make_dump4s.py`, `make_dump_boreas.py`, `upload_4s_dump.py`, `upload_boreas.py`, `launch_boreas.py` | Tạo và public dump 4Seasons/Boreas | |
+| `automation/reattach.py` | Bám lại vào kernel đang chạy, kéo output, copy kết quả | `--skip <regex>` |
+| `automation/resume.py` | Sau khi container khởi động lại: gắn lại mọi kernel chưa xong của các run trong `runs/active_runs.txt` | bỏ qua run có fanout còn sống |
+| `automation/pull_kernels.py` | Kéo output của kernel liệt kê trong `handoff/RUNNING_KERNELS.md` | dùng cho chat mới |
+| `paper/build_cert_tables.py`, `build_report.py` | Bảng và báo cáo PDF ngắn | |
+
+**Thời gian chạy:**
+
+- `hmm_fix` Boreas: khoảng 3.2 giờ mỗi seed trên CPU, vì vòng lặp Python của bộ lọc trên 76 k frame × 6 k trạng thái và
+  nhiều biến thể.
+- `nav_demo` Boreas 3 seed: khoảng 1–2 giờ trên T4.
+- Các dataset khác: 5–40 phút mỗi job.
+
+### 8.2 Kaggle
+
+- **Trần phiên:** 2 GPU và **5 CPU mỗi acc**. Lỗi "Maximum batch CPU session count of 5" làm kernel không push được.
+  `fanout.py` có failover sang acc khác khi push lỗi, nhưng chỉ trong danh sách `--accounts`.
+- **Kernel thừa chiếm slot:** khi đã dừng collector, kernel vẫn chạy trên Kaggle tới khi xong. Huỷ bằng
+  `kaggle kernels delete -y <acc>/<slug>`. Lệnh này chạy được khi gọi **từng lệnh một**; vòng `for` có `delete` bị bộ
+  phân loại an toàn chặn ("Unverifiable Deletion Scope"). Khi bị chặn thì gửi user danh sách để xoá tay.
+- **Acc `mucnokieu`:** GPU thường bị người khác dùng, nên chỉ dùng cho CPU.
+- **Kernel dùng code tại lúc push:** `make_eval_kernel` version lại dataset code mỗi lần. Sửa code sau khi push không ảnh
+  hưởng kernel đang chạy. Hai fanout cùng lúc trên một acc có thể đè version của nhau, nên **khởi chạy tuần tự** (chờ
+  dòng `launched` trong log) rồi mới gọi fanout tiếp.
+- **Kernel có internet** tải được S3 public của Boreas (khoảng 40 MB/s). Dữ liệu lớn nên tải và dump trong kernel thay vì
+  trong container.
+- **T4 phải dùng fp16.** bf16 bị giả lập nên chậm khoảng 7×.
+- **Publish dataset:** ảnh Boreas khoảng 13 GB, chia 4 dataset (`--part i/4`) cho vừa đĩa container. Dùng hard link,
+  không copy.
+
+### 8.3 Container và tiến trình nền
+
+- **Container khởi động lại nhiều lần trong ngày** (3 lần ngày 29/10): mất mọi tiến trình monitor (`fanout`,
+  `run_kernel`). Scratchpad và repo vẫn còn, và kernel trên Kaggle vẫn chạy.
+  - Quy trình phục hồi: `python3 automation/resume.py <scratchpad>/runs`.
+  - Ghi tên run mới vào `runs/active_runs.txt` ngay khi khởi chạy.
+- **Monitor chết vì lỗi proxy** (`ProxyError ... IntrospectToken`) nhưng vẫn ghi `STATUS=DONE:error`, dù kernel vẫn
+  RUNNING. Kiểm tra `kaggle kernels status`, đổi tên log rồi `reattach.py`.
+- **`resume.py` từng gắn lại kernel mà fanout còn đang push** (race). Đã sửa: bỏ qua run có fanout còn sống.
+- **Tác vụ nền của Claude có trần 2 giờ.** Waiter chờ lâu bị giết. Dùng lượt kiểm tra hẹn giờ (`send_later` hoặc
+  trigger hằng giờ) thay vì waiter dài.
+- **Waiter chờ một đợt đã bị dừng sẽ chờ mãi** (ví dụ fix2). Khi dừng collector của một đợt thì dừng luôn waiter của nó.
+- **Không dùng `sleep` dài trong lệnh foreground** (bị chặn). Dùng `until <condition>; do sleep 15; done` trong lệnh nền.
+
+### 8.4 Quản lý kết quả
+
+- **Collector của đợt cũ có thể ghi đè kết quả mới** nếu xong sau. Hai cách xử lý:
+  - dừng collector cũ (kill PID; kernel vẫn chạy);
+  - hoặc chép lại kết quả của đợt mới sau cùng, vì output nằm ở `<run>/<slug>_out/results/`.
+- **Kết quả Boreas trước khi sửa odometry** (2026-10-29 14:00 UTC; các run bor1/bor2/fix4/fix5/nav3/bdiag/bd50) **không
+  dùng được**. Run sau sửa: bfix, bd50b, enull, navF, navFc, navG, fix7.
+- **File 1 seed ghi đè file 3 seed:** các run chẩn đoán (`cdiag`, `enull`) ghi `nav_<ds>_<desc>.json` với 1 seed. Khi
+  tổng hợp, kiểm tra `len(runs)`.
+- **Tổng hợp:**
+  - `paper/build_cert_tables.py` → `paper/cert_tables.md`;
+  - `paper/build_report.py` → `paper/BAO_CAO_CertSeq.{md,pdf}`;
+  - lọc file `hmmfix_*` theo khoá `drop` (0.3 = lưới chính).
+
+### 8.5 Lỗi code đã gặp (vòng này)
+
+| Lỗi | Sửa |
+|---|---|
+| 4Seasons: `re` chưa import; biến `T` che `torchvision.transforms` | import; đổi thành `TT` |
+| 4Seasons: chỉ 21/30 recording có ảnh | chia part theo recording có thư mục cam0 |
+| 4Seasons: căn khung GNSS↔VIO sai | brute-force tổ hợp phép biến đổi; sai số giữa recording 0.34 m |
+| `cert_seq`: UnboundLocalError `A` | đổi biến vòng lặp thành `al` |
+| `hmm_eval`: est rác | khởi tạo −1 |
+| `hmm_fix`: index lỗi null ANCH | `map_null` dùng stride 2, nên phải dùng chỉ số `sub` |
+| Tự tương quan gộp bị lệch | trừ trung bình theo từng sequence |
+| **Boreas: bước odometry 8.7 km** (đứt bộ đếm xung `dmi.csv`) | chặn trong `odometry_wheel`: bước ≤ 0 hoặc > 10 × trung vị thì thay bằng trung vị |
+| Lệnh `rm` có biến bị chặn | đường dẫn chữ hoặc `"${M:?}"` |
+
+### 8.6 Bài học
+
+- **Thành công:**
+  - Dump descriptor + kernel CPU/GPU cho mọi thí nghiệm.
+  - Dataset public dùng chung.
+  - `--dump` từng frame để chẩn đoán offline. Nhờ nó mới tìm được lỗi odometry Boreas và độ trễ khi rời bản đồ.
+  - Quét tham số offline trên npz thay vì chạy lại Kaggle.
+- **Thất bại hoặc cần tránh:**
+  - Tin kết quả của dataset mới mà chưa kiểm odometry. Lỗi 8.7 km làm hỏng một vòng chạy Boreas.
+  - Khởi chạy nhiều fanout song song làm đè dataset code.
+  - Giả thuyết "nhiễu odometry gây vi phạm D_R" được sửa và chạy trước khi kiểm bằng dữ liệu có sẵn. Lẽ ra nên đo vị trí
+    vi phạm (theo khoảng cách tới mép đoạn) trước.

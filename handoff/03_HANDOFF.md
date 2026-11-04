@@ -1,53 +1,86 @@
 # 03 — Handoff (branch `hmm-2nd-idea`)
 
-*2026-11-03. Trạng thái, cái đã giữ / bỏ khi tách branch, và việc tiếp theo. Bản handoff đầy đủ của ý tưởng 1:
-`git show hmm-navigation-5:handoff/03_HANDOFF.md`.*
+*Cập nhật 2026-11-04. Phạm vi: mục tiêu, tiến độ, quyết định đã thống nhất, vị trí mã / dữ liệu / kết quả, việc tiếp theo. Bằng chứng và số liệu
+chi tiết → `01_SCIENTIFIC_FINDINGS`; cách chạy và bài học vận hành → `02_ENGINEERING_OPS_NOTES`; tài khoản, dataset → `ENVIRONMENT_SUMMARY`.*
 
+## 1. Mục tiêu nghiên cứu
 
-## 0. Trạng thái ý tưởng 2 (cập nhật 2026-11-04 06:25 UTC, phiên `session_01Xy89bX34L6MPEcAxmjRJWt`)
+Lời giải A\* thứ hai (khác hẳn ý tưởng 1 — phẫu thuật bản đồ phản thực, branch `hmm-navigation-5`) cho bài toán: robot camera đơn + odometry
+định vị theo chuỗi (HMM) trên bản đồ ảnh có lỗ, quyết định báo / không báo fix với bảo đảm segFAR ≤ α, recall cao, sai số điều hướng thấp, kiểm
+toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cuu_Cap_Nhat.docx` (novelty A\*, thực nghiệm mạnh, tối ưu tài nguyên Kaggle).
 
-- **Luật khuyến nghị: HSI-VN** (`analysis/hsi_eval.py` VARIANTS["HSI-VN"] = HSI-rot-m-sc + `anchors="ver+geo"` + `train_null=True`). Đạt mọi tiêu
-  chí đăng ký trước trên tập mới seed 16–18 (Entry 9) sau khi đạt 3/4 trên seed 13–15 (Entry 8). Gộp 216 run mới: 0 vi phạm, recall +0.015 (CI
-  [+0.010, +0.020]) so với HSI-rot-m-sc, CMU +0.055, điều hướng −0.53 m. 413 run phát triển: 0.796 vs SH 0.731 (+0.065), vị trí 9/9.
-  **HSI-VMN** (+ `mondrian="ref"`) = điểm vận hành ưu tiên điều hướng (−2.6 m, recall như luật cũ).
-- **Tài liệu:** `RESEARCH_LOG.md` Entry 1–9; `paper/hsi_theory.md` Mệnh đề 1–7; `paper/BAO_CAO_HSI.pdf` (15 trang, abstract tiếng Anh, hình quét α và
-  vách khoá), dựng lại bằng `paper/build_hsi_report.py` (lệnh đầy đủ trong `paper/hsi_report_text.md` §7).
-- **Phân chia dữ liệu:** seed 0 × 4 descriptor = thiết kế; seed 0–9 (413 run) = phát triển; seed 10–12, 13–15, 16–18 = các tập mới ĐÃ DÙNG
-  (`caotienminh1/hmm-navcache-f13`, `-f16` công khai). **Mọi quyết định mới cần tập mới seed 19+** (`analysis/hsi_fresh.py --keep`, ~1 giờ trên 18
-  phiên CPU; `automation/fetch_outputs.py` + `publish_dataset.py --owner`).
-- **Không còn kernel nào chạy.** Kết quả thô: `analysis/results/hsi/*.tgz`.
-- **Điểm yếu còn lại / hướng tiếp:** CMU (0.76 vs SH 0.835): khoá còn lại do chuỗi ngắn hoàn toàn đúng nhưng không thể chứng nhận (giới hạn thông
-  tin); khởi động lạnh bị giới hạn bởi độ trễ nhãn hồi cứu; sai số old town (thời điểm báo sau khi quay lại bản đồ với VIO trôi); null bảo thủ
-  5–25×. Các hướng đã thử và loại: xem `RESEARCH_LOG.md` Entry 8 (chẩn đoán).
+## 2. Tiến độ (một dòng mỗi mốc)
 
-## 1. Trạng thái
+| Mốc | Trạng thái |
+|---|---|
+| Phương pháp HSI (tự giám sát hồi cứu + hiệu chuẩn conformal trên excursion thật) | xong, `analysis/hsi.py` |
+| 9 vòng đăng ký trước (Entry 1–9) | xong; quyết định cuối ở Entry 9 |
+| Ba tập kiểm tra mới (seed 10–12, 13–15, 16–18) | đã dùng |
+| Kho dự trữ seed 19–27 (3 tập × 108 run) | sinh bởi đợt `hsi20`, publish `caotienminh1/hmm-navcache-r19`; **chưa dùng** |
+| Báo cáo `paper/BAO_CAO_HSI.pdf` (15 trang, abstract tiếng Anh) + lý thuyết Mệnh đề 1–7 | xong |
+| Paper hoàn chỉnh | chưa viết (chỉ báo cáo + abstract nháp) |
 
-- Branch tách từ `hmm-navigation-5` (sau Entry 38 + đăng ký trước Entry 39). Chưa có ý tưởng 2: phase 1 (literature + gap) bắt đầu từ đầu.
-- `RESEARCH_LOG.md` mới (trống, Entry 1 cho ý tưởng 2); nhật ký cũ: `history/RESEARCH_LOG_idea1.md`.
-- Entry 39 của ý tưởng 1 (xác nhận CST-JSU [both] trên bố cục lỗ mới, chẩn đoán mép) chạy tiếp trên branch `hmm-navigation-5`; kết quả
-  của nó (nếu đổi baseline) xem `git show hmm-navigation-5:RESEARCH_LOG.md`.
+## 3. Quyết định đã thống nhất
 
-## 2. Đã giữ
+1. **Luật khuyến nghị: HSI-VN** (`VARIANTS["HSI-VN"]`: HSI-rot-m-sc + `anchors="ver+geo"` + `train_null=True`). **Điểm vận hành điều hướng:
+   HSI-VMN** (+ `mondrian="ref"`). Luật trước HSI-rot-m-sc chỉ còn làm tham chiếu.
+2. Một cấu hình chung cho mọi dataset; α = 0.05, H = 10; không tinh chỉnh theo dataset.
+3. Mọi quyết định mới: đăng ký trước trong `RESEARCH_LOG.md` (commit trước khi có kết quả) và kiểm trên **một nhóm 3 seed CHƯA DÙNG của kho dự
+   trữ** (19–21, rồi 22–24, rồi 25–27); ghi nhóm đã dùng vào bảng §5. Không kiểm lại cùng một giả thuyết trên tập khác sau khi đã cam kết "lần cuối".
+4. Seed 0–9 là dữ liệu phát triển (được chẩn đoán tuỳ ý); tập thiết kế 28 run chỉ để đo nhanh — không đủ để kết luận về điều hướng.
+5. Tiêu chí quyết định đặt theo thước đo kết quả (hợp lệ, recall, điều hướng); tiêu chí cơ chế chỉ để báo cáo (bài học Entry 8).
+6. Token Kaggle không bao giờ vào repo / dataset / báo cáo; repo public. Phiên chat mới cần user cung cấp lại token (5 acc đang dùng, xem
+   `ENVIRONMENT_SUMMARY.md` §3).
 
-- Code nền: loader dữ liệu, sinh lỗ + odometry + HMM + metric (`nav_demo.py` và các module nó cần), đánh giá từ cache, kiểm toán theo vị
-  trí, baseline 2026 của người khác (TAO'26, TRAIL'26, SafeVPR'26, VPR-auditing'26). Danh sách: `05_NEW_CHAT_GUIDE.md` §4.
-- Toàn bộ công cụ Kaggle / vận hành (`automation/`), mã trích descriptor (`nb15_src/`, `make_dump_*.py`, `make_stlucia_kernel.py`).
-- Tài liệu: phát hiện khoa học (01), vận hành (02), quy trình (04 + bản gốc), môi trường, `LITERATURE_GATE.md`, `literature/`,
-  `DATA_AUDIT.md`, yêu cầu nghiên cứu `HMM_Navigation_Yeu_Cau_Nghien_Cuu_Cap_Nhat.docx`.
-- Số liệu baseline của ý tưởng 1: `analysis/results/baselines_idea1/` (oc JSON của Entry 37 — 342 run, lỗ 10/50 %, N = 40 — và
-  Entry 38 — 402 run; kiểm toán theo vị trí; so sánh SafeVPR'26 trên St Lucia).
+## 4. Vị trí
 
-## 3. Đã bỏ (khôi phục bằng `git checkout hmm-navigation-5 -- <path>`)
+| Thứ | Ở đâu |
+|---|---|
+| Phương pháp | `analysis/hsi.py` (`online_v2` + cờ: `anchors`, `train_null`, `mondrian`, `sc_mode`, `place_feats`, `geo_budget`, `null_oracle` (chẩn đoán), `min_lab`) |
+| Biến thể có tên | `analysis/hsi_eval.py` `VARIANTS` |
+| Đánh giá / so sánh / tiêu chí | `analysis/hsi_eval.py`, `hsi_compare.py`, `hsi_summary.py`, `hsi_entry8_test.py`, `hsi_alpha.py`, `hsi_lockfig.py`, `hsi_fresh.py` |
+| Kaggle | `automation/` (`hsi_wave.py`, `fanout.py`, `central_monitor.py`, `hsi_collect.py`, `fetch_outputs.py`, `publish_dataset.py`, `make_eval_kernel.py`) |
+| Nhật ký / lý thuyết / novelty | `RESEARCH_LOG.md` (Entry 1–9), `paper/hsi_theory.md`, `LITERATURE_GATE.md` Gate 17 |
+| Báo cáo | `paper/BAO_CAO_HSI.pdf` (dựng: `paper/build_hsi_report.py`, văn bản `paper/hsi_report_text.md`, bảng `paper/tables/`, hình `paper/figures/`) |
+| Kết quả thô | `analysis/results/hsi/hsi_results_json.tgz` (main / holes_d10 / holes_d50 / natural / fresh_s10_12 / test_s13_15 / test_s16_18), `hsi_frames_*.tgz`; baseline ý tưởng 1 `analysis/results/baselines_idea1/e37|e38/oc_*.tgz` |
+| Cache | xem `ENVIRONMENT_SUMMARY.md` §1d, §1g (public trên Kaggle) |
 
-- 46 module của ý tưởng 1: `cms*.py`, `cms_fwd.py`, `cst_audit.py`, `navrisk.py`, `oc_curves.py`, `e36_*`, `e37_*` (trừ `e37_collect.py`),
-  `holes_*`, `natural_*`, `xnull.py`, … (danh sách đầy đủ trong commit tách branch).
-- `paper/` (báo cáo và lý thuyết của ý tưởng 1: `BAO_CAO_E26…E38`, `cms_theory.md`, `cpc_theory.md`), kết quả cũ trong `analysis/results/`,
-  `qcc/` (dự án khác), handoff 06 / RUNNING_KERNELS, `automation/e37_wave.py`, `cms_jobs.py`.
-- Để chạy lại luật SH / CST-JS làm baseline trên dữ liệu mới: khôi phục `analysis/{cms,cms_exact,cms_vec,cms_fwd,cms_torch,navrisk,oc_curves,
-  e37_fwd,e37_prep,e37_eval}.py` và `automation/e37_wave.py` từ `hmm-navigation-5` (null công khai: `hmm-fwd-null-e37`, `hmm-fwd-null-e38`).
+## 5. Sổ dùng tập kiểm tra
 
-## 4. Việc tiếp theo
+| Tập | Dataset | Dùng cho | Trạng thái |
+|---|---|---|---|
+| seed 10–12 | (không publish; tái sinh tất định bằng `hsi_fresh.py`) | C1–C4, Entry 7 | đã dùng |
+| seed 13–15 | `caotienminh1/hmm-navcache-f13` | Entry 8 | đã dùng |
+| seed 16–18 | `caotienminh1/hmm-navcache-f16` | Entry 9 | đã dùng |
+| seed 19–21 | `caotienminh1/hmm-navcache-r19` | — | **trống** |
+| seed 22–24 | `caotienminh1/hmm-navcache-r19` | — | **trống** |
+| seed 25–27 | `caotienminh1/hmm-navcache-r19` | — | **trống** |
 
-Theo `05_NEW_CHAT_GUIDE.md` §3: gate novelty mới → 2–3 ứng viên → chọn → phương pháp → đăng ký trước → hiện thực + kernel thăm dò → đánh
-giá trên giao thức chung (§1 của `07`) → lặp. Hạn mức GPU tuần của các acc đã dùng nhiều trong vòng 11–12 (nhatlong1103 hết đến khi reset):
-ước lượng GPU-giờ trước mỗi đợt, báo user nếu cần thêm acc L4.
+## 6. Việc tiếp theo (khung chat mới)
+
+**Việc 1 — đào sâu bản chất để giải quyết ba điểm yếu** (chẩn đoán trên seed 0–9; quyết định trên kho dự trữ):
+
+- *CMU (0.76 vs SH 0.835, oracle 0.945).* Khoá còn lại do chuỗi ngắn hoàn toàn đúng nhưng không thể chứng nhận. Câu hỏi mở: có thông tin nào
+  (ngoài hình học ngắn — đã chứng minh vô ích ở 20–40 m — và hubness — không mở khoá) phân biệt chuỗi ngắn đúng với excursion off-map aliasing?
+  Gợi ý chưa thử: tính duy nhất của giải thích ở mức chuỗi (lợi thế của SH, nhưng phải KHÁC phẫu thuật bản đồ của ý tưởng 1), học có điều kiện
+  theo phiên / điều kiện ảnh, hiệu chuẩn có trọng số theo xác suất off-map ước lượng cho phần null chưa xác minh. Dữ liệu chẩn đoán đã có: 5
+  cache CMU phát triển bị khoá / không khoá (SALAD s2, s4; CosPlace s1, s2, s4 — tải lại từ `hmm-navcache-v2`).
+- *NCLT (2 run).* Mở rộng đánh giá: cache NCLT chỉ có seed 0 (off-map tự nhiên, không có lỗ tổng hợp); cần sinh thêm cấu hình (vd. lỗ tổng hợp
+  trên bản đồ NCLT, hoặc đổi phiên làm bản đồ) bằng `nav_demo.py` với dump `nhatlong1103/nclt-vpr-dump` (`--ds` thêm dataset này).
+- *Sai số điều hướng old town (32.5 m vs SH 25.9, oracle 19.3).* Không do fix sai xa; do thời điểm báo dưới VIO trôi (khoảng trống sau khi quay lại
+  bản đồ). HSI-VMN giảm còn 29.0. Hướng: quyết định có xét giá trị điều hướng của một báo (độ trôi tích luỹ từ fix cuối) trong giới hạn α.
+
+**Việc 2 — áp dụng lên 16 bộ của VPR-Space** (https://github.com/rfechner/VPR-Space; Fechner & Neubert 2026, arXiv:2610.35642):
+
+- Đã biết (từ `dataset.py` của repo): 16 cặp `db--query` — MadMax ×6 (A0–A2, A2–A4, C0–C1, E0–E1, F0–F3, G0–G2), S3LI-Etna ×2 (crater–crater_inout,
+  traverse_1–loops), LunarLoc ×2 (9–10, 15–17), SPICE ×8 (dawn / noon / night, phơi sáng `spad@5.0us`, `@2500.0us`). Bố cục:
+  `images/<trajectory>/*.png` (thứ tự theo tên), `poses/<trajectory>.npy`, ground truth `vpr_gt/VPR-GT-RPE-0/<setup>.npz` với `gt_soft`, `gt_hard`.
+  Tải: GitHub Releases, nhiều phần `vpr-space.tar.*` (`cat vpr-space.tar.* | tar xvf -`). Giấy phép MIT (cần xác nhận phạm vi dữ liệu).
+- Chưa biết: kích thước, định dạng pose (4×4 hay 7 số), pose có phải quỹ đạo liên tục đủ để tạo odometry không, ý nghĩa chính xác `gt_soft/hard`.
+- Kế hoạch: (1) kernel CPU có internet tải + giải nén, giữ trong output; (2) kernel GPU (cùng acc, mount output đó) trích 6 descriptor thành dump
+  định dạng `vpr-descriptor-dumps` + `meta/` (xem `make_dump_*.py`, `nb15_src/`); (3) viết loader `vprlib.load_vprspace`, odometry từ pose có
+  nhiễu tổng hợp như các dataset khác; (4) định nghĩa giao thức: bản đồ = db, truy vấn = query, off-map = vùng query ngoài phủ của db (từ pose) và /
+  hoặc lỗ tổng hợp; (5) sinh cache `nav_demo --cache-only`, đánh giá HSI-VN / HSI-rot-m-sc / geo-rm / Xu'21 / oracle (không có SH nếu không có GPU).
+  Ước GPU-giờ trước bước (2) và báo user nếu cần thêm acc GPU.
+
+**Việc phụ:** viết paper từ báo cáo (abstract nháp có sẵn ở `paper/hsi_report_text.md` §1b).

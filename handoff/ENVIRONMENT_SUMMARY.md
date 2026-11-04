@@ -1,10 +1,35 @@
 # Datasets & Environment Summary
 
-*Branch `hmm-2nd-idea`: dữ liệu và tài khoản dưới đây dùng chung cho ý tưởng 2. Các dataset cache có tiền tố `hmm-cms-*`, `hmm-fwd-null-*` là của ý tưởng 1 (baseline).*
+*Cập nhật 2026-11-04 (branch `hmm-2nd-idea`, ý tưởng 2 HSI). Đọc trước: **§0** (trạng thái hiện hành, thay mọi ghi chú cũ bên dưới khi mâu thuẫn).
+Cách đọc repo và việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Các dataset `hmm-cms-*`, `hmm-fwd-null-*` là của ý tưởng 1
+(baseline). Các mục §1–§5 bên dưới giữ lịch sử (một số acc / luật trong đó đã cũ).*
 
-*Cập nhật 2026-11-02 (branch `hmm-navigation-5`; St Lucia ở §1e; dataset/acc mới ở §1d, §3). Hướng nghiên cứu hiện tại: **HMM sequence-based visual localization**;
-cách đọc repo và việc tiếp theo ở `handoff/05_NEW_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Kết quả audit dữ liệu (Bước 1): `DATA_AUDIT.md`. Dataset mới
-cho hướng HMM (chuỗi dài + odometry thật): **§1b 4Seasons dump** và **§1c Boreas** bên dưới.*
+## 0. Trạng thái hiện hành (2026-11-04)
+
+**Tài khoản Kaggle đang dùng** (`automation/active_accounts.txt`, theo thứ tự lấp phiên): `quynhle07`, `nguyenhoa99`, `quynhtran35`, `yuan1103`,
+`caotienminh1` — mỗi acc 2 phiên GPU + 5 phiên CPU. Token ở `~/.kaggle/tok_<acc>` (chmod 600) **chỉ trong container của phiên chat**; phiên mới phải
+xin user token lại (không bao giờ đưa token vào repo / dataset / báo cáo). Không có token `nhatlong1103` ⇒ dataset mới đăng dưới **caotienminh1**
+(`automation/publish_dataset.py --owner caotienminh1`). Ý tưởng 2 chỉ dùng phiên CPU (không tốn hạn mức GPU).
+
+**Dataset dùng cho ý tưởng 2 (đều PUBLIC):**
+
+| Slug | Nội dung | Vai trò |
+|---|---|---|
+| `nhatlong1103/hmm-navcache-v2` | cache `nav_demo --cache`, 7 dataset × 6 descriptor × seed 0–9 (NCLT seed 0), 366 file | thiết kế (seed 0 × 4 desc) + phát triển |
+| `nhatlong1103/hmm-e37-caches` | cache Oxford (45 run) + St Lucia (30 run) | phát triển |
+| `nhatlong1103/hmm-navcache-holes` | lỗ 10 % (`d10/`) và 50 % (`d50/`), 6 dataset × 6 desc × seed 0–2 | độ bền |
+| `nhatlong1103/hmm-natural-cache` | 4Seasons chéo cảnh (`navcache_4sx_*`, 36 run) | off-map tự nhiên |
+| `caotienminh1/hmm-navcache-f13` | bố cục lỗ mới seed 13–15, 6 dataset × 6 desc (108 file, 377 MB) | đã dùng (Entry 8) |
+| `caotienminh1/hmm-navcache-f16` | seed 16–18 (108 file) | đã dùng (Entry 9) |
+| `caotienminh1/hmm-navcache-r19` | **kho dự trữ** seed 19–27 (324 file), chia nhóm 19–21 / 22–24 / 25–27 | **chưa dùng** — mỗi quyết định rút một nhóm |
+| `nhatlong1103/vpr-descriptor-dumps`, `vpr-dumps-4seasons`, `boreas-vpr-dump` | dump descriptor (runner mount mặc định) | sinh cache mới (`hsi_fresh.py`, `nav_demo.py`) |
+| `nhatlong1103/nclt-vpr-dump` | dump NCLT + FOG | cần cho việc mở rộng NCLT (`--ds` thêm) |
+
+Mount trong kernel: `--nodumps --ds <slug>` và token `DIR:navcache_` (một dataset) hoặc `DIR:navcache_@<thư mục>` (nhiều dataset cùng tên file).
+
+**Container phiên chat:** 4 lõi CPU, không GPU, đĩa ~30 GB có hạn mức; scratchpad mất khi phiên kết thúc (kết quả cần giữ phải ở repo:
+`analysis/results/hsi/*.tgz`). Gói phải cài mỗi phiên: `pip install kaggle markdown xhtml2pdf scipy scikit-learn matplotlib pypdf`. md → pdf:
+`python3 automation/md2pdf.py <in.md> <out.pdf>`. Kaggle CLI 2.2.5 hỗ trợ `kernels output --file-pattern`.
 
 ## 1. Dataset quan trọng nhất: descriptor dumps (PUBLIC)
 
