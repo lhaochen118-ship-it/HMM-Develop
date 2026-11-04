@@ -56,3 +56,8 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
   0.866–0.871 với t ∈ {0.8, 0.9, 0.95}, D ∈ {12, 16, 24}, tất cả hợp lệ (bền); đặc trưng độ tin OWF cho HSI (`xmsc`) +0.0006 (bỏ); OWF-H-VMN
   0.860 / 13.63 m trội HSI-VMN (0.781 / 13.65). Vòng 3 phát triển (`devS`, 4 phiên L4, 149 run): ngân hàng tỉ lệ odometry `--scales 0.97,1.0,1.03`
   × `--qx 0.005,0.02` (thiết kế countryside s0: recall 0.554 → 0.603, MAP đúng 0.812 → 0.834) + OWF-H trên đó.
+- 17:30 UTC: **Entry 11 ĐẠT trên seed 40–42** (144 run): OWF-H 0.885 vs HSI-VN 0.811 (+0.074, CI [+0.060, +0.088]), 1/144 run > α, sai số 14.46 vs
+  15.35 m ⇒ **OWF-H là luật khuyến nghị**. Handoff 00 / 01 / 03 cập nhật.
+- 17:40 UTC: **Entry 12 đăng ký trước** (OWF-HU = OWF-H ∨ báo OWF ≥ 1 − 1e-5 sau 16·excl; phát triển Score 0.892, 0 run > α, 13.74 m); đợt kiểm tra
+  `t43` (seed 43–45, 32 kernel CPU) đã đẩy. `devS` (ngân hàng tỉ lệ odometry, L4) đang chạy. Bảng điểm (tập mới, recall gộp / run > α / sai số):
+  HSI-VN 0.811 / 1 / 15.35 → OWF-H 0.885 / 1 / 14.46 (seed 40–42).
