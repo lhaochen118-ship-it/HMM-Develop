@@ -475,7 +475,7 @@ def evaluate_mask(z, name, acc, seqs, cfg, nav=True):
 
 def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict", bridge="rigid", sc_lags=(), train_all=False,
               calib="regime", adaptive=False, floor=-np.inf, start_relax=False, null_cap=None, mondrian=None, verbose=False,
-              null_oracle=None, geo_budget=None, anchors="ver", sc_mode="window", place_feats=False, **kw):
+              null_oracle=None, geo_budget=None, anchors="ver", sc_mode="window", place_feats=False, train_null=False, **kw):
     """HSI v2 = geometric self-verification (a: trusted anchors, b: dead-reckoning agreement; trusted_geometry) OR
     (c) a hindsight-learned score above a conformal threshold calibrated on hindsight-null segments of the SAME regime
     (frames where a|b do not fire), held out from training. scope: 'pooled' (every session's held-out units) or 'session'.
@@ -581,15 +581,17 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
         e_ = np.nan_to_num(edr, nan=np.inf); s_ = np.nan_to_num(sdr, nan=np.inf)   # with dead reckoning from a trusted reference
         sc = sc_window() | (sc_jump() & hr & (e_ <= cfg.excl + zz * s_) & (s_ <= cfg.excl))
     else: sc = sc_window()
+    st = np.zeros(n, bool)                                      # frames whose (c) eligibility rests on the start relaxation
     if start_relax and sc_lags:                                 # sequence starts: short-track support is undefined there
-        st = np.zeros(n, bool)
         for idx in seqs: st[idx[:max(sc_lags)]] = True
-        sc = sc | st
+        st &= ~sc; sc = sc | st
     regime = ~geo & gate & sc
     # calibration units: JOINT (default) = every held-out null segment, scored by the whole rule (+inf where the geometry
     # reports, the learned score where (c) may report, -inf elsewhere) -> P(any report in a new null segment) <= alpha for
     # the union; 'regime' = only segments inside the (c) regime (conditional, more conservative)
     klass = (~hr).astype(np.int64) if mondrian == "ref" else np.zeros(n, np.int64)   # 1 = no trusted reference yet (start / lost)
+    if mondrian == "start": klass = st.astype(np.int64)        # Mondrian by EVIDENCE STATE: frames relying on the start relaxation
+    elif mondrian == "ref+start": klass = (~hr).astype(np.int64) + 2 * st   # are calibrated apart, so their risk cannot drain the rest
     segs = null_segments(seqs, null if calib == "joint" else null & regime, cal, unit, H, klass)
     seg_k = np.array([klass[s_[0]] for s_ in segs], np.int64) if segs else np.zeros(0, np.int64)
     seg_av = np.array([avail[s].max() for s in segs], np.int64) if segs else np.zeros(0, np.int64)
@@ -604,6 +606,10 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
         lab = np.flatnonzero((neg | pos) & (avail < BIG)); lab = lab[np.argsort(avail[lab], kind="stable")]; lab_av = avail[lab]; lp = 0
         acc_ = {k: np.zeros(M) for k in ("c0", "s0", "q0", "c1", "s1", "q1")}; sm_ = None
         X = np.c_[X, np.full((n, 5), np.nan, np.float32)]; names = names + ["pl_haz", "pl_sup", "pl_z0", "pl_z1", "pl_n0"]
+    # training targets: hindsight labels (default), or (train_null) positives vs the CALIBRATION NULL itself (incl. never-verified
+    # frames): the score then estimates the likelihood ratio against the very distribution the conformal threshold is set on
+    # (Neyman-Pearson), so frames the model never saw as negatives cannot lock the threshold; training units only (split conformal)
+    yt = np.where(null, 0, y).astype(np.int8) if train_null else y
     score = np.full(n, -np.inf); thr_at = np.full(n, np.inf); clf = None; last_n = 0
     for c0 in range(0, n, cfg.chunk):
         T = c0; cur = order[c0:c0 + cfg.chunk]; cc = cond[cur[0]]
@@ -621,10 +627,10 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
             X[cur, -5] = np.log((n0_ + 1) / (n1_ + 1)); X[cur, -4] = np.log1p(n0_ + n1_)
             X[cur, -3] = np.where(n0_ >= 3, (ms[cur] - mu0) / sd0, np.nan); X[cur, -2] = np.where(n1_ >= 3, (ms[cur] - mu1) / sd1, np.nan)
             X[cur, -1] = np.log1p(n0_)
-        m = (y >= 0) & (avail < T) & ~cal if train_all else (y >= 0) & (avail < T) & ~cal & regime
-        n1, n0 = int((y[m] == 1).sum()), int((y[m] == 0).sum())
+        m = (yt >= 0) & (avail < T) & ~cal if train_all else (yt >= 0) & (avail < T) & ~cal & regime
+        n1, n0 = int((yt[m] == 1).sum()), int((yt[m] == 0).sum())
         if n1 >= 50 and n0 >= 50 and (clf is None or m.sum() > 1.1 * last_n):
-            clf = fit_model(X[m], y[m]); last_n = int(m.sum())
+            clf = fit_model(X[m], yt[m]); last_n = int(m.sum())
         if clf is None: continue
         thr_k = {}
         for kk in np.unique(klass[cur]):
