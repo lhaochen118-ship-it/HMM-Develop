@@ -77,3 +77,7 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
   kiểm tra Entry 14 `t49` đã đẩy: 32 kernel CPU, seed 49–51, OWF thường + ngân hàng tỉ lệ → OWF-H + mặt nạ. `devW` (6 phiên) đang chạy. Phát
   triển cục bộ trên countryside cosplace s1: ngân hàng 5 tỉ lệ so với 3 tỉ lệ cho recall OWF 0.568 → 0.603, chuỗi đúng 0.786 → 0.817, sai số
   42.8 → 40.8 m.
+- 22:35 UTC: **Entry 14 ĐẠT trên seed 49–51** (144 run): OWF-HWA-S 0.933 vs OWF-HW-S 0.921 vs HSI-VN 0.804 (+0.012, CI [+0.010, +0.014], thắng
+  144/144); 0 run > α; sai số 13.64 vs 13.78 vs 14.34 m; CMU 0.832 → 0.874 ⇒ **OWF-HWA-S là luật khuyến nghị**. **Entry 15 đăng ký trước:** ngân
+  hàng 5 tỉ lệ 0.94–1.06. Phát triển trên 68 run đủ cặp của `devW`: +0.0058 [+0.0020, +0.0103], −0.86 m. Kiểm tra trên seed 52–54 (đợt `t52`,
+  CPU) đẩy ngay sau commit.

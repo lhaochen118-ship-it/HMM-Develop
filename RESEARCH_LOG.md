@@ -89,7 +89,60 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 15 — Ngân hàng tỉ lệ odometry rộng hơn (0.94–1.06) — đăng ký trước (2026-11-04 22:35 UTC; AUTOLOOP vòng 7)
+
+**Chẩn đoán (dữ liệu phát triển, cache seed 1).** So độ dài từng bước odometry với GNSS:
+- 4Seasons (VIO): lệch tỉ lệ ngoài ngân hàng ±3 % của Entry 13. Countryside: trung vị 1.040, P10–P90 1.03–1.07. Office: 1.037. Old town:
+  0.943, P10–P90 0.93–1.01.
+- Boreas: 1.001.
+- Oxford (mô phỏng): 0.97–1.04.
+- Trôi hướng VIO: nhỏ (|trôi| trung vị < 0.6°/km), nên KHÔNG cần ngân hàng hướng.
+
+**Phát triển.** Cục bộ, countryside cosplace s1 (OWF riêng): recall 0.568 → 0.603, chuỗi đúng 0.786 → 0.817, sai số 42.8 → 40.8 m. Đợt `devW`
+(6 phiên, 149 run phát triển × {3 tỉ lệ, 5 tỉ lệ}, kèm mặt nạ HSI); khi đăng ký mới có 68 run đủ cặp. Luật đầy đủ (OWF-H + hợp hai bậc + bậc đồng
+thuận) với ngân hàng 5 tỉ lệ so với 3 tỉ lệ:
+- recall **+0.0058**, CI [+0.0020, +0.0103]; thắng 45 / thua 23;
+- 0 run > α ở cả hai;
+- sai số 12.77 vs 13.63 m.
+
+Theo dataset: countryside 0.759 → 0.793, old town 0.910 → 0.928 (22.5 vs 27.5 m), office 0.958 → 0.965; Boreas / CMU / Nordland / Oxford /
+St Lucia ±0.002; NCLT −0.016 (2 run).
+
+**Luật đăng ký: OWF-HWA-S5** = OWF-HWA-S (Entry 14) với ngân hàng `--scales 0.94,0.97,1.0,1.03,1.06` (10 bộ lọc: 2 q × 5 tỉ lệ) thay cho
+`0.97,1.0,1.03`. Mọi phần khác giữ nguyên: OWF-H `xms0.9_16` + HSI-VN; `owf_union.py --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"`.
+
+**Tập kiểm tra mới:** seed 52–54 của `synchan5704/hmm-navcache-r49` (144 run, chưa dùng). R* = OWF-HWA-S (Entry 14 đạt). R* và C chạy trong CÙNG
+đợt `t52`, trên CÙNG run: tag `r52S` (3 tỉ lệ) và `r52S5` (5 tỉ lệ), cả hai kèm mặt nạ HSI.
+- **M1 (hợp lệ):** TB segFAR ≤ 0.05 trên 8/8 dataset và ≤ 2/144 run > α.
+- **M2 (recall):** chênh gộp C − R* ≥ +0.003 với cận dưới CI 95 % bootstrap (theo run) > 0.
+- **M3 (điều hướng):** sai số gộp ≤ R* + 0.5 m.
+
+**Quy tắc:** M1 ∧ M2 ∧ M3 ⇒ OWF-HWA-S5 là luật khuyến nghị mới. *Phụ (báo cáo):* recall theo dataset (countryside / old town / office), HSI-VN
+trên cùng run.
+
 ## Entry 14 — Bậc đồng thuận ba nguồn cho đầu chuỗi (OWF ∧ chuỗi tô-pô ∧ truy hồi top-1) — đăng ký trước (2026-11-04 19:05 UTC; AUTOLOOP vòng 6)
+
+**KẾT QUẢ TẬP KIỂM TRA (seed 49–51, 144 run mới, đợt `t49`; ghi 22:30 UTC). Quyết định: OWF-HWA-S THAY OWF-HW-S làm luật khuyến nghị.**
+R* = OWF-HW-S (Entry 13 đạt) ⇒ C = **OWF-HWA-S** = OWF-HW-S ∨ t(3e-4, 0.5) trên khung OWF ngân hàng tỉ lệ. Ô = recall / TB segFAR / run > α / sai số (m).
+
+| Dataset | OWF-HWA-S (C) | OWF-HW-S (R*) | OWF-HU | HSI-VN |
+|---|---|---|---|---|
+| Boreas | 0.975 / 0.0012 / 0 / 3.4 | 0.972 / 0.0010 / 0 / 3.3 | 0.973 / 0.0011 / 0 / 3.3 | 0.898 / 0.0009 / 0 / 5.2 |
+| CMU | **0.874** / 0.0080 / 0 / 3.8 | 0.832 / 0.0066 / 0 / 3.7 | 0.808 / 0.0066 / 0 / 3.8 | 0.808 / 0.0066 / 0 / 3.4 |
+| Nordland | 0.975 / 0.0080 / 0 / 9.6 | 0.972 / 0.0060 / 0 / 9.6 | 0.962 / 0.0058 / 1 / 10.5 | 0.813 / 0.0000 / 0 / 4.2 |
+| office | 0.967 / 0.0006 / 0 / 8.1 | 0.956 / 0.0006 / 0 / 8.1 | 0.950 / 0.0010 / 0 / 8.8 | 0.857 / 0.0006 / 0 / 7.7 |
+| old town | 0.939 / 0.0003 / 0 / 26.6 | 0.926 / 0.0003 / 0 / 27.5 | 0.900 / 0.0005 / 0 / 29.4 | 0.737 / 0.0024 / 0 / 32.0 |
+| countryside | 0.838 / 0.0006 / 0 / 21.7 | 0.831 / 0.0006 / 0 / 21.7 | 0.771 / 0.0000 / 0 / 25.1 | 0.644 / 0.0002 / 0 / 20.0 |
+| Oxford | 0.921 / 0.0066 / 0 / 17.0 | 0.909 / 0.0066 / 0 / 17.1 | 0.896 / 0.0068 / 0 / 17.5 | 0.761 / 0.0071 / 0 / 22.0 |
+| St Lucia | 0.975 / 0.0019 / 0 / 18.9 | 0.970 / 0.0019 / 0 / 19.1 | 0.966 / 0.0016 / 0 / 19.1 | 0.912 / 0.0013 / 0 / 20.4 |
+| **Gộp (144)** | **0.933 / 0 run / 13.64 m** | 0.921 / 0 / 13.78 | 0.903 / 1 / 14.68 | 0.804 / 0 / 14.34 |
+
+- **L1 đạt:** TB segFAR tệ nhất 0.0080 (CMU, Nordland), 0/144 run > α.
+- **L2 đạt:** chênh C − R* **+0.0118**, CI 95 % [+0.0096, +0.0141]; thắng **144/144** run.
+- **L3 đạt:** 13.64 vs 13.78 m.
+
+Gain lớn nhất ở CMU (+0.042, đúng đích chẩn đoán); recall tăng trên cả 8/8 dataset. Bậc đồng thuận trên OWF thường cũng tăng như vậy (OWF-HWA
+0.9205 vs OWF-HW 0.9078; báo cáo phụ). Bảng điểm đầy đủ: `analysis/results/owf/owfhwas_test_s49_51_json.tgz`.
 
 **Chẩn đoán (tập A, 404 run, nhãn chỉ để chẩn đoán).** Với luật hợp hai bậc W(1e-5, 16, 1e-8, 2), chuỗi vị trí lai (OWF-H) đúng trên 0.959 khung
 trong bản đồ nhưng chỉ báo đúng 0.899. Trên CMU khoảng cách lớn nhất: chuỗi đúng 0.964, báo 0.794, và TOÀN BỘ phần thiếu (0.176) nằm ở đoạn
