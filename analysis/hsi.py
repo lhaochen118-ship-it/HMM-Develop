@@ -350,7 +350,7 @@ def online(z, name, mode="session", verbose=False, **kw):
         T = c0; cur = order[c0:c0 + cfg.chunk]; cc = cond[cur[0]]
         m = (y >= 0) & (avail < T) & (~cal if cfg.scope == "pooled" else ((cond != cc) | ~cal))
         n1, n0 = int((y[m] == 1).sum()), int((y[m] == 0).sum())
-        if n1 >= 50 and n0 >= 50 and (clf is None or m.sum() > 1.1 * last_n):
+        if n1 >= min_lab and n0 >= min_lab and (clf is None or m.sum() > 1.1 * last_n):
             clf = fit_model(X[m], y[m]); last_n = int(m.sum())
             if mode == "session+geo": gclf = fit_model(X[m][:, geo], y[m])
         if clf is None: continue
@@ -475,7 +475,7 @@ def evaluate_mask(z, name, acc, seqs, cfg, nav=True):
 
 def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict", bridge="rigid", sc_lags=(), train_all=False,
               calib="regime", adaptive=False, floor=-np.inf, start_relax=False, null_cap=None, mondrian=None, verbose=False,
-              null_oracle=None, geo_budget=None, anchors="ver", sc_mode="window", place_feats=False, train_null=False, **kw):
+              null_oracle=None, geo_budget=None, anchors="ver", sc_mode="window", place_feats=False, train_null=False, min_lab=50, **kw):
     """HSI v2 = geometric self-verification (a: trusted anchors, b: dead-reckoning agreement; trusted_geometry) OR
     (c) a hindsight-learned score above a conformal threshold calibrated on hindsight-null segments of the SAME regime
     (frames where a|b do not fire), held out from training. scope: 'pooled' (every session's held-out units) or 'session'.
@@ -629,7 +629,7 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
             X[cur, -1] = np.log1p(n0_)
         m = (yt >= 0) & (avail < T) & ~cal if train_all else (yt >= 0) & (avail < T) & ~cal & regime
         n1, n0 = int((yt[m] == 1).sum()), int((yt[m] == 0).sum())
-        if n1 >= 50 and n0 >= 50 and (clf is None or m.sum() > 1.1 * last_n):
+        if n1 >= min_lab and n0 >= min_lab and (clf is None or m.sum() > 1.1 * last_n):
             clf = fit_model(X[m], yt[m]); last_n = int(m.sum())
         if clf is None: continue
         thr_k = {}
