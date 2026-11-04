@@ -5,6 +5,17 @@ Không chứa vận hành (→ `02`) hay kế hoạch (→ `03`). Nguồn đầy
 báo cáo `paper/BAO_CAO_HSI.pdf`. Phát hiện của ý tưởng 1 và của các hướng trước: `history/01_SCIENTIFIC_FINDINGS_idea1_and_idea2-early.md`,
 tóm tắt `07_IDEA1_SUMMARY.md`.*
 
+## 00. Entry 11 — OWF-H (luật khuyến nghị mới)
+
+**Đóng góp.** Ghép bộ ƯỚC LƯỢNG OWF (vị trí đúng hơn: MAP trong excl ở 0.87–1.00 frame on-map) với lớp QUYẾT ĐỊNH HSI (tự hiệu chuẩn trên
+excursion thật, hợp lệ từng run). Phát hiện cơ chế: ghép thẳng làm vỡ HSI (CMU segFAR 0.089) vì chứng chỉ hình học của HSI ("chuỗi khớp
+odometry") bị lừa bởi quỹ đạo dead-reckoning của OWF — luôn khớp odometry kể cả khi sai; sửa: chỉ giao chuỗi OWF khi OWF tự tin (≥ 0.9) VÀ đã
+ổn định (≥ 16·excl từ đầu chuỗi), còn lại giữ chuỗi topo tự do. Lân cận (t, D) phẳng (phát triển: Score 0.866–0.871, mọi biến thể hợp lệ).
+**Kết quả (đăng ký trước, tập mới seed 40–42, 144 run):** recall 0.885 vs HSI-VN 0.811 (+0.074, CI [+0.060, +0.088]); thắng 7/8 dataset (Nordland
++0.112, old town +0.105, Oxford +0.104, Boreas +0.081, countryside +0.077, office +0.069, St Lucia +0.040; CMU hoà); 1/144 run > α (cùng run với
+HSI-VN); điều hướng gộp 14.46 vs 15.35 m (Boreas 2.8 vs 7.5). **Hạn chế:** CMU không cải thiện (đầu chuỗi phủ gần hết chuỗi ngắn); điều hướng
+countryside 30.4 vs 23.6 m.
+
 ## 0. Entry 10 — ý tưởng 2b: bộ lọc thế giới mở (OWF) — đọc trước §1 nếu cần số mới nhất
 
 **Đóng góp.** Đổi BỘ ƯỚC LƯỢNG chứ không đổi lớp quyết định: trạng thái là vị trí trên lưới mét phủ cả vùng có bản đồ và vùng trống (+ trạng thái

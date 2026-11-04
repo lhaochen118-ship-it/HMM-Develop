@@ -23,7 +23,9 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 
 ## 3. Quyết định đã thống nhất
 
-1. **Luật khuyến nghị: HSI-VN** (`VARIANTS["HSI-VN"]`: HSI-rot-m-sc + `anchors="ver+geo"` + `train_null=True`). **Điểm vận hành điều hướng:
+0. **Luật khuyến nghị (Entry 11, 2026-11-04 17:30 UTC): OWF-H** — OWF (Entry 10) → `owf_hybrid.py --mode xms0.9_16` → HSI-VN; tập mới seed
+   40–42: recall 0.885 vs HSI-VN 0.811, 1/144 run > α, sai số 14.46 vs 15.35 m (`RESEARCH_LOG.md` Entry 11). Mục 1 bên dưới là luật trước đó.
+1. **Luật khuyến nghị (đến Entry 10): HSI-VN** (`VARIANTS["HSI-VN"]`: HSI-rot-m-sc + `anchors="ver+geo"` + `train_null=True`). **Điểm vận hành điều hướng:
    HSI-VMN** (+ `mondrian="ref"`). Luật trước HSI-rot-m-sc chỉ còn làm tham chiếu.
 2. Một cấu hình chung cho mọi dataset; α = 0.05, H = 10; không tinh chỉnh theo dataset.
 3. Mọi quyết định mới: đăng ký trước trong `RESEARCH_LOG.md` (commit trước khi có kết quả) và kiểm trên **một nhóm 3 seed CHƯA DÙNG của kho dự
@@ -61,6 +63,9 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 16–18 | `caotienminh1/hmm-navcache-f16` | Entry 9 | đã dùng |
 | seed 19–21 | `caotienminh1/hmm-navcache-r19` | — | **trống** |
 | seed 22–24 | `caotienminh1/hmm-navcache-r19` | — | **trống** |
+| seed 40–42 | `synchan5704/hmm-navcache-r40` (AUTOLOOP) | Entry 11 (OWF-H: F1–F3 đạt) | đã dùng |
+| seed 43–45 | `synchan5704/hmm-navcache-r40` | — | trống |
+| seed 46–48 | `synchan5704/hmm-navcache-r40` | — | trống |
 | seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
 
 ## 6. Việc tiếp theo (khung chat mới)

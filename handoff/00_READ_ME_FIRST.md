@@ -5,6 +5,11 @@
 
 **Luật khuyến nghị: HSI-VN** — 0 vi phạm trên 413 run phát triển + 216 run của hai tập kiểm tra mới; +0.065 recall so với ý tưởng 1 (SH).
 
+**LUẬT KHUYẾN NGHỊ (từ 2026-11-04 17:30 UTC, Entry 11): OWF-H** = bộ ước lượng thế giới mở OWF + lớp quyết định HSI-VN (chuỗi OWF chỉ giao cho HSI
+khi khối lượng ≥ 0.9 và đã đi ≥ 16·excl từ đầu chuỗi; `analysis/owf_hybrid.py --mode xms0.9_16`). Tập mới seed 40–42 (144 run): recall **0.885** vs
+HSI-VN 0.811 (+0.074, CI [+0.060, +0.088]), 1/144 run > α (như HSI-VN), sai số điều hướng 14.46 vs 15.35 m. Vòng lặp tự động 12 giờ:
+`handoff/AUTOLOOP.md`.
+
 **Entry 10 — ý tưởng 2b, bộ lọc thế giới mở (OWF, `analysis/owf.py`):** lưới mét phủ cả vùng có bản đồ và vùng trống, hiện diện suy từ vị trí.
 Hợp lệ (TB), recall cao nhất: tập A 404 run 0.863 (HSI-VN 0.791, SH 0.726), tập quyết định mới seed 25–27: +0.076 so với HSI-VN (CI [+0.054,
 +0.099]) — nhưng sai số điều hướng kém HSI-VN ở 4/6 dataset và 4.7 % run vượt α (CMU, Nordland) ⇒ **theo quy tắc đăng ký trước HSI-VN vẫn là luật
