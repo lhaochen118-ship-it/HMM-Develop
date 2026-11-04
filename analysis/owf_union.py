@@ -1,6 +1,7 @@
 """AUTOLOOP iteration 4 (offline): union of OWF-H with very confident, settled OWF reports.
 OWF-H (Entry 11) reports where HSI-VN reports on the hybrid chain; on Nordland / old town the open-world filter alone reports more correct
-fixes. Union rule U(e2, D2): report at t iff OWF-H reports, OR (OWF disc mass >= 1 - e2 AND odometry path since the sequence start >= D2 excl).
+fixes. Union rule U(e2, D2): report at t iff OWF-H reports, OR (OWF disc mass >= 1 - e2 AND odometry path since the sequence start >= D2 excl);
+W(e2, D2, e3, D3): two tiers (a very strict one early, e.g. 1e-8 after 2 excl, and a strict one later, e.g. 1e-5 after 16 excl).
 Fix position: OWF-H's position where it reports (hybrid chain = OWF image where mass >= 0.9 and path >= 16 excl, the topological chain
 elsewhere), the OWF image otherwise. Inputs: OWF frames (fr_*_b1.npz: mass, xhat), OWF-H masks (hsifr_*_<tag>.npz from hsi_eval --frames
 via owf_hybrid --hsiframes), navcaches. Usage:
@@ -37,8 +38,10 @@ def one(args):
     for v in variants:
         if v == "H": acc = accH; est = est_h
         else:
-            e2, D2 = [float(a) for a in v[2:-1].split(",")]
-            extra = (xh >= 0) & (mass >= 1 - e2) & (pst >= D2 * excl) & ~accH
+            a = [float(x) for x in v[2:-1].split(",")]                        # U(e2,D2) or W(e2,D2,e3,D3): two tiers
+            ok = (mass >= 1 - a[0]) & (pst >= a[1] * excl)
+            if v.startswith("W"): ok |= (mass >= 1 - a[2]) & (pst >= a[3] * excl)
+            extra = (xh >= 0) & ok & ~accH
             acc = accH | extra; est = np.where(extra, np.maximum(xh, 0), est_h)
         xf = MP[est].astype(float); xf = xf if xf.ndim > 1 else xf[:, None]
         err = np.linalg.norm(xf - q2, axis=1); gd = z["inm"] & (err <= excl)

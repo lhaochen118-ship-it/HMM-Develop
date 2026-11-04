@@ -67,6 +67,13 @@ def main():
                 for sd in (25, 26, 27):
                     J.append((f"hsi_eval.py DIR:navcache_@hmm-navcache-r19 {ds} {desc} {sd} --variants HSI-VN,HSI-VMN,HSI-rot-m-sc,oracle --frames --tag r25",
                               fr[ds] * 4 * 0.35e-3))
+    if which.startswith("fresh:"):        # another fresh pool, e.g. fresh:49-54 (caches kept in navcache_r<first seed>)
+        a, b = [int(x) for x in which.split(":")[1].split("-")]
+        cost = {"boreas": 95, "4s:countryside": 47, "cmu": 20, "nord": 12, "4s:office_loop": 12, "4s:old_town": 10, "oxford": 6, "stlucia": 4}
+        for ds, c in cost.items():
+            for desc in DESCS:
+                for sd in range(a, b + 1):
+                    J.append((f"hsi_fresh.py {ds} {desc} {sd} 1 --keep navcache_r{a} --variants HSI-VN,HSI-VMN,oracle --tag r{a}", c * 60 * DFAC[desc]))
     if which == "fresh":                  # AUTOLOOP fresh pool: seeds 40-48 of 8 holed datasets, caches kept in /kaggle/working/navcache_r40,
         # HSI-VN / HSI-VMN / HSI-rot-m-sc / oracle evaluated on the same caches (hsi_fresh.py; the runner prepends the dump dir)
         cost = {"boreas": 95, "4s:countryside": 47, "cmu": 20, "nord": 12, "4s:office_loop": 12, "4s:old_town": 10, "oxford": 6, "stlucia": 4}

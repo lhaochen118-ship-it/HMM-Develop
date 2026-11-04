@@ -89,6 +89,33 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 13 — OWF-HW-S: ngân hàng tỉ lệ odometry + luật hợp hai bậc — đăng ký trước (2026-11-04 18:00 UTC; AUTOLOOP vòng 3 + 5)
+
+**Phát triển (không quyết định; nhãn chỉ để đánh giá).**
+(a) *Ngân hàng tỉ lệ odometry* (`owf.py --qx 0.005,0.02 --scales 0.97,1.0,1.03`: 6 bộ lọc, chọn trực tuyến theo evidence; VIO 4Seasons dài hơn GNSS
+1–12 %, odometry mô phỏng sai tỉ lệ ~3 %), đợt `devS` (149 run: seed 1–3 của 6 dataset có lỗ, NCLT, Oxford / St Lucia seed 0–2), cùng run:
+
+| Luật | recall gộp | run > α | sai số (m) | countryside recall / sai số |
+|---|---|---|---|---|
+| OWF-H-S | 0.876 | 0 | 15.15 | 0.787 / 27.4 |
+| OWF-H | 0.866 | 0 | 15.72 | 0.730 / 30.5 |
+| OWF-S | 0.871 | 2 | 15.67 | 0.661 / 45.3 |
+| OWF | 0.856 | 1 | 16.23 | 0.605 / 48.3 |
+| HSI-VN | 0.786 | 0 | 16.81 | 0.646 / 28.9 |
+
+(b) *Luật hợp hai bậc* trên tập A (404 run, `owf_union.py`, OWF thường): W(1e-5, 16, 1e-8, 2) = OWF-H ∨ (khối lượng ≥ 1 − 1e-5 sau 16·excl) ∨
+(khối lượng ≥ 1 − 1e-8 sau 2·excl): Score **0.899**, 0 run > α, 13.73 m; CMU 0.794 (OWF-H 0.756, SH 0.834). W(…, 1e-7, 2) 0.900; W(…, 1e-9, 2) 0.898;
+W(…, 1e-8, 4) 0.896 — bậc sớm cực chặt mở được đầu chuỗi CMU mà không vi phạm.
+
+**Luật đăng ký: OWF-HW-S** = OWF với ngân hàng tỉ lệ (`--qx 0.005,0.02 --scales 0.97,1.0,1.03`, phần còn lại như Entry 10) → OWF-H (`--mode
+xms0.9_16`, HSI-VN) → hợp hai bậc W(1e-5, 16, 1e-8, 2) với khối lượng / ảnh của OWF-S.
+**Tập kiểm tra mới:** seed 46–48 của `hmm-navcache-r40` (144 run). Luật đương nhiệm R* = luật khuyến nghị sau Entry 12 (OWF-HU nếu Entry 12 đạt,
+ngược lại OWF-H), tính trên CÙNG 144 run (OWF thường + OWF-H + mặt nạ, trong cùng đợt `t46`).
+- **K1 (hợp lệ):** TB segFAR ≤ 0.05 trên 8/8 dataset và ≤ 2/144 run > α.
+- **K2 (recall):** chênh gộp OWF-HW-S − R* ≥ +0.01 với cận dưới CI 95 % bootstrap > 0.
+- **K3 (điều hướng):** sai số gộp ≤ R* + 0.5 m.
+**Quy tắc:** K1 ∧ K2 ∧ K3 ⇒ OWF-HW-S là luật khuyến nghị mới. *Phụ (báo cáo):* OWF-HW (OWF thường + hợp hai bậc), OWF-H-S, HSI-VN.
+
 ## Entry 12 — OWF-HU: hợp của OWF-H với các báo OWF cực tự tin đã ổn định — đăng ký trước (2026-11-04 17:32 UTC; AUTOLOOP vòng 4)
 
 **Bối cảnh.** Entry 11: OWF-H là luật khuyến nghị (tập mới 40–42: 0.885, 1/144 run > α, 14.46 m). Trên Nordland / old town / St Lucia, OWF một mình
