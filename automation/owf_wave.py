@@ -67,6 +67,13 @@ def main():
                 for sd in (25, 26, 27):
                     J.append((f"hsi_eval.py DIR:navcache_@hmm-navcache-r19 {ds} {desc} {sd} --variants HSI-VN,HSI-VMN,HSI-rot-m-sc,oracle --frames --tag r25",
                               fr[ds] * 4 * 0.35e-3))
+    if which == "fresh":                  # AUTOLOOP fresh pool: seeds 40-48 of 8 holed datasets, caches kept in /kaggle/working/navcache_r40,
+        # HSI-VN / HSI-VMN / HSI-rot-m-sc / oracle evaluated on the same caches (hsi_fresh.py; the runner prepends the dump dir)
+        cost = {"boreas": 95, "4s:countryside": 47, "cmu": 20, "nord": 12, "4s:office_loop": 12, "4s:old_town": 10, "oxford": 6, "stlucia": 4}
+        for ds, c in cost.items():
+            for desc in DESCS:
+                for sd in range(40, 49):
+                    J.append((f"hsi_fresh.py {ds} {desc} {sd} 1 --keep navcache_r40 --variants HSI-VN,HSI-VMN,HSI-rot-m-sc,oracle --tag r40", c * 60 * DFAC[desc]))
     if which in ("holes", "all"):         # hole ratio 10 % / 50 % (hmm-navcache-holes, seeds 0-2, 6 datasets x 6 descriptors)
         for dr in ("d10", "d50"):
             for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town"):
