@@ -21,7 +21,7 @@ xin user token lại (không bao giờ đưa token vào repo / dataset / báo c�
 | `nhatlong1103/hmm-natural-cache` | 4Seasons chéo cảnh (`navcache_4sx_*`, 36 run) | off-map tự nhiên |
 | `caotienminh1/hmm-navcache-f13` | bố cục lỗ mới seed 13–15, 6 dataset × 6 desc (108 file, 377 MB) | đã dùng (Entry 8) |
 | `caotienminh1/hmm-navcache-f16` | seed 16–18 (108 file) | đã dùng (Entry 9) |
-| `caotienminh1/hmm-navcache-r19` | **kho dự trữ** seed 19–27 (324 file), chia nhóm 19–21 / 22–24 / 25–27 | **chưa dùng** — mỗi quyết định rút một nhóm |
+| `caotienminh1/hmm-navcache-r19` | **kho dự trữ** seed 19–27 (324 file, 1.2 GB, đã kiểm đủ và đọc được), chia nhóm 19–21 / 22–24 / 25–27 | **chưa dùng** — mỗi quyết định rút một nhóm |
 | `nhatlong1103/vpr-descriptor-dumps`, `vpr-dumps-4seasons`, `boreas-vpr-dump` | dump descriptor (runner mount mặc định) | sinh cache mới (`hsi_fresh.py`, `nav_demo.py`) |
 | `nhatlong1103/nclt-vpr-dump` | dump NCLT + FOG | cần cho việc mở rộng NCLT (`--ds` thêm) |
 
