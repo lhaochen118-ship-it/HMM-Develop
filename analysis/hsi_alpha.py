@@ -1,6 +1,7 @@
 """alpha sweep of the recommended rule (HSI-sc@alpha = HSI-rot-m-sc at level alpha; alpha = 0.05 is HSI-rot-m-sc itself) and the
 Claxton'24 labelled reference, on the held-out runs (design set excluded as in hsi_summary.py).
-Usage: hsi_alpha.py <hsi_results_dir> [--md out.md] [--png out.png]
+Usage: hsi_alpha.py <hsi_results_dir> [--md out.md] [--png out.png] [--family PREFIX BASE]
+--family: alpha variants named PREFIX@<alpha> with BASE as the alpha = 0.05 rule (default HSI-sc / HSI-rot-m-sc).
 Per alpha: mean / max realized segFAR (per dataset mean, then over datasets), runs with segFAR > alpha, pooled recall, nav error."""
 import sys, os, glob, json
 import numpy as np
@@ -17,7 +18,8 @@ def main():
     rd = sys.argv[1]; md = sys.argv[sys.argv.index("--md") + 1] if "--md" in sys.argv else None
     R = [j for j in (json.load(open(f)) for f in glob.glob(os.path.join(rd, "hsi_*.json"))) if held(j) and ":" not in j["ds"].replace("4s:", "")]
     R = [j for j in R if not j["ds"].startswith("4sx")]
-    rows = [("HSI-sc@0.01", 0.01), ("HSI-sc@0.02", 0.02), ("HSI-rot-m-sc", 0.05), ("HSI-sc@0.1", 0.1), ("HSI-sc@0.2", 0.2), ("Claxton24", 0.05), ("Xu21", 0.05), ("oracle", 0.0)]
+    pre, base = (sys.argv[sys.argv.index("--family") + 1], sys.argv[sys.argv.index("--family") + 2]) if "--family" in sys.argv else ("HSI-sc", "HSI-rot-m-sc")
+    rows = [(f"{pre}@0.01", 0.01), (f"{pre}@0.02", 0.02), (base, 0.05), (f"{pre}@0.1", 0.1), (f"{pre}@0.2", 0.2), ("Claxton24", 0.05), ("Xu21", 0.05), ("oracle", 0.0)]
     out = ["| rule | nominal α | runs | segFAR mean of dataset means | max dataset mean | runs > α | runs > 0.05 | pooled recall | nav err (m) |", "|---|---|---|---|---|---|---|---|---|"]
     for v, a in rows:
         J = [j for j in R if v in j["variants"]]
@@ -31,13 +33,13 @@ def main():
         out.append(f"| {v} | {a} | {len(J)} | {np.mean(dm):.4f} | {np.max(dm):.4f} | {nviol} ({nviol / len(J):.1%}) | {n05} | {rec:.3f} | {err:.1f} |")
     txt = "\n".join(out); print(txt)
     if md: open(md, "w").write("### α sweep (held-out runs)\n\n" + txt + "\n")
-    if "--png" in sys.argv: plot(R, sys.argv[sys.argv.index("--png") + 1])
+    if "--png" in sys.argv: plot(R, sys.argv[sys.argv.index("--png") + 1], rows[:5])
 
 
-def plot(R, out):
+def plot(R, out, pts=None):
     """two panels, one axis each: realized segFAR vs nominal alpha (with the y = x bound), recall vs nominal alpha"""
     import matplotlib; matplotlib.use("Agg"); import matplotlib.pyplot as plt
-    pts = [("HSI-sc@0.01", 0.01), ("HSI-sc@0.02", 0.02), ("HSI-rot-m-sc", 0.05), ("HSI-sc@0.1", 0.1), ("HSI-sc@0.2", 0.2)]
+    pts = pts or [("HSI-sc@0.01", 0.01), ("HSI-sc@0.02", 0.02), ("HSI-rot-m-sc", 0.05), ("HSI-sc@0.1", 0.1), ("HSI-sc@0.2", 0.2)]
     A, M, MX, F, RC = [], [], [], [], []
     for v, a in pts:
         J = [j["variants"][v] for j in R if v in j["variants"]]
