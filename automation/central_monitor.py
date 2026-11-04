@@ -30,6 +30,7 @@ Usage: central_monitor.py <state.json> [--gap 15] [--run-poll 600] [--backoff 60
 import sys, os, re, json, glob, time, shutil, subprocess, random
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CODE_NAME = os.environ.get("VPR_CODE_DS", "dive-vpr-analysis")    # code dataset name (make_eval_kernel.py)
 args = sys.argv[1:]
 
 
@@ -139,7 +140,7 @@ def retarget(kd, s, acc):
     """move a not-yet-pushed kernel to account acc (metadata id + that account's code dataset; fanout --build-only refreshed it)"""
     f = os.path.join(kd, "kernel-metadata.json"); md = json.load(open(f)); old = md["id"].split("/")[0]
     md["id"] = f"{acc}/{os.path.basename(kd)}"
-    md["dataset_sources"] = [d.replace(f"{old}/dive-vpr-analysis", f"{acc}/dive-vpr-analysis") for d in md["dataset_sources"]]
+    md["dataset_sources"] = [d.replace(f"{old}/{CODE_NAME}", f"{acc}/{CODE_NAME}") for d in md["dataset_sources"]]
     json.dump(md, open(f, "w"), indent=2); s["kid"] = md["id"]
     # the target account's code dataset must hold the current analysis/*.py (hash-cached: no upload when unchanged); a kernel
     # moved to an account with stale code fails at once (2026-11-03: "can't open file mps_probe.py")
@@ -147,7 +148,7 @@ def retarget(kd, s, acc):
                         "codesync", "true", "", "--owner", acc], capture_output=True, text=True)
     if "unchanged" not in r.stdout:
         for _ in range(30):                                            # wait until the new version is ready before the push
-            o = subprocess.run(["kaggle", "datasets", "status", f"{acc}/dive-vpr-analysis"], capture_output=True, text=True,
+            o = subprocess.run(["kaggle", "datasets", "status", f"{acc}/{CODE_NAME}"], capture_output=True, text=True,
                                env=dict(os.environ, KAGGLE_API_TOKEN=open(os.path.expanduser(f"~/.kaggle/tok_{acc}")).read().strip())).stdout.strip()
             if o.endswith("ready"): break
             time.sleep(10)

@@ -20,7 +20,8 @@ import sys, os, json, glob, shutil, subprocess
 #   --acc2 (yuan1103), --acc3 (synchan5704), or --owner <username> for any new account.
 ACC = 3 if "--acc3" in sys.argv else 2 if "--acc2" in sys.argv else 1
 OWNER = sys.argv[sys.argv.index("--owner") + 1] if "--owner" in sys.argv else {1: "nhatlong1103", 2: "yuan1103", 3: "synchan5704"}[ACC]
-CODE_DS = f"{OWNER}/dive-vpr-analysis"
+CODE_NAME = os.environ.get("VPR_CODE_DS", "dive-vpr-analysis")    # env VPR_CODE_DS: a separate code dataset per chat / line of work
+CODE_DS = f"{OWNER}/{CODE_NAME}"
 _tok = os.path.expanduser(f"~/.kaggle/tok_{OWNER}")                     # per-account token file, if present
 if os.path.isfile(_tok): os.environ["KAGGLE_API_TOKEN"] = open(_tok).read().strip()
 DUMPS = []
@@ -40,10 +41,10 @@ dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
 stage = os.path.join(kdir, "_code"); shutil.rmtree(stage, ignore_errors=True); os.makedirs(stage)
 for f in glob.glob(os.path.join(ROOT, "analysis", "*.py")) + glob.glob(os.path.join(ROOT, "analysis", "*.sh")):
     shutil.copy(f, stage)
-json.dump({"title": "dive-vpr-analysis", "id": CODE_DS, "licenses": [{"name": "CC0-1.0"}]}, open(os.path.join(stage, "dataset-metadata.json"), "w"))
+json.dump({"title": CODE_NAME, "id": CODE_DS, "licenses": [{"name": "CC0-1.0"}]}, open(os.path.join(stage, "dataset-metadata.json"), "w"))
 import hashlib
 h = hashlib.sha256(b"".join(open(f, "rb").read() for f in sorted(glob.glob(os.path.join(stage, "*.py")) + glob.glob(os.path.join(stage, "*.sh"))))).hexdigest()
-hf = os.path.expanduser(f"~/.kaggle/codehash_{OWNER}")          # skip the upload when this account already has this exact code
+hf = os.path.expanduser(f"~/.kaggle/codehash_{OWNER}" + ("" if CODE_NAME == "dive-vpr-analysis" else "_" + CODE_NAME))          # skip the upload when this account already has this exact code
 exists = subprocess.run(["kaggle", "datasets", "status", CODE_DS], capture_output=True, text=True).stdout.strip().lower() == "ready"
 if exists and os.path.isfile(hf) and open(hf).read().strip() == h:
     print("code dataset: unchanged (hash), not re-uploaded")

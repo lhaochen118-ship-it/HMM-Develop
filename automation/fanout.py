@@ -9,6 +9,7 @@ Prints one line per kernel; waits for all runners; then copies every results/*.j
 import sys, os, glob, subprocess, shutil, time
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+CODE_NAME = os.environ.get("VPR_CODE_DS", "dive-vpr-analysis")    # code dataset name (make_eval_kernel.py)
 ACCOUNTS = sorted(os.path.basename(f)[4:] for f in glob.glob(os.path.expanduser("~/.kaggle/tok_*")))
 ACCOUNTS = ["nhatlong1103"] + [a for a in ACCOUNTS if a != "nhatlong1103"]
 _res = os.path.join(os.path.dirname(os.path.abspath(__file__)), "reserved_accounts.txt")   # kept for the user: never used
@@ -50,7 +51,7 @@ time.sleep(30)                                                             # let
 for acc in sorted({slots[k % len(slots)][0] for k in range(nk)}):
     env = dict(os.environ, KAGGLE_API_TOKEN=open(os.path.expanduser(f"~/.kaggle/tok_{acc}")).read().strip())
     for _ in range(40):
-        if subprocess.run(["kaggle", "datasets", "status", f"{acc}/dive-vpr-analysis"], capture_output=True, text=True, env=env).stdout.strip().endswith("ready"): break
+        if subprocess.run(["kaggle", "datasets", "status", f"{acc}/{CODE_NAME}"], capture_output=True, text=True, env=env).stdout.strip().endswith("ready"): break
         time.sleep(10)
 def make(kd, slug, part, acc, gpu, t4=False):
     flag = (["--t4"] if t4 else (["--l4"] if L4 else ["--gpu"])) if gpu else []
