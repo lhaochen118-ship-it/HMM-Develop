@@ -186,6 +186,14 @@ Tập kiểm tra seed 13–15 (sinh sau đăng ký trước Entry 8; 108 run, kh
 
 {{CMP_test8}}
 
+Tập kiểm tra seed 16–18 (Entry 9 — nhân bản đúng quy tắc của Entry 8, sinh sau đăng ký trước; 108 run):
+
+{{CMP_test9}}
+
+Gộp hai tập kiểm tra mới (seed 13–18, 216 run):
+
+{{CMP_test1318}}
+
 {{TABLES_E1}}
 
 {{TABLES_E2}}
