@@ -6,8 +6,9 @@ Cách đọc repo và việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md`, `hand
 
 ## 0. Trạng thái hiện hành (2026-11-04)
 
-**Tài khoản Kaggle đang dùng** (`automation/active_accounts.txt`, theo thứ tự lấp phiên): `quynhle07`, `nguyenhoa99`, `quynhtran35`, `yuan1103`,
-`caotienminh1` — mỗi acc 2 phiên GPU + 5 phiên CPU. Token ở `~/.kaggle/tok_<acc>` (chmod 600) **chỉ trong container của phiên chat**; phiên mới phải
+**Tài khoản Kaggle đang dùng** (`automation/active_accounts.txt`, theo thứ tự lấp phiên): `synchan5704`, `yeshenhi` (thêm 2026-11-04 cho Entry 10;
+`yeshenhi` chỉ T4 khi xin GPU, CPU bình thường), `quynhle07`, `nguyenhoa99`, `quynhtran35`, `yuan1103`, `caotienminh1` — mỗi acc 2 phiên GPU + 5 phiên CPU.
+Code dataset của kernel: `<acc>/dive-vpr-analysis` (mặc định, phiên HSI) và `<acc>/dive-vpr-owf` (Entry 10; chọn bằng `export VPR_CODE_DS=...`). Token ở `~/.kaggle/tok_<acc>` (chmod 600) **chỉ trong container của phiên chat**; phiên mới phải
 xin user token lại (không bao giờ đưa token vào repo / dataset / báo cáo). Không có token `nhatlong1103` ⇒ dataset mới đăng dưới **caotienminh1**
 (`automation/publish_dataset.py --owner caotienminh1`). Ý tưởng 2 chỉ dùng phiên CPU (không tốn hạn mức GPU).
 
@@ -21,7 +22,7 @@ xin user token lại (không bao giờ đưa token vào repo / dataset / báo c�
 | `nhatlong1103/hmm-natural-cache` | 4Seasons chéo cảnh (`navcache_4sx_*`, 36 run) | off-map tự nhiên |
 | `caotienminh1/hmm-navcache-f13` | bố cục lỗ mới seed 13–15, 6 dataset × 6 desc (108 file, 377 MB) | đã dùng (Entry 8) |
 | `caotienminh1/hmm-navcache-f16` | seed 16–18 (108 file) | đã dùng (Entry 9) |
-| `caotienminh1/hmm-navcache-r19` | **kho dự trữ** seed 19–27 (324 file, 1.2 GB, đã kiểm đủ và đọc được), chia nhóm 19–21 / 22–24 / 25–27 | **chưa dùng** — mỗi quyết định rút một nhóm |
+| `caotienminh1/hmm-navcache-r19` | **kho dự trữ** seed 19–27 (324 file, 1.2 GB, đã kiểm đủ và đọc được), chia nhóm 19–21 / 22–24 / 25–27 | 19–21, 22–24 **chưa dùng**; 25–27 đã dùng (Entry 10, OWF) |
 | `nhatlong1103/vpr-descriptor-dumps`, `vpr-dumps-4seasons`, `boreas-vpr-dump` | dump descriptor (runner mount mặc định) | sinh cache mới (`hsi_fresh.py`, `nav_demo.py`) |
 | `nhatlong1103/nclt-vpr-dump` | dump NCLT + FOG | cần cho việc mở rộng NCLT (`--ds` thêm) |
 

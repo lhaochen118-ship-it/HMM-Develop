@@ -82,3 +82,28 @@ monitor đẩy / kéo; (5) gom ngay khi từng kernel xong, kiểm `cache_path` 
   recall; (2) tiêu chí cơ chế quá chặt (T3 Entry 8) làm một luật trội Pareto chưa được nhận — đặt tiêu chí theo thước đo kết quả, tiêu chí cơ chế
   để báo cáo; (3) giả định "lỗi điều hướng do chụm sai ngắn" sai — đo trước khi viết code.
 - **Bảo mật:** token Kaggle chỉ ở `~/.kaggle/tok_<acc>` (chmod 600), không bao giờ trong repo / dataset / báo cáo / prompt; repo là public.
+
+## 6. Entry 10 (OWF, 2026-11-04) — vận hành và bài học
+
+| Việc | Cách / số đo |
+|---|---|
+| một run OWF | `python3 analysis/owf.py <cache_dir> <dump_dir> <ds> <desc> <seed> --out r.json --frames fr` (cần cả navcache — lỗ, odometry, nhãn — và dump descriptor; ba bộ lọc q chạy trong một tiến trình) |
+| đợt Kaggle | `automation/owf_wave.py <groups> --set main|abl|holes|r19|r19hsi --kernels N` → `VPR_CODE_DS=dive-vpr-owf fanout.py ... --groups --cpu --build-only --par 4 --ds <caches>` (`--nodumps` cho `r19hsi`) → `VPR_CODE_DS=dive-vpr-owf central_monitor.py <state> --gap 20 --run-poll 300 --nocopy <dirs>` → `owf_collect.py <work> <out> [--frames]` → `owf_summary.py` |
+| thời gian | cục bộ 2–14 ms/frame (3 bộ lọc, 1 lõi); phiên CPU Kaggle (4 job / 4 vCPU) 6–36 ms/frame, chậm ~2.3×; Boreas 8448-d ~33 phút / run ⇒ tập A 404 run trên 30 kernel CPU ~85 phút đồng hồ, tập B 108 run trên 10 kernel ~50 phút; 62 kernel tổng, 0 job lỗi |
+| bộ nhớ | ≤ 4 GB / job (Boreas 8448-d), 4 job / phiên CPU 30 GB ổn |
+
+**Lỗi / sự cố và cách sửa.**
+- *Checkout cũ:* container của phiên bắt đầu ở commit tạo branch (`7502e2c`), không có Entry 1–9 của HSI; chỉ phát hiện khi push bị từ chối. Bài
+  học: `git fetch` + `git log HEAD..origin/<branch>` NGAY khi bắt đầu, và trước mỗi push.
+- *Hai phiên chat song song cùng branch / cùng acc:* (i) kernel thăm dò của phiên này đã version `<acc>/dive-vpr-analysis` bằng code cũ (thiếu
+  `hsi*.py`) ⇒ có thể làm hỏng kernel mới của phiên kia; đã đồng bộ lại bằng HEAD và thêm `VPR_CODE_DS` (code dataset riêng mỗi phiên, cả
+  `make_eval_kernel.py`, `fanout.py`, `central_monitor.py`); (ii) cả hai cùng publish `hmm-navcache-r19` trong cùng phút (lỗi "title already in
+  use" ở phiên này — dataset của phiên kia, đủ 324 file); (iii) tập quyết định chuyển sang nhóm dự trữ cuối (25–27) để không giành nhóm 19–21.
+- *Thử nghiệm sai:* `opt()` đọc `sys.argv` sau khi đã cắt cho `import nav_demo` ⇒ cờ `--frames` / `--out` mất (sửa: đọc trước khi cắt);
+  `rmdir $d/$(...)` bị chặn bởi kiểm an toàn ⇒ dùng đường dẫn tương đối tường minh; `tar --exclude` phải đặt trước đường dẫn.
+- *GitHub 500 khi push:* thử lại với lùi luỹ thừa thành công ở lần 2.
+
+**Bài học.** (1) Đo khoảng trống trước khi chọn ý tưởng (MAP chuỗi đúng vs recall báo) chỉ ra nút thắt nằm ở cấu trúc trạng thái, không ở lớp
+quyết định. (2) Một vòng thiết kế cục bộ trên seed 0 (CPU 4 lõi, ~2 giờ) đủ để chốt cấu hình; mọi tham số chọn bằng nguyên tắc (đơn vị excl,
+evidence trực tuyến) và ghi lại đường đi thiết kế. (3) Sai số điều hướng phải được đo ngay trong thiết kế: tập thiết kế cũ chỉ có Boreas có err,
+nên điểm yếu điều hướng chỉ lộ ra ở tập giữ ra.

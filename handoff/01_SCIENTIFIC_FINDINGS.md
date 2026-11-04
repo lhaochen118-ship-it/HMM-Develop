@@ -5,6 +5,30 @@ Không chứa vận hành (→ `02`) hay kế hoạch (→ `03`). Nguồn đầy
 báo cáo `paper/BAO_CAO_HSI.pdf`. Phát hiện của ý tưởng 1 và của các hướng trước: `history/01_SCIENTIFIC_FINDINGS_idea1_and_idea2-early.md`,
 tóm tắt `07_IDEA1_SUMMARY.md`.*
 
+## 0. Entry 10 — ý tưởng 2b: bộ lọc thế giới mở (OWF) — đọc trước §1 nếu cần số mới nhất
+
+**Đóng góp.** Đổi BỘ ƯỚC LƯỢNG chứ không đổi lớp quyết định: trạng thái là vị trí trên lưới mét phủ cả vùng có bản đồ và vùng trống (+ trạng thái
+xa Ω); chuyển trạng thái bảo toàn khối lượng (khối lượng đi vào lỗ được dead-reckon qua lỗ thay vì bị dồn về các nút bản đồ); emission là tỉ số
+hợp lý tự chuẩn hoá (LR = 1 ở ô trống); hiện diện là HÀM của vị trí; báo khi khối lượng hậu nghiệm trong đĩa excl ≥ 1 − 1e-3. Lý thuyết
+(`paper/owf_theory.md`): Mệnh đề 1 (niềm tin khuếch tán không bị kéo về bản đồ), Mệnh đề 2 (cận Ville cho báo sai trong một đoạn off-map —
+không có số hạng mép; đầu chuỗi là trường hợp yếu), Mệnh đề 3 (rời bản đồ quyết định bằng dead-reckoning so với vùng phủ). Chẩn đoán dẫn tới ý
+tưởng: chuỗi vị trí topo đúng ở 0.78–0.95 frame on-map nhưng lớp quyết định (SH) chỉ báo 0.51–0.80.
+
+**Tích cực (đăng ký trước, Entry 10).** Tập A (404 run chưa từng xem với OWF): recall gộp **0.863** vs HSI-VN 0.791 vs SH 0.726; cao hơn HSI-VN
+trên 8/9 dataset (gộp +0.072, CI [+0.061, +0.083]) và hơn SH 8/9; TB segFAR ≤ 0.05 trên 9/9; **kiểm toán vị trí đạt mọi lớp, mép ≤ 0.003 mọi
+dataset** (ý tưởng 1: 0.08–0.11 ở Boreas / old town). Sai số điều hướng tốt nhất trên Boreas (3.1 m vs SH 4.5, HSI-VN 7.0), old town (21.6 vs 26.1
+/ 33.0), Oxford, St Lucia, NCLT. Tập quyết định mới (seed 25–27, 108 run): D1 hợp lệ đạt (3/108 run > α), D2 recall +0.076 so với HSI-VN (CI
+[+0.054, +0.099]).
+
+**Tiêu cực.** (a) **D3 trượt** — sai số điều hướng ≤ HSI-VN + 1 m chỉ 2/6 dataset ⇒ HSI-VN giữ nguyên là luật khuyến nghị. Nguyên nhân (chẩn
+đoán): vài fix sai XA sau khi hậu nghiệm nhảy sang một đoạn giống (Nordland 0.6 % fix, CMU 0.8 %) và fix thô / quá tự tin dưới VIO trôi
+(countryside: 7.8 % fix > excl, 23 % fix 10–25 m). (b) Đuôi hợp lệ: 19/404 run > α (CMU 14 — khởi đầu toàn cục trên chuỗi ngắn; Nordland 5 —
+chuỗi bắt đầu trong lỗ), HSI-VN 0. (c) CMU recall 0.758 < SH 0.834 (= HSI-VN 0.756). (d) countryside recall < HSI-VN (−0.025). (e) ε = 0.01 không
+an toàn (CMU, Nordland 0.06). (f) Chi phí 6–36 ms/frame trên Kaggle CPU (3 bộ lọc), vượt mục tiêu 15 ms.
+**Đã thử và bác trong thiết kế (seed 0):** không trọng số bằng chứng theo quãng đường (FL 0.80); prior đều trên dải (khởi đầu chậm); kidnap 1e-4
+(hạt giống của bóng ma 170 m ở Boreas); trọng số theo tương quan profile (r = 0.98–0.998 ⇒ quá mạnh); dải ×2 / ×4 (vô ích); q cố định (mỗi giá trị
+hỏng một nơi). Sau tập A (chẩn đoán): cổng nhảy dead-reckoning — Nordland tốt hẳn, CMU không đổi, countryside xấu đi.
+
 ## 1. Bài toán và giao thức (để đọc số liệu đúng)
 
 Robot camera đơn + odometry định vị trên bản đồ ảnh bằng một bộ lọc chuỗi vị trí HMM (MAP `est_c`, dùng chung cho mọi luật). Mỗi frame: báo

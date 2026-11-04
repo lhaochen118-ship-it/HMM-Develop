@@ -9,7 +9,8 @@
 3. `handoff/02_ENGINEERING_OPS_NOTES.pdf` — công cụ, cách chạy một đợt Kaggle, lỗi đã gặp.
 4. `handoff/ENVIRONMENT_SUMMARY.pdf` §0 — tài khoản, dataset công khai, gói cần cài.
 5. `paper/BAO_CAO_HSI.pdf` (15 trang) — câu chuyện đầy đủ, bảng, hình; `paper/hsi_theory.md` — Mệnh đề 1–7.
-6. Khi cần chi tiết một vòng: `RESEARCH_LOG.md` (Entry mới ở trên cùng; Entry 1–9 của ý tưởng 2).
+6. Khi cần chi tiết một vòng: `RESEARCH_LOG.md` (Entry mới ở trên cùng; Entry 1–9 = HSI, Entry 10 = OWF).
+6b. Ý tưởng 2b (OWF): `paper/BAO_CAO_OWF.pdf`, `paper/owf_theory.md` (Mệnh đề 1–3), `LITERATURE_GATE.md` Gate 18.
 7. Yêu cầu gốc của user: `HMM_Navigation_Yeu_Cau_Nghien_Cuu_Cap_Nhat.docx`; quy trình: `handoff/04_RESEARCH_WORKFLOW.pdf`.
 
 ## 2. Bản đồ repository (chỉ phần dùng cho ý tưởng 2)
@@ -24,7 +25,11 @@ analysis/nav_demo.py       HMM + giao thức + cache (dùng chung với ý tư�
 automation/                hsi_wave.py, fanout.py, central_monitor.py, hsi_collect.py, fetch_outputs.py, publish_dataset.py, md2pdf.py
 paper/                     BAO_CAO_HSI.(md|pdf), hsi_report_text.md, build_hsi_report.py, hsi_theory.md, tables/, figures/
 analysis/results/hsi/      kết quả thô (JSON mỗi run + mặt nạ báo theo frame), baselines_idea1/ (SH, CST-JS của ý tưởng 1)
-RESEARCH_LOG.md, LITERATURE_GATE.md (Gate 17), handoff/, history/ (tài liệu cũ, ý tưởng 1)
+analysis/owf.py            ý tưởng 2b: bộ lọc thế giới mở (OpenWorldFilter + main: một run từ navcache + dump)
+analysis/owf_summary.py    so sánh cặp với SH / CST-JS / HSI-VN, kiểm toán vị trí, giả thuyết H1–H9, tiêu chí D1–D3 (--decide)
+automation/owf_wave.py     nhóm job (main / abl / holes / design / r19 / r19hsi), owf_collect.py  gom JSON theo tập
+analysis/results/owf/      JSON mỗi run của Entry 10 (tập A, tập B + HSI-VN cùng run, ablation, lỗ)
+RESEARCH_LOG.md, LITERATURE_GATE.md (Gate 17 HSI, Gate 18 OWF), handoff/, history/ (tài liệu cũ, ý tưởng 1)
 ```
 
 ## 3. Khởi động phiên mới (≈ 10 phút)
@@ -33,8 +38,11 @@ RESEARCH_LOG.md, LITERATURE_GATE.md (Gate 17), handoff/, history/ (tài liệu c
 pip install -q kaggle markdown xhtml2pdf scipy scikit-learn matplotlib pypdf
 ```
 
-- Xin user token Kaggle của 5 acc (`quynhle07, nguyenhoa99, quynhtran35, yuan1103, caotienminh1`); lưu `~/.kaggle/tok_<acc>` (chmod 600). Không ghi
-  token ở bất kỳ đâu khác.
+- Xin user token Kaggle của 7 acc (`quynhle07, nguyenhoa99, quynhtran35, yuan1103, caotienminh1`, + `synchan5704, yeshenhi` từ Entry 10); lưu
+  `~/.kaggle/tok_<acc>` (chmod 600). Không ghi token ở bất kỳ đâu khác.
+- **Kiểm tra trước khi làm gì:** `git fetch origin hmm-2nd-idea && git log HEAD..origin/hmm-2nd-idea` — Entry 10 được làm từ một checkout CŨ (không
+  thấy Entry 1–9) và hai phiên chat đã chạy song song trên cùng branch / cùng acc. Đặt `export VPR_CODE_DS=<tên riêng>` cho mọi kernel của mình
+  (code dataset riêng, `make_eval_kernel.py`) để không ghi đè code của phiên khác.
 - Tái tạo số liệu chính không cần Kaggle: giải nén `analysis/results/hsi/hsi_results_json.tgz` và `analysis/results/baselines_idea1/e37/oc_e37.tgz`,
   `e38/oc_e38.tgz` vào scratchpad rồi chạy, ví dụ
   `python3 analysis/hsi_compare.py <x>/main HSI-VN,HSI-rot-m-sc --base <x>/oc37 <x>/oc38` và
@@ -49,12 +57,18 @@ pip install -q kaggle markdown xhtml2pdf scipy scikit-learn matplotlib pypdf
    số cũ) và smoke test trên 2–4 run thiết kế.
 3. Đợt phát triển trên seed 0–9 (`hsi_wave.py` → `fanout.py --build-only --cpu --nodumps` → `central_monitor.py`), 15–40 phút.
 4. Viết đăng ký trước vào `RESEARCH_LOG.md` (tiêu chí theo thước đo kết quả, quy tắc quyết định), commit + push.
-5. Đánh giá trên **một nhóm seed chưa dùng** của `caotienminh1/hmm-navcache-r19` (token `DIR:navcache_`, `--nodumps --ds caotienminh1/hmm-navcache-r19`,
+5. Đánh giá trên **một nhóm seed chưa dùng** của `caotienminh1/hmm-navcache-r19` (19–21, 22–24 còn trống; 25–27 đã dùng ở Entry 10) (token `DIR:navcache_`, `--nodumps --ds caotienminh1/hmm-navcache-r19`,
    seeds `19-21` …), ghi kết quả + quyết định, cập nhật `03_HANDOFF.md` §5, báo cáo (`paper/build_hsi_report.py`), commit + push.
 
 ## 5. Việc tiếp theo
 
 Chi tiết trong `03_HANDOFF.md` §6. Tóm tắt:
+
+0. **OWF (Entry 10):** recall cao nhất nhưng điều hướng kém trên Nordland / CMU / countryside. Hướng có số đo: cổng nhảy dead-reckoning giữa hai
+   lần báo (chẩn đoán trên tập A: Nordland sai số 15 → ~5 m, recall −0.01; vô ích trên CMU, hại countryside); fix chính xác hơn (báo theo khối
+   lượng trong bán kính nhỏ hơn excl); khởi đầu toàn cục (CMU, chuỗi bắt đầu trong lỗ). Ghép OWF (bộ ước lượng) với lớp quyết định của HSI là
+   hướng tự nhiên: HSI cần chuỗi vị trí đúng, OWF cho chuỗi vị trí đúng hơn (MAP của OWF trong excl ở 0.87–1.00 frame on-map trên tập A, so với 0.78–0.95 của chuỗi topo). Mọi quyết định mới cần tập mới
+   (19–21 / 22–24 hoặc sinh seed 28–30 bằng `hsi_fresh.py --keep`).
 
 1. **Đào sâu ba điểm yếu:** CMU (0.76 vs SH 0.835 — khoá còn lại do chuỗi ngắn đúng nhưng không thể chứng nhận), NCLT (mới 2 run — cần thêm cấu
    hình đánh giá), sai số điều hướng old town (do thời điểm báo dưới VIO trôi, không do fix sai xa).

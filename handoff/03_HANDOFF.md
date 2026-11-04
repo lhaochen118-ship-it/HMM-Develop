@@ -19,6 +19,7 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | Kho dự trữ seed 19–27 (3 tập × 108 run) | sinh bởi đợt `hsi20`, publish `caotienminh1/hmm-navcache-r19`; **chưa dùng** |
 | Báo cáo `paper/BAO_CAO_HSI.pdf` (15 trang, abstract tiếng Anh) + lý thuyết Mệnh đề 1–7 | xong |
 | Paper hoàn chỉnh | chưa viết (chỉ báo cáo + abstract nháp) |
+| **Entry 10 — OWF (ý tưởng 2b, bộ lọc thế giới mở)** | xong: Gate 18, đăng ký trước, tập A 404 run + tập quyết định seed 25–27; D3 (điều hướng) trượt ⇒ HSI-VN giữ nguyên; `paper/BAO_CAO_OWF.pdf` |
 
 ## 3. Quyết định đã thống nhất
 
@@ -29,8 +30,13 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
    trữ** (19–21, rồi 22–24, rồi 25–27); ghi nhóm đã dùng vào bảng §5. Không kiểm lại cùng một giả thuyết trên tập khác sau khi đã cam kết "lần cuối".
 4. Seed 0–9 là dữ liệu phát triển (được chẩn đoán tuỳ ý); tập thiết kế 28 run chỉ để đo nhanh — không đủ để kết luận về điều hướng.
 5. Tiêu chí quyết định đặt theo thước đo kết quả (hợp lệ, recall, điều hướng); tiêu chí cơ chế chỉ để báo cáo (bài học Entry 8).
-6. Token Kaggle không bao giờ vào repo / dataset / báo cáo; repo public. Phiên chat mới cần user cung cấp lại token (5 acc đang dùng, xem
-   `ENVIRONMENT_SUMMARY.md` §3).
+6. Token Kaggle không bao giờ vào repo / dataset / báo cáo; repo public. Phiên chat mới cần user cung cấp lại token (7 acc đang dùng, xem
+   `ENVIRONMENT_SUMMARY.md` §0).
+7. **OWF (Entry 10)** là luật hợp lệ có recall cao nhất (tập A gộp 0.863 vs HSI-VN 0.791; tập mới seed 25–27 +0.076) nhưng KHÔNG thay HSI-VN: sai số
+   điều hướng kém hơn trên 4/6 dataset (Nordland, CMU, countryside, office) và 19/404 run > α (CMU, Nordland). Dùng OWF khi ưu tiên recall / tốc độ
+   bắt lại sau lỗ; HSI-VN khi ưu tiên hợp lệ từng run và điều hướng.
+8. Mỗi phiên chat dùng code dataset Kaggle riêng (`export VPR_CODE_DS=...`); kiểm `git log HEAD..origin/hmm-2nd-idea` trước khi bắt đầu (hai phiên đã
+   chạy song song trên branch này ngày 2026-11-04).
 
 ## 4. Vị trí
 
@@ -40,7 +46,8 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | Biến thể có tên | `analysis/hsi_eval.py` `VARIANTS` |
 | Đánh giá / so sánh / tiêu chí | `analysis/hsi_eval.py`, `hsi_compare.py`, `hsi_summary.py`, `hsi_entry8_test.py`, `hsi_alpha.py`, `hsi_lockfig.py`, `hsi_fresh.py` |
 | Kaggle | `automation/` (`hsi_wave.py`, `fanout.py`, `central_monitor.py`, `hsi_collect.py`, `fetch_outputs.py`, `publish_dataset.py`, `make_eval_kernel.py`) |
-| Nhật ký / lý thuyết / novelty | `RESEARCH_LOG.md` (Entry 1–9), `paper/hsi_theory.md`, `LITERATURE_GATE.md` Gate 17 |
+| Nhật ký / lý thuyết / novelty | `RESEARCH_LOG.md` (Entry 1–9 HSI, Entry 10 OWF), `paper/hsi_theory.md`, `paper/owf_theory.md`, `LITERATURE_GATE.md` Gate 17, 18 |
+| OWF (Entry 10) | `analysis/owf.py` (phương pháp + chạy một run), `analysis/owf_summary.py` (so sánh / giả thuyết / D1–D3), `automation/owf_wave.py`, `owf_collect.py`; kết quả `analysis/results/owf/*.tgz`; báo cáo `paper/BAO_CAO_OWF.(md|pdf)` |
 | Báo cáo | `paper/BAO_CAO_HSI.pdf` (dựng: `paper/build_hsi_report.py`, văn bản `paper/hsi_report_text.md`, bảng `paper/tables/`, hình `paper/figures/`) |
 | Kết quả thô | `analysis/results/hsi/hsi_results_json.tgz` (main / holes_d10 / holes_d50 / natural / fresh_s10_12 / test_s13_15 / test_s16_18), `hsi_frames_*.tgz`; baseline ý tưởng 1 `analysis/results/baselines_idea1/e37|e38/oc_*.tgz` |
 | Cache | xem `ENVIRONMENT_SUMMARY.md` §1d, §1g (public trên Kaggle) |
@@ -57,6 +64,12 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
 
 ## 6. Việc tiếp theo (khung chat mới)
+
+**Việc 0 — OWF (Entry 10):** sửa sai số điều hướng mà không mất recall. Đã đo (chẩn đoán, tập A): (a) cổng nhảy dead-reckoning giữa hai lần
+báo — Nordland 15.4 → ~5 m, recall −0.01; CMU không đổi; countryside xấu đi (45 → 51–57 m: chặn fix đúng sau khi VIO trôi); (b) countryside: 23 %
+fix sai số 10–25 m và 7.8 % fix > excl ⇒ hậu nghiệm quá tự tin dưới VIO trôi ⇒ báo theo khối lượng trong bán kính nhỏ hơn, hoặc phương sai trôi
+lớn hơn khi bằng chứng yếu; (c) đuôi hợp lệ ở đầu chuỗi (CMU 14/54 run > α; Nordland: chuỗi bắt đầu trong lỗ). Ghép OWF với lớp quyết định HSI
+(HSI dùng chuỗi vị trí; OWF đặt MAP đúng 0.87–1.00 vs 0.78–0.95 của chuỗi topo). Cần tập mới: 19–21 / 22–24 hoặc sinh seed 28–30.
 
 **Việc 1 — đào sâu bản chất để giải quyết ba điểm yếu** (chẩn đoán trên seed 0–9; quyết định trên kho dự trữ):
 
