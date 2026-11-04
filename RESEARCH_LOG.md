@@ -4,6 +4,19 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+**Ablation (phụ, không quyết định; seed 1–2 × CosPlace + MegaLoc × 7 dataset, NCLT seed 0 — 26 run mỗi biến thể; ghi 11:26 UTC).**
+
+| Biến thể | recall | segFAR TB | run > α | sai số (m) | OWF đầy đủ, cùng run |
+|---|---|---|---|---|---|
+| thế giới ĐÓNG (ô trống / Ω có LR ≈ 0: bản tương tự topo với cùng emission và chuyển động) | 0.847 | **0.297** | **26/26** | 50.2 | 0.882 / 0.0026 / 12.7 |
+| không trọng số theo quãng đường (ℓ = 0) | 0.917 | **0.606** | **26/26** | 75.5 | |
+| q cố định 0.02 excl (không chọn trực tuyến) | 0.862 | 0.0026 | 0 | 11.9 | |
+| kidnap 1e-4 | 0.848 | 0.0101 | 2 | 13.4 | |
+
+**Đọc:** (1) không gian trạng thái mở là thứ tạo ra tính hợp lệ: cùng emission, cùng chuyển động, chỉ bỏ ô trống ⇒ mọi run vượt α (segFAR 0.21–0.45
+theo dataset) — xác nhận chẩn đoán của §1; (2) trọng số theo quãng đường là bắt buộc (aliasing đếm mỗi frame); (3) chọn q trực tuyến thêm
++0.020 recall (sai số +0.8 m); (4) kidnap ≈ 0 thêm +0.034 recall và bỏ 2 run vi phạm.
+
 **Kết quả tập A (404 run chưa từng xem với OWF: seed 1–9 × 6 desc × 6 dataset có lỗ, NCLT × 5 desc, Oxford 45, St Lucia 30; đợt `owfa` +
 probe `owfp-1`; ghi 11:02 UTC).** ε = 1e-3; SH / CST-JS / HSI-VN trên CÙNG run.
 

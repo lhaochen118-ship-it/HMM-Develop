@@ -6,7 +6,19 @@
 
 ## 1. Tóm tắt
 
-@@ABSTRACT@@
+**Vấn đề.** Định vị chuỗi bằng HMM trên bản đồ ảnh có lỗ: mỗi frame phải quyết định báo hay không báo một fix, với số đoạn off-map bị báo
+sai ≤ α = 0.05, không nhãn. Hai lời giải trước (ý tưởng 1: phẫu thuật bản đồ phản thực; ý tưởng 2a HSI: tự giám sát hồi cứu + conformal) giữ
+NGUYÊN bộ lọc vị trí topo và chỉ đổi lớp quyết định. Chẩn đoán: chuỗi vị trí topo đúng ở 0.78–0.95 frame on-map nhưng lớp quyết định chỉ báo
+0.51–0.80; nguyên nhân là nhân chuyển trạng thái chuẩn hoá trên các nút bản đồ — robot đi vào lỗ không có chỗ trong không gian trạng thái.
+
+**Phương pháp.** Bộ lọc thế giới mở (OWF): vị trí trên lưới mét phủ cả vùng có và không có bản đồ, chuyển trạng thái bảo toàn khối lượng, emission
+là tỉ số hợp lý tự chuẩn hoá (LR = 1 ở ô trống), hiện diện là hàm của vị trí, quyết định đọc thẳng từ hậu nghiệm; không học, không dữ liệu hiệu
+chuẩn, không phẫu thuật bản đồ. Lý thuyết: cận Ville cho báo sai trong một đoạn off-map, không có số hạng mép.
+
+**Kết quả (đăng ký trước).** Tập A 404 run: recall 0.863 (HSI-VN 0.791, SH 0.726), TB segFAR ≤ 0.05 trên 9/9 dataset, kiểm toán vị trí đạt mọi lớp
+(mép ≤ 0.003). Tập quyết định mới seed 25–27 (108 run): recall +0.076 so với HSI-VN (CI 95 % [+0.054, +0.099]), hợp lệ. **Nhưng** sai số điều hướng
+kém hơn HSI-VN trên 4/6 dataset (tiêu chí D3 trượt) và 4.7 % run vượt α (CMU, Nordland) ⇒ theo quy tắc đã đăng ký, HSI-VN vẫn là luật khuyến
+nghị; OWF là luật hợp lệ có recall cao nhất và là bộ ước lượng tốt hơn (MAP đúng 0.87–1.00).
 
 ## 2. Bài toán, giao thức và các đối thủ
 
@@ -98,7 +110,29 @@ thế (chuỗi CMU ngắn; countryside CosPlace). Không đoạn MÉP nào bị 
 
 ### 6.2 Tập A — 404 run phát triển chưa từng xem với OWF (seed 1–9, NCLT, Oxford, St Lucia)
 
-@@SETA@@
+| Dataset | runs | OWF recall / segFAR | runs > α | SH recall / segFAR | CST-JS | HSI-VN recall / segFAR | Δ vs SH (wins) | Δ vs HSI-VN (wins) | err OWF / SH / HSI-VN (m) | OWF tại segFAR của SH | start / edge / deep | ms/frame (Kaggle) |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| Boreas | 54 | 0.954 / 0.0012 | 0 | 0.771 / 0.0023 | 0.776 | 0.893 / 0.0015 | +0.182 (54/54) | +0.060 (43/54) | **3.1** / 4.5 / 7.0 | 0.919 | 0.002 / 0.000 / 0.001 | 30.0 |
+| NCLT | 5 | 0.689 / 0.0013 | 0 | 0.601 / 0.0020 | 0.622 | 0.570 / 0.0007 | +0.088 (5/5) | +0.119 (5/5) | **4.0** / 4.6 / 4.4 | 0.786 | 0.000 / 0.000 / 0.002 | 27.8 |
+| CMU | 54 | 0.758 / 0.0307 | 14 | 0.834 / 0.0092 | 0.815 | 0.756 / 0.0042 | −0.076 (8/54) | +0.002 (26/54) | 6.2 / 4.0 / **3.6** | 0.609 | 0.037 / – / – | 21.0 |
+| Nordland | 54 | 0.938 / 0.0215 | 5 | 0.766 / 0.0000 | 0.779 | 0.784 / 0.0001 | +0.171 (54/54) | +0.154 (54/54) | 15.4 / 6.2 / **5.8** | 0.562 | 0.002 / 0.003 / 0.023 | 6.1 |
+| office | 54 | 0.925 / 0.0000 | 0 | 0.798 / 0.0003 | 0.810 | 0.870 / 0.0000 | +0.127 (52/54) | +0.054 (41/54) | 10.3 / 9.7 / **9.0** | 0.981 | 0.000 / 0.000 / 0.000 | 12.7 |
+| old town | 54 | 0.893 / 0.0007 | 0 | 0.701 / 0.0058 | 0.709 | 0.723 / 0.0014 | +0.192 (54/54) | +0.169 (54/54) | **21.6** / 26.1 / 33.0 | 0.949 | 0.005 / 0.000 / 0.000 | 28.0 |
+| countryside | 54 | 0.632 / 0.0006 | 0 | 0.483 / 0.0006 | 0.494 | 0.657 / 0.0067 | +0.149 (49/54) | −0.025 (25/54) | 45.6 / 33.8 / **26.7** | 0.733 | 0.000 / 0.000 / 0.001 | 36.4 |
+| Oxford | 45 | 0.898 / 0.0007 | 0 | 0.719 / 0.0039 | 0.729 | 0.805 / 0.0089 | +0.179 (45/45) | +0.093 (45/45) | **17.6** / 21.9 / 21.1 | 0.960 | 0.006 / 0.002 / 0.000 | 23.6 |
+| St Lucia | 30 | 0.975 / 0.0000 | 0 | 0.761 / 0.0006 | 0.763 | 0.915 / 0.0013 | +0.214 (30/30) | +0.060 (30/30) | **16.6** / 25.5 / 18.5 | 0.996 | 0.000 / 0.000 / 0.000 | 20.6 |
+
+Gộp 404 run: recall OWF **0.863**, SH 0.726, HSI-VN 0.791 (OWF − HSI-VN +0.072, CI 95 % [+0.061, +0.083]); run > α: OWF 19/404 (CMU 14,
+Nordland 5; tệ nhất 0.140), HSI-VN 0, SH 2; sai số điều hướng gộp OWF 16.9 m, SH 15.7, HSI-VN 15.1.
+**Giả thuyết:** H1 **đạt** (TB ≤ 0.05 trên 9/9; CMU 0.031); H2 **đạt** 8/9 (CMU −0.076); H2b **đạt**; H3 **đạt** (mọi lớp ≤ 0.07: mép ≤ 0.003
+mọi dataset — ý tưởng 1 không đạt ở đây; CMU start 0.037, Nordland deep 0.023); H4 **không đạt** (3/7: Boreas, NCLT, old town); H5 **không đạt**
+(6–36 ms/frame trên phiên CPU Kaggle 4 job / 4 vCPU; cục bộ 2–14 ms); H6 **không đạt** (7/9: Nordland và CMU — SH ở segFAR ≈ 0 ở đó, đường cong
+OWF tại segFAR đó thấp hơn); H7 (ε = 0.01) **không đạt** (hợp lệ 7/9: CMU 0.059, Nordland 0.060; recall > SH 8/9); H8 **đạt** 8/9 (countryside
+−0.025); H9 **đạt** 5/9 (Boreas, NCLT, old town, Oxford, St Lucia).
+**Đọc:** OWF đổi recall lấy đuôi: trung bình hợp lệ trên mọi dataset và recall cao nhất trên 8/9 (gộp +0.072 so với HSI-VN, +0.137 so với SH),
+nhưng (a) 4.7 % run vượt α, tập trung ở CMU (khởi đầu toàn cục trên chuỗi ngắn) và Nordland (chuỗi bắt đầu trong lỗ, aliasing đường ray)
+— đúng chỗ yếu Mệnh đề 2 dự báo (O₀ ≈ 1 ở đầu chuỗi); (b) sai số điều hướng kém hơn trên Nordland / CMU (vài fix sai xa sau khi hậu nghiệm nhảy)
+và countryside (fix thô, VIO trôi). Kết luận nhất quán với tập B.
 
 ### 6.3 Tập B — tập quyết định: kho dự trữ seed 25–27 (108 run), OWF vs HSI-VN trên cùng cache
 
@@ -125,8 +159,35 @@ sang một đoạn giống (Nordland, CMU — chỗ HSI có cổng nhất quán 
 
 ### 6.4 Ablation, độ bền tỉ lệ lỗ
 
-@@ABL@@
+**Ablation (phụ; seed 1–2 × CosPlace + MegaLoc × 7 dataset, NCLT seed 0 — 26 run mỗi biến thể; ghi 11:26 UTC).**
+
+| Biến thể | recall | segFAR TB | run > α | sai số (m) | OWF đầy đủ, cùng run |
+|---|---|---|---|---|---|
+| thế giới ĐÓNG (ô trống / Ω có LR ≈ 0: bản tương tự topo với cùng emission và chuyển động) | 0.847 | **0.297** | **26/26** | 50.2 | 0.882 / 0.0026 / 12.7 |
+| không trọng số theo quãng đường (ℓ = 0) | 0.917 | **0.606** | **26/26** | 75.5 | |
+| q cố định 0.02 excl (không chọn trực tuyến) | 0.862 | 0.0026 | 0 | 11.9 | |
+| kidnap 1e-4 | 0.848 | 0.0101 | 2 | 13.4 | |
+
+**Đọc:** (1) không gian trạng thái mở là thứ tạo ra tính hợp lệ: cùng emission, cùng chuyển động, chỉ bỏ ô trống ⇒ mọi run vượt α (segFAR 0.21–0.45
+theo dataset) — xác nhận chẩn đoán của §1; (2) trọng số theo quãng đường là bắt buộc (aliasing đếm mỗi frame); (3) chọn q trực tuyến thêm
++0.020 recall (sai số +0.8 m); (4) kidnap ≈ 0 thêm +0.034 recall và bỏ 2 run vi phạm.
+
+@@HOLES@@
 
 ## 7. Kết quả âm, hạn chế, việc tiếp theo
 
-@@NEG@@
+**Kết quả âm (có số đo).** (a) Sai số điều hướng (D3, H4): Nordland 15.4 m vs SH 6.2 / HSI-VN 5.8; countryside 45.6 vs 33.8 / 26.7; CMU 6.2 vs 4.0 /
+3.6 (tập A). Nguyên nhân: vài fix sai xa sau khi hậu nghiệm nhảy sang một đoạn giống (Nordland 0.6 %, CMU 0.8 % các báo) và fix thô dưới VIO trôi
+(countryside: 23 % báo có sai số 10–25 m, 7.8 % > excl). (b) Đuôi hợp lệ: 19/404 run > α (CMU 14, Nordland 5) — đầu chuỗi là trường hợp yếu của
+Mệnh đề 2 (O₀ ≈ 1); HSI-VN 0/404. (c) CMU recall 0.758 < SH 0.834. (d) countryside recall < HSI-VN (−0.025). (e) ε = 0.01 vượt α trên CMU /
+Nordland. (f) Chi phí 6–36 ms/frame trên phiên CPU Kaggle (mục tiêu 15 ms không đạt; cục bộ 2–14 ms).
+
+**Hạn chế của lý thuyết.** Giả định (E1) (LR có trọng số là e-value có điều kiện ngoài bản đồ) bị vi phạm bởi aliasing mạch lạc; trọng số theo
+quãng đường chỉ là hiệu chỉnh thô; ε = α/50 được chọn để hấp thụ hệ số thổi phồng — không phải bảo đảm chặt. Lưới mét cần odometry trong hệ toạ
+độ bản đồ (như mọi luật của giao thức: hướng ban đầu hiệu chỉnh trên 50 frame đầu).
+
+**Việc tiếp theo.** (1) Sửa điều hướng: cổng nhảy dead-reckoning giữa hai lần báo (chẩn đoán trên tập A: Nordland 15.4 → ~5 m, recall −0.01;
+không đổi CMU; xấu đi countryside 45 → 51–57 m) ⇒ cần một tiêu chí chọn theo độ trôi; báo theo khối lượng trong bán kính nhỏ hơn excl; phương sai
+trôi lớn hơn khi bằng chứng yếu. (2) Khởi đầu toàn cục an toàn hơn (CMU, chuỗi bắt đầu trong lỗ). (3) Ghép OWF (bộ ước lượng) với lớp quyết
+định HSI (HSI cần chuỗi vị trí đúng; OWF cho chuỗi vị trí đúng hơn). (4) Mọi quyết định mới cần tập mới: nhóm dự trữ 19–21 / 22–24 (của phiên
+HSI) hoặc sinh seed 28–30 bằng `hsi_fresh.py --keep`.
