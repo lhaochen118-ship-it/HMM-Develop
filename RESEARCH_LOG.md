@@ -92,7 +92,7 @@ nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo
 ## Entry 11 — OWF-H: bộ ước lượng thế giới mở + lớp quyết định HSI, giao chuỗi khi đã "ổn định" — đăng ký trước (2026-11-04 15:40 UTC; AUTOLOOP vòng 1)
 
 **Bối cảnh.** Entry 10: OWF có recall cao nhất nhưng 19/404 run > α và điều hướng kém; HSI-VN hợp lệ từng run nhưng dùng chuỗi vị trí topo kém hơn.
-AUTOLOOP (): Score = recall gộp với ràng buộc V1 (TB mọi dataset ≤ 0.05), V2 (≤ 2 % run > α), N1 (sai số gộp ≤ HSI-VN + 0.5 m).
+AUTOLOOP (`handoff/AUTOLOOP.md`): Score = recall gộp với ràng buộc V1 (TB mọi dataset ≤ 0.05), V2 (≤ 2 % run > α), N1 (sai số gộp ≤ HSI-VN + 0.5 m).
 
 **Phát triển (tập A của Entry 10 = 404 run seed 1–9 / NCLT / Oxford / St Lucia; nhãn chỉ để đánh giá; ngoại tuyến từ frame OWF đã lưu).**
 - 13 biến thể lớp quyết định của chính OWF (`analysis/owf_decide.py`: lịch ε khởi đầu, tuổi track, cổng nhảy): không biến thể nào đạt V2 (11–19
