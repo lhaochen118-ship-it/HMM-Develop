@@ -51,3 +51,8 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
   chuỗi): Score phát triển 0.870 (0 run > α, sai số 14.58 m) vs HSI-VN 0.791. **Entry 11 đăng ký trước** (F1–F3 trên seed 40–42, 144 run) đã push.
   Đợt phát triển vòng 2 `hybC` (L4: đặc trưng độ tin OWF cho HSI `xmsc`, quét t / D) đã đẩy 15:48. Kho `fr40`: 7/34 kernel xong, cache kéo dần
   bằng `automation/fetch_done.py` vào scratchpad `r40/`.
+- 16:55 UTC: kho `fr40` xong (432 cache, publish `synchan5704/hmm-navcache-r40`, kèm HSI-VN / VMN / rot-m-sc / oracle trên cùng cache). Đợt kiểm
+  tra Entry 11 `t40` (32 kernel CPU, 144 run seed 40–42: OWF → OWF-H HSI-VN + VMN) đã đẩy 16:41. Vòng 2 phát triển: lân cận (t, D) phẳng — Score
+  0.866–0.871 với t ∈ {0.8, 0.9, 0.95}, D ∈ {12, 16, 24}, tất cả hợp lệ (bền); đặc trưng độ tin OWF cho HSI (`xmsc`) +0.0006 (bỏ); OWF-H-VMN
+  0.860 / 13.63 m trội HSI-VMN (0.781 / 13.65). Vòng 3 phát triển (`devS`, 4 phiên L4, 149 run): ngân hàng tỉ lệ odometry `--scales 0.97,1.0,1.03`
+  × `--qx 0.005,0.02` (thiết kế countryside s0: recall 0.554 → 0.603, MAP đúng 0.812 → 0.834) + OWF-H trên đó.

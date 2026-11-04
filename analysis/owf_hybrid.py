@@ -36,12 +36,13 @@ def settled(z, xh, mass, kind, D):
 
 def build(frames, cache, out, mode):
     z = dict(np.load(cache, allow_pickle=True)); fr = np.load(frames, allow_pickle=True)
-    xh = np.asarray(fr["xhat"]).astype(int); bad = xh < 0; mass = np.asarray(fr["mass"], float)
-    if mode.startswith(("xma", "xms")):                     # xma<t>_<D> / xms<t>_<D>: confident AND settled (track age / path from start)
-        t, D = mode[3:].split("_"); bad = bad | (mass < float(t)) | ~settled(z, xh, mass, mode[2], float(D))
+    xh = np.asarray(fr["xhat"]).astype(int); bad = xh < 0; mass = np.asarray(fr["mass"], float); conf = False
+    if mode.startswith(("xma", "xms")):                     # xma[c]<t>_<D> / xms[c]<t>_<D>: confident AND settled (track age / path from start)
+        rest = mode[3:]; conf = rest.startswith("c"); t, D = rest.lstrip("c").split("_")
+        bad = bad | (mass < float(t)) | ~settled(z, xh, mass, mode[2], float(D))
     elif mode.startswith("xm"): bad = bad | (mass < float(mode.lstrip("xmc") or 0.5))   # replace only where OWF is confident
     est = z["est_c"].astype(int).copy(); est[~bad] = xh[~bad]; z["est_c"] = est
-    if mode == "xc" or mode.startswith("xmc"):
+    if mode == "xc" or mode.startswith("xmc") or conf:
         m = np.clip(np.asarray(fr["mass"], float), 1e-9, 1 - 1e-9)
         z["conf_c"] = np.where(bad, z["conf_c"], m); z["lo_c"] = np.where(bad, z["lo_c"], np.log(m / (1 - m)))
     np.savez_compressed(out, **z)

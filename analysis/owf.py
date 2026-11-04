@@ -148,6 +148,7 @@ def main():
     opt = lambda k, d: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else d
     betas = [float(b) for b in opt("--beta", "1").split(",")]; ellx = float(opt("--ellx", "0.4")); drift = float(opt("--drift", "0"))
     qxs, pkid = [float(x) for x in opt("--qx", "0.005,0.02,0.08").split(",")], float(opt("--pkid", "1e-12"))
+    scales = [float(x) for x in opt("--scales", "1").split(",")]      # AUTOLOOP iteration 3: odometry scale hypotheses (bank = q x scale)
     bandx, pin = float(opt("--bandx", "1")), float(opt("--pin", "0.01")); temper = opt("--temper", "ell")
     closed = "--closed" in sys.argv; eps0 = float(opt("--eps0", "1e-3")); tag = opt("--tag", ""); xmode = opt("--xhat", "mean")
     eps_l = [float(e) for e in opt("--eps", "0.2,0.1,0.05,0.02,0.01,0.005,0.002,0.001,5e-4,2e-4,1e-4,1e-5").split(",")]
@@ -170,12 +171,14 @@ def main():
         for idx in seqs:
             Zs = robust_z(Q[idx].astype(np.float32) @ M.T); LL = log_lr(Zs, beta)
             wt = corr_weight(Zs, float(temper[4:] or 2))[0] if temper.startswith("corr") else None
-            rs = [F.run(LL, U[idx], excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode) for qx in qxs]
-            # ONLINE self-calibration of the odometry noise: at frame t follow the filter with the largest cumulative log evidence
-            # sum_{s<=t} log p(z_s | z_<s) (causal; ties -> the first = smallest q)
+            bank = [(qx, sc) for sc in scales for qx in qxs]
+            rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode) for qx, sc in bank]
+            # ONLINE self-calibration of the odometry noise (and scale): at frame t follow the filter with the largest cumulative log evidence
+            # sum_{s<=t} log p(z_s | z_<s) (causal; ties -> the first = smallest q, first scale)
             cum = np.cumsum(np.stack([r_["lml"] for r_ in rs]), 1); ks = np.argmax(cum, 0); tt = np.arange(len(idx))
             for k_ in ("mass", "cov", "om", "lml"): out[k_][idx] = np.stack([r_[k_] for r_ in rs])[ks, tt]
-            xh[idx] = np.stack([r_["xhat"] for r_ in rs])[ks, tt]; out["qsel"][idx] = np.array(qxs)[ks]
+            xh[idx] = np.stack([r_["xhat"] for r_ in rs])[ks, tt]; out["qsel"][idx] = np.array([b[0] for b in bank])[ks]
+            out.setdefault("ssel", np.ones(nq))[idx] = np.array([b[1] for b in bank])[ks]
         dt = (time.time() - t0) / nq * 1e3
         xf = z["MP"][np.maximum(xh, 0)]; err = np.linalg.norm(xf - qp, axis=1); gd = inm & (err <= excl) & (xh >= 0)
         rows = []
@@ -201,7 +204,8 @@ def main():
             np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh,
                                 err=err, inm=inm, offm=offm, q_sid=sid, q_k=k, q_pos=qp, cond=z["cond"])
         res["runs"][str(beta)] = dict(ms_per_frame=dt, logml=float(out["lml"].sum()), map_correct_on=ceil, curve=rows, default=default,
-                                      qsel={str(x): float(np.mean(out["qsel"] == x)) for x in qxs})
+                                      qsel={str(x): float(np.mean(out["qsel"] == x)) for x in qxs},
+                                      ssel={str(x): float(np.mean(out.get("ssel", np.ones(nq)) == x)) for x in scales})
         print(f"{ds}/{desc} s{seed} beta {beta}: {dt:.1f} ms/frame logml {out['lml'].sum():.1f} MAP-correct(on) {ceil:.3f} q-share",
               {x: round(float(np.mean(out["qsel"] == x)), 2) for x in qxs}, flush=True)
         for rr in rows: print("   eps %-7g recall %.3f FL %.4f segFAR %.4f delay %.1f" % (rr["eps"], rr["recall"], rr["FL"], rr["seg_FAR"], rr["reentry_delay"]),
