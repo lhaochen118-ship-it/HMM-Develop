@@ -172,7 +172,27 @@ sang một đoạn giống (Nordland, CMU — chỗ HSI có cổng nhất quán 
 theo dataset) — xác nhận chẩn đoán của §1; (2) trọng số theo quãng đường là bắt buộc (aliasing đếm mỗi frame); (3) chọn q trực tuyến thêm
 +0.020 recall (sai số +0.8 m); (4) kidnap ≈ 0 thêm +0.034 recall và bỏ 2 run vi phạm.
 
-@@HOLES@@
+**Độ bền tỉ lệ lỗ (phụ; `hmm-navcache-holes` seed 0–2 × 6 dataset × 6 desc, 216 run; ghi 11:39 UTC).**
+
+| lỗ | Dataset | runs | OWF recall / segFAR | run > α | SH | HSI-VN | err OWF / SH / HSI-VN (m) |
+|---|---|---|---|---|---|---|---|
+| 10 % | boreas | 18 | 0.976 / 0.0007 | 0 | 0.812 / 0.0000 | 0.913 / 0.0006 | 2.1 / 3.2 / 6.2 |
+| 10 % | cmu | 18 | 0.768 / 0.0502 | 6 | 0.838 / 0.0158 | 0.597 / 0.0000 | 5.4 / 3.7 / 2.8 |
+| 10 % | nord | 18 | 0.951 / 0.0129 | 1 | 0.774 / 0.0000 | 0.829 / 0.0000 | 4.5 / 5.5 / 3.8 |
+| 10 % | 4s:office_loop | 18 | 0.951 / 0.0000 | 0 | 0.812 / 0.0008 | 0.867 / 0.0000 | 8.2 / 7.4 / 6.7 |
+| 10 % | 4s:old_town | 18 | 0.927 / 0.0000 | 0 | 0.736 / 0.0040 | 0.729 / 0.0000 | 17.2 / 21.5 / 32.4 |
+| 10 % | 4s:countryside | 18 | 0.662 / 0.0007 | 0 | 0.519 / 0.0000 | 0.696 / 0.0016 | 45.3 / 32.5 / 19.1 |
+| 50 % | boreas | 18 | 0.923 / 0.0000 | 0 | 0.730 / 0.0017 | 0.881 / 0.0001 | 3.2 / 5.2 / 4.6 |
+| 50 % | cmu | 18 | 0.652 / 0.0184 | 3 | 0.743 / 0.0269 | 0.770 / 0.0296 | 8.8 / 9.9 / 9.9 |
+| 50 % | nord | 18 | 0.921 / 0.0187 | 0 | 0.766 / 0.0002 | 0.685 / 0.0001 | 40.5 / 9.6 / 8.9 |
+| 50 % | 4s:office_loop | 18 | 0.877 / 0.0000 | 0 | 0.783 / 0.0009 | 0.860 / 0.0008 | 14.6 / 13.6 / 13.7 |
+| 50 % | 4s:old_town | 18 | 0.861 / 0.0000 | 0 | 0.696 / 0.0033 | 0.720 / 0.0011 | 34.0 / 36.9 / 60.2 |
+| 50 % | 4s:countryside | 18 | 0.531 / 0.0021 | 0 | 0.457 / 0.0044 | 0.608 / 0.0049 | 56.3 / 41.9 / 35.6 |
+
+Gộp: lỗ 10 % recall OWF 0.872 / SH 0.748 / HSI-VN 0.772, 7/108 run > α (CMU 6 — TB CMU **0.0502**, vượt α ngay ở mức trung bình; Nordland 1); lỗ
+50 % 0.794 / 0.696 / 0.754, 3/108 run > α (CMU). Mép: 0.000–0.003 ở mọi tỉ lệ. Điều hướng: Nordland lỗ 50 % 40.5 m (SH 9.6, HSI-VN 8.9) — cùng
+cơ chế fix sai xa sau bước nhảy; Boreas và old town vẫn tốt nhất. ⇒ cùng bức tranh: recall cao nhất ở mọi tỉ lệ, đuôi hợp lệ CMU và điều hướng
+Nordland / countryside là điểm yếu.
 
 ## 7. Kết quả âm, hạn chế, việc tiếp theo
 

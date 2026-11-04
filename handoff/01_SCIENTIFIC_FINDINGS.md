@@ -25,6 +25,10 @@ dataset** (ý tưởng 1: 0.08–0.11 ở Boreas / old town). Sai số điều h
 (countryside: 7.8 % fix > excl, 23 % fix 10–25 m). (b) Đuôi hợp lệ: 19/404 run > α (CMU 14 — khởi đầu toàn cục trên chuỗi ngắn; Nordland 5 —
 chuỗi bắt đầu trong lỗ), HSI-VN 0. (c) CMU recall 0.758 < SH 0.834 (= HSI-VN 0.756). (d) countryside recall < HSI-VN (−0.025). (e) ε = 0.01 không
 an toàn (CMU, Nordland 0.06). (f) Chi phí 6–36 ms/frame trên Kaggle CPU (3 bộ lọc), vượt mục tiêu 15 ms.
+**Cơ chế (ablation, 26 run mỗi biến thể):** bỏ ô trống (thế giới đóng — bản tương tự topo với cùng emission / chuyển động) ⇒ 26/26 run vượt α
+(segFAR 0.297); bỏ trọng số theo quãng đường ⇒ 26/26 (0.606); chọn q trực tuyến +0.020 recall; kidnap ≈ 0 +0.034 recall. **Độ bền tỉ lệ lỗ**
+(216 run): lỗ 10 % recall 0.872 (SH 0.748, HSI-VN 0.772), 7/108 run > α (CMU TB 0.0502 — vượt α); lỗ 50 % 0.794 (0.696, 0.754), 3/108; Nordland
+lỗ 50 % sai số 40.5 m.
 **Đã thử và bác trong thiết kế (seed 0):** không trọng số bằng chứng theo quãng đường (FL 0.80); prior đều trên dải (khởi đầu chậm); kidnap 1e-4
 (hạt giống của bóng ma 170 m ở Boreas); trọng số theo tương quan profile (r = 0.98–0.998 ⇒ quá mạnh); dải ×2 / ×4 (vô ích); q cố định (mỗi giá trị
 hỏng một nơi). Sau tập A (chẩn đoán): cổng nhảy dead-reckoning — Nordland tốt hẳn, CMU không đổi, countryside xấu đi.
