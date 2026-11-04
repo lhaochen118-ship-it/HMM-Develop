@@ -95,6 +95,9 @@ không tệ hơn.
 - *Bầu chọn chuỗi bằng truy hồi top-1:* giảm độ đúng của chuỗi (0.959 → 0.947), vì top-1 chỉ đúng 0.84.
 - *Đòi đồng thuận liên tục L khung:* không tốt hơn biên ε.
 - *Trôi hướng VIO:* nhỏ (< 0.6°/km), nên không cần ngân hàng hướng.
+- *Thêm bậc sau Entry 14 (phát triển, tập A):* gần bão hoà. Bậc đầu chuỗi (đồng thuận + khối lượng ≥ 0.5 khi đường đi < 0.5·excl) và bậc đồng thuận
+  lỏng có bền vững (ε = 3e-3 / 1e-2, L = 3 / 5) chỉ thêm +0.001–0.004 nhưng làm xuất hiện 1–2 run > α. Phần còn thiếu nằm ở BỘ ƯỚC LƯỢNG
+  (countryside: chuỗi đúng ~0.84–0.87), không ở lớp quyết định.
 
 <!-- ENTRY15 -->
 
