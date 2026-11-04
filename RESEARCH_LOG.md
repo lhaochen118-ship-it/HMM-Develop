@@ -27,6 +27,24 @@ xác minh, Mệnh đề 4 (i)); ở α nhỏ (0.01) vài run vượt do số đo
 oracle 0.845). Tham chiếu **Claxton'24** (MLP giám sát bằng nhãn của 2 điều kiện dễ nhất, kiểu RA-L'24): recall 0.729 nhưng **287/413 run vượt
 α**, sai số 46 m — một bộ giám sát học có nhãn không được hiệu chuẩn cho off-map không thay được hiệu chuẩn trên excursion thật; Xu'21: 202/413.
 
+## Kết quả tập xác nhận mới (seed 10–12, 108 run; đợt `hsi10` + `hsi12`, kéo về 2026-11-04 02:09 UTC) — C1–C4, Entry 7
+
+Cache sinh lại hai lần độc lập (hai đợt) cho kết quả HSI-rot-m-sc giống hệt nhau trên 108/108 run (tất định). Không có SH (cần GPU). Gộp 108 run
+(recall / segFAR TB / run > 0.05 / sai số m): **HSI-rot-m-sc 0.784 / 0.0029 / 0 / 13.9**; HSI-V 0.792 / 0.0028 / 0 / 13.8; HSI-VM-nosc 0.792 / 0.0056 / 0 / 13.2;
+HSI-VM 0.782 / 0.0026 / 0 / 12.8; HSI-M 0.776 / 0.0028 / 0 / 13.0; HSI-V-sc5 0.795 / 0.0073 / 1 / 16.4; HSI-V-nosc 0.804 / 0.0083 / 1 / 17.1; chỉ chứng chỉ
+(geo-rm) 0.675 / 0.0001 / 0 / 15.6; tham chiếu có nhãn: Xu'21 0.609 / 0.150 / **33** / 48.3, Claxton'24 0.716 / 0.196 / **75** / 45.6; oracle 0.833.
+- **C1 đạt:** luật được chọn (HSI-rot-m-sc) 0/108 run > 0.05, segFAR TB dataset ≤ 0.012 (6/6).
+- **C2 không đạt (cùng dấu, nhỏ hơn ngưỡng):** HSI-V − HSI-rot-m-sc = +0.0074 (bootstrap 95 % [+0.0026, +0.0127], thắng 64/108) < +0.01. Lợi ích của
+  cầu neo bằng chứng chỉ lặp lại về dấu và có ý nghĩa thống kê nhưng nhỏ hơn trên tập giữ ra (+0.014).
+- **C3 đạt:** chứng chỉ một mình 0/108 run > 0.05 (tổng cộng 0/773 run trên mọi tập).
+- **C4:** Entry 6 giữ HSI-rot-m-sc ⇒ C4 trùng C1 (đạt). Biến thể bỏ cổng (sc5, nosc) lặp lại cái giá điều hướng trên dữ liệu mới (+2.5 / +3.2 m).
+- **Entry 7 (HSI-VM-nosc):** E1 đạt (0/108; TB dataset ≤ 0.017), **E2 không đạt** (+0.0080, bootstrap 95 % [−0.0020, +0.0182] < +0.01), E3 đạt (−0.66 m).
+  **Quyết định:** giữ HSI-rot-m-sc.
+**Kết luận cuối của vòng tự động:** luật khuyến nghị của ý tưởng 2 là **HSI-rot-m-sc** — hợp lệ ở 0/413 run giữ ra và 0/108 run mới, +0.041 recall so
+với ý tưởng 1 (SH) trên giữ ra. Các cải tiến sau đó (Entry 4–7) đều hợp lệ và lặp lại về dấu trên dữ liệu mới, nhưng lợi ích (≤ +0.008 recall, hoặc
+−1 m điều hướng với HSI-VM) không vượt các ngưỡng đã đăng ký trước ⇒ báo cáo như các điểm vận hành thay thế (recall: HSI-V; điều hướng: HSI-VM),
+không thay luật.
+
 ## Entry 7 — HSI-VM-nosc, quyết định CHỈ trên tập xác nhận mới — đăng ký trước (2026-11-04 02:05 UTC)
 
 *Viết sau kết quả giữ ra của Entry 6 (bên dưới) và TRƯỚC khi xem bất kỳ kết quả nào của tập mới seed 10–12 (đợt `hsi10`, `hsi12` chưa được kéo về).*
