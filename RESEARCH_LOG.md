@@ -89,6 +89,57 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 14 — Bậc đồng thuận ba nguồn cho đầu chuỗi (OWF ∧ chuỗi tô-pô ∧ truy hồi top-1) — đăng ký trước (2026-11-04 19:20 UTC; AUTOLOOP vòng 6)
+
+**Chẩn đoán (tập A, 404 run, nhãn chỉ để chẩn đoán).** Với luật hợp hai bậc W(1e-5, 16, 1e-8, 2), chuỗi vị trí lai (OWF-H) đúng trên 0.959 khung
+trong bản đồ nhưng chỉ báo đúng 0.899. Trên CMU khoảng cách lớn nhất: chuỗi đúng 0.964, báo 0.794, và TOÀN BỘ phần thiếu (0.176) nằm ở đoạn
+đường < 16·excl từ đầu chuỗi. Lý do: mỗi run CMU có ~130 chuỗi ngắn (~7.5·excl ≈ 190 m), nên chuỗi OWF-H và bậc U không bao giờ được dùng,
+còn HSI-VN thận trọng ở đầu chuỗi. Countryside: 0.073 khung có OWF tự tin nhưng sai trong khi chuỗi tô-pô đúng.
+
+**Cơ chế.** Ba bộ ước lượng có kiểu lỗi khác nhau:
+- OWF: thế giới mở, metric, có trạng thái ngoài bản đồ.
+- Chuỗi tô-pô `est_c`: HMM thế giới đóng, bị ép chọn một nút.
+- Truy hồi top-1: một khung, không có động học.
+
+Ngoài bản đồ, cả ba cùng chỉ về một ảnh sai VÀ OWF đặt khối lượng đĩa ≥ 1 − ε là hiếm. Vì thế điều kiện đồng thuận thay được phần lớn yêu cầu
+"đã đi đủ xa" của bậc U/W. Riêng bậc đồng thuận (không hợp với OWF-H) trên 149 run `devS`: TB segFAR ≤ 0.003 trên mọi dataset, 0 run > α, với cả
+OWF thường lẫn OWF ngân hàng tỉ lệ.
+
+**Phát triển (tập A, 404 run, `owf_union.py` dạng tổng quát).** Bậc t(ε, D) = khối lượng OWF ≥ 1 − ε, đường đi ≥ D·excl, và ảnh OWF nằm trong
+excl của CẢ `est_c` lẫn top-1. Luật = W(1e-5, 16, 1e-8, 2) ∨ t(ε, D):
+
+| Bậc thêm | Score (recall gộp) | run > α | segFAR dataset tệ nhất | sai số (m) | CMU | countryside | NCLT |
+|---|---|---|---|---|---|---|---|
+| — (W) | 0.8990 | 0 | 0.0079 | 13.73 | 0.794 | 0.770 | 0.786 |
+| t(1e-6, 0) | 0.9030 | 0 | 0.0079 | 13.73 | 0.818 | 0.772 | 0.786 |
+| t(1e-4, 0.5) | 0.9107 | 0 | 0.0082 | 13.70 | 0.842 | 0.778 | 0.795 |
+| **t(3e-4, 0.5)** | **0.9136** | **0** | 0.0082 | 13.73 | 0.848 | 0.780 | 0.800 |
+| t(1e-3, 0) | 0.9168 | 1 | 0.0095 | 13.77 | 0.856 | 0.783 | 0.807 |
+| t(1e-2, 0.5) | 0.9229 | 6 | 0.0179 | 13.95 | 0.871 | 0.788 | 0.820 |
+
+Kết quả phát triển, theo từng phần:
+- *Bền vững (persistence):* đòi đồng thuận liên tục L khung KHÔNG tốt hơn biên ε. Ví dụ p(1e-3, 0, 3) cho 0.9127 / 0 run;
+  p(1e-2, 0.5, 5) cho 0.9149 / 1 run.
+- *Đồng thuận hai nguồn (bỏ top-1):* kém an toàn hơn. a(1e-3, 2) trên CMU có 4 run > α.
+- *Chọn điểm:* điểm có Score phát triển lớn nhất mà 0 run > α là **ε = 3e-4, D = 0.5**.
+- *Theo dataset:* recall tăng trên 9/9 dataset; CMU 0.794 → 0.848, vượt SH 0.834.
+
+**Luật đăng ký: C = R* ∨ t(3e-4, 0.5).** R* là luật khuyến nghị sau Entry 13: OWF-HW-S nếu Entry 13 đạt, ngược lại OWF-HU. Bậc đồng thuận dùng
+khối lượng / ảnh của CÙNG bộ lọc OWF mà R* dùng; báo thêm lấy ảnh OWF làm fix. Tên:
+- OWF-HWA-S (nếu R* = OWF-HW-S);
+- OWF-HUA (nếu R* = OWF-HU).
+
+Lệnh: `owf_union.py … --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"`, hoặc `"H|m(1e-5,16)|t(3e-4,0.5)"` cho OWF-HUA.
+
+**Tập kiểm tra mới:** seed 49–51 của kho mới `fr49` (seed 49–54; 8 dataset có lỗ × 6 descriptor = 144 run; sinh bằng `hsi_fresh.py --keep`, chưa
+dùng cho bất kỳ quyết định nào). Chạy đợt `t49` = OWF thường và OWF ngân hàng tỉ lệ → OWF-H (HSI-VN, `--hsiframes`), rồi hợp ngoại tuyến. R* và
+C tính trên CÙNG 144 run.
+- **L1 (hợp lệ):** TB segFAR ≤ 0.05 trên 8/8 dataset và ≤ 2/144 run > α.
+- **L2 (recall):** chênh gộp C − R* ≥ +0.005 với cận dưới CI 95 % bootstrap (theo run) > 0.
+- **L3 (điều hướng):** sai số gộp ≤ R* + 0.5 m.
+
+**Quy tắc:** L1 ∧ L2 ∧ L3 ⇒ C là luật khuyến nghị mới. *Phụ (báo cáo, không quyết định):* recall CMU của C và R*, HSI-VN trên cùng run.
+
 ## Entry 13 — OWF-HW-S: ngân hàng tỉ lệ odometry + luật hợp hai bậc — đăng ký trước (2026-11-04 18:00 UTC; AUTOLOOP vòng 3 + 5)
 
 **Phát triển (không quyết định; nhãn chỉ để đánh giá).**

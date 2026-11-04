@@ -2,6 +2,9 @@
 OWF-H (Entry 11) reports where HSI-VN reports on the hybrid chain; on Nordland / old town the open-world filter alone reports more correct
 fixes. Union rule U(e2, D2): report at t iff OWF-H reports, OR (OWF disc mass >= 1 - e2 AND odometry path since the sequence start >= D2 excl);
 W(e2, D2, e3, D3): two tiers (a very strict one early, e.g. 1e-8 after 2 excl, and a strict one later, e.g. 1e-5 after 16 excl).
+General form (AUTOLOOP iteration 6): terms joined by "|", OR-ed: H (OWF-H), m(e,D) (OWF mass >= 1 - e and path >= D excl),
+t(e,D[,L]) (same, and three-way agreement: the OWF image lies within excl of BOTH the topological chain est_c and the retrieval top-1;
+L > 1: the condition held on the last L frames), e.g. OWF-HWA = "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)".
 Fix position: OWF-H's position where it reports (hybrid chain = OWF image where mass >= 0.9 and path >= 16 excl, the topological chain
 elsewhere), the OWF image otherwise. Inputs: OWF frames (fr_*_b1.npz: mass, xhat), OWF-H masks (hsifr_*_<tag>.npz from hsi_eval --frames
 via owf_hybrid --hsiframes), navcaches. Usage:
@@ -13,6 +16,24 @@ from multiprocessing import Pool
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT = "H;U(1e-3,16);U(1e-4,16);U(1e-5,16);U(1e-4,32);U(1e-5,32)"
+
+
+def terms(v):
+    """parse the general variant form into (kind, e, D, L) tuples; H is implicit (always OR-ed)"""
+    out = []
+    for t in v.split("|"):
+        if t == "H": continue
+        a = [float(x) for x in t[2:-1].split(",")]; out.append((t[0], a[0], a[1], int(a[2]) if len(a) > 2 else 1))
+    return out
+
+
+def persist(c, seqs, L):
+    """c held on the last L frames of its sequence"""
+    out = np.zeros_like(c)
+    for idx in seqs:
+        r = 0
+        for i in idx: r = r + 1 if c[i] else 0; out[i] = r >= L
+    return out
 
 
 def one(args):
@@ -35,8 +56,18 @@ def one(args):
     est_h = z["est_c"].astype(int).copy(); rep = (xh >= 0) & (mass >= 0.9) & (pst >= 16 * excl); est_h[rep] = xh[rep]   # OWF-H chain
     ds = OD._dsname(base); segs = PA.seg_classes(z, PA.OFF_D[ds.split(":")[0]])
     q2 = qp if qp.ndim > 1 else qp[:, None]; out = {}
+    M2 = MP.astype(float); M2 = M2 if M2.ndim > 1 else M2[:, None]; xs = np.maximum(xh, 0); ec = z["est_c"].astype(int)
+    agt = (xh >= 0) & (np.linalg.norm(M2[xs] - M2[ec], axis=1) <= excl) & (np.linalg.norm(M2[xs] - M2[z["top"].astype(int)], axis=1) <= excl)
     for v in variants:
         if v == "H": acc = accH; est = est_h
+        elif "|" in v:                                                   # general form
+            ok = np.zeros(n, bool)
+            for kind, e, D, L in terms(v):
+                c = (xh >= 0) & (mass >= 1 - e) & (pst >= D * excl)
+                if kind == "t": c &= agt
+                if L > 1: c = persist(c, seqs, L)
+                ok |= c
+            extra = ok & ~accH; acc = accH | extra; est = np.where(extra, xs, est_h)
         else:
             a = [float(x) for x in v[2:-1].split(",")]                        # U(e2,D2) or W(e2,D2,e3,D3): two tiers
             ok = (mass >= 1 - a[0]) & (pst >= a[1] * excl)

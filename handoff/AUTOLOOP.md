@@ -64,3 +64,8 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
 - 18:50 UTC: **Entry 12 ĐẠT trên seed 43–45**: OWF-HU 0.896 vs OWF-H 0.878 vs HSI-VN 0.805 (+0.018, CI [+0.014, +0.022]); 1/144 run > α như các luật kia;
   sai số 14.94 vs 15.73 vs 15.92 m ⇒ **OWF-HU là luật khuyến nghị**. Entry 13 (OWF-HW-S, seed 46–48, R* = OWF-HU) đang chạy trên 6 phiên L4; kho seed
   49–54 đang sinh trên CPU. Phụ phát triển: hợp hai bậc trên HSI-VMN 0.892 / 12.66 m.
+- 19:20 UTC: **vòng 6 (phát triển):** chẩn đoán oracle trên tập A cho thấy CMU có ~130 chuỗi ngắn (~7.5·excl) mỗi run. Ở đó chuỗi lai đúng 0.964
+  nhưng chỉ báo 0.794, và mọi khung thiếu đều ở đầu chuỗi. Giải pháp: **bậc đồng thuận ba nguồn** t(ε, D), báo khi ảnh OWF trùng (≤ excl) với
+  cả chuỗi tô-pô lẫn truy hồi top-1, kèm khối lượng ≥ 1 − ε và đường đi ≥ D·excl. W ∨ t(3e-4, 0.5) đạt Score 0.9136 (0 run > α, 13.73 m),
+  CMU 0.848 > SH 0.834. **Entry 14 đăng ký trước** (seed 49–51 của kho `fr49`, R* = luật sau Entry 13). Đợt `t46` (Entry 13) và kho `fr49`
+  (seed 49–54) đang chạy.
