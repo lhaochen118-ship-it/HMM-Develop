@@ -475,7 +475,7 @@ def evaluate_mask(z, name, acc, seqs, cfg, nav=True):
 
 def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict", bridge="rigid", sc_lags=(), train_all=False,
               calib="regime", adaptive=False, floor=-np.inf, start_relax=False, null_cap=None, mondrian=None, verbose=False,
-              null_oracle=None, geo_budget=None, anchors="ver", sc_mode="window", **kw):
+              null_oracle=None, geo_budget=None, anchors="ver", sc_mode="window", place_feats=False, **kw):
     """HSI v2 = geometric self-verification (a: trusted anchors, b: dead-reckoning agreement; trusted_geometry) OR
     (c) a hindsight-learned score above a conformal threshold calibrated on hindsight-null segments of the SAME regime
     (frames where a|b do not fire), held out from training. scope: 'pooled' (every session's held-out units) or 'session'.
@@ -596,9 +596,31 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     seg_c = np.array([cond[s[0]] for s in segs]) if segs else np.zeros(0, str)
     seg_cert = np.array([cert[s_].all() for s_ in segs], bool) if segs else np.zeros(0, bool)
     seg_geo = np.array([geo[s_].any() for s_ in segs], bool) if segs else np.zeros(0, bool)
+    if place_feats:                                             # the map learns its own blind spots (hubness of the place chain):
+        from scipy import sparse                                # per map place, causal counts of hindsight-null vs verified fixes
+        M = len(MP); nbl = cKDTree(MP).query_ball_point(MP, r=cfg.excl)   # and their similarity, pooled over places within excl
+        A_ = sparse.csr_matrix((np.ones(sum(len(a) for a in nbl)), (np.repeat(np.arange(M), [len(a) for a in nbl]), np.concatenate(nbl))), shape=(M, M))
+        neg = null | (y == 0); pos = (y == 1) & ~neg; ms = np.asarray(z["maxsim"], float)
+        lab = np.flatnonzero((neg | pos) & (avail < BIG)); lab = lab[np.argsort(avail[lab], kind="stable")]; lab_av = avail[lab]; lp = 0
+        acc_ = {k: np.zeros(M) for k in ("c0", "s0", "q0", "c1", "s1", "q1")}; sm_ = None
+        X = np.c_[X, np.full((n, 5), np.nan, np.float32)]; names = names + ["pl_haz", "pl_sup", "pl_z0", "pl_z1", "pl_n0"]
     score = np.full(n, -np.inf); thr_at = np.full(n, np.inf); clf = None; last_n = 0
     for c0 in range(0, n, cfg.chunk):
         T = c0; cur = order[c0:c0 + cfg.chunk]; cc = cond[cur[0]]
+        if place_feats:
+            up = int(np.searchsorted(lab_av, T, side="left"))
+            if up > lp or sm_ is None:
+                new_ = lab[lp:up]; lp = up
+                for g_, k_ in ((neg, "0"), (pos, "1")):
+                    w_ = new_[g_[new_]]
+                    np.add.at(acc_["c" + k_], est[w_], 1.0); np.add.at(acc_["s" + k_], est[w_], ms[w_]); np.add.at(acc_["q" + k_], est[w_], ms[w_] ** 2)
+                sm_ = {k: A_ @ v for k, v in acc_.items()}
+            pc = est[cur]; n0_, n1_ = sm_["c0"][pc], sm_["c1"][pc]
+            mu0 = sm_["s0"][pc] / np.maximum(n0_, 1); sd0 = np.sqrt(np.maximum(sm_["q0"][pc] / np.maximum(n0_, 1) - mu0 ** 2, 1e-6))
+            mu1 = sm_["s1"][pc] / np.maximum(n1_, 1); sd1 = np.sqrt(np.maximum(sm_["q1"][pc] / np.maximum(n1_, 1) - mu1 ** 2, 1e-6))
+            X[cur, -5] = np.log((n0_ + 1) / (n1_ + 1)); X[cur, -4] = np.log1p(n0_ + n1_)
+            X[cur, -3] = np.where(n0_ >= 3, (ms[cur] - mu0) / sd0, np.nan); X[cur, -2] = np.where(n1_ >= 3, (ms[cur] - mu1) / sd1, np.nan)
+            X[cur, -1] = np.log1p(n0_)
         m = (y >= 0) & (avail < T) & ~cal if train_all else (y >= 0) & (avail < T) & ~cal & regime
         n1, n0 = int((y[m] == 1).sum()), int((y[m] == 0).sum())
         if n1 >= 50 and n0 >= 50 and (clf is None or m.sum() > 1.1 * last_n):

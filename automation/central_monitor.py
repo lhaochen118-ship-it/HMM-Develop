@@ -43,6 +43,9 @@ GAP_MIN = float(opt("--gap", "15")); RUN_POLL = float(opt("--run-poll", "600"));
 PULL_FIRST = re.compile(opt("--pull-first", "^$"))
 NEVER = 1e18
 NOCOPY = "--nocopy" in args
+# --pull-pattern REGEX: download only the matching output files (e.g. '^(results\.tar|.*\.log)$' when a kernel also keeps large
+# reusable files such as fresh caches in /kaggle/working for later kernels to mount as kernel sources)
+_pp = opt("--pull-pattern", ""); PULL_PAT = ["--file-pattern", _pp] if _pp else []
 args = [a for a in args if a != "--nocopy"]
 SF, KDIRS = args[0], [a.rstrip("/") for a in args[1:]]
 ST = json.load(open(SF)) if os.path.exists(SF) else {}
@@ -86,7 +89,7 @@ def api(kid, *a):
 
 def pull(kd, s, state):
     slug = os.path.basename(kd); out = kd + "_out"; os.makedirs(out, exist_ok=True)
-    o = api(s["kid"], "kernels", "output", s["kid"], "-p", out, "-o")
+    o = api(s["kid"], "kernels", "output", s["kid"], "-p", out, "-o", *PULL_PAT)
     if os.path.isfile(os.path.join(out, "results.tar")):
         subprocess.run(["tar", "-xf", os.path.join(out, "results.tar"), "-C", out])
     txt = ""
@@ -216,7 +219,7 @@ while pend:
     if w > 0: time.sleep(min(w, 2 if pushable else 60)); continue
     if PULL_FIRST.search(slug) and not s.get("pull_tried"):
         s["pull_tried"] = True; out = s["kdir"] + "_out"; os.makedirs(out, exist_ok=True)
-        api(s["kid"], "kernels", "output", s["kid"], "-p", out, "-o")
+        api(s["kid"], "kernels", "output", s["kid"], "-p", out, "-o", *PULL_PAT)
         if os.path.isfile(os.path.join(out, "results.tar")):
             pull_done(s["kdir"], s); s["done"] = True; pend.remove(slug); save(); continue
         say(f"{slug}: no results.tar yet -> status polling"); save()
