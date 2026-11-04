@@ -82,12 +82,17 @@ def main():
                 for sd in range(40, 49):
                     J.append((f"hsi_fresh.py {ds} {desc} {sd} 1 --keep navcache_r40 --variants HSI-VN,HSI-VMN,HSI-rot-m-sc,oracle --tag r40", c * 60 * DFAC[desc]))
     if which.startswith("fresh_owf"):     # AUTOLOOP fresh test: OWF + OWF->HSI hybrid on the fresh pool (seeds of the group, e.g. fresh_owf:40-42)
-        a, b = which.split(":")[1].split("-"); modes = opt("--modes", "xms0.9_8:HSI-VN")
+        # --pool r49: cache dataset hmm-navcache-r49 (default r40); --bank: also the odometry-scale-bank OWF (tag r<a>S, 6 filters);
+        # --hsiframes: HSI report masks for owf_union.py
+        a, b = which.split(":")[1].split("-"); modes = opt("--modes", "xms0.9_8:HSI-VN"); pool = opt("--pool", "r40")
+        hf = " --hsiframes" if "--hsiframes" in sys.argv else ""
+        cfgs = [(f"r{a}", "", 1.0)] + ([(f"r{a}S", " --qx 0.005,0.02 --scales 0.97,1.0,1.03", 2.5)] if "--bank" in sys.argv else [])
         for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town", "oxford", "stlucia"):
             for desc in DESCS:
                 for sd in range(int(a), int(b) + 1):
-                    J.append((f"owf_hsi_job.py DIR:navcache_@hmm-navcache-r40 DUMP {ds} {desc} {sd} --tag r{a} --modes {modes}",
-                              DS[ds][1] * DS[ds][2] * DFAC[desc] / 1e3 * 1.3))
+                    for tg, fl, cm in cfgs:
+                        J.append((f"owf_hsi_job.py DIR:navcache_@hmm-navcache-{pool} DUMP {ds} {desc} {sd} --tag {tg} --modes {modes}{hf}{fl}",
+                                  DS[ds][1] * DS[ds][2] * DFAC[desc] / 1e3 * 1.3 * cm))
     if which in ("holes", "all"):         # hole ratio 10 % / 50 % (hmm-navcache-holes, seeds 0-2, 6 datasets x 6 descriptors)
         for dr in ("d10", "d50"):
             for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town"):
