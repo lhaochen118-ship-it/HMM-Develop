@@ -89,7 +89,7 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
-## Entry 14 — Bậc đồng thuận ba nguồn cho đầu chuỗi (OWF ∧ chuỗi tô-pô ∧ truy hồi top-1) — đăng ký trước (2026-11-04 19:20 UTC; AUTOLOOP vòng 6)
+## Entry 14 — Bậc đồng thuận ba nguồn cho đầu chuỗi (OWF ∧ chuỗi tô-pô ∧ truy hồi top-1) — đăng ký trước (2026-11-04 19:05 UTC; AUTOLOOP vòng 6)
 
 **Chẩn đoán (tập A, 404 run, nhãn chỉ để chẩn đoán).** Với luật hợp hai bậc W(1e-5, 16, 1e-8, 2), chuỗi vị trí lai (OWF-H) đúng trên 0.959 khung
 trong bản đồ nhưng chỉ báo đúng 0.899. Trên CMU khoảng cách lớn nhất: chuỗi đúng 0.964, báo 0.794, và TOÀN BỘ phần thiếu (0.176) nằm ở đoạn
