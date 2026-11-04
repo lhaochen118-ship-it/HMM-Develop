@@ -27,6 +27,31 @@ xác minh, Mệnh đề 4 (i)); ở α nhỏ (0.01) vài run vượt do số đo
 oracle 0.845). Tham chiếu **Claxton'24** (MLP giám sát bằng nhãn của 2 điều kiện dễ nhất, kiểu RA-L'24): recall 0.729 nhưng **287/413 run vượt
 α**, sai số 46 m — một bộ giám sát học có nhãn không được hiệu chuẩn cho off-map không thay được hiệu chuẩn trên excursion thật; Xu'21: 202/413.
 
+## Entry 8 — vách khoá hiệu chuẩn và căn chỉnh Neyman–Pearson (HSI-VN) — đăng ký trước (2026-11-04 03:40 UTC)
+
+*Từ đây: seed 0–9 (413 run) = dữ liệu PHÁT TRIỂN (được chẩn đoán); seed 10–12 đã dùng cho C1–C4 / Entry 7; **seed 13–15 = tập KIỂM TRA**, sinh bởi
+đợt `hsi13` (cache giữ lại, xuất bản công khai sau khi sinh), chưa có kết quả nào của bất kỳ luật nào trên đó. Viết TRƯỚC khi tập kiểm tra sinh xong.*
+**Chẩn đoán (phát triển; `paper/hsi_theory.md` Mệnh đề 7):** CMU có hai chế độ theo seed — ở 27/60 run (HSI-rot-m-sc) nhánh học TẮT HẲN (frac_c <
+0.1, recall ~0.52–0.66; SH 0.87–0.98), ở các run khác HSI thắng SH. Cơ chế: ngưỡng conformal = phân vị của max điểm theo đoạn; điểm GBM bão hoà;
+khi tỉ lệ q đoạn null có frame được phép báo vượt α, θ nhảy từ −∞ lên ≈ 1 (vách). Đoạn đặt ngưỡng đều là frame CHƯA TỪNG XÁC MINH — đầu các
+chuỗi bắt đầu trong lỗ (nới đầu chuỗi của Entry 3) và vài chuỗi ngắn hoàn toàn đúng — mà mô hình (học trên nhãn đúng/sai CÓ nhãn) chưa từng thấy
+là âm. Thử và loại: đặc trưng hubness theo nơi (bản đồ tự học điểm mù — 1 % nơi hút 36–46 % fix sai, nhưng không mở khoá), chứng chỉ cửa sổ ngắn
+"học từ chuỗi dài" (ước lượng thầy đánh giá thấp lỗi thật: 0.005 vs 0.097), chứng chỉ tự đồng dạng bản đồ (K = 0 gần như không bao giờ ở ℓ ≤ 30 m),
+Mondrian theo trạng thái bằng chứng (mở khoá nhưng mất ở run không khoá). **Thay đổi (một cờ, `train_null=True`):** huấn luyện (c) với dương =
+frame đã xác minh, âm = TOÀN BỘ null hồi cứu (gồm frame chưa xác minh), chỉ trên đơn vị huấn luyện ⇒ điểm ước lượng tỉ số hợp lý so với chính
+phân phối null dùng để hiệu chuẩn (Neyman–Pearson), bảo đảm split conformal giữ nguyên.
+**Phát triển (413 run seed 0–9; recall / segFAR TB / run > α / sai số):** HSI-rot-m-sc 0.772 / 0.0026 / 0 / 15.0; HSI-V 0.786 / 0.0040 / 0 / 15.3; **HSI-VN
+0.796 / 0.0029 / 0 / 15.1** (CMU 0.761 vs 0.652; run CMU bị khoá 27 → 1 / 60); HSI-VMN 0.786 / 0.0017 / 0 / 13.6 (CMU 0.753); HSI-N (không V) 0.784 /
+0.0021 / 0 / 15.3 (CMU 0.741); SH 0.731 / 0.0029 / 2 / 15.6 (CMU 0.835). Tập thiết kế: HSI-VN 0.720, segFAR max 0.014 (HSI-V 0.044).
+**Đăng ký trước (tập kiểm tra seed 13–15, 6 dataset × 6 descriptor = 108 run, so với HSI-rot-m-sc trên cùng run):** luật ứng viên chính **HSI-VN**;
+phụ **HSI-VMN**; ablation HSI-V, HSI-VM, HSI-N; chẩn đoán geo-rm, Xu'21, Claxton'24, oracle.
+- **T1 (hợp lệ):** ≤ 5 % run segFAR > 0.05 và segFAR TB ≤ 0.05 trên 6/6 dataset.
+- **T2 (recall):** recall gộp HSI-VN − HSI-rot-m-sc ≥ +0.01 (kèm bootstrap 95 %).
+- **T3 (cơ chế, CMU):** recall CMU HSI-VN − HSI-rot-m-sc ≥ +0.03 VÀ số run CMU bị khoá (frac_c < 0.1) của HSI-VN ≤ một nửa của HSI-rot-m-sc.
+- **T4 (điều hướng):** sai số gộp HSI-VN ≤ HSI-rot-m-sc + 0.5 m.
+**Quyết định:** T1 ∧ T2 ∧ T3 ∧ T4 ⇒ HSI-VN thay HSI-rot-m-sc làm luật khuyến nghị; nếu HSI-VN chỉ trượt T4 mà HSI-VMN đạt cả bốn (T2, T3 tính cho
+HSI-VMN) ⇒ HSI-VMN; còn lại giữ HSI-rot-m-sc. Kết quả báo cáo dù thuận hay nghịch.
+
 ## Kết quả tập xác nhận mới (seed 10–12, 108 run; đợt `hsi10` + `hsi12`, kéo về 2026-11-04 02:09 UTC) — C1–C4, Entry 7
 
 Cache sinh lại hai lần độc lập (hai đợt) cho kết quả HSI-rot-m-sc giống hệt nhau trên 108/108 run (tất định). Không có SH (cần GPU). Gộp 108 run

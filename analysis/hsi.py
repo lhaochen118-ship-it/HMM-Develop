@@ -651,6 +651,7 @@ def online_v2(z, name, scope="pooled", null_kind="offwrong", gate_kind="strict",
     rc = (score > np.maximum(thr_at, floor)) & regime          # MAP floor: never report a fix the model thinks is more likely wrong
     acc = geo | rc
     return dict(acc=acc, ra=ra, rb=rb, rc=rc, score=score, thr=thr_at, anc=anc, y=y, null=null, seqs=seqs, cfg=cfg, kappa=kap, sc=sc, gate=gate,
+                hr=hr, edr=edr, sdr=sdr, dm=dm, st=st,
                 n_cal_seg=len(segs), names=names, secs=time.time() - t0)
 
 

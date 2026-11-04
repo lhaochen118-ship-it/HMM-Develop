@@ -61,6 +61,21 @@ không hiệu chuẩn được bằng dữ liệu không nhãn mà là tính ch�
 geo-rm, Entry 5). Hai cách "giữ G trong hiệu chuẩn" đã thử trên tập thiết kế đều thua: (i) phán xét G bằng cầu không dùng G (HSI-Vc) — nhiễm
 như cũ; (ii) phán xét mỗi đoạn neo bằng các đoạn neo lân cận (leave-one-run-out) — chuỗi ngắn (CMU) không có lân cận ⇒ G thành "chưa xác minh".
 
+## Mệnh đề 7 (vách khoá hiệu chuẩn và căn chỉnh Neyman–Pearson — Entry 8)
+
+Ngưỡng hợp θ = phân vị ⌈(1−α)(n+1)⌉ của S_u = max_{t∈u} s_t trên n đoạn null. Gọi q = tỉ lệ đoạn null có ít nhất một frame được phép báo
+(s_t > −∞). (i) Nếu q < α thì θ = −∞ (mọi frame trong chế độ (c) đều báo); nếu q ≥ α thì θ nằm trong phân phối điểm của các đoạn "trúng". Khi điểm
+bão hoà (GBM: P̂ ≈ 1 trên phần lớn frame được phép), θ ≈ 1 và nhánh học TẮT HẲN ⇒ hiệu năng là một hàm bậc thang của q: một vài chuỗi ngắn
+(CMU CosPlace s4: 6 chuỗi, 1.1 % frame) đủ đẩy q qua α và khoá toàn bộ lần triển khai (recall 0.88 → 0.59). (ii) Điểm tối ưu cho phép thử
+conformal là tỉ số hợp lý Λ(x) = p₊(x)/p₀(x) giữa phân phối dương và **phân phối null dùng để hiệu chuẩn** p₀ (bổ đề Neyman–Pearson; với max
+theo đoạn: xấp xỉ). Mô hình học trên nhãn hồi cứu (đúng vs sai CÓ nhãn) ước lượng p₊/p_sai, KHÔNG phải p₊/p₀: p₀ còn gồm frame chưa từng xác minh
+(đầu chuỗi trong lỗ, chuỗi ngắn), mô hình chưa thấy chúng là âm nên chấm điểm cao ⇒ q bị thổi lên. **Căn chỉnh:** học dương (đã xác minh) vs null
+(gồm cả chưa xác minh), chỉ trên các đơn vị huấn luyện (tách khỏi đơn vị hiệu chuẩn ⇒ Mệnh đề 4 giữ nguyên). Đo được (CMU, phát triển): SALAD s4
+0.520 → 0.914 (segFAR 0.000), CosPlace s4 0.590 → 0.873; tập thiết kế: recall không đổi, segFAR max 0.044 → 0.014. (iii) Giới hạn: khi null
+bị nhiễm bởi frame ĐÚNG mà đặc trưng không phân biệt được với dương (chuỗi ngắn hoàn toàn đúng nhưng không thể chứng nhận, CosPlace s1), không
+thông tin nào gỡ được khoá mà vẫn giữ bảo đảm; và ở thang 20–40 m hình học không giúp (K(p, ℓ) = 0 gần như không xảy ra — mọi đoạn đường ngắn
+đều có bản sao đồng dạng trong bản đồ), nên chứng nhận sớm hơn bằng hình học là bất khả.
+
 ## Vì sao khác ý tưởng 1
 
 Ý tưởng 1 sinh null bằng **can thiệp** lên bản đồ (phẫu thuật phản thực quanh niềm tin của hệ thống) và hiệu chuẩn một thống kê hiện diện cố
