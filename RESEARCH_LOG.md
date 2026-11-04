@@ -4,6 +4,29 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+**Kết quả tập quyết định B (seed 25–27, 108 run, đợt `owfb` + `hsib`; ghi 10:43 UTC, trước khi đọc tập A).**
+
+| Dataset | runs | OWF recall | OWF segFAR | runs > α | HSI-VN recall | HSI-VN segFAR | Δ recall (wins) | OWF err (m) | HSI-VN err (m) | start / edge / deep (OWF) |
+|---|---|---|---|---|---|---|---|---|---|---|
+| Boreas | 18 | 0.961 | 0.0034 | 0 | 0.887 | 0.0001 | +0.074 (16/18) | **3.0** | 6.6 | 0.014 / 0.000 / 0.002 |
+| CMU | 18 | 0.735 | 0.0237 | 3 | 0.695 | 0.0181 | +0.040 (11/18) | 5.9 | **4.7** | 0.033 / – / – |
+| Nordland | 18 | 0.956 | 0.0158 | 0 | 0.799 | 0.0003 | +0.157 (18/18) | 8.0 | **5.6** | 0.000 / 0.009 / 0.017 |
+| office | 18 | 0.912 | 0.0000 | 0 | 0.853 | 0.0008 | +0.059 (15/18) | 9.9 | **8.3** | 0.000 / 0.000 / 0.000 |
+| old town | 18 | 0.906 | 0.0000 | 0 | 0.764 | 0.0021 | +0.141 (18/18) | **22.7** | 39.2 | 0.000 / 0.000 / 0.000 |
+| countryside | 18 | 0.647 | 0.0025 | 0 | 0.661 | 0.0026 | −0.015 (8/18) | 46.7 | **28.2** | 0.037 / 0.000 / 0.000 |
+
+**D1 đạt** (mọi dataset ≤ 0.05; 3/108 = 2.8 % run > α, đều CMU, tệ nhất 0.128). **D2 đạt:** recall gộp OWF − HSI-VN = **+0.076** (CI 95 % bootstrap
+[+0.054, +0.099]); thắng 5/6 dataset (Nordland +0.157, old town +0.141, Boreas +0.074, office +0.059, CMU +0.040), countryside −0.015.
+**D3 không đạt** (2/6: Boreas 3.0 vs 6.6 m, old town 22.7 vs 39.2 m; thua CMU +1.2, Nordland +2.4, office +1.6, countryside +18.5 m).
+Kiểm toán vị trí: mép ≤ 0.009 mọi dataset; start CMU 0.033, countryside 0.037; tất cả ≤ 0.07.
+**Quyết định (theo quy tắc đăng ký trước): D3 trượt ⇒ HSI-VN vẫn là luật khuyến nghị.** OWF được ghi nhận là luật hợp lệ có recall cao nhất
+(+0.076 so với HSI-VN trên dữ liệu mới), không đổi được sai số điều hướng.
+*Chẩn đoán sau khi xem (không quyết định gì; ε = 1e-3, tập B, nhãn chỉ để chẩn đoán):* tỉ lệ báo sai trên bản đồ (err > excl) trong các báo:
+countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng thô), Nordland 0.47 % với 0.59 % báo xa > 20 frame (km), CMU 0.84 % báo xa
+> 100 m; Boreas / office / old town ≤ 0.2 %. ⇒ sai số điều hướng do (i) một ít fix sai XA sau khi hậu nghiệm nhảy sang một đoạn giống (Nordland,
+CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
+nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
+
 ## Entry 10 — the open-world filter (OWF, idea 2b): presence by position, not by test — đăng ký trước (2026-11-04 09:13 UTC)
 
 **Context.** Same problem and protocol (`handoff/07_IDEA1_SUMMARY.md` §1: maps with 30 % of the 300 m cells removed, label-free per-frame

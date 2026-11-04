@@ -54,7 +54,7 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 16–18 | `caotienminh1/hmm-navcache-f16` | Entry 9 | đã dùng |
 | seed 19–21 | `caotienminh1/hmm-navcache-r19` | — | **trống** |
 | seed 22–24 | `caotienminh1/hmm-navcache-r19` | — | **trống** |
-| seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN, D1–D3; đăng ký 2026-11-04 09:13 UTC) | đang dùng |
+| seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
 
 ## 6. Việc tiếp theo (khung chat mới)
 
