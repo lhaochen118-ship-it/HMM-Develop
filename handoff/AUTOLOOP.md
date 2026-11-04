@@ -73,3 +73,7 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
   [+0.019, +0.031]. Cả ba luật đều có 1/144 run > α; sai số 12.75 / 13.61 / 14.72 m ⇒ **OWF-HW-S là luật khuyến nghị**. Tách đóng góp: hợp hai bậc
   +0.011 (CMU), ngân hàng tỉ lệ +0.013 (countryside +0.057). Vòng 7 (phát triển): VIO 4Seasons lệch tỉ lệ 0.94–1.07, nằm ngoài ngân hàng ±3 %. Đợt
   `devW` (6 phiên L4, 149 run × {ngân hàng 5 tỉ lệ 0.94–1.06, ngân hàng 3 tỉ lệ}, kèm mặt nạ HSI) đã đẩy.
+- 20:27 UTC: kho `fr49` xong (seed 49–54, 288 cache; publish `synchan5704/hmm-navcache-r49`, kèm HSI-VN / HSI-VMN / oracle trên cùng cache). Đợt
+  kiểm tra Entry 14 `t49` đã đẩy: 32 kernel CPU, seed 49–51, OWF thường + ngân hàng tỉ lệ → OWF-H + mặt nạ. `devW` (6 phiên) đang chạy. Phát
+  triển cục bộ trên countryside cosplace s1: ngân hàng 5 tỉ lệ so với 3 tỉ lệ cho recall OWF 0.568 → 0.603, chuỗi đúng 0.786 → 0.817, sai số
+  42.8 → 40.8 m.
