@@ -23,7 +23,14 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 
 ## 3. Quyết định đã thống nhất
 
-0. **Luật khuyến nghị (Entry 11, 2026-11-04 17:30 UTC): OWF-H** — OWF (Entry 10) → `owf_hybrid.py --mode xms0.9_16` → HSI-VN; tập mới seed
+0. **Luật khuyến nghị (Entry 13, 2026-11-04 19:18 UTC): OWF-HW-S.** Các bước:
+   - OWF ngân hàng tỉ lệ (`owf.py --qx 0.005,0.02 --scales 0.97,1.0,1.03`);
+   - OWF-H (`owf_hybrid.py --mode xms0.9_16 --hsiframes`);
+   - hợp hai bậc (`owf_union.py --variants "W(1e-5,16,1e-8,2)"`).
+
+   Seed 46–48: 0.902 vs OWF-HU 0.878 vs HSI-VN 0.786, 1/144 run > α, sai số 12.75 m. Trước đó, Entry 12 (OWF-HU, seed 43–45: 0.896) và
+   Entry 11 (OWF-H). Chi tiết: `RESEARCH_LOG.md` Entry 11–13, `handoff/AUTOLOOP.md`.
+   *Luật trước đó, Entry 11, 2026-11-04 17:30 UTC: OWF-H* — OWF (Entry 10) → `owf_hybrid.py --mode xms0.9_16` → HSI-VN; tập mới seed
    40–42: recall 0.885 vs HSI-VN 0.811, 1/144 run > α, sai số 14.46 vs 15.35 m (`RESEARCH_LOG.md` Entry 11). Mục 1 bên dưới là luật trước đó.
 1. **Luật khuyến nghị (đến Entry 10): HSI-VN** (`VARIANTS["HSI-VN"]`: HSI-rot-m-sc + `anchors="ver+geo"` + `train_null=True`). **Điểm vận hành điều hướng:
    HSI-VMN** (+ `mondrian="ref"`). Luật trước HSI-rot-m-sc chỉ còn làm tham chiếu.
@@ -64,8 +71,10 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 19–21 | `caotienminh1/hmm-navcache-r19` | — | **trống** |
 | seed 22–24 | `caotienminh1/hmm-navcache-r19` | — | **trống** |
 | seed 40–42 | `synchan5704/hmm-navcache-r40` (AUTOLOOP) | Entry 11 (OWF-H: F1–F3 đạt) | đã dùng |
-| seed 43–45 | `synchan5704/hmm-navcache-r40` | — | trống |
-| seed 46–48 | `synchan5704/hmm-navcache-r40` | — | trống |
+| seed 43–45 | `synchan5704/hmm-navcache-r40` | Entry 12 (OWF-HU: G1–G3 đạt) | đã dùng |
+| seed 46–48 | `synchan5704/hmm-navcache-r40` | Entry 13 (OWF-HW-S: K1–K3 đạt) | đã dùng |
+| seed 49–51 | kho `fr49` (`synchan5704/hmm-navcache-r49`, đang sinh) | Entry 14 (đăng ký trước) | dành riêng |
+| seed 52–54 | kho `fr49` | — | trống |
 | seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
 
 ## 6. Việc tiếp theo (khung chat mới)

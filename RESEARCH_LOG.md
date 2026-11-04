@@ -142,6 +142,31 @@ C tính trên CÙNG 144 run.
 
 ## Entry 13 — OWF-HW-S: ngân hàng tỉ lệ odometry + luật hợp hai bậc — đăng ký trước (2026-11-04 18:00 UTC; AUTOLOOP vòng 3 + 5)
 
+**KẾT QUẢ TẬP KIỂM TRA (seed 46–48, 144 run mới, đợt `t46`; ghi 19:18 UTC). Quyết định: OWF-HW-S THAY OWF-HU làm luật khuyến nghị.**
+R* = OWF-HU (Entry 12 đạt). Ô = recall / TB segFAR / run > α / sai số điều hướng (m).
+
+| Dataset | OWF-HW-S | OWF-HU (R*) | OWF-HW | OWF-H-S | HSI-VN |
+|---|---|---|---|---|---|
+| Boreas | 0.970 / 0.0013 / 0 / 4.1 | 0.971 / 0.0010 / 0 / 3.9 | 0.972 / 0.0010 / 0 / 3.8 | 0.964 / 0.0005 / 0 / 4.2 | 0.883 / 0.0002 / 0 / 6.3 |
+| CMU | 0.679 / 0.0014 / 0 / 2.9 | 0.603 / 0.0014 / 0 / 3.0 | 0.676 / 0.0014 / 0 / 2.9 | 0.603 / 0.0014 / 0 / 3.0 | 0.603 / 0.0014 / 0 / 3.0 |
+| Nordland | 0.963 / 0.0006 / 0 / 3.6 | 0.948 / 0.0003 / 0 / 3.6 | 0.955 / 0.0003 / 0 / 3.7 | 0.919 / 0.0000 / 0 / 3.7 | 0.799 / 0.0000 / 0 / 4.3 |
+| office | 0.957 / 0.0008 / 0 / 9.1 | 0.945 / 0.0012 / 0 / 10.0 | 0.946 / 0.0012 / 0 / 10.0 | 0.944 / 0.0008 / 0 / 9.2 | 0.852 / 0.0010 / 0 / 8.8 |
+| old town | 0.934 / 0.0003 / 0 / 21.2 | 0.915 / 0.0003 / 0 / 23.6 | 0.916 / 0.0003 / 0 / 23.6 | 0.882 / 0.0003 / 0 / 26.6 | 0.757 / 0.0008 / 0 / 31.3 |
+| countryside | 0.807 / 0.0013 / 0 / 25.7 | 0.746 / 0.0016 / 0 / 28.8 | 0.750 / 0.0016 / 0 / 28.8 | 0.783 / 0.0013 / 0 / 26.3 | 0.693 / 0.0016 / 0 / 22.4 |
+| Oxford | 0.940 / 0.0044 / 0 / 18.3 | 0.932 / 0.0045 / 0 / 18.6 | 0.933 / 0.0045 / 0 / 18.6 | 0.930 / 0.0044 / 0 / 18.4 | 0.817 / 0.0043 / 0 / 21.4 |
+| St Lucia | 0.966 / 0.0069 / 1 / 17.3 | 0.961 / 0.0076 / 1 / 17.5 | 0.961 / 0.0076 / 1 / 17.5 | 0.942 / 0.0069 / 1 / 18.6 | 0.887 / 0.0076 / 1 / 20.3 |
+| **Gộp (144)** | **0.902 / 1 run / 12.75 m** | 0.878 / 1 / 13.61 | 0.889 / 1 / 13.60 | 0.871 / 1 / 13.74 | 0.786 / 1 / 14.72 |
+
+- **K1 đạt:** TB segFAR tệ nhất 0.0069 (St Lucia), 1/144 run > α (cùng một run St Lucia như mọi luật, kể cả HSI-VN).
+- **K2 đạt:** chênh OWF-HW-S − OWF-HU **+0.0244**, CI 95 % [+0.0185, +0.0307]; thắng 124 / hoà 1 / thua 19.
+- **K3 đạt:** 12.75 m vs 13.61 m.
+
+Tách đóng góp trên cùng run:
+- *Hợp hai bậc* (OWF-HW − OWF-HU): +0.0110 [+0.0066, +0.0160], 112 thắng / 0 thua; gần như toàn bộ từ CMU (0.603 → 0.676).
+- *Ngân hàng tỉ lệ* (OWF-HW-S − OWF-HW): +0.0134 [+0.0095, +0.0179]; countryside +0.057, old town +0.018, Nordland / office +0.01.
+
+Điểm yếu còn lại: CMU (0.68; chuỗi ngắn), là đích của Entry 14. Bảng điểm: `analysis/results/owf/owfhws_test_s46_48_json.tgz`.
+
 **Phát triển (không quyết định; nhãn chỉ để đánh giá).**
 (a) *Ngân hàng tỉ lệ odometry* (`owf.py --qx 0.005,0.02 --scales 0.97,1.0,1.03`: 6 bộ lọc, chọn trực tuyến theo evidence; VIO 4Seasons dài hơn GNSS
 1–12 %, odometry mô phỏng sai tỉ lệ ~3 %), đợt `devS` (149 run: seed 1–3 của 6 dataset có lỗ, NCLT, Oxford / St Lucia seed 0–2), cùng run:

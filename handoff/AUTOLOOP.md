@@ -69,3 +69,7 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
   cả chuỗi tô-pô lẫn truy hồi top-1, kèm khối lượng ≥ 1 − ε và đường đi ≥ D·excl. W ∨ t(3e-4, 0.5) đạt Score 0.9136 (0 run > α, 13.73 m),
   CMU 0.848 > SH 0.834. **Entry 14 đăng ký trước** (seed 49–51 của kho `fr49`, R* = luật sau Entry 13). Đợt `t46` (Entry 13) và kho `fr49`
   (seed 49–54) đang chạy.
+- 19:18 UTC: **Entry 13 ĐẠT trên seed 46–48** (144 run). OWF-HW-S đạt 0.902, so với OWF-HU 0.878 và HSI-VN 0.786: chênh +0.024, CI
+  [+0.019, +0.031]. Cả ba luật đều có 1/144 run > α; sai số 12.75 / 13.61 / 14.72 m ⇒ **OWF-HW-S là luật khuyến nghị**. Tách đóng góp: hợp hai bậc
+  +0.011 (CMU), ngân hàng tỉ lệ +0.013 (countryside +0.057). Vòng 7 (phát triển): VIO 4Seasons lệch tỉ lệ 0.94–1.07, nằm ngoài ngân hàng ±3 %. Đợt
+  `devW` (6 phiên L4, 149 run × {ngân hàng 5 tỉ lệ 0.94–1.06, ngân hàng 3 tỉ lệ}, kèm mặt nạ HSI) đã đẩy.

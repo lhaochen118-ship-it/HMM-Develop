@@ -5,10 +5,21 @@
 
 **Luật khuyến nghị: HSI-VN** — 0 vi phạm trên 413 run phát triển + 216 run của hai tập kiểm tra mới; +0.065 recall so với ý tưởng 1 (SH).
 
-**LUẬT KHUYẾN NGHỊ (từ 2026-11-04 17:30 UTC, Entry 11): OWF-H** = bộ ước lượng thế giới mở OWF + lớp quyết định HSI-VN (chuỗi OWF chỉ giao cho HSI
-khi khối lượng ≥ 0.9 và đã đi ≥ 16·excl từ đầu chuỗi; `analysis/owf_hybrid.py --mode xms0.9_16`). Tập mới seed 40–42 (144 run): recall **0.885** vs
-HSI-VN 0.811 (+0.074, CI [+0.060, +0.088]), 1/144 run > α (như HSI-VN), sai số điều hướng 14.46 vs 15.35 m. Vòng lặp tự động 12 giờ:
-`handoff/AUTOLOOP.md`.
+**LUẬT KHUYẾN NGHỊ (từ 2026-11-04 19:18 UTC, Entry 13): OWF-HW-S.** Quy trình gồm ba bước:
+1. OWF với ngân hàng tỉ lệ odometry (`owf.py --qx 0.005,0.02 --scales 0.97,1.0,1.03`).
+2. OWF-H: chuỗi OWF giao cho HSI-VN khi khối lượng ≥ 0.9 và đã đi ≥ 16·excl (`owf_hybrid.py --mode xms0.9_16`).
+3. Hợp hai bậc với các báo OWF cực tự tin: `owf_union.py --variants "W(1e-5,16,1e-8,2)"`.
+
+Vòng lặp tự động 12 giờ (`handoff/AUTOLOOP.md`). Mỗi luật được đăng ký trước, rồi kiểm trên một nhóm seed MỚI. Bảng dưới là recall gộp / số run
+> α / sai số điều hướng; mọi luật đều hợp lệ trên mọi dataset:
+
+| Nhóm mới (144 run) | HSI-VN | OWF-H (Entry 11) | OWF-HU (Entry 12) | OWF-HW-S (Entry 13) |
+|---|---|---|---|---|
+| seed 40–42 | 0.811 / 1 / 15.35 | **0.885** / 1 / 14.46 | | |
+| seed 43–45 | 0.805 / 1 / 15.92 | 0.878 / 1 / 15.73 | **0.896** / 1 / 14.94 | |
+| seed 46–48 | 0.786 / 1 / 14.72 | 0.860 / 1 / 14.62 | 0.878 / 1 / 13.61 | **0.902** / 1 / 12.75 |
+
+Đang chạy: Entry 14, bậc đồng thuận ba nguồn cho đầu chuỗi (CMU), kiểm trên seed 49–51.
 
 **Entry 10 — ý tưởng 2b, bộ lọc thế giới mở (OWF, `analysis/owf.py`):** lưới mét phủ cả vùng có bản đồ và vùng trống, hiện diện suy từ vị trí.
 Hợp lệ (TB), recall cao nhất: tập A 404 run 0.863 (HSI-VN 0.791, SH 0.726), tập quyết định mới seed 25–27: +0.076 so với HSI-VN (CI [+0.054,
