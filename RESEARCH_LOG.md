@@ -89,6 +89,32 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 12 — OWF-HU: hợp của OWF-H với các báo OWF cực tự tin đã ổn định — đăng ký trước (2026-11-04 17:32 UTC; AUTOLOOP vòng 4)
+
+**Bối cảnh.** Entry 11: OWF-H là luật khuyến nghị (tập mới 40–42: 0.885, 1/144 run > α, 14.46 m). Trên Nordland / old town / St Lucia, OWF một mình
+báo được nhiều fix đúng hơn OWF-H (tập 40–42: 0.947 / 0.901 / 0.984 vs 0.919 / 0.852 / 0.970).
+**Phát triển (tập A, 404 run, ngoại tuyến `analysis/owf_union.py` từ mặt nạ báo của OWF-H — đợt `hybE` — và frame OWF; biến thể "H" tái tạo
+đúng OWF-H 0.8697):**
+
+| Luật | Score (recall gộp) | run > α | sai số (m) |
+|---|---|---|---|
+| U(1e-3, 16) | 0.901 | 5 (Nordland) | 14.74 |
+| U(1e-4, 16) | 0.896 | 2 | 13.97 |
+| U(1e-4, 32) | 0.895 | 2 | 13.99 |
+| **U(1e-5, 16)** | **0.892** | **0** | **13.74** |
+| U(1e-5, 32) | 0.891 | 0 | 13.75 |
+| OWF-H | 0.870 | 0 | 14.58 |
+
+**Luật đăng ký: OWF-HU = U(1e-5, 16):** báo tại t nếu OWF-H báo, HOẶC (khối lượng đĩa OWF ≥ 1 − 1e-5 VÀ quãng đường từ đầu chuỗi ≥ 16·excl); vị trí
+fix = của OWF-H nếu nó báo, ngược lại ảnh của OWF. Lý do cơ chế: sau vùng đầu chuỗi (nơi Mệnh đề 2 yếu) hậu nghiệm OWF ở mức 1 − 1e-5 hầu như
+không sai (tập A: 0 run vi phạm); HSI chặn bớt các báo này vì null hồi cứu bảo thủ.
+**Tập kiểm tra mới:** seed 43–45 của `hmm-navcache-r40` (144 run, 8 dataset × 6 desc × 3 seed); OWF, OWF-H (+ mặt nạ báo) chạy trong cùng job
+(đợt `t43`); HSI-VN trên cùng cache (đợt `fr40`).
+- **G1 (hợp lệ):** TB segFAR ≤ 0.05 trên 8/8 dataset và ≤ 2/144 run > α.
+- **G2 (recall):** chênh gộp OWF-HU − OWF-H ≥ +0.01 với cận dưới CI 95 % bootstrap > 0.
+- **G3 (điều hướng):** sai số gộp ≤ OWF-H + 0.5 m.
+**Quy tắc:** G1 ∧ G2 ∧ G3 ⇒ OWF-HU thay OWF-H làm luật khuyến nghị; ngược lại OWF-H giữ nguyên. Ghi kèm so sánh với HSI-VN trên cùng run.
+
 ## Entry 11 — OWF-H: bộ ước lượng thế giới mở + lớp quyết định HSI, giao chuỗi khi đã "ổn định" — đăng ký trước (2026-11-04 15:40 UTC; AUTOLOOP vòng 1)
 
 **KẾT QUẢ TẬP KIỂM TRA (seed 40–42, 144 run mới, đợt `t40`; ghi 17:31 UTC). Quyết định: OWF-H THAY HSI-VN làm luật khuyến nghị.**
