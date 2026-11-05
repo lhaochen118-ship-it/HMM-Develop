@@ -181,7 +181,7 @@ INC, H:
   0.04 % frame off-map. Điểm ≥ 3 cho 0.489 / 0 / 0 trên 49 410 frame off-map.
 - Countryside: khoảng trống nằm ở chuỗi dài (≥ 16 excl): OWF đúng 0.912, báo 0.844 (khối lượng bị VIO trôi làm loãng).
 
-**Phụ lục Entry 16 — ngân hàng tỉ lệ rộng ±15 % (phát triển, tập A, 399 run; ghi 18:22 UTC).**
+**Phụ lục Entry 16 — ngân hàng tỉ lệ rộng ±15 % (phát triển, tập A, 399 run; ghi 18:21 UTC).**
 - Đo trên GNSS: tỉ lệ VIO theo cửa sổ 50 m chủ yếu là độ lệch theo từng chuỗi. Độ lệch chuẩn trong chuỗi chỉ 0.01; độ dài tương quan
   100–200 m; độ lệch chuẩn của trung bình các chuỗi 0.02–0.06.
 - Khoảng P10–P90 vượt ngân hàng ±6 %: office 0.956–1.119, old town 0.904–1.028, countryside 1.024–1.081.
