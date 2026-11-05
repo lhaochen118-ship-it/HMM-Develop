@@ -44,6 +44,20 @@ cần ngưỡng cực đoan cố định.
 Đuôi hợp lệ còn lại thuộc nhánh HSI, không thuộc các bậc OWF. Tham chiếu: HSI-VN đạt 0.772 / 0.754 ở lỗ 10 % / 50 %, SH (ý tưởng 1)
 0.748 / 0.696.
 
+**Entry 17 — XÁC NHẬN trên seed mới 55–57 (đăng ký trước; 144 run, cùng run cho mọi luật).** Ô = recall / run > α / sai số (m):
+- OWF-HWA-S5: **0.937 / 1 / 12.5**;
+- HSI-VN: 0.806 / 0 / 15.0;
+- TAO'26: 0.846 / 129 / 123.5;
+- Xu'21: 0.691 / 75 / 57.5;
+- Claxton'24: 0.732 / 99 / 48.4;
+- oracle một-frame: 0.847.
+
+C1–C4 đều đạt. Luật vượt oracle một-frame trên 7/8 dataset (Nordland 0.970 vs 0.675). Ngoại lệ là CMU: 0.841 vs 0.929.
+
+**Độ phóng đại (E1) đo được** (`owf_theory.md` §7, Mệnh đề 2′): K̂(ε) = segFAR(ε) / (2ε) của OWF đơn lẻ ≤ 1 trên 4Seasons và St Lucia, tức cận
+Ville đúng như phát biểu. Trên CMU / Nordland, K̂ tăng tới 10³–4·10⁴ khi ε giảm (aliasing đuôi nặng). Điều này giải thích vì sao cần bậc cực
+đoan và nhánh HSI.
+
 **Khoảng trống recall còn lại (tập A, nhãn chỉ để chẩn đoán).**
 - CMU: ảnh MAP của OWF đúng 0.95–0.99 frame on-map ở mọi khoảng cách từ đầu chuỗi, nhưng chỉ 0.53–0.94 được báo. Phần bị bỏ = 0.125
   frame on-map, tức toàn bộ khoảng cách recall của CMU. Mọi chuỗi CMU đều < 16 excl.
