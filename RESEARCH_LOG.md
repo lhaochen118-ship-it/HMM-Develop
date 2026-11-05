@@ -181,6 +181,12 @@ INC, H:
   0.04 % frame off-map. Điểm ≥ 3 cho 0.489 / 0 / 0 trên 49 410 frame off-map.
 - Countryside: khoảng trống nằm ở chuỗi dài (≥ 16 excl): OWF đúng 0.912, báo 0.844 (khối lượng bị VIO trôi làm loãng).
 
+**Phụ lục Entry 16 — nhiệt độ emission β như một chiều của ngân hàng (thiết kế, 1 run; ghi 16:46 UTC).** Lập luận: các LR có chung tham chiếu
+p₀, nên log-evidence tích luỹ so sánh được giữa các β, tức chọn β trực tuyến là chọn mô hình cảm biến một cách nguyên tắc, không cần nhãn
+(`owf.py --bbank 1,0.7,1.4`, engine torch). Trên Nordland cosplace s1, evidence chọn β = 1.4 cho 98 % frame và log-evidence tăng mạnh (19 060
+so với 15 713). Nhưng segFAR tăng 0.038 → 0.064 và sai số điều hướng 15 → 51 m. Điểm log trung bình tốt hơn thưởng cho LR sắc hơn, và chính
+LR sắc làm các đợt aliasing liên tiếp (hiếm nhưng quyết định hợp lệ) tệ hơn: cùng thất bại (E1). Loại, không chạy đợt phát triển.
+
 **Phụ lục Entry 16 — đơn giản hoá các bậc (phát triển, tập A, 399 run; ghi 16:42 UTC).** Biến thể của `owf_union.py` (recall gộp / run > α
 / sai số):
 - INC: 0.933 / 1 / 12.7.

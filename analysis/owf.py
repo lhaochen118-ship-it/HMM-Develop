@@ -157,7 +157,9 @@ def main():
     closed = "--closed" in sys.argv; eps0 = float(opt("--eps0", "1e-3")); tag = opt("--tag", ""); xmode = opt("--xhat", "mean")
     eps_l = [float(e) for e in opt("--eps", "0.2,0.1,0.05,0.02,0.01,0.005,0.002,0.001,5e-4,2e-4,1e-4,1e-5").split(",")]
     fr_out, fo = opt("--frames", None), opt("--out", None)
-    engine = opt("--engine", "numpy")                                  # numpy (reference) | torch (owf_torch.py; CUDA when available)
+    engine = opt("--engine", "numpy")
+    bbank = [float(x) for x in opt("--bbank", "").split(",") if x]     # emission temperatures selected online like q / scale (torch engine)
+    assert not bbank or engine == "torch", "--bbank needs --engine torch"                                  # numpy (reference) | torch (owf_torch.py; CUDA when available)
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     sys.argv = sys.argv[:1]
     import nav_demo as N
@@ -180,9 +182,13 @@ def main():
             if engine == "torch":                                          # same filter, all bank members in one GPU tensor (owf_torch.py)
                 assert wt is None and drift == 0 and not closed and xmode == "mean", "--engine torch: default filter configuration only"
                 import owf_torch as OT
-                o = OT.run_bank(F, LL, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell)
-                xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1)
-                rs = [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j], mean=o["mean"][j]) for j in range(len(bank))]
+                rs = []
+                for bb in (bbank or [beta]):                               # --bbank: emission temperature as a bank dimension (2026-11-05)
+                    LLb = LL if bb == beta else log_lr(Zs, bb)
+                    o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell)
+                    xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1)
+                    rs += [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j], mean=o["mean"][j]) for j in range(len(bank))]
+                bank = [(qx, sc) for bb in (bbank or [beta]) for qx, sc in bank]; bsel_l = [bb for bb in (bbank or [beta]) for _ in range(len(rs) // len(bbank or [beta]))]
             else:
                 rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode) for qx, sc in bank]
             # ONLINE self-calibration of the odometry noise (and scale): at frame t follow the filter with the largest cumulative log evidence
@@ -193,6 +199,7 @@ def main():
             if "mean" in rs[0]:                                          # posterior mean of the reporting disc (metric, not snapped)
                 out.setdefault("xmean", np.full((nq, F.d), np.nan))[idx] = np.stack([r_["mean"] for r_ in rs])[ks, tt]
             out.setdefault("ssel", np.ones(nq))[idx] = np.array([b[1] for b in bank])[ks]
+            if bbank: out.setdefault("bsel", np.ones(nq))[idx] = np.array(bsel_l)[ks]
         dt = (time.time() - t0) / nq * 1e3
         xf = z["MP"][np.maximum(xh, 0)]; err = np.linalg.norm(xf - qp, axis=1); gd = inm & (err <= excl) & (xh >= 0)
         rows = []
@@ -215,11 +222,12 @@ def main():
                        pos={cl: (int(sum(bool(acc0[g].any()) for g, c_ in segs if c_ == cl)), int(sum(1 for _, c_ in segs if c_ == cl))) for cl in PA.CLASSES})
         print(f"   DEFAULT eps {eps0:g}: recall {default['recall']:.3f} segFAR {default['seg_FAR']:.4f} FL {default['FL']:.4f} err_mean {default['err_mean']:.1f} m p95 {default['err_p95']:.1f}", flush=True)
         if fr_out:
-            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh, **({"xmean": out["xmean"]} if "xmean" in out else {}),
+            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh, **({"xmean": out["xmean"]} if "xmean" in out else {}), qsel=out["qsel"], ssel=out.get("ssel", np.ones(nq)), **({"bsel": out["bsel"]} if "bsel" in out else {}),
                                 err=err, inm=inm, offm=offm, q_sid=sid, q_k=k, q_pos=qp, cond=z["cond"])
         res["runs"][str(beta)] = dict(ms_per_frame=dt, logml=float(out["lml"].sum()), map_correct_on=ceil, curve=rows, default=default,
                                       qsel={str(x): float(np.mean(out["qsel"] == x)) for x in qxs},
-                                      ssel={str(x): float(np.mean(out.get("ssel", np.ones(nq)) == x)) for x in scales})
+                                      ssel={str(x): float(np.mean(out.get("ssel", np.ones(nq)) == x)) for x in scales},
+                                      bsel={str(x): float(np.mean(out["bsel"] == x)) for x in bbank} if bbank else {})
         print(f"{ds}/{desc} s{seed} beta {beta}: {dt:.1f} ms/frame logml {out['lml'].sum():.1f} MAP-correct(on) {ceil:.3f} q-share",
               {x: round(float(np.mean(out["qsel"] == x)), 2) for x in qxs}, flush=True)
         for rr in rows: print("   eps %-7g recall %.3f FL %.4f segFAR %.4f delay %.1f" % (rr["eps"], rr["recall"], rr["FL"], rr["seg_FAR"], rr["reentry_delay"]),
