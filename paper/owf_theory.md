@@ -113,3 +113,42 @@ track would certify a coherent alias (its track is odometry-consistent by constr
 chain, which is computed independently of the OWF. Mondrian strata by path since the start make the guarantee hold per stratum, so the
 weak start case of Proposition 2 is calibrated on start segments only. The guarantee is marginal over segments of the deployment, not per
 run; the per-run tail is measured (runs > α).
+
+**Result (Entry 16, development set A, 399 runs): Proposition 4 does not replace the fixed tiers.** Every hindsight-calibrated variant lost to
+the incumbent on recall (−0.017 … −0.027), per-run validity (23–46 runs above α vs 1) and navigation (+2 … +4.6 m). The guarantee bounds the
+EXPECTED share of null segments with a report; the per-run segFAR then scatters around α, whereas the incumbent operates about ten times
+below α. The proposition stays true; it is the wrong target for a per-run requirement.
+
+## 7. Proposition 2′ (Ville bound with an inflation budget) and its measured inflation
+
+*Assumption (E1-K).* Over an off-map stretch S = [t₀, t₁], E[L_t(c)^{w_t} | 𝓕_{t−1}] ≤ κ_t for every near-map cell c, with κ_t ≥ 1 and
+Π_{t∈S} κ_t ≤ K almost surely (K = 1 is (E1)).
+
+*Claim.* P(∃ t ∈ S: report at t) ≤ K · ε (1 + O₀) / ((1 − ε)(1 − λ)).
+
+*Proof.* As in Proposition 2, with T_t / Π_{s ≤ t} κ_s a nonnegative supermartingale: E[T_t | 𝓕_{t−1}] ≤ π̃_{t−1}(U-part) + κ_t
+π̃_{t−1}(N-part) ≤ κ_t T_{t−1}. A report needs T_t ≥ k(1 − λ) π̃_{t₀}(U) (k = (1 − ε)/ε), hence T_t / Π κ_s ≥ k(1 − λ) π̃_{t₀}(U) / K; Ville's
+inequality gives the claim. ∎
+
+*Meaning.* A fixed threshold ε is safe at level α while the inflation budget satisfies K ≲ α / (2ε) (O₀ ≈ 1 at a start, λ ≈ 0). Examples:
+ε = 1e-3 tolerates K ≈ 25; ε = 1e-5 tolerates K ≈ 2.5 · 10³; ε = 1e-8 tolerates K ≈ 2.5 · 10⁶. Coherent perceptual aliasing makes K a heavy-tailed
+property of the (map, descriptor, route) triple.
+
+*Measured inflation* (`analysis/results/owf/s1105/inflation_dev_a.json`): OWF alone on set A, K̂(ε) = observed segFAR(ε) / (2ε), pooled per
+dataset.
+
+| dataset | ε = 1e-2 | 1e-3 | 1e-4 | 1e-5 | 1e-6 | 1e-8 | 1e-10 |
+|---|---|---|---|---|---|---|---|
+| 4Seasons (3 scenes), St Lucia | ≤ 0.4 | ≤ 1 | 0 | 0 | 0 | 0 | 0 |
+| Boreas | 0.25 | 1.3 | 6.3 | 21 | 33 | 0 | 0 |
+| Oxford | 0.04 | 0.27 | 1.4 | 9.7 | 97 | 8.7 · 10³ | 8.7 · 10⁵ (one persistent segment) |
+| Nordland | 3.4 | 12 | 56 | 200 | 1.1 · 10³ | 4.1 · 10⁴ | 0 |
+| CMU | 4 | 22 | 140 | 880 | 3.6 · 10³ | 4.3 · 10³ | 0 |
+
+**Reading.**
+- Where aliasing is mild (4Seasons, St Lucia, Boreas at ε ≥ 1e-3), (E1) holds empirically and Proposition 2 is valid as stated.
+- On CMU (short sequences, global starts) and Nordland (repetitive railway, long holes), K̂ GROWS as ε shrinks. Alias evidence is
+  heavy-tailed: segFAR falls far more slowly than ε. That is why OWF alone needs ε ≈ 1e-8 there, and why the incumbent combines extreme
+  fixed thresholds with path conditions and a calibrated learned branch.
+- A per-run guarantee in this regime needs either a bound on K from the map itself (how strongly and for how long two places of the map
+  look alike) or a decision whose risk does not grow with the evidence. Both are open.
