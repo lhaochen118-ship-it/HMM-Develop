@@ -136,6 +136,21 @@ def main():
                         for desc in DESCS:
                             DS.setdefault(f"4sx:{a_}{b_}", ("", 15000, 10.0, None))
                             J.append(ij("DIR:navcache_@hmm-natural-cache", f"4sx:{a_}{b_}", desc, 0, f"x{tg}"))
+    if which.startswith("sota:"):         # external baselines (sota_job.py) on the generality sets: sota:holes+natural+nclt
+        for part in which.split(":")[1].split("+"):
+            if part == "holes":
+                for dr in ("d10", "d50"):
+                    for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town"):
+                        for desc in DESCS:
+                            for s in (0, 1, 2): J.append((f"sota_job.py DIR:navcache_@{dr} DUMP {ds} {desc} {s} --tag {dr}", DS[ds][1] * 1.5e-3))
+            if part == "natural":
+                sc = ("office_loop", "old_town", "countryside")
+                for a_ in sc:
+                    for b_ in sc:
+                        if a_ != b_:
+                            for desc in DESCS: J.append((f"sota_job.py DIR:navcache_@hmm-natural-cache DUMP 4sx:{a_}{b_} {desc} 0 --tag x", 20.0))
+            if part == "nclt":
+                for desc in DESCS: J.append((f"sota_job.py DIR:navcache_@hmm-navcache-v2 DUMP nclt {desc} 0 --tag n", 60.0))
     if which in ("holes", "all"):         # hole ratio 10 % / 50 % (hmm-navcache-holes, seeds 0-2, 6 datasets x 6 descriptors)
         for dr in ("d10", "d50"):
             for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town"):
