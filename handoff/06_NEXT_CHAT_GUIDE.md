@@ -2,6 +2,23 @@
 
 *2026-11-04, branch `hmm-2nd-idea` (repo `lhaochen118-ship-it/hmm-develop`, public). Không tạo PR. Thay cho `history/05_NEW_CHAT_GUIDE_idea2-start.md`.*
 
+## 0. Bắt đầu nhanh (phiên 2026-11-05 chiều trở đi)
+
+1. `git fetch origin hmm-2nd-idea && git log --oneline HEAD..origin/hmm-2nd-idea`. Nếu local không có gì riêng:
+   `git reset --hard origin/hmm-2nd-idea` (phiên này bắt đầu ở một checkout cũ, lịch sử khác hẳn remote).
+2. Token: lưu `~/.kaggle/tok_<username>` (chmod 600). Username lấy từ `kaggle kernels list --mine` (ví dụ token "DuckZuy" là `duckzuykobip`).
+   Ghi các tài khoản vào `automation/active_accounts.txt` theo thứ tự lấp phiên. Thăm dò máy bằng một kernel L4 nhỏ (`02` §8).
+3. Đọc `paper/BAO_CAO_S1105.pdf` (phiên gần nhất), `RESEARCH_LOG.md` Entry 16–17, `03_HANDOFF.md` §6a (việc tiếp theo).
+4. Công cụ mới:
+   - `owf.py --engine torch`: OWF trên GPU.
+   - `owf_wave.py --set inc:<sets>`: luật đương nhiệm trên GPU cho tập A / lỗ / tự nhiên / NCLT / `fresh<a>-<b>`; `--sota` thêm đối thủ ngoài;
+     `--bankscales`.
+   - `owf_hcal.py`, `owf_union.py`, `hcal_board.py`: quyết định ngoại tuyến và bảng.
+   - `sota_job.py`: TAO'26, Xu'21, Claxton'24, top-1, oracle.
+   - `e17_board.py`: tiêu chí đăng ký trước.
+   - `make_vprspace_kernel.py`: VPR-Space bước 2.
+5. Kho seed mới: `namhunhh/hmm-navcache-r55`, seed 58–60 còn TRỐNG. Đánh giá một luật mới trên đó mất ~20 phút (4 phiên L4, kèm SOTA).
+
 ## 1. Đọc theo thứ tự (≈ 30 phút)
 
 1. `handoff/03_HANDOFF.pdf` — mục tiêu, quyết định đã chốt, vị trí mọi thứ, sổ dùng tập kiểm tra, **việc tiếp theo** (§6).
