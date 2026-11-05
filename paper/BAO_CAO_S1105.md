@@ -93,6 +93,9 @@ Các run vượt α của OWF-HWA-S5 (CMU khi lỗ 50 %; 2 run off-map tự nhi�
 - Phần quyết định của hệ vẫn là bậc ngưỡng cố định, có biện minh thực nghiệm (bền trên lỗ 10/50 %, off-map tự nhiên) nhưng chưa có mệnh đề
   kiểm soát đuôi theo run.
 - Nhánh HSI là nguồn của đuôi hợp lệ còn lại (CMU khi lỗ 50 %).
-- VPR-Space (16 cặp ngoài Trái Đất) chưa chạy. Repo `rfechner/vpr-space` đọc được (danh sách setup trong `dataset.py`), nhưng proxy của phiên
-  chặn API release: phải tải trong kernel Kaggle có internet.
+- VPR-Space (16 cặp ngoài Trái Đất) chưa chạy. Repo `rfechner/vpr-space` đọc được (danh sách setup trong `dataset.py`); proxy của phiên chặn
+  API release. Kernel CPU có internet (`dinhthinh/vprspace-fetch`) liệt kê release v0.1.0: 11 phần `vpr-space.tar.0000–0010`, tổng 20.3 GB,
+  lớn hơn đĩa làm việc của một kernel (20.9 GB) nếu vừa lưu vừa giải nén. Hướng khả thi:
+  - stream `curl … | tar x` lọc theo từng quỹ đạo trong kernel CPU có internet, thu nhỏ ảnh vào output (< 19 GB);
+  - kernel L4 cùng tài khoản mount output đó (`kernel_sources`), trích 6 descriptor.
 - Paper: bản nháp tiếng Anh `paper/OWF_paper_draft.md`; phần kết quả lấy từ các entry đăng ký trước.
