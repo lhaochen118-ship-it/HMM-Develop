@@ -4,6 +4,21 @@
 Cách đọc repo và việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Các dataset `hmm-cms-*`, `hmm-fwd-null-*` là của ý tưởng 1
 (baseline). Các mục §1–§5 bên dưới giữ lịch sử (một số acc / luật trong đó đã cũ).*
 
+## 00. Phiên 2026-11-05 (chiều): tài khoản, máy L4, engine GPU
+
+**Tài khoản của phiên này** (`automation/active_accounts.txt`, thứ tự lấp phiên): `namhunhh`, `duckzuykobip`, `dinhthinh`. Token ở
+`~/.kaggle/tok_<username>` (chmod 600), không bao giờ vào repo. Các tài khoản cũ (bảng §0 bên dưới) không có token trong phiên này; dataset công
+khai của chúng vẫn mount được. `namhunhh` có kernel của người dùng khác chạy song song: monitor tự bỏ qua slot CPU đang bận ("no free cpu session").
+
+**Máy L4 đo bằng kernel thăm dò (cả ba tài khoản, 2026-11-05 14:52 UTC):** 4 × NVIDIA L4 (23 GB mỗi GPU), 48 vCPU, 188 GB RAM, 20 GB đĩa
+`/kaggle/working`, torch 2.11 + CUDA 13. Kernel L4: `machine_shape = NvidiaL4`, `competition_sources = ["gemma-4-developer-agent"]`, internet tắt.
+
+**Engine GPU của OWF** (`analysis/owf_torch.py`, `owf.py --engine torch`): mọi bộ lọc của ngân hàng (q × tỉ lệ) chạy trong một tensor float64 trên
+một GPU. L4: 2.7–3.4 ms/frame cho ngân hàng 10 bộ lọc (numpy trên cùng máy: 29 ms/frame); Boreas 76k frame 4.6 phút. Tương đương bản numpy ở mức
+quyết định (vị trí báo trùng, quyết định trùng ở mọi ngưỡng 1−0.2 … 1−1e-8, đường cong vận hành trùng; |Δ khối lượng| ≤ 1e-4 ở 1-D, ≤ 7e-7 ở 2-D).
+Runner của `make_eval_kernel.py` chia job vòng tròn lên 4 GPU (`CUDA_VISIBLE_DEVICES = i % 4`); `--par 24` = 6 job / GPU, phần HSI chạy trên CPU
+của cùng phiên.
+
 ## 0. Trạng thái hiện hành (2026-11-04)
 
 **Tài khoản Kaggle đang dùng** (`automation/active_accounts.txt`, theo thứ tự lấp phiên): `synchan5704`, `yeshenhi` (thêm 2026-11-04 cho Entry 10;

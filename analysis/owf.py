@@ -182,7 +182,7 @@ def main():
                 import owf_torch as OT
                 o = OT.run_bank(F, LL, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell)
                 xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1)
-                rs = [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j]) for j in range(len(bank))]
+                rs = [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j], mean=o["mean"][j]) for j in range(len(bank))]
             else:
                 rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode) for qx, sc in bank]
             # ONLINE self-calibration of the odometry noise (and scale): at frame t follow the filter with the largest cumulative log evidence
@@ -190,6 +190,8 @@ def main():
             cum = np.cumsum(np.stack([r_["lml"] for r_ in rs]), 1); ks = np.argmax(cum, 0); tt = np.arange(len(idx))
             for k_ in ("mass", "cov", "om", "lml"): out[k_][idx] = np.stack([r_[k_] for r_ in rs])[ks, tt]
             xh[idx] = np.stack([r_["xhat"] for r_ in rs])[ks, tt]; out["qsel"][idx] = np.array([b[0] for b in bank])[ks]
+            if "mean" in rs[0]:                                          # posterior mean of the reporting disc (metric, not snapped)
+                out.setdefault("xmean", np.full((nq, F.d), np.nan))[idx] = np.stack([r_["mean"] for r_ in rs])[ks, tt]
             out.setdefault("ssel", np.ones(nq))[idx] = np.array([b[1] for b in bank])[ks]
         dt = (time.time() - t0) / nq * 1e3
         xf = z["MP"][np.maximum(xh, 0)]; err = np.linalg.norm(xf - qp, axis=1); gd = inm & (err <= excl) & (xh >= 0)
@@ -213,7 +215,7 @@ def main():
                        pos={cl: (int(sum(bool(acc0[g].any()) for g, c_ in segs if c_ == cl)), int(sum(1 for _, c_ in segs if c_ == cl))) for cl in PA.CLASSES})
         print(f"   DEFAULT eps {eps0:g}: recall {default['recall']:.3f} segFAR {default['seg_FAR']:.4f} FL {default['FL']:.4f} err_mean {default['err_mean']:.1f} m p95 {default['err_p95']:.1f}", flush=True)
         if fr_out:
-            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh,
+            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh, **({"xmean": out["xmean"]} if "xmean" in out else {}),
                                 err=err, inm=inm, offm=offm, q_sid=sid, q_k=k, q_pos=qp, cond=z["cond"])
         res["runs"][str(beta)] = dict(ms_per_frame=dt, logml=float(out["lml"].sum()), map_correct_on=ceil, curve=rows, default=default,
                                       qsel={str(x): float(np.mean(out["qsel"] == x)) for x in qxs},

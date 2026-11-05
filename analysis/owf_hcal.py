@@ -28,7 +28,21 @@ def parse(v):
     if "@" in v: v, a = v.split("@"); a = float(a)
     kind = "C" if v.startswith("C") else "HC"; rest = v[len(kind):]
     nl = "v" if rest.endswith("v") else "u"; rest = rest.rstrip("v")
-    return dict(kind=kind, bins=rest.rstrip("a"), agree=rest.endswith("a"), alpha=a, null=nl)
+    age = rest.startswith("e"); rest = rest.lstrip("e")                 # e: strata by evidence age instead of path since the start
+    return dict(kind=kind, bins=rest.rstrip("a"), agree=rest.endswith("a"), alpha=a, null=nl, age=age)
+
+
+def evidence_age(mass, xh, U, seqs, hz, excl):
+    """odometry path (excl units) since the last frame at which the OWF disc mass was < 0.5 (or the sequence start): the filter's
+    information state; a track lost in a hole and re-acquired (or aliased) starts again at 0"""
+    age = np.zeros(len(mass)); Uh = U[:, hz]
+    for idx in seqs:
+        a = 0.0
+        for j, i in enumerate(idx):
+            if j: a += float(np.linalg.norm(Uh[i]))
+            if mass[i] < 0.5 or xh[i] < 0: a = 0.0
+            age[i] = a / excl
+    return age
 
 
 def calibrated(score, strat, seqs, null, cal, unit, avail, H, accH, alpha, chunk=200, joint=True):
@@ -113,7 +127,9 @@ def one(args):
         elif v == "H":
             extra = np.zeros(n, bool)
         else:
-            p = parse(v); edges = np.array(BINS[p["bins"]]); strat = (np.searchsorted(edges, pst, side="right") - 1).astype(np.int64)
+            p = parse(v); edges = np.array(BINS[p["bins"]])
+            if p["age"] and "age" not in locals(): age = evidence_age(mass, xh, U, seqs, hz, excl)
+            strat = (np.searchsorted(edges, age if p["age"] else pst, side="right") - 1).astype(np.int64)
             sc = np.where(agt, score, -np.inf) if p["agree"] else score
             base_acc = accH if p["kind"] == "HC" else np.zeros(n, bool)
             c, info = calibrated(sc, strat, dseqs, NULLS[p["null"]], cal, unit, avail, H, base_acc, p["alpha"])
