@@ -89,6 +89,50 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 18 — VPR-Space (ngoài Trái Đất): tổng quát của OWF-HWA-S5 — MÔ TẢ, không đăng ký trước, không quyết định luật (2026-11-05 21:12 UTC)
+
+**Dữ liệu.** VPR-Space (Fechner & Neubert 2026; repo `rfechner/vpr-space`, release v0.1.0, 20.3 GB): 16 cặp db → query, gồm MadMax (sa mạc),
+S3LI Etna (núi lửa), LunarLoc, SPICE (mô phỏng Mặt Trăng, 3 điều kiện chiếu sáng). Tổng 25 quỹ đạo, 8783 frame.
+
+Đường ống (`02` §8):
+1. Kernel CPU có internet `dinhthinh/vprspace-frames`: stream release, thu nhỏ ảnh.
+2. Kernel L4 `dinhthinh/vprspace-desc`: 6 descriptor qua các cell `nb15_src`.
+3. Cục bộ: `vprlib.load_vprspace`, cache `nav_demo`, OWF + OWF-H + đối thủ ngoài; 96 run = 16 setup × 6 descriptor, seed 0.
+
+**Giao thức.**
+- Pose 4×4, cùng hệ toạ độ trong một setup: cặp GT "hard" cách nhau 1–4 m, cặp ngẫu nhiên 7–167 m.
+- Quỹ đạo dài 14 m (SPICE) đến 1.3 km (Etna), bước 0.2–1 m. Vì vậy mọi hằng số giao thức lấy theo thang τ của chính benchmark: τ = p90
+  khoảng cách cặp GT hard. excl = τ, off_d = 1.6τ, in_d = 0.2τ, block = 12τ, tức đúng tỉ lệ 25 : 40 : 5 : 300 m của các dataset đường phố.
+  τ = 0.22–11 m.
+- Off-map TỰ NHIÊN, không lỗ tổng hợp: MadMax-A4 13 %, E1 40 %, G2 33 %, Etna crater_inout 62 % frame off-map.
+- Mỗi setup chỉ một chuỗi truy vấn; đối thủ có nhãn chỉnh ngưỡng trên chính chuỗi đó, nên có lợi cho họ.
+
+**Kết quả (96 run).** Ô = recall gộp / run > α:
+
+| Luật | Kết quả |
+|---|---|
+| OWF-HWA-S5 | 0.292 / 0 |
+| nhánh H (HSI) | 0.079 / 0 |
+| OWF đơn lẻ ε = 1e-3 | 0.372 / 0 |
+| oracle một-frame | 0.562 / 0 |
+| TAO'26 | 0.629 / **24** |
+| Xu'21 (nhãn) | 0.498 / 5 |
+| Claxton'24 (nhãn) | 0.441 / 8 |
+
+Luật khuyến nghị hợp lệ nhưng recall thấp hơn oracle một-frame 0.27. Đây là **thất bại tổng quát của LỚP QUYẾT ĐỊNH, không phải của bộ ước
+lượng**:
+- (i) Ảnh MAP của OWF đúng 0.70–1.00 frame on-map (đa số ≥ 0.93), vượt xa top-1 một-frame (SPICE ban đêm 0.95 vs 0.16; LunarLoc-15 1.00
+  vs 0.33).
+- (ii) HSI không bao giờ khởi động: chuỗi 54–1683 frame không đủ nhãn hồi cứu (≥ 50 mỗi lớp) và đoạn hiệu chuẩn.
+- (iii) Các bậc OWF cần đi ≥ 2–16 excl, xấp xỉ cả chuỗi.
+- (iv) **OWF đơn lẻ không báo sai lần nào ở MỌI ε** (0/96 run > α kể cả ε = 0.2). Recall gộp là 0.372 / 0.528 / 0.682 / 0.733 ở
+  ε = 1e-3 / 0.02 / 0.1 / 0.2.
+
+Theo Mệnh đề 2′: độ phóng đại aliasing K ≈ 0 ở các cảnh này nhưng 10³–10⁴ trên CMU/Nordland, nên một ε cố định không thể đúng cho cả hai.
+Chọn ε = 0.1 cho VPR-Space SAU KHI xem số liệu là chỉnh theo dataset (trái docx §2), nên KHÔNG làm. Kết luận dùng cho hướng tiếp theo: một
+cận K theo từng bản đồ, tính trước khi triển khai và không cần nhãn, sẽ cho ε thích ứng (`03_HANDOFF.md` §6a mục 2).
+Bảng: `analysis/results/owf/vprspace/vs_board.md`; JSON `vprspace_json.tgz`.
+
 ## Entry 17 — Xác nhận độc lập OWF-HWA-S5 trên nhóm seed mới 55–57 và so sánh với SOTA ngoài trên CÙNG run — đăng ký trước (2026-11-05 16:42 UTC)
 
 **KẾT QUẢ (seed 55–57, 144 run; đợt `test55`, 4 phiên L4, ~20 phút; ghi 18:38 UTC). Quyết định: XÁC NHẬN (C1–C4 đều đạt).** Ô = recall / TB
