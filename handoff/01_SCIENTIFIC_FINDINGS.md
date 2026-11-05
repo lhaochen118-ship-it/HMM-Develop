@@ -58,6 +58,14 @@ C1–C4 đều đạt. Luật vượt oracle một-frame trên 7/8 dataset (Nord
 Ville đúng như phát biểu. Trên CMU / Nordland, K̂ tăng tới 10³–4·10⁴ khi ε giảm (aliasing đuôi nặng). Điều này giải thích vì sao cần bậc cực
 đoan và nhánh HSI.
 
+**VPR-Space (Entry 18, mô tả; 16 setup ngoài Trái Đất × 6 descriptor, off-map tự nhiên, giao thức theo thang τ của benchmark).**
+- OWF-HWA-S5 hợp lệ (0/96 run > α) nhưng recall 0.292, thấp hơn oracle một-frame 0.562.
+- Đối thủ: TAO'26 0.629 (24 run > α); Xu'21 / Claxton'24 (chỉnh bằng nhãn trên chính chuỗi) 0.498 / 0.441.
+- Bộ ước lượng OWF tổng quát tốt: MAP đúng 0.70–1.00 frame on-map, vượt xa top-1 một-frame.
+- Lớp quyết định thì không: HSI không khởi động trên chuỗi 54–1683 frame, các bậc cần ≥ 2–16 excl.
+- OWF đơn lẻ không báo sai ở MỌI ε (0.733 ở ε = 0.2): K ≈ 0 ở đây, so với 10³–10⁴ trên CMU/Nordland, nên ε cố định không hợp cả hai.
+- Không chọn ε sau khi xem số liệu. Hướng tiếp: cận K theo bản đồ (`03` §6a).
+
 **Khoảng trống recall còn lại (tập A, nhãn chỉ để chẩn đoán).**
 - CMU: ảnh MAP của OWF đúng 0.95–0.99 frame on-map ở mọi khoảng cách từ đầu chuỗi, nhưng chỉ 0.53–0.94 được báo. Phần bị bỏ = 0.125
   frame on-map, tức toàn bộ khoảng cách recall của CMU. Mọi chuỗi CMU đều < 16 excl.

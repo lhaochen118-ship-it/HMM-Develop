@@ -89,7 +89,7 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
-## Entry 18 — VPR-Space (ngoài Trái Đất): tổng quát của OWF-HWA-S5 — MÔ TẢ, không đăng ký trước, không quyết định luật (2026-11-05 21:12 UTC)
+## Entry 18 — VPR-Space (ngoài Trái Đất): tổng quát của OWF-HWA-S5 — MÔ TẢ, không đăng ký trước, không quyết định luật (2026-11-05 20:54 UTC)
 
 **Dữ liệu.** VPR-Space (Fechner & Neubert 2026; repo `rfechner/vpr-space`, release v0.1.0, 20.3 GB): 16 cặp db → query, gồm MadMax (sa mạc),
 S3LI Etna (núi lửa), LunarLoc, SPICE (mô phỏng Mặt Trăng, 3 điều kiện chiếu sáng). Tổng 25 quỹ đạo, 8783 frame.

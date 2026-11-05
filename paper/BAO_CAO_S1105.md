@@ -87,6 +87,14 @@ Các run vượt α của OWF-HWA-S5 (CMU khi lỗ 50 %; 2 run off-map tự nhi�
 - Countryside: khoảng trống nằm ở chuỗi dài; khối lượng trung vị của frame đúng bị bỏ chỉ 0.70, tức bộ ước lượng chưa đủ sắc dưới VIO trôi.
 - Sai số điều hướng đến từ dead-reckoning trong lỗ, không từ độ chính xác fix (trung vị 2.3–2.5 m).
 
+**VPR-Space (Entry 18, mô tả; 16 setup ngoài Trái Đất × 6 descriptor, off-map tự nhiên, giao thức theo thang τ của benchmark).**
+- OWF-HWA-S5 hợp lệ (0/96 run > α) nhưng recall 0.292, thấp hơn oracle một-frame 0.562.
+- Đối thủ: TAO'26 0.629 (24 run > α); Xu'21 / Claxton'24 (chỉnh bằng nhãn trên chính chuỗi) 0.498 / 0.441.
+- Bộ ước lượng OWF tổng quát tốt: MAP đúng 0.70–1.00 frame on-map, vượt xa top-1 một-frame.
+- Lớp quyết định thì không: HSI không khởi động trên chuỗi 54–1683 frame, các bậc cần ≥ 2–16 excl.
+- OWF đơn lẻ không báo sai ở MỌI ε (0.733 ở ε = 0.2): K ≈ 0 ở đây, so với 10³–10⁴ trên CMU/Nordland, nên ε cố định không hợp cả hai.
+- Không chọn ε sau khi xem số liệu. Hướng tiếp: cận K theo bản đồ (`03` §6a).
+
 ## 5. Entry 17 — xác nhận trên seed 55–57 (đăng ký trước 16:42 UTC)
 
 **XÁC NHẬN: C1–C4 đều đạt** (144 run mới; mọi luật chạy trên CÙNG run). Ô = recall gộp / TB segFAR tệ nhất / run > α / sai số điều hướng (m):

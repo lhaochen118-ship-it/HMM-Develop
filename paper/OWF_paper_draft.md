@@ -123,6 +123,21 @@ conditions, as in their papers; oracle = report exactly the correct top-1 retrie
 Ours is the only rule that is valid and has high recall. It exceeds the single-frame oracle by 0.06–0.13 because sequence evidence recovers
 frames whose top-1 retrieval is wrong. Its runs above α (CMU at 50 % holes, two natural runs) coincide with its HSI branch.
 
+**6.2b VPR-Space (planetary / lunar / volcanic; descriptive, Entry 18).** 16 db → query setups × 6 descriptors, natural off-map, the
+protocol scaled by each setup's own ground-truth tolerance τ:
+- ours 0.292 (0 runs > α), single-frame oracle 0.562, TAO'26 0.629 (24 runs > α);
+- label-tuned Xu'21 / Claxton'24: 0.498 / 0.441.
+
+The OWF estimator transfers: its map estimate is right on 0.70–1.00 of on-map frames, far above single-frame retrieval. The decision layer
+does not:
+- the hindsight branch never warms up on 54–1683-frame deployments;
+- the tiers need 2–16 excl of path;
+- OWF alone makes no false report at any ε on these scenes (pooled recall 0.733 at ε = 0.2), i.e. K ≈ 0 here versus 10³–10⁴ on CMU and
+  Nordland.
+
+A threshold fixed across environments cannot fit both regimes. This is the main limitation and motivates bounding K per map before
+deployment.
+
 **6.3 Why fixed extreme thresholds (Proposition 2′).** The measured inflation of the e-value assumption, K̂(ε) = segFAR(ε)/(2ε), is ≤ 1 on
 4Seasons and St Lucia, i.e. Proposition 2 holds as stated. On CMU and Nordland it grows from about 10 at ε = 1e-3 to about 10⁴ at ε = 1e-8,
 because coherent aliasing is heavy-tailed (`owf_theory.md` §7).
@@ -144,5 +159,6 @@ because coherent aliasing is heavy-tailed (`owf_theory.md` §7).
   Proposition 2′ explains it, but the inflation budget K is measured, not bounded a priori.
 - CMU (short sequences) keeps a recall gap of about 0.12 at sequence starts, although the OWF estimate is already right on 0.95–0.99 of
   those frames.
-- The holes are simulated (except NCLT and 4Seasons cross-scene); VPR-Space (planetary / lunar) is not yet evaluated.
+- The holes are simulated (except NCLT, 4Seasons cross-scene and VPR-Space). On short planetary deployments (VPR-Space) the fixed decision
+  layer is far too conservative (0.29 vs single-frame oracle 0.56) although the estimator is right on ≥ 0.93 of frames in most setups.
 - Global descriptors only (no 6-DoF refinement).
