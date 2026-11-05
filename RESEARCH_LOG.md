@@ -89,7 +89,7 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
-## Entry 16 — Hindsight-calibrated OWF decision (OWF-HC): KẾT QUẢ PHÁT TRIỂN ÂM, không đăng ký kiểm tra (2026-11-05 16:55 UTC)
+## Entry 16 — Hindsight-calibrated OWF decision (OWF-HC): KẾT QUẢ PHÁT TRIỂN ÂM, không đăng ký kiểm tra (2026-11-05 16:38 UTC)
 
 **Bối cảnh.** Luật đương nhiệm OWF-HWA-S5 (Entry 15) hợp OWF-H với ba bậc ngưỡng CỐ ĐỊNH m(1e-5, 16) | m(1e-8, 2) | t(3e-4, 0.5), chọn trên
 seed phát triển. Tài liệu 08 ghi đây là phần heuristic của hệ. Giả thuyết của Entry 16: thay các hằng số đó bằng ngưỡng do chính lần triển khai
