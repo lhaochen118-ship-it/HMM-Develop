@@ -181,6 +181,16 @@ INC, H:
   0.04 % frame off-map. Điểm ≥ 3 cho 0.489 / 0 / 0 trên 49 410 frame off-map.
 - Countryside: khoảng trống nằm ở chuỗi dài (≥ 16 excl): OWF đúng 0.912, báo 0.844 (khối lượng bị VIO trôi làm loãng).
 
+**Phụ lục Entry 16 — ngân hàng tỉ lệ rộng ±15 % (phát triển, tập A, 399 run; ghi 18:22 UTC).**
+- Đo trên GNSS: tỉ lệ VIO theo cửa sổ 50 m chủ yếu là độ lệch theo từng chuỗi. Độ lệch chuẩn trong chuỗi chỉ 0.01; độ dài tương quan
+  100–200 m; độ lệch chuẩn của trung bình các chuỗi 0.02–0.06.
+- Khoảng P10–P90 vượt ngân hàng ±6 %: office 0.956–1.119, old town 0.904–1.028, countryside 1.024–1.081.
+- Đợt `devs11` (6 phiên L4, 405 run, 22 bộ lọc: 11 tỉ lệ 0.85–1.15 × 2 q) so với S5 trên cùng run: recall gộp **−0.0037** (CI
+  [−0.0048, −0.0026]), cùng 1 run > α, sai số +0.13 m.
+- Theo dataset: countryside −0.018 dù tỉ lệ thật 1.04–1.08; Boreas −0.007; Nordland −0.007; office +0.003; old town 0.
+- Cơ chế: nhiều bộ lọc hơn cho phép chọn theo evidence tích luỹ khoá vào một tỉ lệ sai nhưng khớp tạm. Loại; giữ S5.
+- Hệ quả: cả lớp quyết định (bậc) lẫn ngân hàng ước lượng (q × tỉ lệ × β) đều đã bão hoà trong họ thiết kế hiện tại.
+
 **Phụ lục Entry 16 — nhiệt độ emission β như một chiều của ngân hàng (thiết kế, 1 run; ghi 16:46 UTC).** Lập luận: các LR có chung tham chiếu
 p₀, nên log-evidence tích luỹ so sánh được giữa các β, tức chọn β trực tuyến là chọn mô hình cảm biến một cách nguyên tắc, không cần nhãn
 (`owf.py --bbank 1,0.7,1.4`, engine torch). Trên Nordland cosplace s1, evidence chọn β = 1.4 cho 98 % frame và log-evidence tăng mạnh (19 060
