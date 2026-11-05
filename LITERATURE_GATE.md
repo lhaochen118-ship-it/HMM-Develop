@@ -3,6 +3,32 @@
 *Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 17 = idea 2a (HSI), Gate 18 = idea 2b (OWF). Gate 3 lists HMM / sequence VPR papers that are directly
 relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
 
+## Gate 19 (2026-11-05, branch `hmm-2nd-idea`, Entry 16): hindsight-calibrated open-world decision (OWF-HC)
+
+**Claim checked.** The decision of the open-world filter is its own posterior disc mass, thresholded per evidence stratum (path since the
+sequence start) by split conformal on null segments that the SAME deployment labels in hindsight (bridges from the independent
+topological chain; possibly off-map / OWF report possibly wrong / never verified), jointly with the OWF-H branch; replaces the fixed
+tiers of Entry 15; finite-sample guarantee without the e-value assumption (E1) of Proposition 2 (`paper/owf_theory.md` §6).
+**Queries (web, 2026-11-05; abstracts only):** conformal calibration of a Bayes-filter posterior for localisation integrity with
+self-supervised / hindsight labels; conformal prediction for visual place recognition with a false-positive guarantee (2025–2026);
+e-values / Ville's inequality under perceptual aliasing in robot localisation.
+**Closest work found.**
+- SafeVPR'26 (arXiv 2605.28048): accept / reject the top-1 match of sequence VPR by Mondrian Learn-Then-Test with Bonferroni-corrected
+  per-bin thresholds (FDR control) calibrated on LABELLED data; under condition shift the authors check validity empirically. Already a
+  baseline here (St Lucia). Differences: no labelled calibration set, the calibrated score is the posterior of an open-world filter, units
+  are the deployment's own real excursions, strata by evidence state.
+- Conformal recalibration of foundation-model evidence inside a spatial-semantic map update, calibrated on the robot's own geometric
+  perception (arXiv 2606.00318, 2026): the same "the robot's geometry is the calibration source" principle, for semantic mapping, not
+  localisation decisions. Must be cited.
+- Bayesian calibration for Monte Carlo localisation (Bowling et al. AAAI 2006): learns sensor-model parameters from data; no decision
+  guarantee. Carson et al. 2023 (arXiv 2307.01464): unsupervised quality prediction from an independent second estimate (no guarantee).
+  Lajoie et al. RA-L (arXiv 1810.11692): perceptual aliasing produces mutually consistent wrong matches (the dependence that breaks (E1)).
+- HSI (Gate 17, ours): hindsight self-supervision + conformal on real excursions, for a LEARNED score on the topological chain.
+**Verdict:** no prior work found that calibrates an open-world localisation posterior on the deployment's own hindsight-labelled
+excursions. The mechanism combines our two earlier principles (OWF: the hole is in the state; HSI: the deployment labels its own past);
+novelty rests on the combination and on Proposition 4 replacing hand-set tiers, and is only worth claiming if Entry 16's pre-registered
+test supports it.
+
 ## Gate 18 (2026-11-04, branch `hmm-2nd-idea`, Entry 10): the open-world filter (OWF)
 
 **Gap measured before the search (navcache-v2, seeds 0–2, every descriptor; `RESEARCH_LOG.md` Entry 10 §1).** The place chain
