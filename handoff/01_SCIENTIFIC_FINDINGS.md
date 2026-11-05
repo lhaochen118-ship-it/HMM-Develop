@@ -5,6 +5,53 @@ Không chứa vận hành (→ `02`) hay kế hoạch (→ `03`). Nguồn đầy
 báo cáo `paper/BAO_CAO_HSI.pdf`. Phát hiện của ý tưởng 1 và của các hướng trước: `history/01_SCIENTIFIC_FINDINGS_idea1_and_idea2-early.md`,
 tóm tắt `07_IDEA1_SUMMARY.md`.*
 
+## 000000. Phiên 2026-11-05 chiều — Entry 16 (âm), tính tổng quát của OWF-HWA-S5, chẩn đoán khoảng trống, engine GPU
+
+**Engine GPU (công cụ, không phải đóng góp khoa học).** `owf.py --engine torch`: 2.7–3.4 ms/frame cho ngân hàng 10 bộ lọc trên một L4, so với
+29 ms/frame numpy. Quyết định trùng numpy ở mọi ngưỡng. Nhờ vậy một đợt 657 run (OWF + OWF-H) chỉ mất 35 phút trên 6 phiên 4×L4.
+
+**Entry 16 — âm: hiệu chuẩn conformal OWF trên null hồi cứu của chính run không thay được các bậc cố định.** Phát triển, tập A, 399 run:
+
+| Biến thể | Recall | Run > α | Sai số điều hướng |
+|---|---|---|---|
+| INC (OWF-HWA-S5) | 0.933 | 1 | 12.7 m |
+| HC (tốt nhất) | 0.906–0.916 | 23–46 | 14.7–17.2 m |
+
+Cơ chế: split conformal ở mức α chỉ chặn KỲ VỌNG tỉ lệ đoạn null có báo. segFAR từng run vì thế dao động quanh α, trong khi INC vận hành
+thấp hơn α khoảng 10 lần. Ngoài ra các đợt aliasing liên tiếp là thiểu số trong các đoạn null. Hệ quả cho lý thuyết: Mệnh đề 4 (bảo đảm biên
+theo đoạn, `owf_theory.md` §6) đúng nhưng KHÔNG kiểm soát đuôi theo run.
+
+Hai thử nghiệm nhỏ cùng hướng cũng âm:
+- tầng theo tuổi bằng chứng làm cạn dữ liệu hiệu chuẩn;
+- β (nhiệt độ emission) chọn theo evidence: evidence chọn β = 1.4, log-evidence tăng 3300, nhưng trên Nordland s1 segFAR tăng 0.038 → 0.064
+  và sai số điều hướng tăng 15 → 51 m. LR sắc hơn làm aliasing tệ hơn.
+
+Các biến thể bậc (bỏ điều kiện quãng đường, 2 hằng số thay cho 6) cho recall ±0.005 và thêm run vượt α. Lớp quyết định đã bão hoà.
+
+**Chẩn đoán aliasing.** Trên Nordland, giả thuyết tự tin nhưng sai nằm sâu trong lỗ (≥ 32 excl từ đầu chuỗi, 82 % frame off-map), kéo dài
+trung vị 2.3 excl và đạt khối lượng 1 − 1e-10. Đây là bằng chứng trực tiếp rằng giả định (E1) của Mệnh đề 2 bị vi phạm. Nó giải thích vì sao
+cần ngưỡng cực đoan cố định.
+
+**Tính tổng quát của OWF-HWA-S5** (các tập không dùng để chỉnh luật; H = nhánh OWF-H trên cùng run):
+
+| Tập | Recall INC vs H | TB segFAR tệ nhất | Run > α (INC / H) |
+|---|---|---|---|
+| lỗ 10 % (108 run) | 0.933 vs 0.865 | 0.0077 | 1 / 0 |
+| lỗ 50 % (108 run) | 0.894 vs 0.833 | 0.032 (CMU) | 4 / 4 (CMU, cùng run) |
+| off-map tự nhiên 4Seasons (36 run) | 0.952 vs 0.889 | 0.0104 | 2 / 2 |
+| NCLT (6 run) | 0.781 vs 0.753 | 0.0049 | 0 / 0 |
+
+Đuôi hợp lệ còn lại thuộc nhánh HSI, không thuộc các bậc OWF. Tham chiếu: HSI-VN đạt 0.772 / 0.754 ở lỗ 10 % / 50 %, SH (ý tưởng 1)
+0.748 / 0.696.
+
+**Khoảng trống recall còn lại (tập A, nhãn chỉ để chẩn đoán).**
+- CMU: ảnh MAP của OWF đúng 0.95–0.99 frame on-map ở mọi khoảng cách từ đầu chuỗi, nhưng chỉ 0.53–0.94 được báo. Phần bị bỏ = 0.125
+  frame on-map, tức toàn bộ khoảng cách recall của CMU. Mọi chuỗi CMU đều < 16 excl.
+- Countryside: khoảng trống nằm ở chuỗi dài (OWF đúng 0.912, báo 0.844). Các frame đúng bị bỏ có khối lượng trung vị chỉ 0.70, nên nút thắt
+  là độ sắc của bộ ước lượng dưới VIO trôi, không phải lớp quyết định.
+- Báo vị trí trung bình hậu nghiệm thay cho ảnh bản đồ không giảm sai số điều hướng: sai số fix trung vị chỉ 2.3–2.5 m; sai số điều hướng
+  đến từ khoảng dead-reckoning trong lỗ.
+
 ## 00000. AUTOLOOP Entry 15 — ngân hàng tỉ lệ 5 mức (OWF-HWA-S5, luật khuyến nghị hiện tại)
 
 **Chẩn đoán.** Đo độ dài bước odometry so với GNSS: VIO 4Seasons lệch tỉ lệ ngoài ±3 %. Countryside 1.04 (P10–P90 1.03–1.07), office 1.04, old town
