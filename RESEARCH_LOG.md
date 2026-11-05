@@ -89,6 +89,65 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 16 — Hindsight-calibrated OWF decision (OWF-HC): KẾT QUẢ PHÁT TRIỂN ÂM, không đăng ký kiểm tra (2026-11-05 16:55 UTC)
+
+**Bối cảnh.** Luật đương nhiệm OWF-HWA-S5 (Entry 15) hợp OWF-H với ba bậc ngưỡng CỐ ĐỊNH m(1e-5, 16) | m(1e-8, 2) | t(3e-4, 0.5), chọn trên
+seed phát triển. Tài liệu 08 ghi đây là phần heuristic của hệ. Giả thuyết của Entry 16: thay các hằng số đó bằng ngưỡng do chính lần triển khai
+hiệu chuẩn — split conformal theo tầng quãng đường từ đầu chuỗi, trên các đoạn null hồi cứu của chính run, hiệu chuẩn chung với nhánh OWF-H
+(`paper/owf_theory.md` §6, Mệnh đề 4: bảo đảm hữu hạn mẫu, không cần giả định (E1) của Mệnh đề 2). Gate 19 (`LITERATURE_GATE.md`).
+
+**Chẩn đoán trước khi thiết kế (`analysis/owf_alias_diag.py`, run thiết kế seed 1).** Trên Nordland, các giả thuyết tự tin nhưng sai của OWF
+nằm SÂU trong lỗ: quãng đường từ đầu chuỗi ≥ 32 excl, 82 % frame off-map. Chúng kéo dài trung vị 2.3 excl (p90 16 excl) và đạt khối lượng
+1 − 1e-10. Đây là aliasing liên tiếp: (E1) bị vi phạm, không chỉ ở đầu chuỗi.
+
+**Hạ tầng (mới trong phiên).** Engine GPU cho OWF (`owf_torch.py`, `owf.py --engine torch`): 2.7–3.4 ms/frame cho ngân hàng 10 bộ lọc trên một
+L4, so với 29 ms/frame của numpy. Quyết định trùng numpy ở mọi ngưỡng. Đợt `inc` (6 phiên 4×L4, 657 run, 35 phút, 0 lỗi): luật đương nhiệm trên
+tập phát triển A (399 run: 6 dataset có lỗ × 6 descriptor × seed 1–9, Oxford 45, St Lucia 30) + NCLT 6 + các tập tổng quát (lỗ 10 %, 50 %,
+off-map tự nhiên). `hsi_eval --frames` lưu thêm null hồi cứu / thời điểm khả dụng / đơn vị hiệu chuẩn để nghiên cứu quyết định ngoại tuyến.
+
+**Đánh giá phát triển (tập A, 399 run, `analysis/owf_hcal.py` + `hcal_board.py`; cầu hồi cứu dựng từ chuỗi tô-pô độc lập với OWF; null =
+có thể off-map ∪ ảnh OWF có thể sai ∪ chưa từng xác minh).** Ô = recall / TB segFAR / run > α / sai số điều hướng (m):
+
+| Biến thể | gộp 399 run | Δ recall vs INC (CI 95 %) | tệ nhất (TB segFAR) |
+|---|---|---|---|
+| INC (OWF-HWA-S5) | **0.933 / 0.0045 / 1 / 12.7** | — | 0.0095 (CMU) |
+| H (chỉ nhánh OWF-H) | 0.885 / 0.0026 / 0 / 13.7 | −0.047 | 0.0077 |
+| HC3 (3 tầng 0/2/16 excl) | 0.912 / 0.0158 / 41 / 17.0 | −0.021 [−0.024, −0.018] | 0.035 (Nordland) |
+| HC5 (5 tầng) | 0.911 / 0.0148 / 34 / 16.9 | −0.022 | 0.035 |
+| HC3a / HC5a (+ đồng thuận ba nguồn) | 0.907 / 0.906, 31 / 23 run > α | −0.026 / −0.027 | 0.032 / 0.031 |
+| HC3v (null không gồm frame chưa xác minh) | 0.914 / 0.0192 / 46 / 17.2 | −0.019 | 0.036 |
+| HC1 (một tầng) | 0.916 / 0.0144 / 31 / 16.6 | −0.017 | 0.035 |
+| C3 / C5 (nhánh OWF hiệu chuẩn, không H) | 0.684 / 0.675, 42 / 35 run > α | −0.25 | 0.039 |
+
+Thiết kế cục bộ trước đó cũng loại tầng theo "tuổi bằng chứng" (quãng đường từ lần khối lượng < 0.5 gần nhất). Lý do: gần như mọi đoạn null
+rơi vào tầng tuổi 0, nên các tầng tự tin không có đoạn hiệu chuẩn.
+
+**Kết luận: hướng bị loại (không đăng ký kiểm tra, không dùng nhóm seed mới).** Mọi biến thể HC đều thua INC trên cả ba trục: recall thấp hơn
+0.017–0.027, 23–46 run > α (so với 1), sai số điều hướng tăng 2–4.6 m. Cơ chế:
+- (i) Split conformal ở mức α chặn KỲ VỌNG tỉ lệ đoạn null có báo, nên segFAR từng run dao động quanh α và nhiều run vượt α. INC vận hành
+  thấp hơn α khoảng 10 lần, và chính các ngưỡng cực đoan cố định tạo ra khoảng an toàn đó.
+- (ii) Các đợt aliasing liên tiếp chỉ là thiểu số trong các đoạn null, nên phân vị 95 % bỏ qua chúng (CMU 15 run, Nordland 14 run > α).
+
+Bài học cho lý thuyết: bảo đảm biên theo đoạn (Mệnh đề 4) KHÔNG kiểm soát đuôi theo run. Muốn kiểm soát đuôi theo run cần mức hiệu chuẩn
+thấp hơn nhiều, và cái giá recall khi đó còn lớn hơn. Mệnh đề 4 giữ trong `owf_theory.md` §6 kèm kết quả âm này.
+
+**Tính tổng quát của luật đương nhiệm (mô tả; các tập này không dùng để chỉnh luật).** Ô = recall INC vs H / TB segFAR tệ nhất / run > α
+INC, H:
+- Lỗ 10 % (108 run): 0.933 vs 0.865 / 0.0077 / 1, 0.
+- Lỗ 50 % (108 run): 0.894 vs 0.833 / 0.032 (CMU) / 4, 4 (đều CMU, cùng run).
+- Off-map tự nhiên 4Seasons chéo cảnh (36 run): 0.952 vs 0.889 / 0.0104 / 2, 2.
+- NCLT (6 run): 0.781 vs 0.753 / 0.0049 / 0, 0.
+
+Đuôi hợp lệ còn lại đến từ nhánh H, không từ các bậc. So sánh: HSI-VN trên lỗ 10 % / 50 % đạt 0.772 / 0.754, SH (ý tưởng 1) 0.748 / 0.696.
+
+**Chẩn đoán khoảng trống recall (tập A, nhãn chỉ để chẩn đoán).**
+- CMU không có chuỗi nào dài quá 16 excl. Ảnh MAP của OWF đúng 0.95–0.99 frame on-map ở MỌI khoảng cách từ đầu chuỗi, kể cả 0.964 trong
+  0.5 excl đầu. INC chỉ báo 0.53–0.94. Frame đúng bị bỏ = 0.125 tổng số frame on-map, tức toàn bộ khoảng cách recall của CMU nằm ở quyết định
+  đầu chuỗi.
+- Ở đầu chuỗi CMU (< 2 excl), điểm OWF ≥ 2 (khối lượng ≥ 0.99) kèm đồng thuận ba nguồn báo 0.587 frame đúng, 0/8129 frame sai on-map và
+  0.04 % frame off-map. Điểm ≥ 3 cho 0.489 / 0 / 0 trên 49 410 frame off-map.
+- Countryside: khoảng trống nằm ở chuỗi dài (≥ 16 excl): OWF đúng 0.912, báo 0.844 (khối lượng bị VIO trôi làm loãng).
+
 ## Entry 15 — Ngân hàng tỉ lệ odometry rộng hơn (0.94–1.06) — đăng ký trước (2026-11-04 22:19 UTC; AUTOLOOP vòng 7)
 
 **KẾT QUẢ TẬP KIỂM TRA (seed 52–54, 144 run mới, đợt `t52`; ghi 2026-11-05 00:25 UTC). Quyết định: OWF-HWA-S5 THAY OWF-HWA-S làm luật khuyến
