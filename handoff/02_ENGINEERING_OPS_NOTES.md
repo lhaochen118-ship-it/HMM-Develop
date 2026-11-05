@@ -129,3 +129,24 @@ nên điểm yếu điều hướng chỉ lộ ra ở tập giữ ra.
 chỉ đổi BỘ ƯỚC LƯỢNG mới cần chạy lại trên Kaggle. (2) Chẩn đoán oracle (chuỗi đúng ở đâu, báo thiếu ở đâu, theo quãng đường từ đầu chuỗi) chỉ ra
 ngay nút thắt (CMU đầu chuỗi; countryside tỉ lệ VIO). (3) Chạy luật đương nhiệm và luật mới trong CÙNG đợt, trên CÙNG run ⇒ so sánh cặp có CI hẹp
 (±0.002–0.006).
+
+## 8. Phiên 2026-11-05 (chiều): engine GPU, đợt L4 thật sự dùng 4 GPU, kho r55
+
+| Việc | Cách / số đo |
+|---|---|
+| tài khoản | `namhunhh`, `duckzuykobip`, `dinhthinh` (token `~/.kaggle/tok_<username>`); `active_accounts.txt` chỉ còn ba tài khoản này. `namhunhh` có kernel của người dùng khác chạy song song: monitor tự chuyển sang tài khoản kế khi gặp "no free cpu session" |
+| thăm dò máy | kernel nhỏ `machine_shape=NvidiaL4` in `nvidia-smi`, `os.cpu_count()`, `free -g` rồi xoá: 4 × L4 23 GB, 48 vCPU, 188 GB RAM, 20 GB đĩa |
+| OWF trên GPU | `owf.py ... --engine torch`: cả ngân hàng q × tỉ lệ (× β nếu `--bbank`) trong một tensor float64. L4: 2.7–3.4 ms/frame cho 10 bộ lọc (numpy cùng máy 29 ms/frame); Boreas 76k frame 4.6 phút. Kiểm tương đương: `owf.py` hai engine trên cùng run + so `fr_*_b1.npz` (vị trí báo, quyết định ở 1−0.2 … 1−1e-8, đường cong vận hành) |
+| đợt luật đương nhiệm | `owf_wave.py <groups> --set inc:setA+holes+natural --kernels 6 --par 24` → `fanout.py ... --groups --build-only --l4 --par 24 --nocopy --ds <navcache-v2, e37-caches, nclt/oxford/stlucia dumps, navcache-holes, natural-cache>` → một `central_monitor.py`. 657 run trong 35 phút trên 6 phiên L4, 0 lỗi (OWF trên 4 GPU, HSI trên 48 CPU của cùng phiên; 6 job / GPU) |
+| nhóm seed mới + SOTA | `owf_wave.py <groups> --set inc:fresh55-57 --pool r55 --sota`: mỗi run một job `owf_hsi_job.py` (OWF GPU → OWF-H) và một job `sota_job.py` (top-100 trên GPU → TAO'26, Xu'21, Claxton'24, top-1, oracle) |
+| quyết định ngoại tuyến | `owf_union.py` (biến thể bậc), `owf_hcal.py` (ngưỡng conformal theo tầng trên null hồi cứu tự tính lại từ chuỗi tô-pô, < 1 s / run), `hcal_board.py` (bảng theo dataset + chênh cặp với CI bootstrap). Tập A 399 run: 2.5–7 phút trên 4 lõi |
+| kho seed mới | `owf_wave.py --set fresh:55-60` (288 job `hsi_fresh.py --keep navcache_r55`, 15 kernel CPU, ước 139 phút / kernel; thực tế 73–100 phút); chuỗi nền `runs/r55_chain.sh`: chờ đủ 15 kernel → `fetch_done.py` → `publish_dataset.py ... hmm-navcache-r55 --owner namhunhh` |
+
+**Bài học.**
+- Container phiên chat bắt đầu ở commit cũ (`7502e2c`) dù remote đã đi trước 50 commit với lịch sử khác (orphan). Phải
+  `git fetch && git log HEAD..origin/<branch>` ngay đầu phiên, và `git reset --hard origin/<branch>` khi local không có gì riêng.
+- Đo trước khi chạy lớn tiếp tục cứu thời gian. Ý tưởng hiệu chuẩn conformal (Entry 16) và β-bank đều bị loại trên dữ liệu phát triển
+  (399 run / 1 run) trước khi đụng tới nhóm seed mới.
+- Thời điểm ghi trong nhật ký phải lấy từ `date -u` ngay lúc viết (hai lần ước lượng sai 10–17 phút đã phải sửa).
+- Tập tổng quát (lỗ 10/50 %, off-map tự nhiên) được chạy chung đợt với tập phát triển nhưng gom vào thư mục riêng và chỉ đọc sau khi đã quyết
+  định trên tập A, để chúng vẫn là bằng chứng không bị dùng để chỉnh luật.
