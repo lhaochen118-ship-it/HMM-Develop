@@ -123,7 +123,11 @@ def main():
                 a_, b_ = [int(x) for x in part[5:].split("-")]; pool = opt("--pool", f"r{a_}")
                 for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town", "oxford", "stlucia"):
                     for desc in DESCS:
-                        for sd in range(a_, b_ + 1): J.append(ij(f"DIR:navcache_@hmm-navcache-{pool}", ds, desc, sd, f"t{a_}{tg}"))
+                        for sd in range(a_, b_ + 1):
+                            J.append(ij(f"DIR:navcache_@hmm-navcache-{pool}", ds, desc, sd, f"t{a_}{tg}"))
+                            if "--sota" in sys.argv:          # external baselines on the same run (TAO'26, Xu'21, Claxton'24, top-1, oracle)
+                                J.append((f"sota_job.py DIR:navcache_@hmm-navcache-{pool} DUMP {ds} {desc} {sd} --tag t{a_}",
+                                          DS.get(ds, ("", 16000))[1] * 1.5e-3))
             if part == "natural":
                 sc = ("office_loop", "old_town", "countryside")
                 for a_ in sc:

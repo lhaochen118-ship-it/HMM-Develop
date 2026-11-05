@@ -89,6 +89,39 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 17 — Xác nhận độc lập OWF-HWA-S5 trên nhóm seed mới 55–57 và so sánh với SOTA ngoài trên CÙNG run — đăng ký trước (2026-11-05 16:47 UTC)
+
+**Mục đích.** Yêu cầu §3 Bước 4 và §5 của docx: so sánh với baseline và SOTA phù hợp trên cùng giao thức. Tài liệu 08 ghi rõ: "chưa so với SOTA
+ngoài trên cùng giao thức". Entry 16 cho thấy lớp quyết định đã bão hoà. Vì vậy nhóm seed mới đầu tiên của kho r55 dùng để XÁC NHẬN luật đương
+nhiệm và so nó với các phương pháp đã công bố trên cùng run. Đây không phải quyết định đổi luật.
+
+**Tập.** Seed 55–57 của kho mới `r55`: bố cục lỗ mới, 8 dataset có lỗ × 6 descriptor = 144 run. Kho do đợt `fr55` sinh, publish
+`namhunhh/hmm-navcache-r55`; đến lúc đăng ký, chưa luật nào chạy trên nó. Seed 58–60 để dành cho quyết định sau.
+
+**Luật và đối thủ (cùng cache, cùng run).**
+- INC = OWF-HWA-S5. OWF ngân hàng 5 tỉ lệ × 2 q chạy bằng engine GPU, rồi OWF-H (`xms0.9_16`, HSI-VN, mặt nạ), rồi
+  `owf_union.py --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"` (job `owf_hsi_job.py`, tag `t55S5`).
+- HSI-VN (ý tưởng 2a, chạy bằng `hsi_fresh.py` trong `fr55`).
+- Ngoài, qua `analysis/sota_job.py`, tag `t55`:
+  - TAO'26 (Lu & Tanaka, arXiv 2607.04745): tối ưu neo quỹ đạo trên top-100, ngưỡng map-out 3σ theo NHÃN trên hai điều kiện dễ nhất, như
+    bài báo;
+  - Xu'21 (RA-L, HMM có trạng thái off-map, tham số chỉnh theo nhãn);
+  - Claxton'24 (giám sát toàn vẹn MLP huấn luyện theo nhãn);
+  - top-1 (báo mọi frame);
+  - oracle (chỉ báo top-1 đúng; tham chiếu trên).
+
+**Tiêu chí (α = 0.05; CI 95 % bootstrap theo run).**
+- **C1 (hợp lệ):** INC có TB segFAR ≤ 0.05 trên 8/8 dataset và ≤ 2/144 run > α.
+- **C2 (so HSI-VN):** recall gộp INC − HSI-VN ≥ +0.08, cận dưới CI > 0. Các nhóm 40–54 trước đây cho +0.074 … +0.118.
+- **C3 (so SOTA ngoài):** với mỗi luật TAO'26, Xu'21, Claxton'24, phải có một trong hai:
+  - luật đó KHÔNG hợp lệ: TB segFAR > 0.05 trên ≥ 1 dataset, hoặc > 2/144 run > α;
+  - hoặc recall gộp của INC lớn hơn, cận dưới CI > 0.
+- **C4 (điều hướng):** sai số điều hướng gộp của INC ≤ HSI-VN.
+
+**Quy tắc.** C1 ∧ C2 ∧ C3 ∧ C4 ⇒ "xác nhận": báo cáo bảng SOTA trên cùng run, dùng làm bằng chứng chính cho paper. Bất kỳ tiêu chí nào trượt
+được ghi nguyên văn kèm số liệu; luật khuyến nghị không đổi vì entry này không đề xuất luật mới.
+*Phụ (báo cáo):* bảng theo dataset; kiểm toán vị trí (start / edge / deep); khoảng cách recall tới oracle.
+
 ## Entry 16 — Hindsight-calibrated OWF decision (OWF-HC): KẾT QUẢ PHÁT TRIỂN ÂM, không đăng ký kiểm tra (2026-11-05 16:38 UTC)
 
 **Bối cảnh.** Luật đương nhiệm OWF-HWA-S5 (Entry 15) hợp OWF-H với ba bậc ngưỡng CỐ ĐỊNH m(1e-5, 16) | m(1e-8, 2) | t(3e-4, 0.5), chọn trên
@@ -147,6 +180,19 @@ INC, H:
 - Ở đầu chuỗi CMU (< 2 excl), điểm OWF ≥ 2 (khối lượng ≥ 0.99) kèm đồng thuận ba nguồn báo 0.587 frame đúng, 0/8129 frame sai on-map và
   0.04 % frame off-map. Điểm ≥ 3 cho 0.489 / 0 / 0 trên 49 410 frame off-map.
 - Countryside: khoảng trống nằm ở chuỗi dài (≥ 16 excl): OWF đúng 0.912, báo 0.844 (khối lượng bị VIO trôi làm loãng).
+
+**Phụ lục Entry 16 — đơn giản hoá các bậc (phát triển, tập A, 399 run; ghi 16:45 UTC).** Biến thể của `owf_union.py` (recall gộp / run > α
+/ sai số):
+- INC: 0.933 / 1 / 12.7.
+- Bỏ điều kiện quãng đường của bậc đồng thuận, t(3e-4, 0): GIỐNG HỆT INC, vì điều kiện ≥ 0.5 excl không bao giờ có tác dụng.
+- H | t(1e-3, 0) | m(1e-8, 0) (2 hằng số, không điều kiện quãng đường): 0.934 / 3 / 12.6.
+- H | m(1e-5, 16) | t(1e-3, 0): 0.934 / 3.
+- H | t(1e-3, 0): 0.931 / 3.
+- H | t(1e-2, 0): 0.936 / 7.
+- H | t(3e-4, 0): 0.928 / 1.
+
+Mặt recall phẳng (±0.005); nới ngưỡng chỉ thêm run vượt α. INC nằm gần điểm tốt nhất của họ luật này, nên lớp quyết định đã bão hoà. Không đăng
+ký biến thể nào.
 
 ## Entry 15 — Ngân hàng tỉ lệ odometry rộng hơn (0.94–1.06) — đăng ký trước (2026-11-04 22:19 UTC; AUTOLOOP vòng 7)
 
