@@ -84,6 +84,32 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 58–60 | `namhunhh/hmm-navcache-r55` | — | **trống** |
 | seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
 
+## 6a. Việc tiếp theo — cập nhật phiên 2026-11-05 chiều (đọc trước §6 cũ)
+
+**Đã chốt trong phiên.** Luật khuyến nghị vẫn là OWF-HWA-S5. Lớp quyết định và ngân hàng ước lượng đều đã bão hoà trong họ thiết kế hiện tại.
+Bằng chứng: Entry 16, gồm ngưỡng conformal hồi cứu, biến thể bậc, β-bank, ngân hàng ±15 % — tất cả âm hoặc phẳng trên 399 run phát triển.
+Bằng chứng mới cho paper:
+- tổng quát trên lỗ 10/50 %, off-map tự nhiên, NCLT;
+- SOTA ngoài trên cùng run;
+- độ phóng đại đo được của giả định (E1) (`owf_theory.md` §7);
+- Entry 17 trên seed 55–57.
+
+**Theo thứ tự ưu tiên:**
+1. **VPR-Space (tổng quát sang miền ngoài Trái Đất).**
+   - Bước 1 đang / đã chạy: kernel CPU có internet `dinhthinh/vprspace-frames` stream release v0.1.0 (11 phần, 20.3 GB) qua `tar`, thu nhỏ
+     frame về JPEG ≤ 322 px, giữ `poses/` + `vpr_gt/` trong output.
+   - Bước 2: kernel L4 CÙNG tài khoản (`kernel_sources = dinhthinh/vprspace-frames`, không đi qua monitor vì monitor có thể chuyển tài
+     khoản). Ghép các cell `nb15_src` 10/20/25 + vòng trích như `automation/make_stlucia_kernel.py`; weights từ `nhatlong1103/bundle`,
+     `nhatlong1103/vpr-descriptor-weights`.
+   - Bước 3: `vprlib.load_vprspace(dump, desc, setup)` (16 setup trong `rfechner/vpr-space/dataset.py`, db = bản đồ, query = truy vấn), odometry
+     mô phỏng từ pose như các dataset khác, `nav_demo --cache-only` có lỗ, rồi đánh giá OWF-HWA-S5 + SOTA bằng các job hiện có.
+2. **Cận cho ngân sách phóng đại K từ chính bản đồ (Mệnh đề 2′).** Đây là con đường duy nhất thấy được tới bảo đảm theo run cho các bậc cố
+   định: đo mức hai nơi của bản đồ giống nhau mạnh và lâu tới đâu.
+   - Cảnh báo novelty: tự phát lại bản đồ là lãnh thổ của ý tưởng 1 (SelfCal / CMS). Cần gate riêng trước khi làm.
+3. **Đầu chuỗi CMU.** Khoảng trống 0.125: OWF đúng 0.95–0.99 nhưng không báo. Ở mức frame, điểm ≥ 2 + đồng thuận tách gần hoàn hảo, nhưng ở
+   mức đoạn mọi nới lỏng đều thêm run vượt α. Cần một cơ chế mới, không phải hằng số mới.
+4. **Seed 58–60 của `namhunhh/hmm-navcache-r55` còn trống:** dành cho quyết định đầu tiên có ứng viên vượt luật đương nhiệm trên tập A.
+
 ## 6. Việc tiếp theo (khung chat mới)
 
 **Việc 0 — OWF (Entry 10):** sửa sai số điều hướng mà không mất recall. Đã đo (chẩn đoán, tập A): (a) cổng nhảy dead-reckoning giữa hai lần
