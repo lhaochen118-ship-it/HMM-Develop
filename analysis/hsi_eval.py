@@ -137,6 +137,11 @@ def main():
                 rc = N.rule_metrics(acc & mc, ok & inm & mc, inm & mc, offm & mc, sq, cfg.H)
                 r["per_cond"][c] = dict(recall=rc["recall"], seg_FAR=rc["seg_FAR"], n_seg=rc["n_seg"])
             out["variants"][v] = r; masks[v] = np.packbits(acc)
+            if frames and "null" in o:                            # hindsight internals for offline decision research (2026-11-05)
+                masks.update({f"{v}__null": np.packbits(o["null"]), f"{v}__cal": np.packbits(o["cal"]), f"{v}__geo": np.packbits(o["geo"]),
+                              f"{v}__regime": np.packbits(o["regime"]), f"{v}__avail": np.minimum(o["avail"], 2**62),
+                              f"{v}__unit": o["unit"], f"{v}__klass": o["klass"].astype(np.int8),
+                              f"{v}__score": o["score"].astype(np.float32), f"{v}__thr": o["thr"].astype(np.float32)})
             print(f"{name} {v:10s} rec {r['recall']:.3f} seg {r['seg_FAR']:.3f} FL {r['FL']:.4f} err {r['err_mean']:.1f} "
                   + " ".join(f"{k}{c[0]}:{c[1]:.3f}" for k, c in r["classes"].items()) + f" | {r['secs']:.0f}s", flush=True)
         json.dump(out, open(f"results/hsi_{ds.replace(':', '_')}_{desc}_s{seed}{tag}.json", "w"), indent=1, default=float)

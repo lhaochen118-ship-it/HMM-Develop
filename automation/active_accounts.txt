@@ -1,26 +1,8 @@
 # Accounts that may receive NEW kernels, in packing order (user rules): fill one account (2 GPU + 5 CPU sessions) before the next.
-# Tokens in ~/.kaggle/tok_<username>, never in git. 2026-11-05 ~02:10 UTC GPU probe (handoff/08_CHUYEN_GIAO_THEO_YEU_CAU.md §4):
-# L4 with quota first, then T4-only (an L4 request there gets a machine without GPU), then accounts whose weekly GPU quota was spent
-# (still fine for CPU sessions; GPU again after the weekly reset). The central monitor uses at most 8 accounts at a time.
-quynhtran35
-yuan1103
-phatle1578
-nguyenmanh0404
-yeshenhi
-mxuanquy
-synchan5704
-quynhle07
-nguyenhoa99
-caotienminh1
-nhatlong1103
-anderson1202
-loinguyentran
-mucnokieu
-huyenco
-nguynduylm
-phuongnehe
-thnliu
-linhmai24
-lelynhan
-duylnng
-hai1108
+# Tokens in ~/.kaggle/tok_<username>, never in git. 2026-11-05 14:55 UTC (new chat session): the user gave 3 accounts, probed with an
+# L4 kernel: 4x NVIDIA L4 (23 GB each), 48 vCPU, 188 GB RAM per GPU session on all three. Earlier accounts (quynhtran35, yuan1103,
+# phatle1578, nguyenmanh0404, yeshenhi, mxuanquy, synchan5704, quynhle07, nguyenhoa99, caotienminh1, nhatlong1103, ...) have no token in
+# this session; their public datasets are still mounted read-only.
+namhunhh
+duckzuykobip
+dinhthinh

@@ -97,6 +97,36 @@ def main():
                     for tg, fl, cm in cfgs:
                         J.append((f"owf_hsi_job.py DIR:navcache_@hmm-navcache-{pool} DUMP {ds} {desc} {sd} --tag {tg} --modes {modes}{hf}{fl}",
                                   DS[ds][1] * DS[ds][2] * DFAC[desc] / 1e3 * 1.3 * cm))
+    if which.startswith("inc:"):          # 2026-11-05: the incumbent pipeline (OWF S5 bank on the GPU -> OWF-H HSI-VN / VMN masks) on a named
+        # set: inc:setA (development: seeds 1-9 of the 6 holed datasets, NCLT 5 desc, Oxford, St Lucia), inc:holes (10 % / 50 % holes, seeds
+        # 0-2), inc:natural (4Seasons cross-scene, natural off-map), inc:nclt (NCLT seed 0, 6 desc); several sets: inc:setA+holes+...
+        bank = " --qx 0.005,0.02 --scales 0.94,0.97,1.0,1.03,1.06 --engine torch"; tg = opt("--tag", "S5")
+        hm = " --modes xms0.9_16:HSI-VN,HSI-VMN --hsiframes"; gpu_fac = 0.08          # GPU engine: ~1/12 of the CPU cost per frame (measured)
+        def ij(cache, ds, desc, sd, tag):
+            return (f"owf_hsi_job.py {cache} DUMP {ds} {desc} {sd} --tag {tag}{hm}{bank}", DS.get(ds, ("", 16000, 10.0))[1] * 10.0 * DFAC[desc] / 1e3 * gpu_fac + DS.get(ds, ("", 16000))[1] * 4e-3)
+        for part in which.split(":")[1].split("+"):
+            if part == "setA":
+                for ds, (c_, _, _, seeds) in DS.items():
+                    for desc in DESCS:
+                        ss = OX_SEEDS[desc] if ds == "oxford" else (range(0, 1) if ds == "nclt" else seeds)
+                        for s in ss:
+                            if ds == "nclt": continue                                  # NCLT: own part below (all 6 descriptors)
+                            J.append(ij(c_, ds, desc, s, f"a{tg}"))
+            if part in ("nclt", "setA"):
+                for desc in DESCS: J.append(ij("DIR:navcache_@hmm-navcache-v2", "nclt", desc, 0, f"n{tg}"))
+            if part == "holes":
+                for dr in ("d10", "d50"):
+                    for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town"):
+                        for desc in DESCS:
+                            for s in (0, 1, 2): J.append(ij(f"DIR:navcache_@{dr}", ds, desc, s, f"{dr}{tg}"))
+            if part == "natural":
+                sc = ("office_loop", "old_town", "countryside")
+                for a_ in sc:
+                    for b_ in sc:
+                        if a_ == b_: continue
+                        for desc in DESCS:
+                            DS.setdefault(f"4sx:{a_}{b_}", ("", 15000, 10.0, None))
+                            J.append(ij("DIR:navcache_@hmm-natural-cache", f"4sx:{a_}{b_}", desc, 0, f"x{tg}"))
     if which in ("holes", "all"):         # hole ratio 10 % / 50 % (hmm-navcache-holes, seeds 0-2, 6 datasets x 6 descriptors)
         for dr in ("d10", "d50"):
             for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town"):

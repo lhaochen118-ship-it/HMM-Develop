@@ -135,7 +135,11 @@ def load_run(cache_dir, dump, ds, desc, seed):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import vprlib as V
     z = dict(np.load(os.path.join(cache_dir, f"navcache_{ds.replace(':', '_')}_{desc}_s{seed}.npz"), allow_pickle=True))
-    if ds.startswith("4s:"): ep = V.load_4seasons(dump, desc, ds[3:])
+    if ds.startswith("4sx:"):                       # natural off-map pair (Entry 30 caches; published file names lost the "+")
+        nm = ds[4:].replace("+", ""); sc = ("office_loop", "old_town", "countryside")
+        pair = next(f"{a}+{b}" for a in sc for b in sc if a != b and a + b == nm)
+        ep = V.load_4s_cross(dump, desc, pair)
+    elif ds.startswith("4s:"): ep = V.load_4seasons(dump, desc, ds[3:])
     elif ds == "boreas": ep = V.load_boreas(dump, desc)
     else: ep = V.LOADERS[ds](dump, desc)
     assert np.allclose(ep.q_pos, z["q_pos"]), "query order differs from the cache"
@@ -153,6 +157,7 @@ def main():
     closed = "--closed" in sys.argv; eps0 = float(opt("--eps0", "1e-3")); tag = opt("--tag", ""); xmode = opt("--xhat", "mean")
     eps_l = [float(e) for e in opt("--eps", "0.2,0.1,0.05,0.02,0.01,0.005,0.002,0.001,5e-4,2e-4,1e-4,1e-5").split(",")]
     fr_out, fo = opt("--frames", None), opt("--out", None)
+    engine = opt("--engine", "numpy")                                  # numpy (reference) | torch (owf_torch.py; CUDA when available)
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     sys.argv = sys.argv[:1]
     import nav_demo as N
@@ -172,7 +177,14 @@ def main():
             Zs = robust_z(Q[idx].astype(np.float32) @ M.T); LL = log_lr(Zs, beta)
             wt = corr_weight(Zs, float(temper[4:] or 2))[0] if temper.startswith("corr") else None
             bank = [(qx, sc) for sc in scales for qx in qxs]
-            rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode) for qx, sc in bank]
+            if engine == "torch":                                          # same filter, all bank members in one GPU tensor (owf_torch.py)
+                assert wt is None and drift == 0 and not closed and xmode == "mean", "--engine torch: default filter configuration only"
+                import owf_torch as OT
+                o = OT.run_bank(F, LL, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell)
+                xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1)
+                rs = [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j]) for j in range(len(bank))]
+            else:
+                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode) for qx, sc in bank]
             # ONLINE self-calibration of the odometry noise (and scale): at frame t follow the filter with the largest cumulative log evidence
             # sum_{s<=t} log p(z_s | z_<s) (causal; ties -> the first = smallest q, first scale)
             cum = np.cumsum(np.stack([r_["lml"] for r_ in rs]), 1); ks = np.argmax(cum, 0); tt = np.arange(len(idx))
