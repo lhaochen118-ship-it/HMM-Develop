@@ -150,3 +150,7 @@ ngay nút thắt (CMU đầu chuỗi; countryside tỉ lệ VIO). (3) Chạy lu�
 - Thời điểm ghi trong nhật ký phải lấy từ `date -u` ngay lúc viết (hai lần ước lượng sai 10–17 phút đã phải sửa).
 - Tập tổng quát (lỗ 10/50 %, off-map tự nhiên) được chạy chung đợt với tập phát triển nhưng gom vào thư mục riêng và chỉ đọc sau khi đã quyết
   định trên tập A, để chúng vẫn là bằng chứng không bị dùng để chỉnh luật.
+- `kaggle kernels output <kernel> --file-pattern X` liệt kê TOÀN BỘ file output rồi mới lọc phía client. Với output hàng chục nghìn file (ví dụ
+  `vprspace-frames`: ảnh JPEG) mỗi lần gọi đốt hết hạn mức API và bị 429 suốt hơn 50 phút. Cách xử lý:
+  - đừng tải output lớn về máy chat; mount nó làm `kernel_sources` trong kernel kế tiếp cùng tài khoản;
+  - hoặc ghi một log nhỏ riêng vào dataset.
