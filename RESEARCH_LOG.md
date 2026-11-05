@@ -89,7 +89,7 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
-## Entry 17 — Xác nhận độc lập OWF-HWA-S5 trên nhóm seed mới 55–57 và so sánh với SOTA ngoài trên CÙNG run — đăng ký trước (2026-11-05 16:47 UTC)
+## Entry 17 — Xác nhận độc lập OWF-HWA-S5 trên nhóm seed mới 55–57 và so sánh với SOTA ngoài trên CÙNG run — đăng ký trước (2026-11-05 16:42 UTC)
 
 **Mục đích.** Yêu cầu §3 Bước 4 và §5 của docx: so sánh với baseline và SOTA phù hợp trên cùng giao thức. Tài liệu 08 ghi rõ: "chưa so với SOTA
 ngoài trên cùng giao thức". Entry 16 cho thấy lớp quyết định đã bão hoà. Vì vậy nhóm seed mới đầu tiên của kho r55 dùng để XÁC NHẬN luật đương
@@ -181,7 +181,7 @@ INC, H:
   0.04 % frame off-map. Điểm ≥ 3 cho 0.489 / 0 / 0 trên 49 410 frame off-map.
 - Countryside: khoảng trống nằm ở chuỗi dài (≥ 16 excl): OWF đúng 0.912, báo 0.844 (khối lượng bị VIO trôi làm loãng).
 
-**Phụ lục Entry 16 — đơn giản hoá các bậc (phát triển, tập A, 399 run; ghi 16:45 UTC).** Biến thể của `owf_union.py` (recall gộp / run > α
+**Phụ lục Entry 16 — đơn giản hoá các bậc (phát triển, tập A, 399 run; ghi 16:42 UTC).** Biến thể của `owf_union.py` (recall gộp / run > α
 / sai số):
 - INC: 0.933 / 1 / 12.7.
 - Bỏ điều kiện quãng đường của bậc đồng thuận, t(3e-4, 0): GIỐNG HỆT INC, vì điều kiện ≥ 0.5 excl không bao giờ có tác dụng.
