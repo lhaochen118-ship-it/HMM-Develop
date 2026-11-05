@@ -91,6 +91,28 @@ nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo
 
 ## Entry 15 — Ngân hàng tỉ lệ odometry rộng hơn (0.94–1.06) — đăng ký trước (2026-11-04 22:19 UTC; AUTOLOOP vòng 7)
 
+**KẾT QUẢ TẬP KIỂM TRA (seed 52–54, 144 run mới, đợt `t52`; ghi 2026-11-05 00:25 UTC). Quyết định: OWF-HWA-S5 THAY OWF-HWA-S làm luật khuyến
+nghị.** Ô = recall / TB segFAR / run > α / sai số (m).
+
+| Dataset | OWF-HWA-S5 (C) | OWF-HWA-S (R*) | HSI-VN |
+|---|---|---|---|
+| Boreas | 0.976 / 0.0024 / 0 / 4.0 | 0.977 / 0.0026 / 0 / 4.0 | 0.890 / 0.0001 / 0 / 5.8 |
+| CMU | 0.862 / 0.0114 / 1 / 4.3 | 0.861 / 0.0114 / 1 / 4.3 | 0.799 / 0.0114 / 1 / 4.4 |
+| Nordland | 0.969 / 0.0062 / 0 / 6.3 | 0.970 / 0.0061 / 0 / 6.3 | 0.823 / 0.0000 / 0 / 3.6 |
+| office | 0.970 / 0.0000 / 0 / 8.5 | 0.969 / 0.0000 / 0 / 9.0 | 0.876 / 0.0000 / 0 / 8.5 |
+| old town | 0.959 / 0.0027 / 0 / 22.1 | 0.950 / 0.0037 / 0 / 24.6 | 0.766 / 0.0012 / 0 / 31.4 |
+| countryside | **0.873** / 0.0019 / 0 / 24.0 | 0.847 / 0.0019 / 0 / 24.7 | 0.693 / 0.0026 / 0 / 24.3 |
+| Oxford | 0.944 / 0.0065 / 0 / 18.3 | 0.944 / 0.0066 / 0 / 18.3 | 0.812 / 0.0076 / 0 / 21.6 |
+| St Lucia | 0.977 / 0.0021 / 0 / 13.8 | 0.976 / 0.0023 / 0 / 13.7 | 0.928 / 0.0022 / 0 / 15.0 |
+| **Gộp (144)** | **0.941 / 1 run / 12.67 m** | 0.937 / 1 / 13.11 | 0.823 / 1 / 14.32 |
+
+- **M1 đạt:** TB segFAR tệ nhất 0.0114 (CMU). 1/144 run > α: cùng một run CMU ở mọi luật, kể cả HSI-VN.
+- **M2 đạt:** chênh C − R* **+0.0045**, CI 95 % [+0.0024, +0.0070]; thắng 80 / hoà 5 / thua 59.
+- **M3 đạt:** 12.67 vs 13.11 m.
+
+Gain tập trung đúng ở các dataset VIO lệch tỉ lệ: countryside +0.026, old town +0.009 (sai số 22.1 vs 24.6 m). Các dataset khác ±0.001.
+Bảng điểm đầy đủ (cả OWF-H-S5, OWF-HW-S5): `analysis/results/owf/owfhwas5_test_s52_54_json.tgz`.
+
 **Chẩn đoán (dữ liệu phát triển, cache seed 1).** So độ dài từng bước odometry với GNSS:
 - 4Seasons (VIO): lệch tỉ lệ ngoài ngân hàng ±3 % của Entry 13. Countryside: trung vị 1.040, P10–P90 1.03–1.07. Office: 1.037. Old town:
   0.943, P10–P90 0.93–1.01.

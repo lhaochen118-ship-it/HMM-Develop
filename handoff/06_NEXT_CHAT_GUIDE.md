@@ -69,7 +69,7 @@ pip install -q kaggle markdown xhtml2pdf scipy scikit-learn matplotlib pypdf
 
 ## 5. Việc tiếp theo
 
-Chi tiết trong `03_HANDOFF.md` §6. Luật khuyến nghị: **OWF-HWA-S** (Entry 14), hoặc OWF-HWA-S5 nếu Entry 15 đạt (xem `RESEARCH_LOG.md`). Kho seed
+Chi tiết trong `03_HANDOFF.md` §6. Luật khuyến nghị: **OWF-HWA-S5** (Entry 15; seed 52–54: 0.941 vs HSI-VN 0.823). Kho seed
 mới đã dùng hết (40–54); quyết định tiếp theo cần sinh kho mới bằng `owf_wave.py --set fresh:55-60` (34 kernel CPU, ~2.5 giờ).
 
 1. **Countryside:** chuỗi tốt nhất chỉ đúng ~0.87 khung (VIO trôi); sai số điều hướng 21.7 m (HSI-VN 20.0). Hướng tiếp: ước lượng tỉ lệ liên tục

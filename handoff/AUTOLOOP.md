@@ -36,7 +36,7 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
 3. **Bộ ước lượng OWF tốt hơn:** mô hình trôi hướng / tỉ lệ (countryside VIO), BMA thay vì chọn một q.
 4. Nếu còn thời gian: giao (OWF ∧ HSI) / hợp có hiệu chuẩn; NCLT thêm cấu hình.
 
-## 5. Trạng thái hiện tại (cập nhật mỗi bước)
+## 5. Trạng thái (nhật ký từng bước)
 
 - 14:15 UTC: bắt đầu. Kế hoạch ghi; hẹn giờ tự đánh thức mỗi ~2 giờ (send_later), lần cuối ~02:15 UTC = tổng kết.
 - 14:23 UTC: đợt `fr40` (34 kernel CPU, 432 job `hsi_fresh.py --keep navcache_r40`, seed 40–48 × 8 dataset × 6 desc, kèm HSI-VN / HSI-VMN /
@@ -81,3 +81,24 @@ sinh bằng `hsi_fresh.py --keep navcache_r40` (kèm HSI-VN / HSI-VMN / HSI-rot-
   144/144); 0 run > α; sai số 13.64 vs 13.78 vs 14.34 m; CMU 0.832 → 0.874 ⇒ **OWF-HWA-S là luật khuyến nghị**. **Entry 15 đăng ký trước:** ngân
   hàng 5 tỉ lệ 0.94–1.06. Phát triển trên 68 run đủ cặp của `devW`: +0.0058 [+0.0020, +0.0103], −0.86 m. Kiểm tra trên seed 52–54 (đợt `t52`,
   CPU) đẩy ngay sau commit.
+- 00:13 UTC: container khởi động lại (monitor dừng ~00:05; kernel trên Kaggle không mất), monitor chạy lại từ state.
+- 00:25 UTC: **Entry 15 ĐẠT trên seed 52–54** (144 run). OWF-HWA-S5 đạt 0.941, so với OWF-HWA-S 0.937 và HSI-VN 0.823: chênh +0.0045, CI
+  [+0.0024, +0.0070]. Cả ba luật đều có 1/144 run > α (cùng một run CMU). Sai số 12.67 / 13.11 / 14.32 m; countryside +0.026 ⇒ **OWF-HWA-S5 là
+  luật khuyến nghị**. Kho seed mới 40–54 đã dùng hết. Không đẩy đợt mới: không đợt nào xong kịp trước 02:00.
+
+## 6. Tổng kết vòng lặp (2026-11-05 00:30 UTC)
+
+5 luật được đăng ký trước, mỗi luật kiểm trên một nhóm 3 seed mới (144 run), và **cả 5 đều đạt**:
+
+| Entry | Luật mới | Nhóm | Recall: mới vs đương nhiệm | Chênh, CI 95 % | Run > α | Sai số (m) |
+|---|---|---|---|---|---|---|
+| 11 | OWF-H (OWF → HSI, giao chuỗi khi ổn định) | 40–42 | 0.885 vs HSI-VN 0.811 | +0.074 [+0.060, +0.088] | 1 = 1 | 14.46 vs 15.35 |
+| 12 | OWF-HU (+ báo OWF ≥ 1 − 1e-5 sau 16·excl) | 43–45 | 0.896 vs 0.878 | +0.018 [+0.014, +0.022] | 1 = 1 | 14.94 vs 15.73 |
+| 13 | OWF-HW-S (ngân hàng tỉ lệ ±3 % + bậc sớm 1e-8) | 46–48 | 0.902 vs 0.878 | +0.024 [+0.019, +0.031] | 1 = 1 | 12.75 vs 13.61 |
+| 14 | OWF-HWA-S (+ đồng thuận ba nguồn) | 49–51 | 0.933 vs 0.921 | +0.012 [+0.010, +0.014] | 0 = 0 | 13.64 vs 13.78 |
+| 15 | OWF-HWA-S5 (ngân hàng tỉ lệ ±6 %) | 52–54 | 0.941 vs 0.937 | +0.0045 [+0.0024, +0.0070] | 1 = 1 | 12.67 vs 13.11 |
+
+So với điểm xuất phát HSI-VN trên nhóm cuối: recall 0.941 vs 0.823 (+0.118), cùng số run > α, sai số 12.67 vs 14.32 m. Tăng trên 8/8 dataset
+(old town +0.193, countryside +0.180, Nordland +0.146, Oxford +0.132, office +0.094, Boreas +0.086, CMU +0.063, St Lucia +0.049).
+
+Báo cáo: `paper/BAO_CAO_AUTOLOOP.pdf`. Việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md` §5.

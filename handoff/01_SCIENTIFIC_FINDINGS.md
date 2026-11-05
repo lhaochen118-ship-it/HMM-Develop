@@ -5,6 +5,21 @@ Không chứa vận hành (→ `02`) hay kế hoạch (→ `03`). Nguồn đầy
 báo cáo `paper/BAO_CAO_HSI.pdf`. Phát hiện của ý tưởng 1 và của các hướng trước: `history/01_SCIENTIFIC_FINDINGS_idea1_and_idea2-early.md`,
 tóm tắt `07_IDEA1_SUMMARY.md`.*
 
+## 00000. AUTOLOOP Entry 15 — ngân hàng tỉ lệ 5 mức (OWF-HWA-S5, luật khuyến nghị hiện tại)
+
+**Chẩn đoán.** Đo độ dài bước odometry so với GNSS: VIO 4Seasons lệch tỉ lệ ngoài ±3 %. Countryside 1.04 (P10–P90 1.03–1.07), office 1.04, old town
+0.94. Trôi hướng nhỏ (< 0.6°/km), nên không cần ngân hàng hướng.
+
+**Thay đổi.** Lưới tỉ lệ {0.94, 0.97, 1, 1.03, 1.06} thay cho {0.97, 1, 1.03}; chọn trực tuyến theo evidence như cũ.
+
+**Kết quả (đăng ký trước, seed 52–54).** 0.941 vs OWF-HWA-S 0.937 (+0.0045, CI [+0.0024, +0.0070]), 1/144 run > α (cùng run CMU với mọi luật kể cả
+HSI-VN), 12.67 vs 13.11 m. Gain nằm đúng ở các dataset VIO: countryside +0.026, old town +0.009 (22.1 vs 24.6 m); các dataset khác ±0.001.
+
+**Tổng kết vòng lặp.** Trên nhóm cuối (seed 52–54), luật hiện tại so với HSI-VN (luật khuyến nghị lúc bắt đầu vòng lặp): recall **0.941 vs 0.823
+(+0.118)**, cùng số run > α, sai số điều hướng 12.67 vs 14.32 m. Theo dataset: old town +0.193, countryside +0.180, Nordland +0.146, Oxford +0.132,
+office +0.094, Boreas +0.086, CMU +0.063, St Lucia +0.049. Hạn chế: điều hướng Nordland (6.3 vs 3.6 m) và countryside (24.0 vs 24.3 m) không tốt hơn
+HSI-VN; chưa kiểm trên NCLT (off-map tự nhiên).
+
 ## 0000. AUTOLOOP Entry 14 — bậc đồng thuận ba nguồn (OWF-HWA-S, luật khuyến nghị hiện tại)
 
 **Chẩn đoán.** Trên tập A, chuỗi lai đúng 0.959 khung trong bản đồ nhưng chỉ báo đúng 0.899. CMU có ~130 chuỗi ngắn ~7.5·excl mỗi run, nên mọi khung

@@ -25,12 +25,12 @@ báo hay không báo một fix, không có nhãn.
 
 Không nhóm seed nào được dùng cho hai quyết định.
 
-## 2. Lời giải hiện tại (luật khuyến nghị): OWF-HWA-S
+## 2. Lời giải hiện tại (luật khuyến nghị): OWF-HWA-S5
 
 ```
 ảnh truy vấn + odometry
    │
-   ├─► OWF, ngân hàng tỉ lệ odometry {0.97, 1, 1.03} × q {0.005, 0.02}·excl, chọn trực tuyến theo evidence      (owf.py --scales)
+   ├─► OWF, ngân hàng tỉ lệ odometry {0.94, 0.97, 1, 1.03, 1.06} × q {0.005, 0.02}·excl, chọn trực tuyến theo evidence  (owf.py --scales)
    │      → khối lượng đĩa excl m_t, ảnh bản đồ x̂_t
    │
    ├─► chuỗi lai: x̂_t nếu m_t ≥ 0.9 VÀ đường đi từ đầu chuỗi ≥ 16·excl, ngược lại chuỗi tô-pô est_c          (owf_hybrid.py --mode xms0.9_16)
@@ -49,28 +49,29 @@ Không nhóm seed nào được dùng cho hai quyết định.
 Ô = recall gộp / số run > α (trên 144) / sai số điều hướng gộp (m). Mọi luật có số trong bảng đều đạt V1 trên nhóm của nó. Mỗi nhóm seed chỉ dùng
 cho MỘT quyết định (cột in đậm là luật được kiểm ở nhóm đó).
 
-| Nhóm mới | HSI-VN | OWF-H (E11) | OWF-HU (E12) | OWF-HW-S (E13) | OWF-HWA-S (E14) | Quyết định |
-|---|---|---|---|---|---|---|
-| seed 40–42 | 0.811 / 1 / 15.35 | **0.885** / 1 / 14.46 | | | | E11 đạt: +0.074 [+0.060, +0.088] |
-| seed 43–45 | 0.805 / 1 / 15.92 | 0.878 / 1 / 15.73 | **0.896** / 1 / 14.94 | | | E12 đạt: +0.018 [+0.014, +0.022] |
-| seed 46–48 | 0.786 / 1 / 14.72 | 0.860 / 1 / 14.62 | 0.878 / 1 / 13.61 | **0.902** / 1 / 12.75 | | E13 đạt: +0.024 [+0.019, +0.031] |
-| seed 49–51 | 0.804 / 0 / 14.34 | 0.882 / 0 / 15.37 | 0.903 / 1 / 14.68 | 0.921 / 0 / 13.78 | **0.933** / 0 / 13.64 | E14 đạt: +0.012 [+0.010, +0.014] |
+| Nhóm mới | HSI-VN | OWF-H (E11) | OWF-HU (E12) | OWF-HW-S (E13) | OWF-HWA-S (E14) | OWF-HWA-S5 (E15) | Quyết định |
+|---|---|---|---|---|---|---|---|
+| seed 40–42 | 0.811 / 1 / 15.35 | **0.885** / 1 / 14.46 | | | | | E11 đạt: +0.074 [+0.060, +0.088] |
+| seed 43–45 | 0.805 / 1 / 15.92 | 0.878 / 1 / 15.73 | **0.896** / 1 / 14.94 | | | | E12 đạt: +0.018 [+0.014, +0.022] |
+| seed 46–48 | 0.786 / 1 / 14.72 | 0.860 / 1 / 14.62 | 0.878 / 1 / 13.61 | **0.902** / 1 / 12.75 | | | E13 đạt: +0.024 [+0.019, +0.031] |
+| seed 49–51 | 0.804 / 0 / 14.34 | 0.882 / 0 / 15.37 | 0.903 / 1 / 14.68 | 0.921 / 0 / 13.78 | **0.933** / 0 / 13.64 | | E14 đạt: +0.012 [+0.010, +0.014] |
+| seed 52–54 | 0.823 / 1 / 14.32 | | | | 0.937 / 1 / 13.11 | **0.941** / 1 / 12.67 | E15 đạt: +0.0045 [+0.0024, +0.0070] |
 
-Trên nhóm 49–51, luật hiện tại so với HSI-VN có recall **+0.129** (0.933 vs 0.804), không run nào vượt α, và sai số điều hướng thấp hơn 0.7 m.
-Theo dataset (recall / sai số):
+Trên nhóm cuối (seed 52–54), luật hiện tại so với HSI-VN (luật khuyến nghị lúc bắt đầu vòng lặp) có recall **+0.118** (0.941 vs 0.823), cùng số
+run > α (một run CMU vượt α ở mọi luật), và sai số điều hướng thấp hơn 1.65 m. Theo dataset (recall / sai số):
 
-| Dataset | OWF-HWA-S | HSI-VN | Δ recall |
+| Dataset | OWF-HWA-S5 | HSI-VN | Δ recall |
 |---|---|---|---|
-| Boreas | 0.975 / 3.4 m | 0.898 / 5.2 m | +0.077 |
-| CMU | 0.874 / 3.8 m | 0.808 / 3.4 m | +0.066 |
-| Nordland | 0.975 / 9.6 m | 0.813 / 4.2 m | +0.162 |
-| office | 0.967 / 8.1 m | 0.857 / 7.7 m | +0.110 |
-| old town | 0.939 / 26.6 m | 0.737 / 32.0 m | +0.202 |
-| countryside | 0.838 / 21.7 m | 0.644 / 20.0 m | +0.194 |
-| Oxford | 0.921 / 17.0 m | 0.761 / 22.0 m | +0.160 |
-| St Lucia | 0.975 / 18.9 m | 0.912 / 20.4 m | +0.063 |
+| Boreas | 0.976 / 4.0 m | 0.890 / 5.8 m | +0.086 |
+| CMU | 0.862 / 4.3 m | 0.799 / 4.4 m | +0.063 |
+| Nordland | 0.969 / 6.3 m | 0.823 / 3.6 m | +0.146 |
+| office | 0.970 / 8.5 m | 0.876 / 8.5 m | +0.094 |
+| old town | 0.959 / 22.1 m | 0.766 / 31.4 m | +0.193 |
+| countryside | 0.873 / 24.0 m | 0.693 / 24.3 m | +0.180 |
+| Oxford | 0.944 / 18.3 m | 0.812 / 21.6 m | +0.132 |
+| St Lucia | 0.977 / 13.8 m | 0.928 / 15.0 m | +0.049 |
 
-Cả bốn quyết định đều đạt trên nhóm seed mới của mình. Mỗi bước nâng recall trên cùng run, không tăng số run vi phạm, và sai số điều hướng
+Cả năm quyết định đều đạt trên nhóm seed mới của mình. Mỗi bước nâng recall trên cùng run, không tăng số run vi phạm, và sai số điều hướng
 không tệ hơn.
 
 ## 4. Các phát hiện cơ chế
@@ -80,8 +81,9 @@ không tệ hơn.
    VÀ đã ổn định (đã đi ≥ 16·excl). Kết quả: bộ ước lượng tốt hơn (OWF) cộng với hiệu chuẩn theo run (HSI).
 2. **Khối lượng thế giới mở cực cao an toàn khi đã ổn định (E12–E13).** Trên Nordland / old town, OWF báo được nhiều fix đúng mà HSI bỏ qua. Với
    ngưỡng 1 − 1e-5 sau 16·excl, và 1 − 1e-8 sau 2·excl cho chuỗi ngắn, không thêm run vi phạm nào.
-3. **Odometry thật lệch tỉ lệ (E13).** VIO 4Seasons dài hơn GNSS 3–7 % (countryside 1.04, office 1.04, old town 0.94); odometry mô phỏng lệch ~3 %.
-   Ngân hàng tỉ lệ chọn theo evidence cho countryside +0.057 recall.
+3. **Odometry thật lệch tỉ lệ (E13, E15).** VIO 4Seasons lệch GNSS 3–7 % (countryside 1.04, P10–P90 1.03–1.07; office 1.04; old town 0.94);
+   odometry mô phỏng lệch ~3 %. Ngân hàng ±3 % chọn theo evidence cho countryside +0.057 (E13). Mở rộng lên ±6 % thêm countryside +0.026 và old
+   town +0.009 (E15), còn các dataset tỉ lệ đúng không đổi: lựa chọn theo evidence tự bỏ qua các tỉ lệ thừa.
 4. **CMU là bài toán đầu chuỗi; đồng thuận ba nguồn mở được nó (E14).** Mỗi run CMU có ~130 chuỗi ngắn ~7.5·excl. Chuỗi lai đúng trên 0.96
    khung nhưng đầu chuỗi không được báo (phát triển: 0.79). OWF (thế giới mở, metric), chuỗi tô-pô (thế giới đóng) và truy hồi top-1 (một khung) có
    kiểu lỗi khác nhau, nên khi cả ba trùng một ảnh, yêu cầu "đã đi đủ xa" gần như không cần nữa. Riêng bậc này có TB segFAR ≤ 0.003 trên mọi dataset
@@ -99,11 +101,15 @@ không tệ hơn.
   lỏng có bền vững (ε = 3e-3 / 1e-2, L = 3 / 5) chỉ thêm +0.001–0.004 nhưng làm xuất hiện 1–2 run > α. Phần còn thiếu nằm ở BỘ ƯỚC LƯỢNG
   (countryside: chuỗi đúng ~0.84–0.87), không ở lớp quyết định.
 
-<!-- ENTRY15 -->
 
 ## 6. Hạn chế và việc tiếp theo
 
-- CMU vẫn là dataset yếu nhất (0.68 trên seed 46–48).
-- Countryside: chuỗi tốt nhất chỉ đúng 0.87 khung; sai số điều hướng 25.7 m (HSI-VN 22.4).
-- Các nhóm seed khác nhau về độ khó (HSI-VN 0.786–0.811), nên mọi so sánh đều làm trên CÙNG run.
-- Mọi kết quả là trên lỗ mô phỏng (30 % ô 300 m) của 8 dataset; NCLT (off-map tự nhiên) không có trong kho mới.
+- **Điều hướng Nordland:** 6.3–9.6 m so với HSI-VN 3.6–4.2 m. ~5 % báo thêm của OWF lệch quá excl (P90 sai số 18.5 frame) và kéo bộ Kalman. Hướng
+  tiếp: điểm vận hành điều hướng riêng (đĩa nhỏ hơn hoặc trọng số fix theo hiệp phương sai OWF), hoặc cổng đổi mới trong bộ lọc điều hướng (áp cho
+  mọi luật như nhau).
+- **Countryside:** chuỗi tốt nhất chỉ đúng ~0.85–0.87 khung (VIO trôi). Hướng tiếp: trạng thái tỉ lệ liên tục trong bộ lọc, trôi tỉ lệ theo thời
+  gian.
+- **CMU:** vẫn là dataset yếu nhất (0.86); một run CMU vượt α ở mọi luật trên seed 52–54.
+- **Độ khó khác nhau giữa các nhóm seed** (HSI-VN 0.786–0.823), nên mọi so sánh đều làm trên CÙNG run.
+- **Phạm vi:** mọi kết quả là trên lỗ mô phỏng (30 % ô 300 m) của 8 dataset. NCLT (off-map tự nhiên) không có trong kho mới. Kho seed mới 40–54 đã
+  dùng hết; quyết định tiếp theo cần sinh kho 55+.
