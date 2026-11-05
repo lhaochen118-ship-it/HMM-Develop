@@ -5,6 +5,16 @@
 
 **Luật khuyến nghị: HSI-VN** — 0 vi phạm trên 413 run phát triển + 216 run của hai tập kiểm tra mới; +0.065 recall so với ý tưởng 1 (SH).
 
+**Phiên 2026-11-05 chiều (Entry 16–17, `paper/BAO_CAO_S1105.pdf`).**
+- Engine GPU cho OWF: 10× nhanh hơn, quyết định trùng bản numpy.
+- Entry 16: mọi hướng "nguyên tắc hoá" lớp quyết định / ước lượng đều âm hoặc phẳng trên 399 run phát triển. Các hướng đó gồm ngưỡng conformal
+  hồi cứu, β theo evidence, ngân hàng tỉ lệ ±15 %.
+- **Entry 17 XÁC NHẬN OWF-HWA-S5 trên seed mới 55–57:** 0.937, 1/144 run > α, 12.5 m, so với HSI-VN 0.806. SOTA ngoài trên cùng run
+  (TAO'26, Xu'21, Claxton'24) đều vượt α trên 75–129 / 144 run.
+- Tổng quát: lỗ 10/50 %, off-map tự nhiên, NCLT đều hợp lệ trung bình.
+- Kho seed mới: `namhunhh/hmm-navcache-r55`; seed 58–60 còn trống.
+- Việc tiếp theo: `03_HANDOFF.md` §6a.
+
 **LUẬT KHUYẾN NGHỊ (từ 2026-11-05 00:25 UTC, Entry 15): OWF-HWA-S5.** Quy trình gồm bốn bước:
 1. OWF với ngân hàng tỉ lệ odometry 5 mức (`owf.py --qx 0.005,0.02 --scales 0.94,0.97,1.0,1.03,1.06`; 10 bộ lọc, chọn trực tuyến theo evidence).
 2. OWF-H: chuỗi OWF giao cho HSI-VN khi khối lượng ≥ 0.9 và đã đi ≥ 16·excl (`owf_hybrid.py --mode xms0.9_16 --hsiframes`).

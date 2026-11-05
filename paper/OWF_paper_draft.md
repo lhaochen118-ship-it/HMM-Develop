@@ -100,7 +100,14 @@ paired against the previous rule on the same runs). Pooled recall / runs above �
 | 46–48 | OWF-HW-S | 0.902 | +0.024 | 1 | 12.75 |
 | 49–51 | OWF-HWA-S | 0.933 | +0.012 | 0 | 13.64 |
 | 52–54 | OWF-HWA-S5 | 0.941 | +0.0045 | 1 | 12.67 |
-| 55–57 | OWF-HWA-S5 (confirmation + external SOTA, Entry 17) | *pending* | | | |
+| 55–57 | OWF-HWA-S5 (confirmation, Entry 17) | 0.937 | +0.131 vs HSI-VN | 1 | 12.48 |
+
+**6.1b External baselines on the fresh group 55–57** (Entry 17, pre-registered, 144 runs, the same runs for every rule). Cell = pooled
+recall / worst-dataset mean segFAR / runs above α / navigation error (m):
+
+| Ours | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+|---|---|---|---|---|---|
+| **0.937** / 0.013 / 1 / 12.5 | 0.806 / 0.008 / 0 / 15.0 | 0.846 / 0.996 / 129 / 123.5 | 0.691 / 0.600 / 75 / 57.5 | 0.732 / 0.268 / 99 / 48.4 | 0.847 / 0 / 0 / 10.9 |
 
 **6.2 Generality and external baselines on sets never used for tuning** (`analysis/results/owf/s1105/sota_*.md`; same runs for every rule).
 Cell = pooled recall / mean segFAR / runs above α. TAO'26, Xu'21 and Claxton'24 use thresholds tuned WITH labels on the two easiest

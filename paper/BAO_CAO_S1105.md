@@ -18,7 +18,10 @@ ngoài những gì các bảng dưới chứng minh trên đúng giao thức nà
 4. **So sánh SOTA ngoài trên cùng run** (TAO'26, Xu'21, Claxton'24; ngưỡng chỉnh bằng NHÃN như trong các bài báo). TAO'26 và Claxton'24 vượt
    α trên phần lớn run; Xu'21 hợp lệ hơn nhưng recall thấp hơn 0.29. OWF-HWA-S5 là luật duy nhất vừa hợp lệ vừa có recall cao, và vượt cả
    oracle một-frame (chỉ báo khi top-1 đúng) 0.06–0.13.
-5. **Entry 17 (đăng ký trước 16:42 UTC):** xác nhận độc lập + SOTA trên nhóm seed mới 55–57. Kết quả: §5.
+5. **Entry 17 (đăng ký trước 16:42 UTC), XÁC NHẬN.** Trên nhóm seed mới 55–57:
+   - OWF-HWA-S5: 0.937, 1/144 run > α, 12.5 m;
+   - HSI-VN: 0.806;
+   - TAO'26 / Xu'21 / Claxton'24: vượt α trên 129 / 75 / 99 run.
 
 ## 2. Engine GPU
 
@@ -86,7 +89,22 @@ Các run vượt α của OWF-HWA-S5 (CMU khi lỗ 50 %; 2 run off-map tự nhi�
 
 ## 5. Entry 17 — xác nhận trên seed 55–57 (đăng ký trước 16:42 UTC)
 
-*(điền sau khi đợt kiểm tra xong)*
+**XÁC NHẬN: C1–C4 đều đạt** (144 run mới; mọi luật chạy trên CÙNG run). Ô = recall gộp / TB segFAR tệ nhất / run > α / sai số điều hướng (m):
+
+| Luật | Gộp 144 run |
+|---|---|
+| **OWF-HWA-S5** | **0.937** / 0.013 / **1** / **12.5** |
+| HSI-VN | 0.806 / 0.008 / 0 / 15.0 |
+| TAO'26 | 0.846 / 0.996 / 129 / 123.5 |
+| Xu'21 | 0.691 / 0.600 / 75 / 57.5 |
+| Claxton'24 | 0.732 / 0.268 / 99 / 48.4 |
+| oracle một-frame | 0.847 / 0 / 0 / 10.9 |
+
+- C2: +0.131 so với HSI-VN, CI [+0.114, +0.150].
+- C3: cả ba đối thủ ngoài đều không hợp lệ.
+- C4: 12.5 vs 15.0 m.
+- Recall vượt oracle một-frame +0.090. Ngoại lệ CMU: 0.841 vs oracle 0.929, khoảng trống đầu chuỗi.
+- Bảng theo dataset: `analysis/results/owf/s1105/e17_board_s55_57.md`.
 
 ## 6. Hạn chế và việc tiếp theo
 
