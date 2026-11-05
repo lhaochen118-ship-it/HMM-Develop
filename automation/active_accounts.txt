@@ -1,11 +1,26 @@
 # Accounts that may receive NEW kernels, in packing order (user rules): fill one account (2 GPU + 5 CPU sessions) before the next.
-# 2026-11-03 (branch hmm-2nd-idea, idea 2): the 5 accounts given by the user for this round (tokens in ~/.kaggle/tok_<acc>, never in git).
-# 2026-11-04 (Entry 10): + synchan5704, yeshenhi given by the user (yeshenhi: T4-only for GPU; CPU sessions fine); listed first because the
-# other five are shared with the HSI chat that was active at the same time. yeshenhi LAST: an L4 request there silently falls back to CPU.
+# Tokens in ~/.kaggle/tok_<username>, never in git. 2026-11-05 ~02:10 UTC GPU probe (handoff/08_CHUYEN_GIAO_THEO_YEU_CAU.md §4):
+# L4 with quota first, then T4-only (an L4 request there gets a machine without GPU), then accounts whose weekly GPU quota was spent
+# (still fine for CPU sessions; GPU again after the weekly reset). The central monitor uses at most 8 accounts at a time.
+quynhtran35
+yuan1103
+phatle1578
+nguyenmanh0404
+yeshenhi
+mxuanquy
 synchan5704
 quynhle07
 nguyenhoa99
-quynhtran35
-yuan1103
 caotienminh1
-yeshenhi
+nhatlong1103
+anderson1202
+loinguyentran
+mucnokieu
+huyenco
+nguynduylm
+phuongnehe
+thnliu
+linhmai24
+lelynhan
+duylnng
+hai1108

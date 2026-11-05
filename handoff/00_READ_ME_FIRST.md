@@ -40,6 +40,7 @@ khuyến nghị**; OWF là luật hợp lệ có recall cao nhất. Báo cáo: `
 | `04_RESEARCH_WORKFLOW.md` (.pdf) + `RESEARCH_WORKFLOW_original.pdf` | quy trình theo phase, trạng thái phase, nguyên tắc |
 | `ENVIRONMENT_SUMMARY.md` (.pdf) | tài khoản, dataset công khai, container (§0 = hiện hành) |
 | `07_IDEA1_SUMMARY.md` (.pdf) | ý tưởng 1: giao thức, baseline cần đánh bại, bài học |
+| `08_CHUYEN_GIAO_THEO_YEU_CAU.md` (.pdf) | chuyển giao theo 5 mục của file yêu cầu docx: đã làm gì, bằng chứng, chưa đạt gì; tình trạng 22 tài khoản Kaggle |
 | `../paper/BAO_CAO_HSI.pdf` | báo cáo đầy đủ của ý tưởng 2a (HSI) |
 | `../paper/BAO_CAO_OWF.pdf`, `../paper/owf_theory.md` | báo cáo + lý thuyết của ý tưởng 2b (OWF, Entry 10) |
 | `../history/` | tài liệu cũ (phát hiện / vận hành của ý tưởng 1, hướng dẫn đầu ý tưởng 2) |
