@@ -19,6 +19,13 @@ quyết định (vị trí báo trùng, quyết định trùng ở mọi ngưỡ
 Runner của `make_eval_kernel.py` chia job vòng tròn lên 4 GPU (`CUDA_VISIBLE_DEVICES = i % 4`); `--par 24` = 6 job / GPU, phần HSI chạy trên CPU
 của cùng phiên.
 
+**Dataset mới (public):**
+
+| Slug | Nội dung | Vai trò |
+|---|---|---|
+| `namhunhh/hmm-navcache-r55` | kho seed mới 55–60: bố cục lỗ mới, 8 dataset × 6 descriptor, 288 cache; sinh bằng đợt `fr55` (`hsi_fresh.py --keep`); HSI-VN / VMN / oracle cùng cache nằm trong output các kernel `fr55-*` | 55–57: Entry 17 (xác nhận + SOTA); 58–60: CHƯA dùng |
+| `<acc>/dive-vpr-owf` (3 tài khoản) | code dataset của phiên (`VPR_CODE_DS=dive-vpr-owf`) | tự đồng bộ khi dựng kernel |
+
 ## 0. Trạng thái hiện hành (2026-11-04)
 
 **Tài khoản Kaggle đang dùng** (`automation/active_accounts.txt`, theo thứ tự lấp phiên): `synchan5704`, `yeshenhi` (thêm 2026-11-04 cho Entry 10;

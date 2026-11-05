@@ -80,7 +80,8 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 46–48 | `synchan5704/hmm-navcache-r40` | Entry 13 (OWF-HW-S: K1–K3 đạt) | đã dùng |
 | seed 49–51 | `synchan5704/hmm-navcache-r49` (kho `fr49`) | Entry 14 (OWF-HWA-S: L1–L3 đạt) | đã dùng |
 | seed 52–54 | `synchan5704/hmm-navcache-r49` | Entry 15 (OWF-HWA-S5: M1–M3 đạt) | đã dùng |
-| seed 55+ | chưa sinh (`owf_wave.py --set fresh:55-60`) | — | — |
+| seed 55–57 | `namhunhh/hmm-navcache-r55` (kho `fr55`, 2026-11-05) | Entry 17 (xác nhận OWF-HWA-S5 + SOTA ngoài trên cùng run) | đã dùng |
+| seed 58–60 | `namhunhh/hmm-navcache-r55` | — | **trống** |
 | seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
 
 ## 6. Việc tiếp theo (khung chat mới)
