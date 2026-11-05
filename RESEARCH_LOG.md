@@ -91,6 +91,33 @@ nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo
 
 ## Entry 17 — Xác nhận độc lập OWF-HWA-S5 trên nhóm seed mới 55–57 và so sánh với SOTA ngoài trên CÙNG run — đăng ký trước (2026-11-05 16:42 UTC)
 
+**KẾT QUẢ (seed 55–57, 144 run; đợt `test55`, 4 phiên L4, ~20 phút; ghi 18:38 UTC). Quyết định: XÁC NHẬN (C1–C4 đều đạt).** Ô = recall / TB
+segFAR / run > α / sai số điều hướng (m), trên CÙNG run:
+
+| Dataset | OWF-HWA-S5 | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+|---|---|---|---|---|---|---|
+| Boreas | **0.970** / 0.0010 / 0 / 3.8 | 0.890 / 0.0008 / 0 / 7.2 | 0.801 / 0.205 / 10 / 40.0 | 0.695 / 0.088 / 7 / 32.4 | 0.730 / 0.120 / 10 / 37.0 | 0.876 |
+| CMU | 0.841 / 0.0134 / 1 / 4.0 | 0.731 / 0.0080 / 0 / 3.5 | 0.920 / 0.374 / 14 / 34.9 | 0.717 / 0.037 / 5 / 6.3 | 0.859 / 0.158 / 13 / 13.1 | 0.929 |
+| Nordland | **0.970** / 0.0048 / 0 / 4.1 | 0.795 / 0.0000 / 0 / 4.0 | 0.812 / 0.592 / 18 / 167.4 | 0.747 / 0.045 / 5 / 45.3 | 0.529 / 0.268 / 18 / 77.2 | 0.675 |
+| office | **0.974** / 0.0000 / 0 / 8.0 | 0.870 / 0.0000 / 0 / 8.0 | 0.934 / 0.705 / 18 / 47.5 | 0.659 / 0.046 / 8 / 13.7 | 0.801 / 0.149 / 9 / 16.7 | 0.912 |
+| old town | **0.955** / 0.0036 / 0 / 19.4 | 0.761 / 0.0028 / 0 / 30.2 | 0.849 / 0.607 / 15 / 173.3 | 0.660 / 0.238 / 8 / 68.1 | 0.739 / 0.208 / 14 / 91.7 | 0.846 |
+| countryside | **0.860** / 0.0024 / 0 / 22.6 | 0.653 / 0.0032 / 0 / 24.4 | 0.773 / 0.678 / 18 / 113.7 | 0.249 / 0.086 / 6 / 83.0 | 0.602 / 0.188 / 17 / 45.7 | 0.740 |
+| Oxford | **0.944** / 0.0081 / 0 / 23.5 | 0.828 / 0.0081 / 0 / 26.6 | 0.848 / 0.969 / 18 / 242.7 | 0.896 / 0.600 / 18 / 154.7 | 0.757 / 0.095 / 9 / 61.7 | 0.907 |
+| St Lucia | **0.981** / 0.0026 / 0 / 14.5 | 0.919 / 0.0022 / 0 / 16.0 | 0.827 / 0.996 / 18 / 168.2 | 0.907 / 0.446 / 18 / 56.5 | 0.836 / 0.172 / 9 / 44.2 | 0.892 |
+| **Gộp (144)** | **0.937 / 0.0045 / 1 / 12.5** | 0.806 / 0.0031 / 0 / 15.0 | 0.846 / 0.641 / 129 / 123.5 | 0.691 / 0.198 / 75 / 57.5 | 0.732 / 0.170 / 99 / 48.4 | 0.847 / 0 / 0 / 10.9 |
+
+- **C1 đạt:** TB segFAR tệ nhất 0.0134 (CMU); 1/144 run > α (CMU).
+- **C2 đạt:** INC − HSI-VN = **+0.131**, CI [+0.114, +0.150].
+- **C3 đạt:**
+  - TAO'26: không hợp lệ (129/144 run > α; St Lucia segFAR 0.996); INC hơn +0.091 [+0.074, +0.108].
+  - Xu'21: không hợp lệ (75 run; Oxford 0.600); INC hơn +0.246.
+  - Claxton'24: không hợp lệ (99 run); INC hơn +0.205.
+- **C4 đạt:** 12.48 vs 14.98 m.
+
+*Phụ:* recall gộp của INC vượt oracle một-frame (0.847) +0.090, nhờ bằng chứng chuỗi cứu các frame có top-1 sai (Nordland 0.970 vs 0.675).
+Ngoại lệ là CMU: 0.841 vs oracle 0.929. Đây đúng là khoảng trống đầu chuỗi đã chẩn đoán ở Entry 16. TAO'26 có recall CMU 0.920 nhưng vượt α
+14/18 run. Bảng: `analysis/results/owf/s1105/e17_board_s55_57.md`; JSON: `e17_test_s55_57_json.tgz`.
+
 **Mục đích.** Yêu cầu §3 Bước 4 và §5 của docx: so sánh với baseline và SOTA phù hợp trên cùng giao thức. Tài liệu 08 ghi rõ: "chưa so với SOTA
 ngoài trên cùng giao thức". Entry 16 cho thấy lớp quyết định đã bão hoà. Vì vậy nhóm seed mới đầu tiên của kho r55 dùng để XÁC NHẬN luật đương
 nhiệm và so nó với các phương pháp đã công bố trên cùng run. Đây không phải quyết định đổi luật.
