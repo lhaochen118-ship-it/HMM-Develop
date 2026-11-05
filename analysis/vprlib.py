@@ -284,11 +284,46 @@ def frame_order(dump, ds, ep, desc="salad"):
         n = len(ep.m); qg = np.asarray(ep.q_cond).astype(str)
         return sequences(np.tile(np.arange(n, dtype=float), len(ep.q) // n), qg, 1.5) + \
             sequences(np.arange(n, dtype=float), np.zeros(n, int), 1.5)
-    if ds.startswith("4s") or ds in ("boreas", "nclt", "oxford", "stlucia") or ds.startswith("nclt:"):
+    if ds.startswith("4s") or ds in ("boreas", "nclt", "oxford", "stlucia") or ds.startswith("nclt:") or ds.startswith("vs:"):
         _, qs = np.unique(ep.q_rec, return_inverse=True); qk = np.empty(len(qs), int)
         for s_ in np.unique(qs): qk[qs == s_] = np.arange((qs == s_).sum())
         return qs, qk, np.zeros(len(ep.m), int), np.arange(len(ep.m))
     raise ValueError("no frame order for " + ds)
+
+
+# --------------------------------------------------------------------------- VPR-Space (Fechner & Neubert 2026; 2026-11-05)
+VS_SETUPS = {f"{db}--{q}": (db, q) for db, q in [
+    ("MadMax-A0", "MadMax-A2"), ("MadMax-A2", "MadMax-A4"), ("MadMax-C0", "MadMax-C1"), ("MadMax-E0", "MadMax-E1"), ("MadMax-F0", "MadMax-F3"),
+    ("MadMax-G0", "MadMax-G2"), ("S3LI-Etna-crater", "S3LI-Etna-crater_inout"), ("S3LI-Etna-traverse_1", "S3LI-Etna-loops"),
+    ("LunarLoc-9", "LunarLoc-10"), ("LunarLoc-15", "LunarLoc-17"),
+    ("SPICE-A-dawn-off-spad@5.0us", "SPICE-A-night-on-spad@5.0us"), ("SPICE-A-dawn-off@2500.0us", "SPICE-A-night-on@2500.0us"),
+    ("SPICE-A-dawn-off-spad@5.0us", "SPICE-A-noon-off-spad@5.0us"), ("SPICE-A-dawn-off@2500.0us", "SPICE-A-noon-off@2500.0us"),
+    ("SPICE-A-noon-off-spad@5.0us", "SPICE-A-night-on-spad@5.0us"), ("SPICE-A-noon-off@2500.0us", "SPICE-A-night-on@2500.0us")]}
+vs_key = lambda n: n.replace("@", "at").replace(".", "p")
+VS_BY_KEY = {vs_key(k): k for k in VS_SETUPS}
+
+
+def vs_tau(dump, setup):
+    """protocol length scale of a VPR-Space setup = the benchmark's own match tolerance: p90 of the distances between the camera
+    centres of its ground-truth 'hard' (db, query) pairs (VPR-GT-RPE-0). Every protocol constant is then a fixed multiple of tau
+    (sc_eval.vs_cfg), as excl / off_d / in_d / block are fixed metric constants on the street-scale datasets."""
+    setup = VS_BY_KEY.get(setup, setup); db, q = VS_SETUPS[setup]
+    g = np.load(os.path.join(dump, "vpr_gt", "VPR-GT-RPE-0", f"{setup}.npz"))
+    Cd = np.load(os.path.join(dump, "meta", f"vs_{vs_key(db)}.npz"))["C"]; Cq = np.load(os.path.join(dump, "meta", f"vs_{vs_key(q)}.npz"))["C"]
+    Hm = g["gt_hard"][:len(Cd), :len(Cq)]; di, qi = np.nonzero(Hm)
+    return float(np.percentile(np.linalg.norm(Cq[qi] - Cd[di], axis=1), 90))
+
+
+def load_vprspace(dump, desc="salad", setup="MadMax-A0--MadMax-A2"):
+    """VPR-Space setup: map = db trajectory, queries = query trajectory (one condition); positions = camera centres (co-registered per
+    setup: GT hard pairs 1-4 m apart vs 7-167 m for random pairs). Natural off-map: the query trajectory leaves the db coverage (no
+    synthetic holes). Odometry simulated from the ground truth (as CMU / Nordland / Oxford / St Lucia)."""
+    setup = VS_BY_KEY.get(setup, setup); db, q = VS_SETUPS[setup]
+    Md = np.load(os.path.join(dump, "meta", f"vs_{vs_key(db)}.npz"), allow_pickle=True); Mq = np.load(os.path.join(dump, "meta", f"vs_{vs_key(q)}.npz"), allow_pickle=True)
+    Dd = np.load(os.path.join(dump, desc, f"vs_{vs_key(db)}.npy")); Dq = np.load(os.path.join(dump, desc, f"vs_{vs_key(q)}.npy"))
+    ep = Episode(f"vs:{vs_key(setup)}", Dq, Dd, Mq["C"], Md["C"], np.array([q] * len(Dq)))
+    ep.q_rec, ep.ref, ep.tau = np.array([q] * len(Dq)), db, vs_tau(dump, setup)
+    return ep
 
 
 LOADERS = {"stlucia": load_stlucia, "oxford": load_oxford, "rc": load_robotcar, "cmu": load_cmu_merged, "nord": load_nordland, "msls": load_msls, "nclt": load_nclt,

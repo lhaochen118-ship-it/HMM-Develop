@@ -135,7 +135,8 @@ def load_run(cache_dir, dump, ds, desc, seed):
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import vprlib as V
     z = dict(np.load(os.path.join(cache_dir, f"navcache_{ds.replace(':', '_')}_{desc}_s{seed}.npz"), allow_pickle=True))
-    if ds.startswith("4sx:"):                       # natural off-map pair (Entry 30 caches; published file names lost the "+")
+    if ds.startswith("vs:"): ep = V.load_vprspace(dump, desc, ds[3:])
+    elif ds.startswith("4sx:"):                       # natural off-map pair (Entry 30 caches; published file names lost the "+")
         nm = ds[4:].replace("+", ""); sc = ("office_loop", "old_town", "countryside")
         pair = next(f"{a}+{b}" for a in sc for b in sc if a != b and a + b == nm)
         ep = V.load_4s_cross(dump, desc, pair)
@@ -165,7 +166,8 @@ def main():
     import nav_demo as N
     from sc_eval import CFG
     z, Q, M = load_run(cache_dir, dump, ds, desc, seed)
-    c = CFG["cmu"] if (ds.startswith("4s") or ds == "boreas") else CFG[ds.split(":")[0]]
+    from sc_eval import vs_cfg
+    c = vs_cfg(float(z["excl"])) if ds.startswith("vs:") else (CFG["cmu"] if (ds.startswith("4s") or ds == "boreas") else CFG[ds.split(":")[0]])
     hz = list(z["hz"]); MP = z["MP"][:, hz].astype(float); U = z["U"][:, hz].astype(float); excl = float(z["excl"])
     sid, k = z["q_sid"], z["q_k"]; seqs = [np.where(sid == s)[0][np.argsort(k[sid == s])] for s in np.unique(sid)]
     g = excl / 5; band = bandx * c["block"]

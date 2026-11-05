@@ -147,6 +147,8 @@ def tce(null_chunks, p_null, r_null, q_seqs, p_q, r_q, nb_p=6, nb_r=4, min_n=30)
     Shiryaev-Roberts bound of the presence chain holds under temporal dependence (coherent aliasing no longer
     accumulates: given a mid p-value last frame, another mid p-value is typical under the null).
     Sparse cells (< min_n pairs) fall back to the p-only cell, then to the marginal pool."""
+    if not any(len(ch) for ch in null_chunks):            # no map self-replay null (map smaller than a few blocks): no evidence
+        return np.ones(len(p_q)), np.ones(len(p_q)), np.zeros(len(p_q), int)
     lp = lambda x: np.log(np.clip(x, 1e-9, 1))
     allp = np.concatenate([p_null[ch] for ch in null_chunks if len(ch)]); allr = np.concatenate([r_null[ch] for ch in null_chunks if len(ch)])
     ep_ = np.quantile(lp(allp), np.linspace(0, 1, nb_p + 1)[1:-1]); er_ = np.quantile(lp(allr), np.linspace(0, 1, nb_r + 1)[1:-1])
@@ -328,6 +330,7 @@ def main():
     elif ds.startswith("4sx:"): ep = V.load_4s_cross(dump, desc, ds[4:]); c = CFG["cmu"]      # Entry 30: natural off-map (other scene)
     elif ds.startswith("nclt:"): ep = V.load_nclt(dump, desc, ref=ds[5:]); c = CFG["nclt"]   # Entry 32: NCLT with another reference session
     elif ds == "boreas": ep = V.load_boreas(dump, desc); c = CFG["cmu"]
+    elif ds.startswith("vs:"): ep = V.load_vprspace(dump, desc, ds[3:]); from sc_eval import vs_cfg; c = vs_cfg(ep.tau)   # natural off-map, tau-scaled
     else: ep = V.LOADERS[ds](dump, desc); c = CFG[ds]
     q_sid, q_k, m_sid, m_k = V.frame_order(dump, ds, ep, desc)
     nord = ds in ("nord", "nordw"); rho_o = 1.0 if nord else 5.0
@@ -336,7 +339,7 @@ def main():
     out = {"ds": ds, "desc": desc, "H": H, "runs": []}
     for seed in range(SEED0, SEED0 + seeds):
         rng = np.random.default_rng(seed); bid0, _ = V.map_cells(ep.m_pos, c["block"]); ub = np.unique(bid0)
-        keep = ~np.isin(bid0, rng.choice(ub, int(round((0.0 if (ds.startswith("nclt") or ds.startswith("4sx")) else DROP) * len(ub))), replace=False))   # NCLT: natural off-map, no holes
+        keep = ~np.isin(bid0, rng.choice(ub, int(round((0.0 if (ds.startswith("nclt") or ds.startswith("4sx") or ds.startswith("vs:")) else DROP) * len(ub))), replace=False))   # NCLT: natural off-map, no holes
         M, MP = ep.m[keep].astype(np.float32), ep.m_pos[keep]
         d_map, _ = cKDTree(MP).query(ep.q_pos); inm, offm = d_map <= c["in_d"], d_map > c["off_d"]
         nrm = lambda x: x / np.linalg.norm(x, axis=1, keepdims=True); mu = M.mean(0, keepdims=True); Mc = nrm(M - mu); qc = nrm(q - mu)

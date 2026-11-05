@@ -79,6 +79,7 @@ class Cfg:
         self.excl = float(z["excl"]); self.H = int(z["H"])
         nord = name.startswith("nord")
         self.off_d = 10.0 if nord else (20.0 if name.startswith("nclt") else 40.0)   # sc_eval.CFG off_d (protocol)
+        if name.startswith("vs_"): self.off_d = 1.6 * self.excl               # VPR-Space: tau-scaled protocol (sc_eval.vs_cfg)
         self.tau = 0.4 * self.excl                    # displacement tolerance of a consistent lag pair (grows with the lag)
         self.lags_c = (10, 20, 40, 80)                # causal anchor: consistent at every lag over the last 80 frames
         self.span = 20; self.lags_h = (5, 10, 20, 40)  # hindsight verification: every lag pair inside t +- 20 frames

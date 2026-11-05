@@ -142,6 +142,8 @@ def lobo_stats(m_desc, m_pos, block, off_d, q_desc, q_pos, cell, excl, k, chunk=
         st["top"] = np.flatnonzero(keep)[np.asarray(st["top"]).astype(int)].astype(float)   # top-1 index in the FULL map
         if out is None: out = {kk: np.full(len(q_pos), np.nan) for kk in st}
         for kk, v in st.items(): out[kk][far] = v
+    if out is None:                     # map too small for a leave-one-block-out null (e.g. VPR-Space): NaN statistics (no null items)
+        st = qm_stats(q_desc[:1], m_desc, m_pos, cell, excl, k); out = {kk: np.full(len(q_pos), np.nan) for kk in st}
     return out
 
 
@@ -207,7 +209,7 @@ class SelfCalTest:
         N = {k: np.asarray(N[k], float) for k in ("ms", "zf", "zg", "sdf")}
         ok = np.isfinite(N["ms"]) & np.isfinite(N["zf"]) & np.isfinite(N["zg"]) & np.isfinite(N["sdf"])
         self.B = max(1, min(strata, int(ok.sum()) // min_per)); self.gate, self.mode = gate, mode
-        self.edges = np.quantile(N["sdf"][ok], np.linspace(0, 1, self.B + 1)[1:-1])
+        self.edges = np.quantile(N["sdf"][ok], np.linspace(0, 1, self.B + 1)[1:-1]) if ok.any() else np.zeros(0)   # no null: p = 1
         bn = np.digitize(N["sdf"], self.edges)
         self.cal = [_AACal(N["ms"][ok & (bn == b)], N["zf"][ok & (bn == b)], N["zg"][ok & (bn == b)]) for b in range(self.B)]
         self.ms_all, self.n = np.sort(N["ms"][ok]), int(ok.sum())

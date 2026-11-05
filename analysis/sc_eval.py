@@ -55,3 +55,9 @@ if __name__ == "__main__":
             print(f"  {row['stat']:10s} a={row['alpha']:.2f} AUROC {row['AUROC']:.3f} FAR {row['FAR']:.3f} worst {row['worstFAR']:.3f} ({row['worst'][:10]}) TPR {row['TPR']:.3f}")
     os.makedirs(os.path.join(os.path.dirname(__file__), "results"), exist_ok=True)
     json.dump(out, open(os.path.join(os.path.dirname(__file__), "results", f"sc_{ds}_{desc}.json"), "w"), default=float, indent=1)
+
+
+def vs_cfg(tau):
+    """VPR-Space protocol constants as the street-scale ratios (excl 25 : off_d 40 : in_d 5 : cell 10 : block 300 : tol 5 / 10 m) times the
+    setup's match tolerance tau (vprlib.vs_tau)"""
+    return dict(cell=0.4 * tau, excl=tau, k=10, block=12.0 * tau, off_d=1.6 * tau, in_d=0.2 * tau, tol=(0.2 * tau, 0.4 * tau), calib=None)

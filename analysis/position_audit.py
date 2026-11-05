@@ -13,7 +13,7 @@ import sys, os, json, glob, re
 import numpy as np
 from multiprocessing import Pool
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "oxford": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0, "stlucia": 40.0}   # sc_eval.CFG off_d
+OFF_D = {"boreas": 40.0, "cmu": 40.0, "4s": 40.0, "4sx": 40.0, "oxford": 40.0, "nclt": 20.0, "nord": 10.0, "rc": 40.0, "stlucia": 40.0, "vs": None}   # vs: VPR-Space, off_d = 1.6 excl (tau-scaled)   # sc_eval.CFG off_d
 
 RULES = ["CMS-CPC/H+CSTJSU+G+NGRr", "CMS-CPC/H+CSTJSB+G+NGRr", "CMS-CPC/H+SH+CSTJSU+G+NGRr", "CMS-CPC/H+CSTJSU+G[both]+NGRr",
          "CMS-CPC/H+CSTJS+G+NGRr", "CMS-CPC/H+SH+CSTJS+G+NGRr", "CMS-CPC/H+CSTJS+G[both]+NGRr", "CMS-CPC/H+CSTJs+G+NGRr",
@@ -25,6 +25,7 @@ CLASSES = ("start", "edge", "deep")
 def seg_classes(z, off_d):
     """[(frames, class)] of the run's real off-map segments (off_d: the dataset's off-map distance = rho of the surgery)"""
     H = int(z["H"]); sid, k = z["q_sid"], z["q_k"]; offm = np.asarray(z["offm"], bool); excl = float(z["excl"])
+    if off_d is None: off_d = 1.6 * excl
     seqs = [np.where(sid == s)[0][np.argsort(k[sid == s])] for s in np.unique(sid)]
     hz = list(z["hz"]); o = z["o_q"]; o = (o[:, hz] if o.ndim > 1 and o.shape[1] > 2 else o).astype(float); o = o if o.ndim > 1 else o[:, None]
     Ds = off_d + 20.0 * excl; out = []
