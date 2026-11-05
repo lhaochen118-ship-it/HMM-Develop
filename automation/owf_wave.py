@@ -119,6 +119,11 @@ def main():
                     for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town"):
                         for desc in DESCS:
                             for s in (0, 1, 2): J.append(ij(f"DIR:navcache_@{dr}", ds, desc, s, f"{dr}{tg}"))
+            if part.startswith("fresh"):  # e.g. fresh55-57 --pool r55: a fresh test group (8 holed datasets x 6 descriptors x seeds)
+                a_, b_ = [int(x) for x in part[5:].split("-")]; pool = opt("--pool", f"r{a_}")
+                for ds in ("boreas", "cmu", "nord", "4s:office_loop", "4s:countryside", "4s:old_town", "oxford", "stlucia"):
+                    for desc in DESCS:
+                        for sd in range(a_, b_ + 1): J.append(ij(f"DIR:navcache_@hmm-navcache-{pool}", ds, desc, sd, f"t{a_}{tg}"))
             if part == "natural":
                 sc = ("office_loop", "old_town", "countryside")
                 for a_ in sc:

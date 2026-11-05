@@ -77,3 +77,39 @@ One grid filter per q value: per frame a whole-cell shift (O(|G|)), a blur only 
 bincount over the n images, a normalisation, and the disc masses of 12 candidate cells. |G| ≈ 0.7–1.0 × 10⁵ cells for the 2-D datasets
 (Nordland 4.5 × 10³). Three filters (online q selection): 2–14 ms/frame on one local CPU core, 22–41 ms/frame on a Kaggle CPU session
 running four jobs on four vCPUs. No forward simulation, no map surgery, no learned score, no calibration data.
+
+## 6. Proposition 4 (hindsight-calibrated open-world decision; Entry 16, drafted before its test)
+
+*Why.* Proposition 2 needs (E1): the weighted likelihood ratio of every near-map cell is a conditional e-value while the robot is elsewhere.
+Coherent perceptual aliasing breaks (E1): consecutive off-map views keep matching one look-alike stretch whose images then get an expected
+LR far above 1. Measured on development runs (`analysis/owf_alias_diag.py`): on Nordland, confident-but-wrong hypotheses arise deep inside
+holes (path ≥ 32 excl from the sequence start, 82 % of their frames off the map), last a median 2.3 excl (p90 16 excl) and reach disc mass
+1 − 1e-10, i.e. evidence ~1e10 against a dead-reckoned tail mass. The incumbent rule (Entry 15) therefore does not read the decision off the
+posterior at one ε: it ORs fixed tiers m(1e-5, 16), m(1e-8, 2), t(3e-4, 0.5) chosen on development seeds. Proposition 4 replaces those
+constants by thresholds the deployment calibrates on its own hindsight, with a finite-sample guarantee that does not need (E1).
+
+*Setting.* Score s_t = −log10(1 − D_t) (D_t: OWF disc mass, Section 1). Stratum k(t) = bin of the odometry path since the sequence start
+(excl units; edges fixed in advance, e.g. {0, 2, 16}). Hindsight null (HSI, `paper/hsi_theory.md`): frames whose two-sided dead-reckoning
+bridge, anchored on stretches where an INDEPENDENT estimator (the topological chain) is geometrically self-verified, places the robot
+possibly off the map, or possibly farther than excl from the OWF report, or that are never bridged; each label becomes usable at the
+deployment rank at which its bridge closes. Calibration units (300 m of path) are held out with probability 1/2, independently of the data.
+A null segment = H consecutive null frames of one held-out unit and one stratum; its conformity score is the segment maximum of s_t, or +∞
+if the other report branch (OWF-H) reports inside it (joint calibration of the union). At deployment rank T the threshold of stratum k is
+τ_k(T) = the ⌈(1 − α)(m + 1)⌉-th smallest score among the m stratum-k segments available before T (τ = ∞ if m < 1/α − 1).
+Report at t iff OWF-H reports or s_t > τ_{k(t)}(T_t).
+
+*Claim.* Let S be a future H-frame stretch of stratum k on which the robot is off the map, and assume (X) its score is exchangeable with
+the scores of the m calibration segments of stratum k used at its time. Then P(the rule reports somewhere in S) ≤ α (and ≥ α − 1/(m+1)
+for continuous scores). The bound holds whatever the emission model, its misspecification under aliasing, or the dependence between frames.
+
+*Proof.* Split conformal (Vovk et al.; Lei et al. 2018): with exchangeable scores, the rank of the new score among the m + 1 is uniform, so
+P(score_S > τ_k) ≤ 1 − ⌈(1 − α)(m + 1)⌉/(m + 1) ≤ α. A report in S happens iff the segment maximum of the rule's score exceeds τ_k
+(either branch; the OWF-H branch enters the score as +∞). ∎
+
+*Assumptions and scope.* (X) is where the hindsight labels enter: the null is a superset of the off-map frames when the bridges are correct
+(it also holds possibly-wrong and never-verified frames), which makes the threshold conservative but keeps (X) plausible only if the
+off-map stretches of a stratum are not systematically harder than the null stretches of the same stratum. Bridges built on the OWF's own
+track would certify a coherent alias (its track is odometry-consistent by construction; Entry 11), so the bridges come from the topological
+chain, which is computed independently of the OWF. Mondrian strata by path since the start make the guarantee hold per stratum, so the
+weak start case of Proposition 2 is calibrated on start segments only. The guarantee is marginal over segments of the deployment, not per
+run; the per-run tail is measured (runs > α).
