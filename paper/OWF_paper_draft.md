@@ -88,6 +88,54 @@ filter fed with the reported fixes, position audit (start / edge / deep). Datase
 (office loop, old town, countryside), Oxford RobotCar, St Lucia, NCLT; descriptors: CosPlace, NetVLAD, MegaLoc, SALAD, MixVPR, DINOv2.
 One configuration for every dataset; no per-dataset tuning.
 
-## 6. Experiments (to be filled from pre-registered entries only)
+## 6. Experiments (filled only from pre-registered entries or from sets never used for tuning)
 
-## 7. Limitations (to be filled)
+**6.1 Pre-registered fresh-seed tests of the full system** (`RESEARCH_LOG.md` Entries 11–15; 144 runs per group, 8 datasets × 6 descriptors,
+paired against the previous rule on the same runs). Pooled recall / runs above α / navigation error:
+
+| Group | Rule | Recall | Paired gain | Runs > α | Nav (m) |
+|---|---|---|---|---|---|
+| 40–42 | OWF-H | 0.885 | +0.074 vs HSI-VN | 1 | 14.46 |
+| 43–45 | OWF-HU | 0.896 | +0.018 | 1 | 14.94 |
+| 46–48 | OWF-HW-S | 0.902 | +0.024 | 1 | 12.75 |
+| 49–51 | OWF-HWA-S | 0.933 | +0.012 | 0 | 13.64 |
+| 52–54 | OWF-HWA-S5 | 0.941 | +0.0045 | 1 | 12.67 |
+| 55–57 | OWF-HWA-S5 (confirmation + external SOTA, Entry 17) | *pending* | | | |
+
+**6.2 Generality and external baselines on sets never used for tuning** (`analysis/results/owf/s1105/sota_*.md`; same runs for every rule).
+Cell = pooled recall / mean segFAR / runs above α. TAO'26, Xu'21 and Claxton'24 use thresholds tuned WITH labels on the two easiest
+conditions, as in their papers; oracle = report exactly the correct top-1 retrievals.
+
+| Set | Ours (OWF-HWA-S5) | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+|---|---|---|---|---|---|---|
+| holes 10 % (108) | **0.933** / 0.002 / 1 | 0.772 / 0.000 / 0 | 0.843 / 0.554 / 92 | 0.646 / 0.077 / 35 | 0.737 / 0.288 / 86 | 0.827 |
+| holes 50 % (108) | **0.894** / 0.009 / 4 | 0.754 / 0.006 / 4 | 0.842 / 0.535 / 93 | 0.609 / 0.129 / 30 | 0.678 / 0.090 / 60 | 0.829 |
+| natural off-map, 4Seasons cross-scene (36) | **0.952** / 0.010 / 2 | 0.742 / 0.004 / 0 | 0.578 / 0.075 / 4 | 0.581 / 0.037 / 10 | 0.678 / 0.020 / 5 | 0.822 |
+| NCLT (6) | **0.781** / 0.005 / 0 | — | 0.756 / 0.713 / 6 | 0.526 / 0.021 / 1 | 0.663 / 0.213 / 5 | 0.724 |
+
+Ours is the only rule that is valid and has high recall. It exceeds the single-frame oracle by 0.06–0.13 because sequence evidence recovers
+frames whose top-1 retrieval is wrong. Its runs above α (CMU at 50 % holes, two natural runs) coincide with its HSI branch.
+
+**6.3 Why fixed extreme thresholds (Proposition 2′).** The measured inflation of the e-value assumption, K̂(ε) = segFAR(ε)/(2ε), is ≤ 1 on
+4Seasons and St Lucia, i.e. Proposition 2 holds as stated. On CMU and Nordland it grows from about 10 at ε = 1e-3 to about 10⁴ at ε = 1e-8,
+because coherent aliasing is heavy-tailed (`owf_theory.md` §7).
+
+**6.4 Negative results (development set, 399 runs; each dropped before any fresh test).**
+- Hindsight-calibrated thresholds (Proposition 4): recall −0.017 … −0.027, 23–46 runs > α vs 1.
+- Wider odometry-scale bank (±15 %, 22 filters): −0.0037.
+- Emission temperature selected by evidence: log-evidence +3300 but segFAR ×1.7 and navigation error ×3 on Nordland.
+- Simplified tiers: recall ±0.005, with more runs above α.
+- Continuous (posterior-mean) fixes: no navigation gain; fix errors are already 2.3–2.5 m.
+
+**6.5 Compute.** The 10-member OWF bank runs at 2.7–3.4 ms/frame on one NVIDIA L4 (numpy: 29 ms/frame). A full evaluation of the system on
+657 runs takes 35 min on six 4×L4 sessions.
+
+## 7. Limitations
+
+- The decision layer of the full system is a union of a hindsight-calibrated learned branch and fixed extreme-confidence tiers. Its
+  validity is established empirically across fresh hole layouts, hole ratios 10–50 % and natural off-map, not by a per-run theorem;
+  Proposition 2′ explains it, but the inflation budget K is measured, not bounded a priori.
+- CMU (short sequences) keeps a recall gap of about 0.12 at sequence starts, although the OWF estimate is already right on 0.95–0.99 of
+  those frames.
+- The holes are simulated (except NCLT and 4Seasons cross-scene); VPR-Space (planetary / lunar) is not yet evaluated.
+- Global descriptors only (no 6-DoF refinement).
