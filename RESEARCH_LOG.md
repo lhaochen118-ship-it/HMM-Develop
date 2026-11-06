@@ -89,6 +89,55 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 22 — Emission có điểm giao "khớp đúng vs bí danh" (OWF `--lu half`, Mệnh đề 6): KẾT QUẢ PHÁT TRIỂN ÂM, không đăng ký kiểm tra (2026-11-06 07:05 UTC)
+
+**Ý tưởng (`paper/owf_theory.md` §9, viết và commit TRƯỚC đợt phát triển).**
+- Emission hiện tại chuẩn hoá theo hồ sơ của chính frame. Vì vậy so với ô trống, một ảnh được tăng khối lượng khi z > A_t / β ≈ 0.5 robust SD.
+- Một bản sao dịch chuyển dọc đường thẳng (odometry không thấy được) có z ≈ 3. Nó tích luỹ bằng chứng không giới hạn (Entry 21: CMU seed 60 và
+  61).
+- Mô hình dịch Gaussian (khớp đúng ~ N(μ₁, 1)), làm mềm về cùng độ dốc β, cho điểm giao μ₁ / 2. Cài đặt: ô trống / Ω nhận log-LR β μ₁ / 2 − A_t.
+  μ₁ ước lượng không nhãn bằng trung vị qua run của max_i z_ti (`owf.py --lu half`, `owf_torch.py`; mặc định tắt).
+
+**Thử cục bộ (CMU s60 CosPlace, ngân hàng S5, NT; chỉ OWF, ε = 1e-3).**
+- segFAR 0.0247 → **0.0000** (17/687 → 0/687 đoạn); recall 0.816 → 0.813.
+- Sai số điều hướng 6.8 → **2.7 m** (p95 42.9 → 8.4).
+- Log-evidence 5984 → 7627.
+
+**Phát triển: đợt `devlu`** (6 phiên L4, 405 run; mọi JSON có khoá `lu`, tức đúng mã), so với R* trên CÙNG 399 run. Ô = recall / TB segFAR / run > α
+/ sai số (m):
+
+| | R* (S5) | C1 = NT | C3 = NT + LU | C4 = C3 + phủ quyết | C5 = C1, phủ quyết H bằng mN của bộ lọc LU | C6 = như C5, phủ quyết mọi báo |
+|---|---|---|---|---|---|---|
+| gộp | 0.933 / 0.0045 / 1 / 12.7 | 0.932 / 0.0040 / 2 / 12.4 | 0.903 / 0.0058 / 3 / 16.1 | 0.876 / 0.0035 / 3 / 16.7 | 0.907 / 0.0018 / 0 / 13.8 | 0.887 / 0.0012 / 0 / 14.2 |
+| CMU | 0.852 / 0.0095 / 1 / 4.4 | 0.852 / 0.0096 / 2 / 4.4 | 0.829 / **0.0055 / 0 / 3.9** | 0.771 / 0.0023 / 0 / 3.4 | 0.802 / 0.0064 / 0 / 3.9 | 0.790 / 0.0033 / 0 / 3.4 |
+| Nordland | 0.968 / 0.0069 / 0 / 6.2 | 0.967 / 0.0053 / 0 / 5.0 | 0.958 / **0.0209 / 3 / 20.1** | 0.956 / 0.0209 / 3 / 20.7 | 0.966 / 0.0053 / 0 / 5.0 | 0.957 / 0.0042 / 0 / 4.9 |
+| countryside | 0.852 / 0.0056 / 0 / 25.4 | 0.852 / 0.0042 / 0 / 24.5 | 0.806 / 0.0047 / 0 / 26.3 | 0.742 / 0.0005 / 0 / 39.2 | 0.770 / 0.0004 / 0 / 38.6 | 0.755 / 0.0004 / 0 / 38.8 |
+
+Chênh recall so với R*:
+- C3: −0.0296 [−0.0343, −0.0252], điều hướng +3.4 m;
+- C5: −0.0262 (điều hướng +1.1 m);
+- C6: −0.0453 (điều hướng +1.5 m).
+
+**Chỉ OWF (ε = 1e-3), NT → NT + LU:**
+- CMU: segFAR 0.036 → **0.008** (÷ 4.6), recall 0.767 → 0.691.
+- office / old town / Boreas: recall −11 … −12 pp.
+- Nordland: segFAR 0.018 → **0.046**.
+- Điểm giao ước lượng c (trung vị theo dataset): 2.1 (Nordland, countryside) … 3.5 (CMU).
+
+**Đọc.**
+- (i) Cơ chế của Mệnh đề 6 là thật. Nâng điểm giao xoá đúng loại báo sai đã chẩn đoán (CMU: bí danh yếu nhất quán chuyển động ở đầu chuỗi).
+- (ii) Nhưng một điểm giao chung cho cả run là sai mô hình khi điều kiện không đồng nhất. Các frame trên bản đồ có z thật < c (mùa đông, quay
+  đầu, che khuất) đẩy khối lượng ra ngoài bản đồ. Ở Nordland, hậu nghiệm mất vết rồi bắt lại sai chỗ, nên báo sai TĂNG. Đây đúng là cái giá
+  §9 đã dự báo.
+- (iii) Mô hình phương sai lớn hơn (N(μ₁, σ₁²), σ₁ ≈ 2–3) hạ điểm giao về ≈ 2, thấp hơn z của bí danh (≈ 3.3). Như vậy theo z, khớp đúng yếu và
+  bí danh mạnh chồng nhau: thông tin tách được nằm ở độ tương đồng TUYỆT ĐỐI (CMU: khớp đúng 5 % = 0.59 so với bí danh 0.45). Chuẩn hoá z
+  đã bỏ đi thông tin đó.
+- (iv) Phủ quyết chéo (C5, C6) chọn mức hợp lệ cao nhất từng đo trên tập A (TB segFAR 0.0012–0.0018), nhưng recall giảm 2.6–4.5 pp.
+
+**Loại cả C3–C6.** Không đăng ký, không dùng seed 64–66 (vẫn chưa dùng).
+**Hướng tiếp:** emission có hiệu chỉnh tuyệt đối theo điều kiện, ví dụ μ₁ ước lượng nhân quả theo từng chuỗi. Hoặc dùng độ tương đồng thô đã
+hiệu chỉnh trên chính bản đồ, thay vì z trong hồ sơ của frame.
+
 ## Entry 21 — Bộ lọc thế giới mở PHỦ QUYẾT nhánh thế giới đóng (OWF-NT-V) — đăng ký trước (2026-11-06 05:59 UTC)
 
 **KẾT QUẢ (seed 61–63, 144 run; đợt `test61`, 6 phiên L4; ghi 06:39 UTC). Quyết định theo quy tắc đăng ký trước: R* GIỮ NGUYÊN (C2 trượt V3,

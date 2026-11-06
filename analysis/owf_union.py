@@ -17,6 +17,9 @@ from multiprocessing import Pool
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT = "H;U(1e-3,16);U(1e-4,16);U(1e-5,16);U(1e-4,32);U(1e-5,32)"
 VETO = float(os.environ.get("OWF_VETO", "0"))                   # OWF_VETO=v: HSI reports only where the OWF near-map mass mN >= v
+VETO_FR = os.environ.get("OWF_VETO_FR", "")                    # Entry 22b: take mN from ANOTHER frame set ("dir:ftag", e.g. the alias-aware
+                                                                 # filter --lu half) instead of the run's own OWF frames
+VETO_ALL = os.environ.get("OWF_VETO_ALL", "") == "1"             # veto every report (HSI branch AND the OWF tiers), not only HSI
 
 
 def terms(v):
@@ -49,8 +52,14 @@ def one(args):
     if cf is None or not os.path.exists(hf): return t, None
     z = np.load(cf, allow_pickle=True); fr = np.load(ff, allow_pickle=True); hm = np.load(hf)
     n = int(hm["n"]); accH = np.unpackbits(hm[hvar])[:n].astype(bool)
-    if VETO > 0 and "mN" in fr.files:                                 # Entry 21: the open-world filter vetoes the closed-world HSI branch
-        accH = accH & (np.asarray(fr["mN"], float) >= VETO)            # where its near-map mass says the robot is probably off the map
+    okV = np.ones(n, bool)
+    if VETO > 0:
+        if VETO_FR:                                                    # Entry 22b: near-map mass of a second (alias-aware) filter
+            vd, vt = VETO_FR.split(":"); vf = os.path.join(vd, f"fr_{base}_s{seed}{vt}_b1.npz")
+            if not os.path.exists(vf): return t, None
+            okV = np.asarray(np.load(vf)["mN"], float) >= VETO
+        elif "mN" in fr.files: okV = np.asarray(fr["mN"], float) >= VETO
+        accH = accH & okV                                              # Entry 21: the open-world filter vetoes the closed-world HSI branch
     excl = float(z["excl"]); MP = z["MP"]; qp = z["q_pos"]; sid, k = z["q_sid"], z["q_k"]
     seqs = [np.where(sid == s)[0][np.argsort(k[sid == s])] for s in np.unique(sid)]
     hz = list(z["hz"]); U = z["U"].astype(float); U = U if U.ndim > 1 else U[:, None]
@@ -77,6 +86,7 @@ def one(args):
             if v.startswith("W"): ok |= (mass >= 1 - a[2]) & (pst >= a[3] * excl)
             extra = (xh >= 0) & ok & ~accH
             acc = accH | extra; est = np.where(extra, np.maximum(xh, 0), est_h)
+        if VETO_ALL: acc = acc & okV
         xf = MP[est].astype(float); xf = xf if xf.ndim > 1 else xf[:, None]
         err = np.linalg.norm(xf - q2, axis=1); gd = z["inm"] & (err <= excl)
         m = N.rule_metrics(acc, gd, z["inm"], z["offm"], seqs, int(z["H"]))
