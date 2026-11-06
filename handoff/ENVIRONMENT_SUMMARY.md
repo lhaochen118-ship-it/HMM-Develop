@@ -13,9 +13,9 @@ Cách đọc repo và việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md`, `hand
 - `mxuanquy`, `yeshenhi`: người dùng báo chỉ có T4, nhưng kernel cấu hình L4 vẫn được nhận và chạy (đợt `ablhn`).
 - Các tài khoản đều có kernel `vprspace-*` do một phiên khác tạo. Không đụng tới.
 
-**Dataset mới:** `namhunhh/hmm-navcache-r67` (seed 67–72, 288 cache, 942 MB, 20 kernel CPU `fr67-*`).
+**Dataset mới:** `namhunhh/hmm-navcache-r73` (seed 73–78, 288 cache, 24 kernel CPU `fr73-*`; chưa dùng). `namhunhh/hmm-navcache-r67` (seed 67–72, 288 cache, 942 MB, 20 kernel CPU `fr67-*`).
 - Seed 67–69: Entry 24.
-- Seed 70–72: chưa dùng.
+- Seed 70–72: Entry 26.
 - Kết quả HSI-VN của kho nằm trong `results.tar` của từng kernel `fr67-*` (không phải file rời).
 
 **Đĩa scratchpad:** hạn mức ~40 GB. Output kernel giải nén rất lớn (1–2 GB mỗi đợt). Xoá `runs/*/<kernel>_out` sau khi đã trích khung
