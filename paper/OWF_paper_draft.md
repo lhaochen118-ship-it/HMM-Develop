@@ -268,6 +268,17 @@ query session, so there is nothing to calibrate from, and the absolute evidence 
 A threshold fixed across environments cannot fit both regimes. This is the main limitation and motivates bounding K per map before
 deployment.
 
+**6.2c Ablation of the final rule** (development set A, 399 runs, the same runs). Cell = recall / mean segFAR / runs above α / navigation
+error (m):
+
+| | S5 (previous rule) | + no teleport | + absolute evidence (HQ) | + both (final) |
+|---|---|---|---|---|
+| pooled | 0.933 / 0.0045 / 1 / 12.7 | 0.932 / 0.0040 / 2 / 12.4 | 0.930 / 0.0034 / 0 / 12.9 | 0.929 / 0.0034 / 0 / 13.0 |
+| CMU | 0.852 / 0.0095 / 1 / 4.4 | 0.852 / 0.0096 / 2 / 4.4 | 0.862 / 0.0066 / 0 / 3.8 | 0.863 / 0.0066 / 0 / 3.8 |
+| Nordland | 0.968 / 0.0069 / 0 / 6.2 | 0.967 / 0.0053 / 0 / 5.0 | 0.972 / 0.0028 / 0 / 4.9 | 0.970 / 0.0026 / 0 / 4.7 |
+
+The calibrated absolute evidence carries almost all of the validity gain. No teleport adds little once it is present.
+
 **6.3 Why fixed extreme thresholds (Proposition 2′).** The measured inflation of the e-value assumption, K̂(ε) = segFAR(ε)/(2ε), is ≤ 1 on
 4Seasons and St Lucia, i.e. Proposition 2 holds as stated. On CMU and Nordland it grows from about 10 at ε = 1e-3 to about 10⁴ at ε = 1e-8,
 because coherent aliasing is heavy-tailed (`owf_theory.md` §7).

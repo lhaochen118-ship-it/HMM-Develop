@@ -114,6 +114,18 @@ Tiêu chí:
 - C10: S1 đạt (0 run > α); S2 đạt (−0.0072 [−0.0103, −0.0046]).
 - Tham chiếu R_old (3 kernel S5) rơi vào tài khoản T4 chậm, nên báo sau, không ảnh hưởng quyết định.
 
+**Ablation (mô tả, tập A, 399 run cùng run; ghi 17:11 UTC; đợt `ablhn` + `ablhm`, S5 + HQ không có NT).** Ô = recall / TB segFAR / run > α / sai số (m):
+
+| | S5 | S5 + NT | S5 + HQ | S5 + NT + HQ (luật cuối) |
+|---|---|---|---|---|
+| gộp | 0.933 / 0.0045 / 1 / 12.7 | 0.932 / 0.0040 / 2 / 12.4 | 0.930 / 0.0034 / 0 / 12.9 | 0.929 / 0.0034 / 0 / 13.0 |
+| CMU | 0.852 / 0.0095 / 1 / 4.4 | 0.852 / 0.0096 / 2 / 4.4 | 0.862 / 0.0066 / 0 / 3.8 | 0.863 / 0.0066 / 0 / 3.8 |
+| Nordland | 0.968 / 0.0069 / 0 / 6.2 | 0.967 / 0.0053 / 0 / 5.0 | 0.972 / 0.0028 / 0 / 4.9 | 0.970 / 0.0026 / 0 / 4.7 |
+
+- HQ mang gần hết lợi ích hợp lệ: TB segFAR −24 %, run > α 1 → 0, CMU và Nordland tốt hơn.
+- NT thêm rất ít khi đã có HQ: Nordland segFAR 0.0028 → 0.0026, điều hướng 4.9 → 4.7 m; recall −0.0012.
+- HQ cũng giảm phụ thuộc vào kênh re-entry: bằng chứng tuyệt đối đã ngăn hạt giống trên bí danh phát triển.
+
 **Tổng trên ba nhóm seed tươi của luật cuối (64–72, 432 run, mỗi nhóm đăng ký trước):**
 - R_new: recall gộp 0.932 / 0.927 / 0.926; **4/432 run > α (0.9 %)**, cả 4 ở CMU seed 64–66 (3 từ nhánh HSI).
 - C10: 0.924 / 0.920 / 0.919; **0/432 run > α**.
