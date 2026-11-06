@@ -212,6 +212,21 @@ conditions, as in their papers; oracle = report exactly the correct top-1 retrie
 Ours is the only rule that is valid and has high recall. It exceeds the single-frame oracle by 0.06–0.13 because sequence evidence recovers
 frames whose top-1 retrieval is wrong. Its runs above α (CMU at 50 % holes, two natural runs) coincide with its HSI branch.
 
+**6.2a The final rule on the same generality sets** (Entry 23 generality wave; external baselines from 6.2 on the same runs). Cell = pooled
+recall / worst-dataset mean segFAR / runs above α:
+
+| Set | Ours (OWF-HWA-S5-NT-HQ) | OWF-HWA-S5 | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+|---|---|---|---|---|---|---|---|
+| holes 10 % (108) | **0.932 / 0.005 / 0** | 0.933 / 0.008 / 1 | 0.772 / 0.002 / 0 | 0.843 / 0.775 / 92 | 0.646 / 0.145 / 35 | 0.737 / 0.517 / 86 | 0.827 |
+| holes 50 % (108) | **0.873 / 0.030 / 4** | 0.894 / 0.032 / 4 | 0.754 / 0.030 / 4 | 0.842 / 0.754 / 93 | 0.609 / 0.381 / 30 | 0.678 / 0.133 / 60 | 0.829 |
+| natural off-map (36) | **0.943 / 0.003 / 0** | 0.952 / 0.010 / 2 | 0.742 / 0.004 / 0 | 0.578 / 0.075 / 4 | 0.581 / 0.037 / 10 | 0.678 / 0.020 / 5 | 0.822 |
+| NCLT (6) | **0.768 / 0.001 / 0** | 0.781 / 0.005 / 0 | — | 0.756 / 0.713 / 6 | 0.526 / 0.021 / 1 | 0.663 / 0.213 / 5 | 0.724 |
+
+cell = pooled recall / worst-dataset mean segFAR / runs > alpha
+
+The final rule is valid on average everywhere and is the most valid rule on every set. Its runs above α fall from 7 to 4, all of them CMU at
+50 % holes, where every label-free rule has 4. Recall is −0.001 … −0.021 below the previous rule; the largest drop is at 50 % holes.
+
 **6.2b VPR-Space (planetary / lunar / volcanic; descriptive, Entry 18).** 16 db → query setups × 6 descriptors, natural off-map, the
 protocol scaled by each setup's own ground-truth tolerance τ:
 - ours 0.292 (0 runs > α), single-frame oracle 0.562, TAO'26 0.629 (24 runs > α);
