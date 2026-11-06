@@ -91,6 +91,38 @@ nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo
 
 ## Entry 21 — Bộ lọc thế giới mở PHỦ QUYẾT nhánh thế giới đóng (OWF-NT-V) — đăng ký trước (2026-11-06 05:59 UTC)
 
+**KẾT QUẢ (seed 61–63, 144 run; đợt `test61`, 6 phiên L4; ghi 06:39 UTC). Quyết định theo quy tắc đăng ký trước: R* GIỮ NGUYÊN (C2 trượt V3,
+C1 trượt N3).** Ô = recall / TB segFAR / run > α / sai số (m), trên CÙNG run:
+
+| Dataset | R* = OWF-HWA-S5 | C1 = NT | C2 = NT-V | H(R*) | H(C2) |
+|---|---|---|---|---|---|
+| Boreas | 0.979 / 0.0066 / 0 / 4.1 | 0.976 / 0.0065 / 0 / 4.2 | 0.968 / 0.0064 / 0 / 4.2 | 0.962 / 0.0007 | 0.952 / 0.0005 |
+| CMU | 0.831 / 0.0140 / **2** / 4.7 | 0.831 / 0.0140 / 2 / 4.7 | 0.829 / 0.0138 / 2 / 4.7 | 0.717 / 0.0012 / 0 | 0.716 / 0.0010 / 0 |
+| Nordland | 0.965 / 0.0043 / 0 / 4.6 | 0.962 / 0.0038 / 0 / 5.4 | 0.962 / 0.0038 / 0 / 5.4 | 0.894 / 0.0000 | 0.892 / 0.0004 |
+| office | 0.962 / 0.0003 / 0 / 8.9 | 0.962 / 0.0003 / 0 / 8.9 | 0.962 / 0.0003 / 0 / 8.9 | 0.933 | 0.933 |
+| old town | 0.954 / 0.0008 / 0 / 22.4 | 0.952 / 0.0008 / 0 / 22.3 | 0.952 / 0.0000 / 0 / 21.1 | 0.865 | 0.862 |
+| countryside | 0.816 / 0.0017 / 0 / 26.0 | 0.813 / 0.0022 / 0 / 25.8 | 0.793 / 0.0008 / 0 / **34.6** | 0.779 | 0.758 |
+| Oxford | 0.940 / 0.0068 / 0 / 20.3 | 0.940 / 0.0068 / 0 / 20.3 | 0.939 / 0.0010 / 0 / 19.6 | 0.918 / 0.0067 | 0.917 / 0.0009 |
+| St Lucia | 0.973 / 0.0000 / 0 / 12.3 | 0.973 / 0.0000 / 0 / 12.3 | 0.973 / 0.0000 / 0 / 12.3 | 0.948 | 0.948 |
+| **Gộp** | 0.927 / 0.0043 / 2 / 12.9 | 0.926 / 0.0043 / 2 / 13.0 | 0.922 / **0.0033** / 2 / 13.8 | 0.877 / 0.0014 / 0 / 13.8 | 0.872 / 0.0005 / 0 / 14.8 |
+
+- **V1 đạt:** run > α 2 = 2; TB segFAR gộp 0.0033 ≤ 0.0043.
+- **V2 đạt:** −0.0049 [−0.0069, −0.0032].
+- **V3 TRƯỢT:** 13.83 so với 12.91 + 0.5 m. Gần như toàn bộ do countryside (26.0 → 34.6 m): ở đó VIO trôi làm hậu nghiệm OWF loang, mN thấp
+  nên phủ quyết bỏ cả các fix HSI đúng.
+- **V4 đạt** (cả R* cũng đạt trên nhóm này).
+- **C1:** N1′ đạt (2 = 2), N2 đạt (−0.0011 [−0.0020, −0.0003]), **N3 trượt sát** (12.98 so với 12.91 m; Nordland 4.6 → 5.4).
+
+**Đọc trung thực.**
+- (i) Phủ quyết làm đúng điều nó hứa ở mặt hợp lệ: TB segFAR −23 %, Oxford 0.0068 → 0.0010, old town → 0. Nó không chạm vào 2 run CMU > α.
+- (ii) 2 run CMU > α (seed 61, CosPlace 0.112, MixVPR 0.059) KHÔNG đến từ HSI (H(R*) = 0 run > α). Chúng đến từ bậc đồng thuận ba nguồn
+  t(3e-4, 0.5): 178 / 88 frame ở đầu chuỗi trong lỗ (quãng đường 2–3 excl), OWF tin chắc (mN = 1), chuỗi tô-pô và top-1 trùng nhau.
+- (iii) Lại là một bản sao dịch chuyển: độ lệch (−652, +166) m không đổi trên 10 chuỗi và 2 descriptor, giữa slice 22 và slice 24 của
+  CMU. Khớp yếu theo giá trị tuyệt đối: CosPlace, bản đồ đầy đủ: 0.34 so với 0.69 ở đúng chỗ. Cùng cơ chế với CMU seed 60 (Entry 21, Mệnh
+  đề 6): điểm giao của emission quá thấp, nên bí danh yếu mà nhất quán chuyển động vẫn tích luỹ.
+- (iv) Kết luận: phủ quyết là đổi một ít recall và điều hướng lấy hợp lệ, không sửa nguyên nhân. Nguyên nhân nằm ở emission (Entry 22).
+  Nhóm seed 61–63 đã dùng; còn 64–66.
+
 **Bối cảnh.** Entry 19: trên seed 58–60, cả R* lẫn C đều có 6/144 run > α; 4 run là CMU seed 60, mọi đoạn báo sai là đoạn đầu chuỗi nằm trong
 lỗ, và ~90 % frame báo sai đến từ nhánh HSI (thế giới đóng). Nhánh HSI không có trạng thái "ngoài bản đồ"; OWF thì có. Đề xuất: HSI chỉ được
 báo ở frame mà OWF cho rằng robot ở gần bản đồ nhiều khả năng hơn là không.
