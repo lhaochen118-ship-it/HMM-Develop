@@ -176,6 +176,21 @@ Cái giá nằm ở đầu các phiên có điều kiện khác hẳn (đêm 4Se
 Script đánh giá in nhầm luật (sao từ Entry 21). Quyết định được tính lại đúng luật đã commit từ cùng các số
 (`analysis/results/owf/s1106/e23_decision.txt`).
 
+**Tổng quát của C9 (mô tả, không quyết định; đợt `genhq`, các tập chưa từng dùng để chỉnh; R* = OWF-HWA-S5 trên CÙNG run).** Ô = recall
+/ TB segFAR / run > α:
+
+| Tập | R* | C9 | chênh recall (CI 95 %) |
+|---|---|---|---|
+| lỗ 10 % (108) | 0.933 / 0.0022 / 1 | 0.932 / 0.0019 / **0** | −0.001 [−0.004, +0.002] |
+| lỗ 50 % (108) | 0.894 / 0.0091 / 4 | 0.873 / 0.0071 / 4 | −0.021 [−0.031, −0.013] |
+| off-map tự nhiên (36) | 0.952 / 0.0104 / 2 | 0.943 / **0.0025 / 0** | −0.009 [−0.014, −0.005] |
+| NCLT (6) | 0.781 / 0.0049 / 0 | 0.768 / 0.0011 / 0 | −0.013 [−0.028, +0.004] |
+
+- Hợp lệ tốt hơn ở MỌI tập: tổng run > α 7 → 4; 4 run còn lại đều là CMU ở lỗ 50 %.
+- Lỗ 10 %, CMU: 0.796 / 0.0077 / 1 → 0.814 / 0.0034 / 0.
+- Điều hướng: lỗ 50 % Nordland 21.7 → 13.2 m; NCLT 5.8 → 4.7 m.
+- Recall giảm rõ nhất ở lỗ 50 % (−0.021): ít frame trên bản đồ, nên phiên đủ 100 mẫu riêng muộn hơn.
+
 Còn lại:
 - 4 run CMU > α (cả hai luật), 3 trong đó từ nhánh HSI. C10 xoá cả 4, đổi lại −0.012 recall.
 - Recall giảm ở đầu các phiên khác điều kiện (old town −0.018, Boreas −0.013).

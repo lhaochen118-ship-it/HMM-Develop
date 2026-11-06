@@ -110,6 +110,8 @@ navigation not worse by > 0.5 m):
 - mean segFAR 0.0074 → 0.0057, recall −0.0037, navigation 14.67 → 14.51 m;
 - CMU recall +0.009 with segFAR −30 % and navigation 8.5 → 7.1 m; Nordland navigation 7.5 → 4.1 m;
 - with a veto of the hindsight branch where the near-map mass is < ½: 0/144 runs above α.
+- on the sets never used for tuning (holes 10/50 %, natural off-map, NCLT), it is more valid everywhere (runs above α 7 → 4, all CMU at
+  50 % holes; natural off-map mean segFAR 0.0104 → 0.0025), with recall −0.001 … −0.021 (largest at 50 % holes).
 
 Development set (399 runs, same runs as the incumbent):
 - pooled mean segFAR 0.0045 → 0.0034, runs above α 1 → 0, recall −0.004;
