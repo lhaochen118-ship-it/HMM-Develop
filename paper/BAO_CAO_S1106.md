@@ -1,4 +1,4 @@
-# Báo cáo phiên 2026-11-06 — Entry 19–23: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được, bằng chứng tuyệt đối hiệu chỉnh hồi cứu
+# Báo cáo phiên 2026-11-06 — Entry 19–24: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được, bằng chứng tuyệt đối hiệu chỉnh hồi cứu
 
 *Branch `hmm-2nd-idea`. Nhật ký đầy đủ: `RESEARCH_LOG.md` Entry 19–22. Lý thuyết: `paper/owf_theory.md` §8 (Mệnh đề 5), §9 (Mệnh đề 6). Số liệu
 thô: `analysis/results/owf/s1106/`. Báo cáo không tuyên bố novelty hay vượt SOTA ngoài những gì các bảng dưới chứng minh trên đúng giao thức này.*
@@ -10,6 +10,7 @@ thô: `analysis/results/owf/s1106/`. Báo cáo không tuyên bố novelty hay v�
    - CMU: recall +0.009, segFAR −30 %, điều hướng 8.5 → 7.1 m. Nordland: segFAR −44 %, điều hướng 7.5 → 4.1 m.
    - Biến thể có phủ quyết (C10, chỉ báo cáo): 0/144 run > α, TB segFAR 0.0024, recall −0.012.
    - Cơ chế: bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu không nhãn, nhân quả theo phiên (Mệnh đề 7).
+   - **Entry 24 xác nhận độc lập trên seed 67–69:** 0/144 run > α, +0.136 so với HSI-VN; TAO'26 / Xu'21 / Claxton'24 không hợp lệ.
 1. **Luật cũ OWF-HWA-S5** đã được kiểm trên ba nhóm seed mới, đều đăng ký trước, mỗi nhóm 144 run (8 dataset × 6 descriptor):
 
    | Nhóm | Recall | TB segFAR | Run > α | Sai số điều hướng (m) |
@@ -194,6 +195,23 @@ Script đánh giá in nhầm luật (sao từ Entry 21). Quyết định đượ
 Còn lại:
 - 4 run CMU > α (cả hai luật), 3 trong đó từ nhánh HSI. C10 xoá cả 4, đổi lại −0.012 recall.
 - Recall giảm ở đầu các phiên khác điều kiện (old town −0.018, Boreas −0.013).
+
+## 4d. Entry 24 — xác nhận độc lập trên seed 67–69, kèm SOTA ngoài trên cùng run (đăng ký trước)
+
+| Seed 67–69, 144 run | **OWF-HWA-S5-NT-HQ** | + phủ quyết (an toàn) | luật cũ | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+|---|---|---|---|---|---|---|---|---|
+| recall | **0.927** | 0.920 | 0.931 | 0.791 | 0.834 | 0.692 | 0.738 | 0.847 |
+| run > α | **0** | **0** | 1 | 0 | 130 | 81 | 104 | 0 |
+| TB segFAR gộp | 0.0031 | **0.0009** | 0.0035 | 0.0030 | 0.668 | 0.256 | 0.200 | 0 |
+| điều hướng (m) | 12.6 | 12.9 | 12.1 | 15.5 | 109.5 | 51.0 | 44.3 | 10.6 |
+
+**Quyết định: XÁC NHẬN (C1–C4).** Điểm vận hành an toàn cũng được xác nhận (S1 ∧ S2).
+- Luật mới vượt oracle một-frame +0.080 recall với 0 run > α.
+- Ba đối thủ ngoài (ngưỡng chỉnh bằng NHÃN) vượt α trên 56–90 % run.
+
+Hai thử nghiệm phát triển phụ không thành công, đều cho đầu phiên đêm:
+- co rút Bayes;
+- chọn hiệu chỉnh theo evidence: evidence lại thưởng cho mô hình linh hoạt hơn, như ngân hàng β ở Entry 16.
 
 ## 5. Vận hành
 

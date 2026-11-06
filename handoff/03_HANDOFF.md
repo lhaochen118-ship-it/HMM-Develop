@@ -85,6 +85,8 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 58–60 | `namhunhh/hmm-navcache-r55` | Entry 19 (OWF-HWA-S5-NT: N1 trượt — cả R* cũng có 6/144 run > α; R* giữ nguyên) | đã dùng |
 | seed 61–63 | `namhunhh/hmm-navcache-r61` (kho `fr61`, 2026-11-06) | Entry 21 (NT-V: V3 điều hướng trượt; NT: N3 trượt 0.07 m; R* giữ nguyên) | đã dùng |
 | seed 64–66 | `namhunhh/hmm-navcache-r61` | Entry 23 (OWF-HWA-S5-NT-HQ: V1–V3 đạt ⇒ thay R*) | đã dùng |
+| seed 67–69 | `namhunhh/hmm-navcache-r67` (kho `fr67`) | Entry 24 (xác nhận OWF-HWA-S5-NT-HQ + SOTA ngoài trên cùng run; điểm an toàn C10) | đã dùng |
+| seed 70–72 | `namhunhh/hmm-navcache-r67` | — | **trống** |
 | seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
 
 ## 6b. Việc tiếp theo — cập nhật phiên 2026-11-06 (đọc trước §6a)

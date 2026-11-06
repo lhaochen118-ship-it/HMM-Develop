@@ -156,10 +156,19 @@ paired against the previous rule on the same runs). Pooled recall / runs above �
 | 61–63 | OWF-HWA-S5 (reference of Entry 21) | 0.927 | — | 2 | 12.91 |
 | 64–66 | **OWF-HWA-S5-NT-HQ (Entry 23, final rule)** | 0.932 | −0.0037 vs OWF-HWA-S5 (mean segFAR 0.0074 → 0.0057) | 4 | 14.51 (vs 14.67) |
 | 64–66 | OWF-HWA-S5-NT-HQ + veto ½ (reported) | 0.924 | −0.0123 (mean segFAR 0.0024) | **0** | 14.90 |
+| 67–69 | **OWF-HWA-S5-NT-HQ (confirmation, Entry 24)** | 0.927 | +0.136 vs HSI-VN | **0** | 12.55 |
+| 67–69 | OWF-HWA-S5-NT-HQ + veto ½ (safe point, Entry 24) | 0.920 | −0.0066 vs final rule (mean segFAR 0.0009) | **0** | 12.93 |
 
 Over the three fresh groups that confirm the final rule (55–63, 432 runs), it reached pooled recall 0.927–0.937 with pooled mean segFAR
 0.0063. 9/432 runs (2.1 %) exceed α; 7 of the 9 are CMU, from two hole layouts (seed 60, seed 61) that each cover an odometry-unobservable
 alias (Section 3.3b). The project target "≤ 2 % of runs above α" holds on 2 of the 3 groups.
+
+**6.1c External baselines on the fresh group 67–69 for the final rule** (Entry 24, pre-registered, 144 runs, same runs for every rule).
+Cell = pooled recall / worst-dataset mean segFAR / runs above α / navigation error (m):
+
+| Ours (OWF-HWA-S5-NT-HQ) | + veto (safe point) | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+|---|---|---|---|---|---|---|
+| **0.927** / 0.008 / **0** / 12.6 | 0.920 / 0.003 / **0** / 12.9 | 0.791 / – / 0 / 15.5 | 0.834 / 0.992 / 130 / 109.5 | 0.692 / 0.584 / 81 / 51.0 | 0.738 / 0.283 / 104 / 44.3 | 0.847 / 0 / 0 / 10.6 |
 
 **6.1b External baselines on the fresh group 55–57** (Entry 17, pre-registered, 144 runs, the same runs for every rule). Cell = pooled
 recall / worst-dataset mean segFAR / runs above α / navigation error (m):
