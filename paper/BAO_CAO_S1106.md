@@ -213,6 +213,24 @@ Hai thử nghiệm phát triển phụ không thành công, đều cho đầu ph
 - co rút Bayes;
 - chọn hiệu chỉnh theo evidence: evidence lại thưởng cho mô hình linh hoạt hơn, như ngân hàng β ở Entry 16.
 
+## 4e. Tổng quát của luật mới so với SOTA ngoài (cùng run), Entry 25, VPR-Space, chẩn đoán đầu chuỗi CMU
+
+| Set | Ours (OWF-HWA-S5-NT-HQ) | OWF-HWA-S5 | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+|---|---|---|---|---|---|---|---|
+| holes 10 % (108) | **0.932 / 0.005 / 0** | 0.933 / 0.008 / 1 | 0.772 / 0.002 / 0 | 0.843 / 0.775 / 92 | 0.646 / 0.145 / 35 | 0.737 / 0.517 / 86 | 0.827 |
+| holes 50 % (108) | **0.873 / 0.030 / 4** | 0.894 / 0.032 / 4 | 0.754 / 0.030 / 4 | 0.842 / 0.754 / 93 | 0.609 / 0.381 / 30 | 0.678 / 0.133 / 60 | 0.829 |
+| natural off-map (36) | **0.943 / 0.003 / 0** | 0.952 / 0.010 / 2 | 0.742 / 0.004 / 0 | 0.578 / 0.075 / 4 | 0.581 / 0.037 / 10 | 0.678 / 0.020 / 5 | 0.822 |
+| NCLT (6) | **0.768 / 0.001 / 0** | 0.781 / 0.005 / 0 | — | 0.756 / 0.713 / 6 | 0.526 / 0.021 / 1 | 0.663 / 0.213 / 5 | 0.724 |
+
+cell = pooled recall / worst-dataset mean segFAR / runs > alpha
+
+- Luật mới hợp lệ nhất trên mọi tập. 4 run > α còn lại đều là CMU ở lỗ 50 %, nơi mọi luật không nhãn đều có 4.
+- **VPR-Space (96 run):** 0.281, 0 run > α, không đổi so với luật cũ. Mỗi setup chỉ có một phiên ngắn, nên bằng chứng tuyệt đối tự về trung
+  tính, đúng như thiết kế. Khoảng cách tới oracle (0.56) vẫn do lớp quyết định.
+- **Entry 25 (phẳng):** phủ quyết theo khối lượng trong 1.6 excl so với trong excl: +0.0003 recall. Chi phí countryside không do bán kính.
+- **Đầu chuỗi CMU:** 31 % số frame trên bản đồ nằm trong 2 excl đầu. Ở đó luật báo 53–82 %, trong khi top-1 đúng 95–97 %. Nguyên nhân là đếm
+  bằng chứng theo quãng đường (cần thiết, Entry 10). Đây là hướng có khoảng trống lớn nhất còn lại.
+
 ## 5. Vận hành
 
 - Kho seed mới `namhunhh/hmm-navcache-r61` (seed 61–66, 288 cache, 20 kernel CPU).
