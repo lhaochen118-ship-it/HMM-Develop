@@ -4,7 +4,25 @@
 filled only from pre-registered experiments (`RESEARCH_LOG.md`). Nothing here claims A\*-level novelty or state-of-the-art performance
 beyond what the cited experiments show.*
 
-## Abstract (placeholder — to be written from the final results)
+## Abstract (draft, 2026-11-06, from pre-registered results only)
+
+A robot localizing against an image map with holes must decide, frame by frame, whether to report a position fix. A false fix while it
+is off the map corrupts navigation. We propose an open-world filter: a mass-conserving Bayes filter on a metric grid that covers mapped and
+unmapped space, so that leaving the map is predicted by dead reckoning instead of being detected by a test.
+
+We identify the failure that remains in every sequential filter that normalises appearance evidence per frame: a weak look-alike shifted
+along a straight road. The odometry cannot see the shift, so the look-alike accumulates evidence without bound. We correct it by giving the
+unmapped cells calibrated absolute evidence: the density of the frame's best match when on the map versus the best look-alike when the true
+place is absent. Both densities are estimated without labels from the filter's own confident fixes, causally and per session.
+
+On two groups of fresh hole layouts (8 datasets, 6 global descriptors, 288 runs; decisions pre-registered before each test), the final
+system:
+- reports correct fixes on 0.93 of on-map frames, above a single-frame oracle (0.85);
+- exceeds the false-report target on 4 of 288 runs, and on none with an open-world veto of its learned branch;
+- achieves navigation errors 15–20 % lower than the best label-free baseline.
+
+Three published integrity / off-map methods, tuned with labels, exceed the target on 56–90 % of the same runs.
+
 
 ## 1. Introduction
 
@@ -25,9 +43,12 @@ Contributions (each tied to a measured claim in Section 6):
    unmapped cells are the natural null (Section 3; Propositions 1–3).
 2. Odometry self-calibration as online Bayesian model selection over a bank of (process noise × scale) hypotheses, which handles the
    3–7 % scale error of real visual-inertial odometry without labels (Section 3.4).
-3. A hindsight-calibrated decision rule: the filter's own posterior confidence is thresholded per evidence stratum by split-conformal
-   calibration on the deployment's own hindsight-labelled excursions, giving a finite-sample false-report guarantee that does not require
-   the emission model to be correct under perceptual aliasing (Section 4, Proposition 4) — *pending Entry 16*.
+3. A diagnosis and a fix for odometry-unobservable aliasing.
+   - Diagnosis (Proposition 6): the per-frame normalised emission has a crossover near 0.5 robust SD, so a motion-consistent shifted copy
+     of the track accumulates evidence without bound.
+   - Fix (Proposition 7, Section 3.3c): label-free, causal, per-session hindsight calibration of absolute evidence for the unmapped
+     cells. Confirmed on two fresh groups (Entries 23–24).
+   - A hindsight-calibrated conformal decision rule (Proposition 4) was tested and is negative (Entry 16, Section 6.4).
 4. An evaluation protocol with pre-registered decisions on fresh hole layouts (8 datasets × 6 descriptors per test group), a
    position audit (sequence starts, hole edges, deep holes), external baselines on the same runs, and a GPU implementation that runs the
    whole bank of filters of a run in one tensor.
