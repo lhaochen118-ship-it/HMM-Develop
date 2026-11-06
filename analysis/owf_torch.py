@@ -46,7 +46,7 @@ def _odometry_plan(U, g, q, ell, d):
 R_LOC = 3.0                                                                                  # local neighbourhood radius (excl units)
 
 
-def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12):
+def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12, reentry="prior"):
     """F: OpenWorldFilter (grid, band, prior, p_kid, p_in, p_omega0); logL (T, n) item log-LRs of one sequence; U (T, d) odometry
     increments; members: list of (q, scale) (q in metres, as F.run's q); returns stacked outputs in member order."""
     dev = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu")); f64 = torch.float64
@@ -58,6 +58,7 @@ def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12):
     # ---- static tensors
     prior0 = torch.tensor(F.prior, dtype=f64, device=dev)                                    # unnormalised start belief (in band)
     priorn = prior0 / prior0.sum()                                                           # kidnap / re-entry draw
+    reent = torch.tensor(F.edge, dtype=f64, device=dev) if reentry == "edge" else priorn            # far-state re-entry (Proposition 5)
     inband = torch.tensor(F.inband, device=dev)
     MPo = torch.tensor(F.MP - F.origin, dtype=f64, device=dev)                                 # (n, d)
     shp = torch.tensor(shape, device=dev)
@@ -110,7 +111,7 @@ def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12):
             tot = B.reshape(nb, -1).sum(1) + om + lost
             B = (1 - pk) * B + (pk * tot * (1 - po)).view(nb, *[1] * d) * priorn
             om = (1 - pk) * (om + lost) + pk * tot * po
-            re = pin * om; om = om - re; B = B + re.view(nb, *[1] * d) * priorn
+            re = pin * om; om = om - re; B = B + re.view(nb, *[1] * d) * reent
         # ---- update: mapped cells get the mean LR of their images, unmapped cells LR = 1
         # dtypes as in owf.py: the item log-LRs are float32 (float32 similarities), so lt, mx, Li = exp(lt - mx) and l0 are float32, the
         # per-cell sums are float64 (np.bincount), and Lc = np.full(.., l0) is a float32 array, i.e. every cell LR is rounded to float32

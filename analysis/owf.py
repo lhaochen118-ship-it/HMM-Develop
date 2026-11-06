@@ -59,6 +59,14 @@ class OpenWorldFilter:
         # proportion to their image counts), the rest uniform over the band; Omega gets p_omega0
         pm = np.bincount(self._cells(np.zeros(self.d)), None, int(np.prod(self.shape))).reshape(self.shape)
         self.prior = p_map0 * pm / pm.sum() + (1 - p_omega0 - p_map0) * self.inband / self.nb
+        # far-state re-entry distribution (Entry 19, Proposition 5): 'prior' (default, historical: over the map images and the band) or
+        # 'edge' (physical: from far away the robot comes back through the band edge = in-band cells next to a cell outside the band)
+        ib = self.inband; edge = np.zeros_like(ib)
+        for k in range(self.d):
+            for sh in (1, -1):
+                nb_ = np.roll(ib, sh, axis=k); sl = [slice(None)] * self.d; sl[k] = 0 if sh == 1 else -1; nb_[tuple(sl)] = False
+                edge |= ib & ~nb_
+        self.edge = edge.astype(float) / max(edge.sum(), 1)
 
     def _cells(self, phi):
         """flat cell index of every map image under the current phase (world pos of cell c = origin + g c + phi)"""
@@ -75,7 +83,7 @@ class OpenWorldFilter:
         out[tuple(sl_dst)] = B[tuple(sl_src)]
         return out, float(lost)
 
-    def run(self, logL, U, excl, ell=0.0, top_c=12, drift=0.0, w=None, q=None, closed=False, xmode="mean"):
+    def run(self, logL, U, excl, ell=0.0, top_c=12, drift=0.0, w=None, q=None, closed=False, xmode="mean", reentry="prior"):
         """logL (T, n) item log-LRs, U (T, d) odometry increments (world frame). Returns per frame: mass (largest posterior
         mass in an excl-disc around a map image), xhat (index of that image), cov (posterior mass within excl of ANY map
         image), om (mass of Omega), logml (log predictive mean LR = log p(z_t | z_<t) / p0(z_t))."""
@@ -100,7 +108,7 @@ class OpenWorldFilter:
                 tot = B.sum() + om + lost
                 B = (1 - self.p_kid) * B + self.p_kid * tot * prior * (1 - self.p_omega0)
                 om = (1 - self.p_kid) * (om + lost) + self.p_kid * tot * self.p_omega0
-                re = self.p_in * om; om -= re; B += re * prior
+                re = self.p_in * om; om -= re; B += re * (self.edge if reentry == "edge" else prior)
             # ---- update: mapped cells get the mean LR of their images, unmapped cells LR = 1
             if w is not None: lt = logL[t] * w[t]                               # per-frame evidence weight (e.g. 1 - r_t^2)
             else: lt = logL[t] if ell <= 0 or t == 0 else logL[t] * min(1.0, float(np.linalg.norm(U[t])) / ell)
@@ -159,6 +167,7 @@ def main():
     eps_l = [float(e) for e in opt("--eps", "0.2,0.1,0.05,0.02,0.01,0.005,0.002,0.001,5e-4,2e-4,1e-4,1e-5").split(",")]
     fr_out, fo = opt("--frames", None), opt("--out", None)
     engine = opt("--engine", "numpy")
+    reentry = opt("--reentry", "prior")                                # prior (historical) | edge (Proposition 5)
     bbank = [float(x) for x in opt("--bbank", "").split(",") if x]     # emission temperatures selected online like q / scale (torch engine)
     assert not bbank or engine == "torch", "--bbank needs --engine torch"                                  # numpy (reference) | torch (owf_torch.py; CUDA when available)
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -187,12 +196,12 @@ def main():
                 rs = []
                 for bb in (bbank or [beta]):                               # --bbank: emission temperature as a bank dimension (2026-11-05)
                     LLb = LL if bb == beta else log_lr(Zs, bb)
-                    o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell)
+                    o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell, reentry=reentry)
                     xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1)
                     rs += [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j], mean=o["mean"][j], mN=o["mN"][j], mNL=o["mNL"][j]) for j in range(len(bank))]
                 bank = [(qx, sc) for bb in (bbank or [beta]) for qx, sc in bank]; bsel_l = [bb for bb in (bbank or [beta]) for _ in range(len(rs) // len(bbank or [beta]))]
             else:
-                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode) for qx, sc in bank]
+                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode, reentry=reentry) for qx, sc in bank]
             # ONLINE self-calibration of the odometry noise (and scale): at frame t follow the filter with the largest cumulative log evidence
             # sum_{s<=t} log p(z_s | z_<s) (causal; ties -> the first = smallest q, first scale)
             cum = np.cumsum(np.stack([r_["lml"] for r_ in rs]), 1); ks = np.argmax(cum, 0); tt = np.arange(len(idx))
