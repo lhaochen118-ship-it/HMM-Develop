@@ -239,6 +239,9 @@ does not:
 - OWF alone makes no false report at any ε on these scenes (pooled recall 0.733 at ε = 0.2), i.e. K ≈ 0 here versus 10³–10⁴ on CMU and
   Nordland.
 
+With the final rule (absolute evidence, Section 3.3c) VPR-Space is unchanged: 0.281, 0 runs above α. Each setup has a single short
+query session, so there is nothing to calibrate from, and the absolute evidence falls back to neutral by design.
+
 A threshold fixed across environments cannot fit both regimes. This is the main limitation and motivates bounding K per map before
 deployment.
 

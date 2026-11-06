@@ -103,6 +103,16 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
   nhưng nhất quán chuyển động. Mọi bộ lọc chuẩn hoá z theo frame đều đi theo nó (Mệnh đề 6, `paper/owf_theory.md` §9). Trên CMU có hai
   bản sao như vậy: lệch 204 m (slice 11–12) và 673 m (slice 22 ↔ 24), không đổi qua 10–17 lượt đi.
 
+**Cập nhật 16:15 UTC (sau Entry 24–25):**
+- OWF-HWA-S5-NT-HQ đã XÁC NHẬN độc lập trên seed 67–69 (Entry 24), kèm SOTA ngoài trên cùng run và điểm vận hành an toàn (+ phủ quyết ½).
+- Entry 25 (phủ quyết theo mN16) phẳng.
+- Kho seed: `hmm-navcache-r67` còn 70–72; kho 73–78 (`fr73-*`, 24 kernel CPU, đẩy 15:31 UTC) đang sinh. Khi xong: kéo
+  `results.tar` / navcache rồi publish `hmm-navcache-r73`.
+- Hướng có khoảng trống lớn nhất còn lại là **đầu chuỗi CMU**: 31 % số frame trên bản đồ nằm trong 2 excl đầu; ở đó luật báo 53–82 %,
+  trong khi top-1 đúng 95–97 % (RESEARCH_LOG Entry 25). Cần một mô hình tương quan bằng chứng giữa các frame liền kề tốt hơn ℓ cố định.
+  Trọng số tương quan hồ sơ 1 − r² và L_vis đã bị loại.
+- Hướng thứ hai: chi phí đầu phiên ở điều kiện chưa thấy (đêm) của HQ. Co rút Bayes và chọn theo evidence đều đã thử, không thành công.
+
 **Theo thứ tự ưu tiên (cập nhật 08:55 UTC, sau Entry 23):**
 0. **Kho seed mới 67–72:** 20 kernel CPU `fr67-*` đã được đẩy lúc 08:58 UTC (xem `ENVIRONMENT_SUMMARY.md` §000 để kéo / publish
    `hmm-navcache-r67`). Kho r61 đã dùng hết. Rồi:

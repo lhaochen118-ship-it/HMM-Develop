@@ -110,6 +110,15 @@ HQ) là xa hơn 1.6 excl. Giả thuyết: VIO trôi ngang (countryside) đặt k
 - Phủ quyết mọi báo, gồm cả các bậc OWF, giống hệt chỉ phủ quyết H: trên tập A, các bậc OWF của NT-HQ không báo khi mN16 < ½.
 - Không đăng ký. Seed 70–72 vẫn trống (kernel `test70-*` đã dựng sẵn nhưng không push).
 
+**VPR-Space với luật mới (mô tả; 96 run, 16 setup × 6 descriptor; chạy cục bộ).** Ô = recall / TB segFAR tệ nhất / run > α:
+- OWF-HWA-S5: 0.292 / 0.0001 / 0;
+- NT: 0.282 / 0.0001 / 0;
+- **NT-HQ: 0.281 / 0.0001 / 0**; NT-HQ + phủ quyết: 0.281;
+- TAO'26: 0.629 / 0.244 / 24; Xu'21: 0.498 / 0.008 / 5; Claxton'24: 0.441 / 0.013 / 8; oracle: 0.562.
+
+HQ không tác dụng ở đây, đúng như thiết kế: mỗi setup chỉ có một phiên truy vấn ngắn (54–1683 frame), không có phiên khác để hiệu chỉnh, và
+phiên tự thân hiếm khi đủ 100 mẫu, nên lu = 0. Khoảng cách tới oracle vẫn do lớp quyết định quá bảo thủ trên triển khai ngắn (Entry 18).
+
 **Chẩn đoán phụ: khoảng trống recall của CMU so với oracle một-frame** (NT-HQ, tập A, 54 run; recall theo quãng đường từ đầu chuỗi):
 
 | quãng đường (excl) | tỉ lệ frame trên bản đồ | luật | top-1 đúng | OWF ≥ 0.99 và đúng | nhánh H |
