@@ -83,7 +83,7 @@ class OpenWorldFilter:
         out[tuple(sl_dst)] = B[tuple(sl_src)]
         return out, float(lost)
 
-    def run(self, logL, U, excl, ell=0.0, top_c=12, drift=0.0, w=None, q=None, closed=False, xmode="mean", reentry="prior"):
+    def run(self, logL, U, excl, ell=0.0, top_c=12, drift=0.0, w=None, q=None, closed=False, xmode="mean", reentry="prior", lu=None):
         """logL (T, n) item log-LRs, U (T, d) odometry increments (world frame). Returns per frame: mass (largest posterior
         mass in an excl-disc around a map image), xhat (index of that image), cov (posterior mass within excl of ANY map
         image), om (mass of Omega), logml (log predictive mean LR = log p(z_t | z_<t) / p0(z_t))."""
@@ -112,9 +112,11 @@ class OpenWorldFilter:
             # ---- update: mapped cells get the mean LR of their images, unmapped cells LR = 1
             if w is not None: lt = logL[t] * w[t]                               # per-frame evidence weight (e.g. 1 - r_t^2)
             else: lt = logL[t] if ell <= 0 or t == 0 else logL[t] * min(1.0, float(np.linalg.norm(U[t])) / ell)
-            cid = self._cells(phi); mx = max(lt.max(), 0.0); Li = np.exp(lt - mx)
+            # lu (Entry 22): per-frame log-LR of the unmapped cells / Omega relative to the SAME normaliser as logL (default 0 = LR 1)
+            lut = 0.0 if lu is None else float(lu[t]) * (float(w[t]) if w is not None else (1.0 if ell <= 0 or t == 0 else min(1.0, float(np.linalg.norm(U[t])) / ell)))
+            cid = self._cells(phi); mx = max(lt.max(), lut, 0.0); Li = np.exp(lt - mx)
             sl = np.bincount(cid, Li, B.size); cn = np.bincount(cid, None, B.size)
-            l0 = np.exp(-mx) * (1e-12 if closed else 1.0)                       # LR of unmapped cells / Omega (closed: ~0)
+            l0 = np.exp(lut - mx) * (1e-12 if closed else 1.0)                  # LR of unmapped cells / Omega (closed: ~0)
             Lc = np.full(B.size, l0); mapped = cn > 0; Lc[mapped] = sl[mapped] / cn[mapped]
             Bf = B.reshape(-1) * Lc; z = Bf.sum() + om * l0; lml[t] = np.log(z) + mx
             B = (Bf / z).reshape(self.shape); om = om * l0 / z
@@ -169,6 +171,7 @@ def main():
     engine = opt("--engine", "numpy")
     reentry = opt("--reentry", "prior")                                # prior (historical) | edge (Proposition 5)
     bbank = [float(x) for x in opt("--bbank", "").split(",") if x]     # emission temperatures selected online like q / scale (torch engine)
+    luopt = opt("--lu", "")                                           # Entry 22: '' (LR 1 for unmapped cells) | half: crossover c = median_t(max_i z_ti) / 2
     assert not bbank or engine == "torch", "--bbank needs --engine torch"                                  # numpy (reference) | torch (owf_torch.py; CUDA when available)
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     sys.argv = sys.argv[:1]
@@ -188,10 +191,17 @@ def main():
     inm, offm = z["inm"], z["offm"]; qp = z["q_pos"]
     res = {"ds": ds, "desc": desc, "seed": seed, "grid": list(F.shape), "n_band": F.nb, "ell": float(ell), "runs": {}}
     print("grid", F.shape, "band cells", F.nb, flush=True)
+    zc = None
+    if luopt == "half":                                               # label-free, from the run's own query stream: typical true-match peak
+        zc = 0.5 * float(np.median(np.concatenate([robust_z(Q[idx].astype(np.float32) @ M.T).max(1) for idx in seqs])))
+        res["lu"] = dict(mode=luopt, c=zc); print(f"unmapped emission: crossover c = {zc:.2f} robust sd", flush=True)
     for beta in betas:
         t0 = time.time(); out = {k_: np.zeros(nq) for k_ in ("mass", "cov", "om", "lml", "qsel")}; xh = np.zeros(nq, int)
         for idx in seqs:
             Zs = robust_z(Q[idx].astype(np.float32) @ M.T); LL = log_lr(Zs, beta)
+            # unmapped cells: log-LR beta c - A_t in the frame normalisation (A_t = log mean_i exp(beta z_ti)), i.e. relative to the unmapped
+            # cells an image gains mass only where z > c (Gaussian-shift crossover between "true match" and "background / alias")
+            luq = None if zc is None else (beta * zc - (beta * Zs[:, 0] - LL[:, 0])).astype(np.float64)
             wt = corr_weight(Zs, float(temper[4:] or 2))[0] if temper.startswith("corr") else None
             bank = [(qx, sc) for sc in scales for qx in qxs]
             if engine == "torch":                                          # same filter, all bank members in one GPU tensor (owf_torch.py)
@@ -200,12 +210,12 @@ def main():
                 rs = []
                 for bb in (bbank or [beta]):                               # --bbank: emission temperature as a bank dimension (2026-11-05)
                     LLb = LL if bb == beta else log_lr(Zs, bb)
-                    o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell, reentry=reentry)
+                    o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell, reentry=reentry, lu=luq)
                     xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1)
                     rs += [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j], mean=o["mean"][j], mN=o["mN"][j], mNL=o["mNL"][j]) for j in range(len(bank))]
                 bank = [(qx, sc) for bb in (bbank or [beta]) for qx, sc in bank]; bsel_l = [bb for bb in (bbank or [beta]) for _ in range(len(rs) // len(bbank or [beta]))]
             else:
-                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode, reentry=reentry) for qx, sc in bank]
+                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode, reentry=reentry, lu=luq) for qx, sc in bank]
             # ONLINE self-calibration of the odometry noise (and scale): at frame t follow the filter with the largest cumulative log evidence
             # sum_{s<=t} log p(z_s | z_<s) (causal; ties -> the first = smallest q, first scale)
             cum = np.cumsum(np.stack([r_["lml"] for r_ in rs]), 1); ks = np.argmax(cum, 0); tt = np.arange(len(idx))

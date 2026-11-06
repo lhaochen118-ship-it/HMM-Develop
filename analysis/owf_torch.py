@@ -46,7 +46,7 @@ def _odometry_plan(U, g, q, ell, d):
 R_LOC = 3.0                                                                                  # local neighbourhood radius (excl units)
 
 
-def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12, reentry="prior"):
+def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12, reentry="prior", lu=None):
     """F: OpenWorldFilter (grid, band, prior, p_kid, p_in, p_omega0); logL (T, n) item log-LRs of one sequence; U (T, d) odometry
     increments; members: list of (q, scale) (q in metres, as F.run's q); returns stacked outputs in member order."""
     dev = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu")); f64 = torch.float64
@@ -116,14 +116,16 @@ def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12, reentry="pri
         # dtypes as in owf.py: the item log-LRs are float32 (float32 similarities), so lt, mx, Li = exp(lt - mx) and l0 are float32, the
         # per-cell sums are float64 (np.bincount), and Lc = np.full(.., l0) is a float32 array, i.e. every cell LR is rounded to float32
         lt = LL[t][None, :] * Wt[t][:, None] if t > 0 else LL[t][None, :].expand(nb, n)      # (nb, n) float32
-        mx = torch.clamp(lt.max(1).values, min=0.0)
+        if lu is None: lut = torch.zeros(nb, dtype=torch.float32, device=dev)
+        else: lut = (float(lu[t]) * Wt[t] if t > 0 else torch.full((nb,), float(lu[0]), device=dev)).to(torch.float32)   # Entry 22: unmapped log-LR
+        mx = torch.clamp(torch.maximum(lt.max(1).values, lut), min=0.0)
         Li = torch.exp((lt - mx[:, None]).to(f64)).to(torch.float32)                          # correctly rounded float32 exp
         c = torch.floor((MPo[None] - PHt[t][:, None, :]) / g).long()                           # (nb, n, d) image cells under the phase
         c = torch.minimum(torch.clamp(c, min=0), shp - 1)
         cid = (c * strides).sum(-1)                                                          # flat cell index
         sl = torch.zeros((nb, ncell), dtype=f64, device=dev).scatter_add_(1, cid, Li.to(f64))
         cn = torch.zeros((nb, ncell), dtype=f64, device=dev).scatter_add_(1, cid, torch.ones_like(Li, dtype=f64))
-        l0 = torch.exp((-mx).to(f64)).to(torch.float32).to(f64)
+        l0 = torch.exp((lut - mx).to(f64)).to(torch.float32).to(f64)
         mapped = cn > 0
         Lc = torch.where(mapped, sl / torch.where(mapped, cn, torch.ones_like(cn)), l0[:, None]).to(torch.float32).to(f64)
         mx = mx.to(f64)

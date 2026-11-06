@@ -176,3 +176,45 @@ over the m steps of the stretch. ∎
 risk depend on how many seeds coherent evidence can amplify; a physical re-entry (from far away the robot can only come back through the band
 edge) removes that channel, leaving the motion tails as the only way mass reaches a look-alike. The price is slower recovery when the
 belief has lost the true position everywhere (only kidnap and the motion blur can re-seed it), which the development wave measures.
+
+## 9. Proposition 6 (the crossover of the emission, and aliases the odometry cannot see; Entry 22, drafted before its development wave)
+
+*Observation that motivates it (Entry 21).* On CMU seed 60 the hole covers a straight road (slices 11–12). Every filter (OWF, HSI) follows a
+copy of the true track shifted about 204 m back along the same road. The offset (−188, −78) m is constant over 17 sequences, along the road
+direction, and two independent descriptors pick the same copy (median 4.9 m apart). The copy matches weakly: CosPlace cosine median 0.445
+vs 0.77 at the true place with the full map; robust z median 3.3 vs 7.3 for true matches. But a shift along a straight line is invisible to
+the odometry, so the motion model cannot reject it.
+
+*Setting.* Frame t has robust z-scores z_ti over the n map images (median 0, MAD-scaled). The filter of Section 1 uses
+log L_ti = β z_ti − A_t, with A_t = log mean_j exp(β z_tj), and LR 1 for unmapped cells and Ω. Write w_t ∈ [0, 1] for the path weight
+(min(1, |u_t| / ℓ)).
+
+*Claim (a): crossover.* Relative to the unmapped cells, image i gains mass at frame t iff z_ti > c_t := A_t / β. For a background-only
+profile with i.i.d. N(0, 1) scores, A_t → β² / 2 as n grows, so c_t → β / 2. With β = 1 the crossover is about 0.5 robust SD: any image above
+roughly the 70th percentile of the background gains mass.
+
+*Claim (b): a track the odometry cannot see.* Let a = (a_t) be a motion-consistent copy of the true trajectory, with all of its positions
+unmapped except the copy's images (straight road, shift s along the road), and let the true positions be unmapped (hole). The motion
+likelihoods of the true track and the copy are equal. Their posterior log ratio after m frames is therefore
+Σ_t w_t β (z_t,a_t − c_t) (copy minus true), which grows without bound whenever the copy's mean z exceeds c ≈ 1/2. No decision threshold
+fixes this, because the copy's mass converges to 1.
+
+*Claim (c): Gaussian-shift crossover.* Suppose the true-match score is N(μ₁, 1) and every other image is background N(0, 1). The exact LR is
+exp(μ₁ z − μ₁² / 2). Tempering it to the filter's slope β (correlated evidence, Section 7) gives log L_ti = β (z_ti − μ₁ / 2). The crossover
+is then μ₁ / 2, independent of β and of the frame. In the frame normalisation this is the same as giving unmapped cells and Ω the log-LR
+lu_t = β μ₁ / 2 − A_t instead of 0. Two properties follow:
+- a frame without a match pulls the map mass towards the unmapped cells (map mean LR ≈ exp(β² / 2 − β μ₁ / 2) < 1);
+- the copy of (b) loses evidence iff its mean z is below μ₁ / 2.
+
+μ₁ is estimated without labels as the median over the run of max_i z_ti, since most frames are on the map (`owf.py --lu half`).
+
+*Proof.* (a) Relative LR of image i to an unmapped cell is exp(β z_ti − A_t). For Gaussian background, mean_j exp(β z_j) → E exp(β Z) =
+exp(β² / 2). (b) The predict steps of the two tracks are identical shifts, so only the update terms differ. Their log ratio per frame is
+w_t (β z_t,a_t − A_t) − w_t · 0. (c) Algebra. ∎
+
+*Predictions, written before the development wave.*
+- CMU seed 60, CosPlace: μ̂₁ / 2 = 3.02 and copy median z = 3.27. The copy's per-frame evidence drops from about e^2.8 to about e^0.25 but stays
+  positive, so (c) slows the copy without reversing it there.
+- Cost: on-map frames whose true-match z is below μ₁ / 2 now push mass off the map, which lowers recall. The cost should be largest for weak
+  descriptors (NetVLAD) and the hardest conditions (CMU, countryside).
+- The open-world veto of Entry 21 turns a lower near-map mass mN into fewer HSI reports, so (c) and the veto act together.
