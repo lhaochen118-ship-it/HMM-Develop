@@ -91,6 +91,34 @@ nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo
 
 ## Entry 19 — Thế giới mở KHÔNG dịch chuyển tức thời (OWF-NT): bỏ kênh re-entry từ trạng thái xa lên khắp bản đồ — đăng ký trước (2026-11-06 04:47 UTC)
 
+**KẾT QUẢ (seed 58–60, 144 run; đợt `test58`; ghi 05:30 UTC). Quyết định theo quy tắc đăng ký trước: R* GIỮ NGUYÊN (N1 trượt).** Ô = recall /
+TB segFAR / run > α / sai số (m), trên CÙNG run:
+
+| Dataset | R* = OWF-HWA-S5 | C = OWF-HWA-S5-NT | H(R*) | H(C) |
+|---|---|---|---|---|
+| Boreas | 0.972 / 0.0006 / 0 / 2.9 | 0.972 / 0.0004 / 0 / 3.1 | 0.958 / 0.0001 / 0 / 2.8 | 0.958 / 0.0000 / 0 / 3.1 |
+| CMU | 0.832 / **0.0398 / 4** / 7.0 | 0.832 / **0.0401 / 4** / 7.0 | 0.752 / 0.0365 / 4 / 6.9 | 0.752 / 0.0365 / 4 / 6.9 |
+| Nordland | 0.969 / 0.0093 / 0 / 19.1 | 0.967 / 0.0055 / 0 / **13.5** | 0.886 / 0.0060 / 0 / 12.0 | 0.889 / 0.0035 / 0 / 7.7 |
+| office | 0.972 / 0.0003 / 0 / 8.0 | 0.972 / 0.0003 / 0 / 7.9 | 0.952 | 0.952 |
+| old town | 0.951 / 0.0023 / 0 / 23.5 | 0.944 / 0.0005 / 0 / 23.7 | 0.903 | 0.903 |
+| countryside | 0.835 / 0.0124 / 1 / 28.5 | 0.838 / 0.0110 / 1 / 27.5 | 0.794 | 0.800 |
+| Oxford | 0.959 / 0.0119 / 0 / 23.3 | 0.956 / 0.0114 / 0 / 23.7 | 0.943 | 0.940 |
+| St Lucia | 0.982 / 0.0039 / 1 / 18.1 | 0.982 / 0.0039 / 1 / 18.1 | 0.962 | 0.961 |
+| **Gộp** | 0.934 / 0.0101 / **6** / 16.3 | 0.933 / 0.0091 / **6** / 15.6 | 0.894 / 0.0091 / 6 / 16.2 | 0.895 / 0.0084 / 6 / 15.5 |
+
+- **N1 trượt:** C có 6/144 run > α (giới hạn 2). TB segFAR tệ nhất 0.0401 (CMU).
+- **N2 đạt:** −0.0010, CI [−0.0021, −0.0001].
+- **N3 đạt:** 15.57 vs 16.29 m; Nordland 19.1 → 13.5 m.
+
+**Đọc trung thực.**
+- (i) R* có ĐÚNG cùng 6 run > α trên nhóm này: 4 CMU, 1 countryside, 1 St Lucia. Nhánh HSI một mình cũng có 4 run CMU. Vậy ngay luật đương
+  nhiệm cũng không đạt yêu cầu ≤ 2 % run > α trên seed 58–60. Nguồn là nhánh HSI ở CMU, giống kết quả lỗ 50 % ở Entry 16. Kết quả của
+  Entry 17 (1/144 trên seed 55–57) vì vậy phụ thuộc nhóm seed; phải báo cáo cả hai nhóm.
+- (ii) NT không làm hợp lệ tệ hơn: TB segFAR 0.0101 → 0.0091; Nordland 0.0093 → 0.0055; old town 0.0023 → 0.0005. NT giảm điều hướng
+  0.7 m.
+- (iii) Tiêu chí N1 đáng lẽ phải viết TƯƠNG ĐỐI ("không tệ hơn R*") cho một thay đổi chỉ chạm bộ ước lượng. Không sửa sau khi xem kết quả.
+  NT ghi nhận là "ngang về recall, tốt hơn về điều hướng và TB segFAR, nhưng chưa được nhận theo quy tắc". Nhóm seed 58–60 đã dùng.
+
 **Chẩn đoán (Mệnh đề 5, `owf_theory.md` §8).** Bộ lọc cũ đưa khối lượng của trạng thái xa Ω quay lại lưới với tốc độ p_in = 0.01 / frame, rải theo
 prior khởi đầu (một nửa lên mọi ảnh bản đồ), tức là "dịch chuyển tức thời". Mỗi frame mọi ảnh nhận một hạt giống nhỏ; một đợt aliasing liên
 tiếp (độ phóng đại K tới 10¹⁰, Mệnh đề 2′) biến hạt giống thành chắc chắn. Run thiết kế Nordland s1:
