@@ -139,6 +139,27 @@ Development set (399 runs, same runs as the incumbent):
 - CMU recall +0.011 with segFAR 0.0095 → 0.0066; Nordland segFAR 0.0069 → 0.0026;
 - the cost is at the start of sessions whose condition differs from every other session (night), before 100 own samples.
 
+**3.7 The final system (OWF-HWA-S5-NT-HQ) and its constants.** Per deployment (a run of sessions on one map):
+
+1. First pass: the OWF bank (q ∈ {0.005, 0.02} excl × scale ∈ {0.94, …, 1.06}) with the far state absorbing (no teleport) and the
+   historical emission.
+2. Hindsight samples at its confident fixes (mass ≥ 1 − 10⁻³):
+   - frame maximum minus profile median (f_on);
+   - best image beyond 1.6 excl (f_off).
+3. Second pass: the same bank with unmapped / Ω log-LR log f_off(x_t) − log f_on(x_t).
+   - Densities come from the session's own earlier samples (≥ 100), else from the run's other sessions.
+   - KDE with 1 % uniform contamination, evaluated in blocks of 50 frames.
+4. Decision: the hindsight branch HSI-VN on the OWF-handed chain (mass ≥ 0.9 after 16 excl), OR the OWF reports at:
+   - 1 − 10⁻⁵ after 16 excl;
+   - 1 − 10⁻⁸ after 2 excl;
+   - 1 − 3·10⁻⁴ with three-way agreement after 0.5 excl.
+5. Optional safe operating point: the hindsight branch reports only where the OWF near-map mass is ≥ ½.
+
+Every constant is shared by all datasets and descriptors. The tiers come from Entries 12–15; 1.6 excl, 1 %, 100 and 50 from Entry 23. One
+command per run: `owf_hsi_job.py <cache> <dump> <ds> <desc> <seed> --modes xms0.9_16:HSI-VN --hsiframes --qx 0.005,0.02 --scales
+0.94,0.97,1.0,1.03,1.06 --engine torch --pin 0 --lu hsq`, then `owf_union.py ... --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"`
+(with `OWF_VETO=0.5` for the safe point). Cost: two passes of the 10-member bank, about 6 ms/frame on one L4.
+
 ## 4. Theory
 
 Propositions 1–3 and their proofs: `paper/owf_theory.md` §2–4 (no net pull of a diffuse belief; a Ville bound on false reports within an
