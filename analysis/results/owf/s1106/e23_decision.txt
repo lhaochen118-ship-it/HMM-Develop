@@ -1,0 +1,5 @@
+144 runs; seeds [64, 65, 66] | script labels: C1 = C9 (NT+HQ), C2 = C10 (NT+HQ+veto)
+C9 = OWF-HWA-S5-NT-HQ: V1 MET (runs>a 4 vs 4, mean segFAR 0.0057 vs 0.0074); V2 MET (-0.0037 [-0.0071, -0.0008], wins 76/ties 0/losses 68); V3 MET (nav 14.51 vs 14.67); V4 NOT MET (worst 0.0254, runs>a 4)
+DECISION (pre-registered rule V1 and V2 and V3 on C9): C9 = OWF-HWA-S5-NT-HQ REPLACES R*
+C10 = C9 + veto (reported only): V1 MET (runs>a 0 vs 4, mean segFAR 0.0024 vs 0.0074) SAFER; V2 NOT MET (-0.0123 [-0.0172, -0.0078], wins 54/ties 0/losses 90); V3 MET (nav 14.90 vs 14.67); V4 MET (worst 0.0129, runs>a 0)
+R*: V4 NOT MET (worst 0.0364, runs>a 4)

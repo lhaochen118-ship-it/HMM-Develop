@@ -91,6 +91,44 @@ nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo
 
 ## Entry 23 — Bằng chứng TUYỆT ĐỐI cho ô trống, hiệu chỉnh hồi cứu theo phiên (OWF-NT-HQ, Mệnh đề 7) — đăng ký trước (2026-11-06 08:27 UTC)
 
+**KẾT QUẢ (seed 64–66, 144 run; đợt `test64`, 8 phiên L4; ghi 08:54 UTC). Theo quy tắc đăng ký trước: V1 ∧ V2 ∧ V3 ĐẠT ⇒ C9 =
+OWF-HWA-S5-NT-HQ THAY R* — LUẬT KHUYẾN NGHỊ MỚI.** Ô = recall / TB segFAR / run > α / sai số (m), trên CÙNG run:
+
+| Dataset | R* = OWF-HWA-S5 | **C9 = OWF-HWA-S5-NT-HQ** | C10 = C9 + phủ quyết (báo cáo) |
+|---|---|---|---|
+| CMU | 0.856 / 0.0364 / 4 / 8.5 | **0.865 / 0.0254 / 4 / 7.1** | 0.856 / 0.0129 / 0 / 5.3 |
+| Nordland | 0.968 / 0.0064 / 0 / 7.5 | **0.972 / 0.0036 / 0 / 4.1** | 0.971 / 0.0036 / 0 / 4.1 |
+| St Lucia | 0.979 / 0.0010 / 0 / 18.0 | 0.985 / 0.0010 / 0 / 17.9 | 0.984 / 0.0007 / 0 / 17.7 |
+| office | 0.977 / 0.0004 / 0 / 7.5 | 0.975 / 0.0006 / 0 / 7.7 | 0.972 / 0.0000 / 0 / 7.7 |
+| old town | 0.938 / 0.0010 / 0 / 22.8 | 0.920 / 0.0008 / 0 / 24.1 | 0.912 / 0.0002 / 0 / 23.8 |
+| countryside | 0.853 / 0.0048 / 0 / 25.9 | 0.847 / 0.0041 / 0 / 25.7 | 0.823 / 0.0008 / 0 / 35.2 |
+| Boreas | 0.973 / 0.0007 / 0 / 4.3 | 0.960 / 0.0010 / 0 / 5.5 | 0.940 / 0.0006 / 0 / 3.8 |
+| Oxford | 0.944 / 0.0087 / 0 / 22.8 | 0.935 / 0.0093 / 0 / 24.0 | 0.932 / 0.0006 / 0 / 21.5 |
+| **Gộp** | 0.936 / 0.0074 / 4 / 14.67 | **0.932 / 0.0057 / 4 / 14.51** | 0.924 / **0.0024 / 0** / 14.90 |
+
+C9:
+- **V1 đạt:** run > α 4 = 4; TB segFAR 0.0074 → 0.0057.
+- **V2 đạt:** −0.0037 [−0.0071, −0.0008] (thắng 76 / thua 68).
+- **V3 đạt:** 14.51 so với 14.67 m (tốt hơn).
+- V4 trượt, giống R*: 4 run CMU > α.
+
+C10 (chỉ báo cáo):
+- V1 đạt, AN TOÀN HƠN: **0/144 run > α**, TB segFAR 0.0024.
+- V2 trượt (−0.0123).
+- V3 đạt (14.90).
+- V4 ĐẠT.
+
+*Ghi chú vận hành:* `e23_eval.sh` sao từ Entry 21 nên in V1–V3 cho biến thể có phủ quyết và N1′–N3 cho C9, và dòng DECISION của nó ("R* KEPT")
+sai luật. Quyết định trên được tính lại đúng luật đã commit (V1–V3 trên C9) từ CÙNG các số (`analysis/results/owf/s1106/e23_decision.txt`).
+
+**Đọc trung thực.**
+- (i) Thay đổi ở bộ ước lượng sửa đúng chỗ đã chẩn đoán. CMU segFAR −30 % VỚI recall +0.009 và điều hướng −1.4 m; Nordland segFAR −44 %,
+  điều hướng 7.5 → 4.1 m.
+- (ii) Recall giảm ở old town / Boreas / Oxford (−0.009 … −0.018). Đó là đầu các phiên có điều kiện khác, đúng như phát triển dự báo.
+- (iii) 4 run CMU > α còn lại (cả R* lẫn C9) có 3 đến từ nhánh HSI (H(R*) 3 run > α). Phủ quyết bằng mN của C9 (C10) xoá cả 4, đổi lại
+  −0.012 recall.
+- (iv) Đây là lần đầu từ Entry 15 một luật mới thay luật khuyến nghị theo quy tắc đăng ký trước. Nhóm 64–66 đã dùng; kho r61 hết.
+
 **Ý tưởng (`paper/owf_theory.md` §10, viết trước khi đọc đợt phát triển).** Entry 22 cho thấy chuẩn hoá z theo frame bỏ mất thông tin tách
 khớp đúng khỏi bí danh. Thông tin đó nằm ở độ tương đồng tuyệt đối. Quan sát x_t = max_i s_ti − median_i s_ti:
 - trên bản đồ, x_t là max của (đúng chỗ, bí danh tốt nhất), mật độ f_on;

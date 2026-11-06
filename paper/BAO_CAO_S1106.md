@@ -1,4 +1,4 @@
-# Báo cáo phiên 2026-11-06 — Entry 19–22: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được
+# Báo cáo phiên 2026-11-06 — Entry 19–23: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được, bằng chứng tuyệt đối hiệu chỉnh hồi cứu
 
 *Branch `hmm-2nd-idea`. Nhật ký đầy đủ: `RESEARCH_LOG.md` Entry 19–22. Lý thuyết: `paper/owf_theory.md` §8 (Mệnh đề 5), §9 (Mệnh đề 6). Số liệu
 thô: `analysis/results/owf/s1106/`. Báo cáo không tuyên bố novelty hay vượt SOTA ngoài những gì các bảng dưới chứng minh trên đúng giao thức này.*
@@ -114,6 +114,46 @@ Thông tin tách được nằm ở độ tương đồng tuyệt đối (cos �
 Phủ quyết bằng bộ lọc LU (quyết định vững trên hai mô hình emission, Entry 22b):
 - hợp lệ nhất từng đo trên tập A: TB segFAR 0.0012–0.0018, 0 run > α;
 - nhưng recall giảm 2.6–4.5 pp.
+
+## 4b. Entry 23 — bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu theo phiên (Mệnh đề 7)
+
+Entry 22 cho thấy thông tin tách khớp đúng khỏi bí danh nằm ở độ tương đồng tuyệt đối, không ở z. Mô hình quan sát đúng là trên **max của
+frame** x_t = max s − median s:
+- trên bản đồ, x_t = max(đúng chỗ, bí danh tốt nhất), mật độ f_on;
+- ngoài bản đồ, x_t = bí danh tốt nhất khi đúng chỗ vắng mặt, mật độ f_off.
+
+Ô trống nhận log-LR log f_off(x_t) − log f_on(x_t).
+
+Hai mật độ ước lượng **không nhãn** từ các fix tự tin của lượt 1 (bộ lọc cũ):
+- f_on: max của frame;
+- f_off: max trên ảnh xa hơn 1.6 excl khỏi fix.
+
+Đây là "bí danh khi đúng chỗ bị loại", cùng điều kiện, cùng descriptor, cùng bản đồ. Trên CMU s60, trung vị bí danh hồi cứu 0.469 khớp bí danh
+thật trong lỗ 0.445.
+
+**Nhân quả:** lượt 1 không phụ thuộc lượt 2. Frame t dùng mẫu của chính phiên ở frame < t khi đã đủ 100 mẫu, trước đó dùng các phiên khác.
+
+Tính chất (Mệnh đề 7):
+- ngoài bản đồ, giả thuyết "trên bản đồ" mất bằng chứng với tốc độ KL(f_off ‖ f_on);
+- ở điều kiện mà đúng chỗ không nổi bật (đêm, đoạn lặp dài), f_on ≈ f_off nên LR ≈ 1 và bộ lọc tự lùi về bộ lọc cũ.
+
+Bài học từ các biến thể thất bại trên run thiết kế: hiệu chỉnh từ phiên khác (leave-one-session-out) làm sập phiên đêm old town (0.72 →
+0.11–0.32), vì cos đúng chỗ ban đêm (0.20 trên nền) thấp hơn bí danh ban ngày (0.30). Chỉ hiệu chỉnh trong chính phiên mới đúng điều kiện.
+
+**Phát triển (tập A, 399 run, cùng run với R*):**
+
+| | R* | C9 = NT + HQ | C10 = C9 + phủ quyết |
+|---|---|---|---|
+| recall gộp | 0.933 | 0.929 | 0.923 |
+| TB segFAR | 0.0045 | **0.0034** | **0.0013** |
+| run > α | 1 | **0** | **0** |
+| điều hướng (m) | 12.7 | 13.0 | 12.8 |
+| CMU recall / segFAR | 0.852 / 0.0095 | **0.863 / 0.0066** | 0.854 / 0.0037 |
+| Nordland recall / segFAR | 0.968 / 0.0069 | **0.970 / 0.0026** | 0.969 / 0.0026 |
+
+Cái giá nằm ở đầu các phiên có điều kiện khác hẳn (đêm 4Seasons), trước khi phiên đủ mẫu riêng: old town −1.4 pp, countryside −1.9 pp.
+
+*(Kết quả kiểm tra trên seed 64–66: xem §4c.)*
 
 ## 5. Vận hành
 

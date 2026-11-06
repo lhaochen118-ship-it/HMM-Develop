@@ -90,6 +90,26 @@ Both have a constant offset over 10–17 traversals, and two independent descrip
 vs 0.69–0.77 at the true place). A Gaussian-shift crossover μ₁/2 removes these false fixes (OWF alone: CMU false segments ÷ 4.6). But
 with one crossover per run it costs 3 pp recall and makes Nordland worse, so it was dropped at development (Section 6.4).
 
+**3.3c Hindsight-calibrated absolute evidence for the unmapped cells (Proposition 7, Entry 23).** The observation that separates a true
+match from an alias is the frame's best similarity above its own profile level, x_t = max_i s_ti − median_i s_ti:
+- on the map, x_t is the maximum over the true place and the best look-alike (density f_on);
+- off the map, x_t is the best look-alike with the true place absent (density f_off).
+
+The unmapped cells and Ω receive the log-LR log f_off(x_t) − log f_on(x_t) instead of 0. Both densities are estimated without labels from the
+confident fixes of a first, historical pass:
+- f_on: the frame's maximum;
+- f_off: the best image farther than 1.6 excl from the fix, a look-alike of the same condition, descriptor and map.
+
+Densities are KDEs with 1 % uniform contamination. Causality is kept because the first pass does not depend on the second: frame t uses its
+own session's samples from frames < t once there are 100 of each, otherwise the run's other sessions. Where the true place does not stand out
+(night, repetitive stretches), f_on ≈ f_off and the filter reduces to the historical one. Off the map, the on-map hypothesis loses evidence
+at rate KL(f_off ‖ f_on).
+
+Development set (399 runs, same runs as the incumbent):
+- pooled mean segFAR 0.0045 → 0.0034, runs above α 1 → 0, recall −0.004;
+- CMU recall +0.011 with segFAR 0.0095 → 0.0066; Nordland segFAR 0.0069 → 0.0026;
+- the cost is at the start of sessions whose condition differs from every other session (night), before 100 own samples.
+
 ## 4. Theory
 
 Propositions 1–3 and their proofs: `paper/owf_theory.md` §2–4 (no net pull of a diffuse belief; a Ville bound on false reports within an
@@ -99,7 +119,8 @@ perceptual aliasing — is measured in Section 6 (alias episodes).
 Proposition 2′ (Ville bound with an inflation budget K, measured): §7. Proposition 5 (no teleport: re-entry seeds are amplified by
 coherent aliasing): §8. Proposition 6 (the crossover of the per-frame normalised emission; aliases that the odometry cannot see grow
 without bound above it; the Gaussian-shift crossover μ₁/2, with predictions written before its development wave and the measured
-outcome): §9.
+outcome): §9. Proposition 7 (hindsight-calibrated absolute evidence for the unmapped cells; drift −KL(f_off ‖ f_on) off the map;
+neutral where the condition hides the true place): §10.
 
 ## 5. Protocol
 

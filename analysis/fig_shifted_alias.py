@@ -32,6 +32,7 @@ def main():
     for j in i[:: max(1, len(i) // 12)]:
         a.annotate("", xy=MP[top[j]], xytext=qp[j], arrowprops=dict(arrowstyle="->", color="0.3", lw=0.6))
     off = np.median(MP[top[i]] - qp[i], 0)
+    a.set_xlim(780, 1300); a.set_ylim(-520, -260)
     a.set_title(f"CMU seed 60 (CosPlace): copy offset {off[0]:.0f}, {off[1]:.0f} m"); a.set_aspect("equal"); a.legend(fontsize=7, loc="lower right")
     a.set_xlabel("x (m)"); a.set_ylabel("y (m)")
     ep = V.load_cmu_merged(dump, "cosplace"); Q = ep.q / np.linalg.norm(ep.q, axis=1, keepdims=True)
