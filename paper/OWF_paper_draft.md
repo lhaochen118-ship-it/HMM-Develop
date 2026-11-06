@@ -17,9 +17,9 @@ place is absent. Both densities are estimated without labels from the filter's o
 
 On two groups of fresh hole layouts (8 datasets, 6 global descriptors, 288 runs; decisions pre-registered before each test), the final
 system:
-- reports correct fixes on 0.93 of on-map frames, above a single-frame oracle (0.85);
+- reports correct fixes on 0.93 of on-map frames, above a single-frame oracle (0.85 on the group where it was measured);
 - exceeds the false-report target on 4 of 288 runs, and on none with an open-world veto of its learned branch;
-- achieves navigation errors 15–20 % lower than the best label-free baseline.
+- achieves navigation errors about 19 % lower than our closed-world, hindsight-calibrated baseline (HSI-VN; 12.6 vs 15.5 m).
 
 Three published integrity / off-map methods, tuned with labels, exceed the target on 56–90 % of the same runs.
 
