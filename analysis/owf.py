@@ -294,7 +294,7 @@ def main():
         zc = 0.5 * float(np.median(np.concatenate([robust_z(Q[idx].astype(np.float32) @ M.T).max(1) for idx in seqs])))
         res["lu"] = dict(mode=luopt, c=zc); print(f"unmapped emission: crossover c = {zc:.2f} robust sd", flush=True)
     luseq = None
-    if luopt in ("hs", "hsm", "hsmp", "hsc", "hsq", "hsr", "hsb"):                                        # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
+    if luopt in ("hs", "hsm", "hsmp", "hsc", "hsq", "hsr", "hsb", "hsqsel"):                                        # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
         beta0 = betas[0]; cent_max = np.zeros(nq); med_all = np.zeros(nq); st_l, sa_l, tt_l = [], [], []; ra = 1.6 * excl
         for idx in seqs:
             S_ = Q[idx].astype(np.float32) @ M.T; med_ = np.median(S_, 1); cent_max[idx] = S_.max(1) - med_; med_all[idx] = med_
@@ -323,6 +323,7 @@ def main():
         elif luopt == "hsq": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l)   # nused = frames on own-session densities
         elif luopt == "hsr": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l, med=med_all)
         elif luopt == "hsb": lu_all, nused = hindsight_lu_shrink(seqs, cent_max, st_l, sa_l, tt_l)
+        elif luopt == "hsqsel": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l)   # + bank dimension {neutral, hsq} (Entry 26)
         else: lu_all, nused = hindsight_lu(seqs, cent_max, st_l, sa_l, loso=(luopt != "hsmp"))   # hsmp: pooled over the run's sessions, own included
         luseq = lu_all
         res["lu"] = dict(mode=luopt, n_true=int(sum(len(a) for a in st_l)), n_alias=int(sum(len(a) for a in sa_l)), seqs_calibrated=nused,
@@ -342,14 +343,18 @@ def main():
                 assert wt is None and drift == 0 and not closed and xmode == "mean", "--engine torch: default filter configuration only"
                 import owf_torch as OT
                 rs = []
-                for bb in (bbank or [beta]):                               # --bbank: emission temperature as a bank dimension (2026-11-05)
+                lus = [None, luq] if luopt == "hsqsel" else [luq]            # Entry 26: {neutral, hsq} as a bank dimension selected by evidence
+                for bb, luv in [(b_, l_) for b_ in (bbank or [beta]) for l_ in lus]:   # --bbank: emission temperature as a bank dimension (2026-11-05)
                     LLb = LL if bb == beta else log_lr(Zs, bb)
-                    o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell, reentry=reentry, lu=luq)
+                    o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell, reentry=reentry, lu=luv)
                     xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1)
                     rs += [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j], mean=o["mean"][j], mN=o["mN"][j], mNL=o["mNL"][j], mN16=o["mN16"][j]) for j in range(len(bank))]
-                bank = [(qx, sc) for bb in (bbank or [beta]) for qx, sc in bank]; bsel_l = [bb for bb in (bbank or [beta]) for _ in range(len(rs) // len(bbank or [beta]))]
+                bank = [(qx, sc) for bb in (bbank or [beta]) for _l in lus for qx, sc in bank]; bsel_l = [bb for bb in (bbank or [beta]) for _ in range(len(rs) // len(bbank or [beta]))]
+                lsel_l = [li for _b in (bbank or [beta]) for li in range(len(lus)) for _ in range(len(rs) // (len(bbank or [beta]) * len(lus)))]
             else:
-                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode, reentry=reentry, lu=luq) for qx, sc in bank]
+                lus = [None, luq] if luopt == "hsqsel" else [luq]
+                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode, reentry=reentry, lu=luv) for luv in lus for qx, sc in bank]
+                bank = [(qx, sc) for _l in lus for qx, sc in bank]; lsel_l = [li for li in range(len(lus)) for _ in range(len(rs) // len(lus))]
             # ONLINE self-calibration of the odometry noise (and scale): at frame t follow the filter with the largest cumulative log evidence
             # sum_{s<=t} log p(z_s | z_<s) (causal; ties -> the first = smallest q, first scale)
             cum = np.cumsum(np.stack([r_["lml"] for r_ in rs]), 1); ks = np.argmax(cum, 0); tt = np.arange(len(idx))
@@ -361,6 +366,7 @@ def main():
                 out.setdefault("xmean", np.full((nq, F.d), np.nan))[idx] = np.stack([r_["mean"] for r_ in rs])[ks, tt]
             out.setdefault("ssel", np.ones(nq))[idx] = np.array([b[1] for b in bank])[ks]
             if bbank: out.setdefault("bsel", np.ones(nq))[idx] = np.array(bsel_l)[ks]
+            if luopt == "hsqsel": out.setdefault("lsel", np.zeros(nq))[idx] = np.array(lsel_l)[ks]      # 1 = the hsq member is followed
         dt = (time.time() - t0) / nq * 1e3
         xf = z["MP"][np.maximum(xh, 0)]; err = np.linalg.norm(xf - qp, axis=1); gd = inm & (err <= excl) & (xh >= 0)
         rows = []
@@ -383,12 +389,13 @@ def main():
                        pos={cl: (int(sum(bool(acc0[g].any()) for g, c_ in segs if c_ == cl)), int(sum(1 for _, c_ in segs if c_ == cl))) for cl in PA.CLASSES})
         print(f"   DEFAULT eps {eps0:g}: recall {default['recall']:.3f} segFAR {default['seg_FAR']:.4f} FL {default['FL']:.4f} err_mean {default['err_mean']:.1f} m p95 {default['err_p95']:.1f}", flush=True)
         if fr_out:
-            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh, **({"xmean": out["xmean"]} if "xmean" in out else {}), qsel=out["qsel"], ssel=out.get("ssel", np.ones(nq)), **{k_: out[k_] for k_ in ("mN", "mNL", "mN16") if k_ in out}, **({"bsel": out["bsel"]} if "bsel" in out else {}),
+            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh, **({"xmean": out["xmean"]} if "xmean" in out else {}), qsel=out["qsel"], ssel=out.get("ssel", np.ones(nq)), **{k_: out[k_] for k_ in ("mN", "mNL", "mN16") if k_ in out}, **({"bsel": out["bsel"]} if "bsel" in out else {}), **({"lsel": out["lsel"]} if "lsel" in out else {}),
                                 err=err, inm=inm, offm=offm, q_sid=sid, q_k=k, q_pos=qp, cond=z["cond"])
         res["runs"][str(beta)] = dict(ms_per_frame=dt, logml=float(out["lml"].sum()), map_correct_on=ceil, curve=rows, default=default,
                                       qsel={str(x): float(np.mean(out["qsel"] == x)) for x in qxs},
                                       ssel={str(x): float(np.mean(out.get("ssel", np.ones(nq)) == x)) for x in scales},
-                                      bsel={str(x): float(np.mean(out["bsel"] == x)) for x in bbank} if bbank else {})
+                                      bsel={str(x): float(np.mean(out["bsel"] == x)) for x in bbank} if bbank else {},
+                                      lsel=float(np.mean(out["lsel"])) if "lsel" in out else None)
         print(f"{ds}/{desc} s{seed} beta {beta}: {dt:.1f} ms/frame logml {out['lml'].sum():.1f} MAP-correct(on) {ceil:.3f} q-share",
               {x: round(float(np.mean(out["qsel"] == x)), 2) for x in qxs}, flush=True)
         for rr in rows: print("   eps %-7g recall %.3f FL %.4f segFAR %.4f delay %.1f" % (rr["eps"], rr["recall"], rr["FL"], rr["seg_FAR"], rr["reentry_delay"]),

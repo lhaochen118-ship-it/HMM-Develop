@@ -4,6 +4,23 @@
 Cách đọc repo và việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Các dataset `hmm-cms-*`, `hmm-fwd-null-*` là của ý tưởng 1
 (baseline). Các mục §1–§5 bên dưới giữ lịch sử (một số acc / luật trong đó đã cũ).*
 
+## 0000. Phiên 2026-11-06 (chiều, từ 14:17 UTC): thêm tài khoản, kho seed r67
+
+**Tài khoản** (`automation/active_accounts.txt`, thứ tự lấp phiên): `namhunhh`, `duckzuykobip`, `dinhthinh`, `hieuho669`, `nguyenmanh0404`,
+`nhatlong1103`, `mxuanquy`, `yeshenhi`. Token ở `~/.kaggle/tok_<username>` (chmod 600), không vào repo.
+- `nguyenmanh0404`: 4× L4.
+- `nhatlong1103`: hết hạn mức GPU tuần (30 giờ) lúc 14:54 UTC; chỉ dùng CPU (và là chủ của các dataset công khai cũ).
+- `mxuanquy`, `yeshenhi`: người dùng báo chỉ có T4, nhưng kernel cấu hình L4 vẫn được nhận và chạy (đợt `ablhn`).
+- Các tài khoản đều có kernel `vprspace-*` do một phiên khác tạo. Không đụng tới.
+
+**Dataset mới:** `namhunhh/hmm-navcache-r67` (seed 67–72, 288 cache, 942 MB, 20 kernel CPU `fr67-*`).
+- Seed 67–69: Entry 24.
+- Seed 70–72: chưa dùng.
+- Kết quả HSI-VN của kho nằm trong `results.tar` của từng kernel `fr67-*` (không phải file rời).
+
+**Đĩa scratchpad:** hạn mức ~40 GB. Output kernel giải nén rất lớn (1–2 GB mỗi đợt). Xoá `runs/*/<kernel>_out` sau khi đã trích khung
+sang `w/`. Lúc đĩa đầy, `fetch_done.py` ghi file cụt mà vẫn đánh dấu là đã kéo, nên phải kiểm `np.load` từng file.
+
 ## 000. Phiên 2026-11-06: tài khoản, kho seed r61
 
 **Tài khoản** (`automation/active_accounts.txt`, thứ tự lấp phiên): `namhunhh`, `duckzuykobip`, `dinhthinh`, `hieuho669`. Mỗi tài khoản có 2 phiên
