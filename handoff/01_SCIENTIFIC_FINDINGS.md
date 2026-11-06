@@ -50,6 +50,19 @@ Tổng 9/432 = 2.1 % run > α. 7 trong 9 là CMU, đến từ hai bố cục l�
 - Ablation then chốt: hiệu chỉnh từ phiên khác làm sập phiên đêm, vì cos đúng chỗ ban đêm thấp hơn bí danh ban ngày; chỉ hiệu chỉnh trong
   chính phiên mới đúng. Cái giá còn lại: đầu các phiên có điều kiện chưa thấy.
 
+**Entry 24 (đăng ký trước, seed 67–69): XÁC NHẬN độc lập.**
+- OWF-HWA-S5-NT-HQ: 0.927 recall, **0/144 run > α**, điều hướng 12.55 m.
+- So với HSI-VN: +0.136. So với oracle một-frame (0.847): +0.080.
+- TAO'26 / Xu'21 / Claxton'24 trên cùng run vượt α ở 130 / 81 / 104 run, recall thấp hơn.
+- Điểm an toàn (+ phủ quyết): TB segFAR 0.0009, 0 run > α, −0.0066 recall.
+- Tổng quát: lỗ 10/50 %, tự nhiên, NCLT đều hợp lệ nhất; VPR-Space không đổi (0.28: một phiên ngắn mỗi setup, nên bằng chứng tuyệt đối
+  trung tính).
+
+**Giới hạn đã đo:**
+- Đầu chuỗi CMU: luật báo 53–82 % trong 2 excl đầu, top-1 đúng 95–97 %. Đây là tốc độ đếm bằng chứng, không phải lỗi; bằng chứng CMU còn tương
+  quan mạnh hơn ℓ giả định.
+- Đầu phiên ở điều kiện chưa thấy (đêm): HQ mất recall trước khi phiên có 100 mẫu riêng.
+
 **Ý nghĩa.** Thông tin loại được bí danh dịch chuyển nằm ở độ tương đồng TUYỆT ĐỐI (CMU: cos ở đúng chỗ, phân vị 5 % = 0.54, so với trung vị bí danh 0.44). Chuẩn
 hoá z theo frame đã bỏ đi thông tin đó. Bước tiếp theo có nguyên tắc là một emission hiệu chỉnh tuyệt đối theo điều kiện.
 
