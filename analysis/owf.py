@@ -189,7 +189,7 @@ def main():
                     LLb = LL if bb == beta else log_lr(Zs, bb)
                     o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell)
                     xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1)
-                    rs += [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j], mean=o["mean"][j]) for j in range(len(bank))]
+                    rs += [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j], mean=o["mean"][j], mN=o["mN"][j], mNL=o["mNL"][j]) for j in range(len(bank))]
                 bank = [(qx, sc) for bb in (bbank or [beta]) for qx, sc in bank]; bsel_l = [bb for bb in (bbank or [beta]) for _ in range(len(rs) // len(bbank or [beta]))]
             else:
                 rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode) for qx, sc in bank]
@@ -198,6 +198,8 @@ def main():
             cum = np.cumsum(np.stack([r_["lml"] for r_ in rs]), 1); ks = np.argmax(cum, 0); tt = np.arange(len(idx))
             for k_ in ("mass", "cov", "om", "lml"): out[k_][idx] = np.stack([r_[k_] for r_ in rs])[ks, tt]
             xh[idx] = np.stack([r_["xhat"] for r_ in rs])[ks, tt]; out["qsel"][idx] = np.array([b[0] for b in bank])[ks]
+            for k_ in ("mN", "mNL"):
+                if k_ in rs[0]: out.setdefault(k_, np.zeros(nq))[idx] = np.stack([r_[k_] for r_ in rs])[ks, tt]
             if "mean" in rs[0]:                                          # posterior mean of the reporting disc (metric, not snapped)
                 out.setdefault("xmean", np.full((nq, F.d), np.nan))[idx] = np.stack([r_["mean"] for r_ in rs])[ks, tt]
             out.setdefault("ssel", np.ones(nq))[idx] = np.array([b[1] for b in bank])[ks]
@@ -224,7 +226,7 @@ def main():
                        pos={cl: (int(sum(bool(acc0[g].any()) for g, c_ in segs if c_ == cl)), int(sum(1 for _, c_ in segs if c_ == cl))) for cl in PA.CLASSES})
         print(f"   DEFAULT eps {eps0:g}: recall {default['recall']:.3f} segFAR {default['seg_FAR']:.4f} FL {default['FL']:.4f} err_mean {default['err_mean']:.1f} m p95 {default['err_p95']:.1f}", flush=True)
         if fr_out:
-            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh, **({"xmean": out["xmean"]} if "xmean" in out else {}), qsel=out["qsel"], ssel=out.get("ssel", np.ones(nq)), **({"bsel": out["bsel"]} if "bsel" in out else {}),
+            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh, **({"xmean": out["xmean"]} if "xmean" in out else {}), qsel=out["qsel"], ssel=out.get("ssel", np.ones(nq)), **{k_: out[k_] for k_ in ("mN", "mNL") if k_ in out}, **({"bsel": out["bsel"]} if "bsel" in out else {}),
                                 err=err, inm=inm, offm=offm, q_sid=sid, q_k=k, q_pos=qp, cond=z["cond"])
         res["runs"][str(beta)] = dict(ms_per_frame=dt, logml=float(out["lml"].sum()), map_correct_on=ceil, curve=rows, default=default,
                                       qsel={str(x): float(np.mean(out["qsel"] == x)) for x in qxs},

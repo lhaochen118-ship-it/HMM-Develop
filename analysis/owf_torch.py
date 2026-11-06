@@ -43,6 +43,9 @@ def _odometry_plan(U, g, q, ell, d):
     return sh, sig, ph, w
 
 
+R_LOC = 3.0                                                                                  # local neighbourhood radius (excl units)
+
+
 def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12):
     """F: OpenWorldFilter (grid, band, prior, p_kid, p_in, p_omega0); logL (T, n) item log-LRs of one sequence; U (T, d) odometry
     increments; members: list of (q, scale) (q in metres, as F.run's q); returns stacked outputs in member order."""
@@ -61,6 +64,12 @@ def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12):
     strides = torch.tensor([int(np.prod(shape[k + 1:])) for k in range(d)], device=dev)
     r = int(np.ceil(excl / g)); offs = np.stack(np.meshgrid(*[np.arange(-r, r + 1)] * d, indexing="ij"), -1).reshape(-1, d)
     offs = torch.tensor(offs[np.linalg.norm(offs * g, axis=1) <= excl], device=dev)            # (nO, d) disc offsets (cells)
+    # 2026-11-06 (Entry 19): near-map region N (cell centre within excl of a map image, phase 0, as the band mask) and the offsets of a
+    # LOCAL neighbourhood of radius R_LOC excl around the reporting disc: mN = posterior mass on N (what Proposition 2 needs),
+    # mNL = mass on N within R_LOC excl of the reporting cell (unambiguous 'near here' integrity)
+    near = torch.tensor((F.tree.query(F.cen)[0] <= excl).reshape(shape), device=dev).reshape(-1)
+    rl = int(np.ceil(R_LOC * excl / g)); offL = np.stack(np.meshgrid(*[np.arange(-rl, rl + 1)] * d, indexing="ij"), -1).reshape(-1, d)
+    offL = torch.tensor(offL[np.linalg.norm(offL * g, axis=1) <= R_LOC * excl], device=dev)
     cen = [torch.arange(shape[k], dtype=f64, device=dev) for k in range(d)]
     LL = torch.tensor(np.asarray(logL), device=dev)                                          # float32 (as computed by owf.log_lr)
     Wt = torch.tensor(W, dtype=LL.dtype, device=dev); PHt = torch.tensor(PH, dtype=f64, device=dev)
@@ -70,6 +79,7 @@ def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12):
     o_mass = torch.zeros((nb, T), dtype=f64, device=dev); o_cov = torch.zeros_like(o_mass); o_om = torch.zeros_like(o_mass)
     o_lml = torch.zeros_like(o_mass); o_mean = torch.zeros((nb, T, d), dtype=f64, device=dev)
     o_best = torch.zeros((nb, T), dtype=torch.long, device=dev)
+    o_mN = torch.zeros((nb, T), dtype=f64, device=dev); o_mNL = torch.zeros_like(o_mN)
     ar = [torch.arange(shape[k], device=dev) for k in range(d)]; bi = torch.arange(nb, device=dev)
     for t in range(T):
         if t > 0:                                                                            # ---- predict
@@ -133,5 +143,9 @@ def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12):
         pos = (nbc[bi, best].to(f64) + 0.5) * g + PHt[t][:, None, :]                          # cell centre (relative to origin) + phase
         o_mean[:, t] = (wgt[:, :, None] * pos).sum(1) / torch.clamp(wgt.sum(1), min=1e-300)[:, None] + torch.tensor(F.origin, dtype=f64, device=dev)
         o_cov[:, t] = (Bf * mapped).sum(1); o_om[:, t] = om
+        o_mN[:, t] = (Bf * near).sum(1)
+        nl = cc[bi, best][:, None, :] + offL[None]                                          # (nb, nL, d) local neighbourhood
+        okl = ((nl >= 0) & (nl < shp)).all(-1); fll = (torch.minimum(torch.clamp(nl, min=0), shp - 1) * strides).sum(-1)
+        o_mNL[:, t] = (torch.gather(Bf, 1, fll) * near[fll] * okl).sum(1)
     cpu = lambda x: x.detach().cpu().numpy()
-    return dict(mass=cpu(o_mass), cov=cpu(o_cov), om=cpu(o_om), lml=cpu(o_lml), mean=cpu(o_mean), best=cpu(o_best))
+    return dict(mass=cpu(o_mass), cov=cpu(o_cov), om=cpu(o_om), lml=cpu(o_lml), mean=cpu(o_mean), best=cpu(o_best), mN=cpu(o_mN), mNL=cpu(o_mNL))

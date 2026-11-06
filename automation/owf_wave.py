@@ -100,7 +100,7 @@ def main():
     if which.startswith("inc:"):          # 2026-11-05: the incumbent pipeline (OWF S5 bank on the GPU -> OWF-H HSI-VN / VMN masks) on a named
         # set: inc:setA (development: seeds 1-9 of the 6 holed datasets, NCLT 5 desc, Oxford, St Lucia), inc:holes (10 % / 50 % holes, seeds
         # 0-2), inc:natural (4Seasons cross-scene, natural off-map), inc:nclt (NCLT seed 0, 6 desc); several sets: inc:setA+holes+...
-        bank = f" --qx 0.005,0.02 --scales {opt('--bankscales', '0.94,0.97,1.0,1.03,1.06')} --engine torch"; tg = opt("--tag", "S5")
+        bank = f" --qx 0.005,0.02 --scales {opt('--bankscales', '0.94,0.97,1.0,1.03,1.06')} --engine torch {opt('--owfextra', '')}".rstrip(); tg = opt("--tag", "S5")
         hm = " --modes xms0.9_16:HSI-VN,HSI-VMN --hsiframes"; gpu_fac = 0.08          # GPU engine: ~1/12 of the CPU cost per frame (measured)
         def ij(cache, ds, desc, sd, tag):
             return (f"owf_hsi_job.py {cache} DUMP {ds} {desc} {sd} --tag {tag}{hm}{bank}", DS.get(ds, ("", 16000, 10.0))[1] * 10.0 * DFAC[desc] / 1e3 * gpu_fac + DS.get(ds, ("", 16000))[1] * 4e-3)
