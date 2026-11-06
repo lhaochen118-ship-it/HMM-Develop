@@ -159,7 +159,7 @@ def load_run(cache_dir, dump, ds, desc, seed):
 def main():
     cache_dir, dump, ds, desc, seed = sys.argv[1:6]; seed = int(seed)
     opt = lambda k, d: sys.argv[sys.argv.index(k) + 1] if k in sys.argv else d
-    betas = [float(b) for b in opt("--beta", "1").split(",")]; ellx = float(opt("--ellx", "0.4")); drift = float(opt("--drift", "0"))
+    betas = [float(b) for b in opt("--beta", "1").split(",")]; ellx = opt("--ellx", "0.4"); drift = float(opt("--drift", "0"))
     qxs, pkid = [float(x) for x in opt("--qx", "0.005,0.02,0.08").split(",")], float(opt("--pkid", "1e-12"))
     scales = [float(x) for x in opt("--scales", "1").split(",")]      # AUTOLOOP iteration 3: odometry scale hypotheses (bank = q x scale)
     bandx, pin = float(opt("--bandx", "1")), float(opt("--pin", "0.01")); temper = opt("--temper", "ell")
@@ -180,9 +180,13 @@ def main():
     hz = list(z["hz"]); MP = z["MP"][:, hz].astype(float); U = z["U"][:, hz].astype(float); excl = float(z["excl"])
     sid, k = z["q_sid"], z["q_k"]; seqs = [np.where(sid == s)[0][np.argsort(k[sid == s])] for s in np.unique(sid)]
     g = excl / 5; band = bandx * c["block"]
-    F = OpenWorldFilter(MP, g, band, qxs[0] * excl, p_kid=pkid, p_in=pin); ell = ellx * excl; nq = len(Q)
+    F = OpenWorldFilter(MP, g, band, qxs[0] * excl, p_kid=pkid, p_in=pin); nq = len(Q)
+    if ellx == "vis":                                                 # Entry 20: one independent view per visual decorrelation length of
+        import vis_length as VL                                       # the MAP (label-free, before deployment; analysis/vis_length.py)
+        ell, _ = VL.vis_length(M, MP, excl); print(f"evidence length L_vis = {ell:.2f} m = {ell / excl:.2f} excl", flush=True)
+    else: ell = float(ellx) * excl
     inm, offm = z["inm"], z["offm"]; qp = z["q_pos"]
-    res = {"ds": ds, "desc": desc, "seed": seed, "grid": list(F.shape), "n_band": F.nb, "runs": {}}
+    res = {"ds": ds, "desc": desc, "seed": seed, "grid": list(F.shape), "n_band": F.nb, "ell": float(ell), "runs": {}}
     print("grid", F.shape, "band cells", F.nb, flush=True)
     for beta in betas:
         t0 = time.time(); out = {k_: np.zeros(nq) for k_ in ("mass", "cov", "om", "lml", "qsel")}; xh = np.zeros(nq, int)
