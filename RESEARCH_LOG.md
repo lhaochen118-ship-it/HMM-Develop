@@ -233,7 +233,7 @@ Chênh recall so với R*:
   đã bỏ đi thông tin đó.
 - (iv) Phủ quyết chéo (C5, C6) chọn mức hợp lệ cao nhất từng đo trên tập A (TB segFAR 0.0012–0.0018), nhưng recall giảm 2.6–4.5 pp.
 
-**Loại cả C3–C6.** Không đăng ký, không dùng seed 64–66 (vẫn chưa dùng).
+**Loại cả C3–C6.** Không đăng ký, không dùng seed 64–66 lúc đó (sau này dùng cho Entry 23).
 **Hướng tiếp:** emission có hiệu chỉnh tuyệt đối theo điều kiện, ví dụ μ₁ ước lượng nhân quả theo từng chuỗi. Hoặc dùng độ tương đồng thô đã
 hiệu chỉnh trên chính bản đồ, thay vì z trong hồ sơ của frame.
 

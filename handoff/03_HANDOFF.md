@@ -102,7 +102,8 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
   bản sao như vậy: lệch 204 m (slice 11–12) và 673 m (slice 22 ↔ 24), không đổi qua 10–17 lượt đi.
 
 **Theo thứ tự ưu tiên (cập nhật 08:55 UTC, sau Entry 23):**
-0. **Sinh kho seed mới** (`owf_wave.py --set fresh:67-72`, 20 kernel CPU, ~1.5 giờ). Kho r61 đã dùng hết. Rồi:
+0. **Kho seed mới 67–72:** 20 kernel CPU `fr67-*` đã được đẩy lúc 08:58 UTC (xem `ENVIRONMENT_SUMMARY.md` §000 để kéo / publish
+   `hmm-navcache-r67`). Kho r61 đã dùng hết. Rồi:
    - (a) kiểm OWF-HWA-S5-NT-HQ + phủ quyết ½ như điểm vận hành "an toàn";
    - (b) dự phòng đầu phiên cho điều kiện chưa thấy (đêm);
    - (c) đọc đợt tổng quát `genhq` (lỗ 10/50 %, tự nhiên, NCLT; script `ghq_cmp.sh` trong scratchpad, có bản sao ở

@@ -145,7 +145,7 @@ phút thay vì một đợt Kaggle.
 - **Entry 23 (đăng ký trước, seed 64–66): OWF-HWA-S5-NT-HQ thay luật khuyến nghị.** Hợp lệ tốt hơn (TB segFAR −23 %), điều hướng tốt
   hơn, recall −0.004. Cơ chế có mệnh đề riêng (Mệnh đề 7, viết trước đợt phát triển). Biến thể + phủ quyết ½: 0/144 run > α.
 - Quy trình (yêu cầu §3): 5 vòng trong phiên (Entry 19–23). Hai vòng đăng ký trước, kiểm trên seed mới, quyết định theo quy tắc (giữ R*). Hai vòng âm ở
-  phát triển nên không đốt seed mới. Nhóm 64–66 còn trống.
+  phát triển nên không đốt seed mới. Nhóm 64–66 dùng cho Entry 23 (luật mới qua). Kho r67 đang sinh.
 - Kaggle (yêu cầu §4): 4 tài khoản × 2 phiên 4×L4 + CPU. Kho seed `namhunhh/hmm-navcache-r61` (20 kernel CPU). Monitor trung tâm khởi động
   lại được sau khi container reset.
 

@@ -36,7 +36,7 @@ thô: `analysis/results/owf/s1106/`. Báo cáo không tuyên bố novelty hay v�
    giới hạn.
 5. **Entry 22 (âm ở phát triển): điểm giao Gaussian-shift μ₁/2 cho ô trống.** Cơ chế được xác nhận: báo sai CMU của OWF đơn lẻ ÷ 4.6; run
    thiết kế CMU s60 từ 17 → 0 đoạn sai, sai số 6.8 → 2.7 m. Nhưng một điểm giao chung cho cả run làm recall hệ đầy đủ giảm 3 pp và Nordland tệ
-   hơn. Loại; seed 64–66 giữ nguyên chưa dùng.
+   hơn. Loại ở phát triển; seed 64–66 để dành, rồi dùng cho Entry 23.
 6. **Entry 20 (âm ở phát triển): độ dài bằng chứng ℓ = chiều dài tương quan thị giác của bản đồ.** Recall −0.029, 13 run > α.
 
 ## 2. Entry 19 — không dịch chuyển tức thời (Mệnh đề 5)

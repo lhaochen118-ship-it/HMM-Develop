@@ -16,7 +16,13 @@ GPU (4× L4) + 5 phiên CPU. Token ở `~/.kaggle/tok_<username>` (chmod 600), k
 
 | Slug | Nội dung | Vai trò |
 |---|---|---|
-| `namhunhh/hmm-navcache-r61` | kho seed mới 61–66: bố cục lỗ mới, 8 dataset × 6 descriptor, 288 cache (939 MB). Sinh bằng 20 kernel CPU `fr61-*` (`hsi_fresh.py --keep`) | 61–63 đã dùng (Entry 21); **64–66 chưa dùng** |
+| `namhunhh/hmm-navcache-r61` | kho seed mới 61–66: bố cục lỗ mới, 8 dataset × 6 descriptor, 288 cache (939 MB). Sinh bằng 20 kernel CPU `fr61-*` (`hsi_fresh.py --keep`) | 61–63 (Entry 21), 64–66 (Entry 23): đã dùng hết |
+
+**Kho seed 67–72 (đang sinh lúc kết thúc phiên, 08:58 UTC):** 20 kernel CPU `fr67-1 … fr67-20` (`hsi_fresh.py --keep navcache_r67`, ước ~1.5–2
+giờ), xếp theo `active_accounts.txt`. Có thể bị monitor chuyển tài khoản, nên tìm bằng `kaggle kernels list --mine` trên từng tài khoản.
+Khi xong:
+1. Kéo `kaggle kernels output <acc>/fr67-k -p <dir> --file-pattern '^navcache_.*\.npz$'`. Kiểm đủ 288 file (48 cấu hình × 6 seed).
+2. `publish_dataset.py <dir> hmm-navcache-r67 ... --owner namhunhh`.
 
 **Container:** khởi động lại lúc ~05:18 UTC (mất monitor nền); `central_monitor.py` chạy lại từ state file. Bài học: state file giúp khởi động lại
 không mất kernel. Kernel đã xong mà monitor chưa poll có thể kéo tay bằng `kaggle kernels output <id> -p <dir> --file-pattern ...`.
