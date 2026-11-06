@@ -1,4 +1,4 @@
-# Báo cáo phiên 2026-11-06 — Entry 19–24: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được, bằng chứng tuyệt đối hiệu chỉnh hồi cứu
+# Báo cáo phiên 2026-11-06 — Entry 19–26: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được, bằng chứng tuyệt đối hiệu chỉnh hồi cứu
 
 *Branch `hmm-2nd-idea`. Nhật ký đầy đủ: `RESEARCH_LOG.md` Entry 19–22. Lý thuyết: `paper/owf_theory.md` §8 (Mệnh đề 5), §9 (Mệnh đề 6). Số liệu
 thô: `analysis/results/owf/s1106/`. Báo cáo không tuyên bố novelty hay vượt SOTA ngoài những gì các bảng dưới chứng minh trên đúng giao thức này.*
@@ -212,6 +212,15 @@ Còn lại:
 Hai thử nghiệm phát triển phụ không thành công, đều cho đầu phiên đêm:
 - co rút Bayes;
 - chọn hiệu chỉnh theo evidence: evidence lại thưởng cho mô hình linh hoạt hơn, như ngân hàng β ở Entry 16.
+
+## 4d-bis. Entry 26 — xác nhận lần ba trên seed 70–72
+
+R_new: 0.926 recall, **0/144 run > α**, điều hướng 13.95 m (HSI-VN 15.24 m). TAO'26 / Xu'21 / Claxton'24 vượt α ở 126 / 83 / 101 run.
+
+**Tổng 432 run tươi (64–72):**
+- R_new: 4 run > α (0.9 %).
+- Điểm an toàn: 0 run > α.
+- Luật cũ: 14/720 run > α (1.9 %) trên 55–69.
 
 ## 4e. Tổng quát của luật mới so với SOTA ngoài (cùng run), Entry 25, VPR-Space, chẩn đoán đầu chuỗi CMU
 

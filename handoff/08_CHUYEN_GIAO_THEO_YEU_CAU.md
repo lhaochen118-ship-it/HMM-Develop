@@ -146,7 +146,8 @@ phút thay vì một đợt Kaggle.
   hơn, recall −0.004. Cơ chế có mệnh đề riêng (Mệnh đề 7, viết trước đợt phát triển). Biến thể + phủ quyết ½: 0/144 run > α.
 - **Entry 24 (seed 67–69): xác nhận độc lập luật mới.** 0/144 run > α; +0.136 so với HSI-VN; ba SOTA ngoài trên cùng run đều không hợp lệ
   (130 / 81 / 104 run > α) và có recall thấp hơn.
-- Quy trình (yêu cầu §3): 6 vòng trong phiên (Entry 19–24). Hai vòng đăng ký trước, kiểm trên seed mới, quyết định theo quy tắc (giữ R*). Hai vòng âm ở
+- **Entry 26 (seed 70–72): xác nhận lần ba.** Trên 432 run tươi, luật cuối có 4 run > α (0.9 %); điểm an toàn có 0.
+- Quy trình (yêu cầu §3): 8 vòng trong phiên (Entry 19–26). Hai vòng đăng ký trước, kiểm trên seed mới, quyết định theo quy tắc (giữ R*). Hai vòng âm ở
   phát triển nên không đốt seed mới. Nhóm 64–66 dùng cho Entry 23 (luật mới qua). Kho r67 đang sinh.
 - Kaggle (yêu cầu §4): 4 tài khoản × 2 phiên 4×L4 + CPU. Kho seed `namhunhh/hmm-navcache-r61` (20 kernel CPU). Monitor trung tâm khởi động
   lại được sau khi container reset.

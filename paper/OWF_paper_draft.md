@@ -15,13 +15,13 @@ along a straight road. The odometry cannot see the shift, so the look-alike accu
 unmapped cells calibrated absolute evidence: the density of the frame's best match when on the map versus the best look-alike when the true
 place is absent. Both densities are estimated without labels from the filter's own confident fixes, causally and per session.
 
-On two groups of fresh hole layouts (8 datasets, 6 global descriptors, 288 runs; decisions pre-registered before each test), the final
+On three groups of fresh hole layouts (8 datasets, 6 global descriptors, 432 runs; decisions pre-registered before each test), the final
 system:
 - reports correct fixes on 0.93 of on-map frames, above a single-frame oracle (0.85 on the group where it was measured);
-- exceeds the false-report target on 4 of 288 runs, and on none with an open-world veto of its learned branch;
-- achieves navigation errors about 19 % lower than our closed-world, hindsight-calibrated baseline (HSI-VN; 12.6 vs 15.5 m).
+- exceeds the false-report target on 4 of 432 runs (0.9 %), and on none with an open-world veto of its learned branch;
+- achieves navigation errors 8–19 % lower than our closed-world, hindsight-calibrated baseline (HSI-VN; 12.6 vs 15.5 m and 14.0 vs 15.2 m).
 
-Three published integrity / off-map methods, tuned with labels, exceed the target on 56–90 % of the same runs.
+Three published integrity / off-map methods, tuned with labels, exceed the target on 56–90 % of the same runs (two groups, 288 runs).
 
 
 ## 1. Introduction
@@ -200,6 +200,8 @@ paired against the previous rule on the same runs). Pooled recall / runs above �
 | 64–66 | OWF-HWA-S5-NT-HQ + veto ½ (reported) | 0.924 | −0.0123 (mean segFAR 0.0024) | **0** | 14.90 |
 | 67–69 | **OWF-HWA-S5-NT-HQ (confirmation, Entry 24)** | 0.927 | +0.136 vs HSI-VN | **0** | 12.55 |
 | 67–69 | OWF-HWA-S5-NT-HQ + veto ½ (safe point, Entry 24) | 0.920 | −0.0066 vs final rule (mean segFAR 0.0009) | **0** | 12.93 |
+| 70–72 | **OWF-HWA-S5-NT-HQ (third confirmation, Entry 26)** | 0.926 | +0.117 vs HSI-VN | **0** | 13.95 |
+| 70–72 | OWF-HWA-S5-NT-HQ + veto ½ (safe point) | 0.919 | −0.0072 vs final rule (mean segFAR 0.0014) | **0** | 14.55 |
 
 Over the three fresh groups that confirm the final rule (55–63, 432 runs), it reached pooled recall 0.927–0.937 with pooled mean segFAR
 0.0063. 9/432 runs (2.1 %) exceed α; 7 of the 9 are CMU, from two hole layouts (seed 60, seed 61) that each cover an odometry-unobservable

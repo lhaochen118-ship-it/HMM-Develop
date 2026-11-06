@@ -10,6 +10,8 @@ bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu theo ph
 - TB segFAR 0.0074 → 0.0057; recall −0.0037; điều hướng 14.67 → 14.51 m.
 - CMU segFAR −30 % với recall +0.009. Nordland điều hướng 7.5 → 4.1 m.
 - Thêm phủ quyết ½ (`OWF_VETO=0.5 owf_union.py`): 0/144 run > α, recall −0.012.
+- **Entry 26 (seed 70–72): XÁC NHẬN lần ba.** 0/144 run > α, +0.117 so với HSI-VN, SOTA ngoài không hợp lệ (126 / 83 / 101 run > α).
+  Tổng 432 run tươi (64–72): 4 run > α (0.9 %); với phủ quyết: 0/432.
 - **Entry 24 (14:30–15:25 UTC, seed 67–69): XÁC NHẬN độc lập.**
   - 0/144 run > α; +0.136 recall so với HSI-VN; điều hướng 12.55 m so với 15.48 m.
   - TAO'26 / Xu'21 / Claxton'24 trên cùng run vượt α ở 130 / 81 / 104 run.
