@@ -89,6 +89,67 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 23 — Bằng chứng TUYỆT ĐỐI cho ô trống, hiệu chỉnh hồi cứu theo phiên (OWF-NT-HQ, Mệnh đề 7) — đăng ký trước (2026-11-06 08:27 UTC)
+
+**Ý tưởng (`paper/owf_theory.md` §10, viết trước khi đọc đợt phát triển).** Entry 22 cho thấy chuẩn hoá z theo frame bỏ mất thông tin tách
+khớp đúng khỏi bí danh. Thông tin đó nằm ở độ tương đồng tuyệt đối. Quan sát x_t = max_i s_ti − median_i s_ti:
+- trên bản đồ, x_t là max của (đúng chỗ, bí danh tốt nhất), mật độ f_on;
+- ngoài bản đồ, x_t là bí danh tốt nhất khi đúng chỗ vắng mặt, mật độ f_off.
+
+Ô trống và Ω nhận log-LR log f_off(x_t) − log f_on(x_t). Mật độ ước lượng KHÔNG nhãn từ lượt 1 (bộ lọc cũ), tại các fix tự tin
+(khối lượng ≥ 1 − 1e-3):
+- f_on: max của frame;
+- f_off: max trên các ảnh xa hơn 1.6 excl khỏi fix (bí danh cùng điều kiện, cùng descriptor, cùng bản đồ);
+- KDE + 1 % nhiễm đều.
+
+**Nhân quả:** lượt 1 là nhân quả và không phụ thuộc lượt 2. Frame t của một phiên dùng mẫu của chính phiên ở các frame < t khi đã có
+≥ 100 mỗi loại; trước đó dùng các phiên khác của run (`owf.py --pin 0 --lu hsq`).
+- Kiểm offline (CMU s60): trung vị bí danh hồi cứu 0.469 khớp bí danh thật trong lỗ 0.445; AUC khớp đúng vs bí danh theo cos 0.92–0.96, theo
+  z 0.86–0.88.
+- Các biến thể đã loại trên run thiết kế:
+  - hs (cos đúng chỗ, LOSO) và hsmp (gộp): sập phiên đêm old town (0.72 → 0.11 … 0.32);
+  - hsc (KDE 2-D theo trung vị hồ sơ): không đỡ;
+  - hsr (dự phòng theo điều kiện khớp): không đổi.
+
+**Phát triển: đợt `devhq`** (8 phiên L4, 405 run; mọi JSON có `lu.mode = hsq`), so với R* trên CÙNG 399 run. Ô = recall / TB segFAR / run > α
+/ sai số (m):
+
+| Dataset | R* (S5) | C9 = NT + HQ | C10 = C9 + phủ quyết ½ |
+|---|---|---|---|
+| CMU | 0.852 / 0.0095 / 1 / 4.4 | **0.863 / 0.0066 / 0 / 3.8** | 0.854 / 0.0037 / 0 / 3.3 |
+| Nordland | 0.968 / 0.0069 / 0 / 6.2 | **0.970 / 0.0026 / 0 / 4.7** | 0.969 / 0.0026 / 0 / 4.7 |
+| St Lucia | 0.980 / 0.0013 | 0.986 / 0.0013 | 0.985 / 0.0008 |
+| office | 0.969 / 0.0001 | 0.970 / 0.0002 | 0.969 / 0.0001 |
+| old town | 0.946 / 0.0010 / 0 / 20.1 | 0.932 / 0.0007 / 0 / 23.3 | 0.927 / 0.0001 / 0 / 19.7 |
+| countryside | 0.852 / 0.0056 / 0 / 25.4 | 0.833 / 0.0049 / 0 / 25.7 | 0.816 / 0.0005 / 0 / 31.2 |
+| Boreas | 0.971 / 0.0027 / 0 / 4.7 | 0.962 / 0.0022 / 0 / 5.7 | 0.952 / 0.0009 / 0 / 3.5 |
+| Oxford | 0.949 / 0.0078 | 0.943 / 0.0089 | 0.940 / 0.0013 |
+| **gộp** | 0.933 / 0.0045 / 1 / 12.7 | 0.929 / **0.0034 / 0** / 13.0 | 0.923 / **0.0013 / 0** / 12.8 |
+
+Chênh recall so với R*:
+- C9: −0.0040 [−0.0061, −0.0022] (thắng 219 / thua 178), điều hướng +0.37 m;
+- C10: −0.0100 [−0.0126, −0.0075], điều hướng +0.10 m.
+
+Đọc:
+- Lần đầu tiên một thay đổi ở bộ ước lượng tăng recall VÀ giảm báo sai trên CMU và Nordland, đúng hai nơi có đuôi hợp lệ.
+- Cái giá nằm ở đầu các phiên có điều kiện khác hẳn các phiên còn lại (đêm 4Seasons, trước khi phiên có 100 mẫu riêng).
+
+**Luật đăng ký: OWF-HWA-S5-NT-HQ (C9).** OWF-HWA-S5 với `--pin 0 --lu hsq`. Union / OWF-H giữ nguyên. Hằng số mới, đều chung cho mọi dataset:
+- 1.6 excl (bán kính "chỗ khác", như giao thức τ của VPR-Space);
+- ε = 1 % nhiễm;
+- 100 mẫu tối thiểu;
+- khối 50 frame.
+
+**Tập kiểm tra mới:** seed 64–66 của `namhunhh/hmm-navcache-r61` (144 run, chưa dùng). R* và C9 trong CÙNG đợt (`test64`). C10 tính từ khung của
+C9 bằng `OWF_VETO=0.5`. Tiêu chí giống hệt V1–V3 đã đăng ký ở Entry 21 cho một ứng viên ưu tiên hợp lệ:
+- **V1 (hợp lệ, tương đối):** run > α của C9 ≤ của R*, VÀ TB segFAR gộp của C9 ≤ của R*.
+- **V2 (giá recall có giới hạn):** chênh gộp ≥ −0.006, VÀ cận dưới CI 95 % ≥ −0.010.
+- **V3 (điều hướng):** sai số gộp của C9 ≤ R* + 0.5 m.
+- **V4 (báo cáo):** mục tiêu tuyệt đối (TB ≤ α trên 8/8 dataset, ≤ 2/144 run > α). Báo cáo thêm CMU / Nordland segFAR.
+
+**Quy tắc:** V1 ∧ V2 ∧ V3 ⇒ C9 thay R* (luật khuyến nghị mới). Nếu thêm run > α giảm ngặt, ghi "an toàn hơn". Nếu chênh recall có CI > 0,
+ghi "tốt hơn". C10 chỉ báo cáo (cùng tiêu chí), không quyết định.
+
 ## Entry 22 — Emission có điểm giao "khớp đúng vs bí danh" (OWF `--lu half`, Mệnh đề 6): KẾT QUẢ PHÁT TRIỂN ÂM, không đăng ký kiểm tra (2026-11-06 07:05 UTC)
 
 **Ý tưởng (`paper/owf_theory.md` §9, viết và commit TRƯỚC đợt phát triển).**

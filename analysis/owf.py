@@ -77,15 +77,20 @@ def hindsight_lu_cond(seqs, feat, samp_true, samp_alias, min_n=50):
     return lu, nused
 
 
-def hindsight_lu_causal(seqs, cent_max, samp_true, samp_alias, samp_t, min_n=100, block=50):
+def hindsight_lu_causal(seqs, cent_max, samp_true, samp_alias, samp_t, min_n=100, block=50, med=None):
     """Entry 23 (hsq): CAUSAL per-session calibration. The first pass (historical filter) is causal and does not depend on the second,
     so the samples of frames < t of the SAME session are available at frame t. Densities for frame t: the session's own first-pass
     samples from frames before t once there are >= min_n of each kind (same condition), otherwise the other sessions of the run (LOSO).
     samp_t[k]: frame index (within the session) of each sample of session k. Evaluated in blocks of `block` frames."""
     lu = np.zeros(len(cent_max)); nown = 0
+    if med is not None:                                              # hsr: condition-matched fallback (session level of the profile median)
+        D = np.array([np.median(med[idx]) for idx in seqs]); sp = np.median([np.median(np.abs(med[idx] - np.median(med[idx]))) * 1.4826 for idx in seqs])
     for k, idx in enumerate(seqs):
-        tro = np.concatenate([samp_true[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
-        alo = np.concatenate([samp_alias[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
+        js = [j for j in range(len(seqs)) if j != k]
+        if med is not None:                                          # other sessions whose level lies within 2 sd of this session's first frame
+            js = [j for j in js if abs(D[j] - med[idx[0]]) <= 2 * sp]
+        tro = np.concatenate([samp_true[j] for j in js] or [np.zeros(0)])
+        alo = np.concatenate([samp_alias[j] for j in js] or [np.zeros(0)])
         oth = None
         for b0 in range(0, len(idx), block):
             sel = samp_t[k] < b0; tr, al = samp_true[k][sel], samp_alias[k][sel]
@@ -263,7 +268,7 @@ def main():
         zc = 0.5 * float(np.median(np.concatenate([robust_z(Q[idx].astype(np.float32) @ M.T).max(1) for idx in seqs])))
         res["lu"] = dict(mode=luopt, c=zc); print(f"unmapped emission: crossover c = {zc:.2f} robust sd", flush=True)
     luseq = None
-    if luopt in ("hs", "hsm", "hsmp", "hsc", "hsq"):                                        # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
+    if luopt in ("hs", "hsm", "hsmp", "hsc", "hsq", "hsr"):                                        # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
         beta0 = betas[0]; cent_max = np.zeros(nq); med_all = np.zeros(nq); st_l, sa_l, tt_l = [], [], []; ra = 1.6 * excl
         for idx in seqs:
             S_ = Q[idx].astype(np.float32) @ M.T; med_ = np.median(S_, 1); cent_max[idx] = S_.max(1) - med_; med_all[idx] = med_
@@ -290,6 +295,7 @@ def main():
             st_l.append(np.array(st)); sa_l.append(np.array(sa)); tt_l.append(np.array(tq, int))
         if luopt == "hsc": lu_all, nused = hindsight_lu_cond(seqs, np.stack([med_all, cent_max], 1), st_l, sa_l)
         elif luopt == "hsq": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l)   # nused = frames on own-session densities
+        elif luopt == "hsr": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l, med=med_all)
         else: lu_all, nused = hindsight_lu(seqs, cent_max, st_l, sa_l, loso=(luopt != "hsmp"))   # hsmp: pooled over the run's sessions, own included
         luseq = lu_all
         res["lu"] = dict(mode=luopt, n_true=int(sum(len(a) for a in st_l)), n_alias=int(sum(len(a) for a in sa_l)), seqs_calibrated=nused,
