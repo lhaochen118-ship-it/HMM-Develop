@@ -89,6 +89,15 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 26 — Xác nhận độc lập lần ba của OWF-HWA-S5-NT-HQ trên seed 70–72 — đăng ký trước (2026-11-06 16:28 UTC)
+
+**Mục đích.** Thêm một nhóm seed tươi (nhóm cuối của `namhunhh/hmm-navcache-r67`, chưa dùng) để ước lượng tỉ lệ run > α của luật cuối trên
+432 run tươi (64–72) thay vì 288. Cấu hình y hệt Entry 24: R_new = OWF-HWA-S5-NT-HQ; R_old = OWF-HWA-S5; C10 = R_new + phủ quyết ½. Tất cả
+trên CÙNG đợt `test70b`; SOTA ngoài trên cùng run (`sota_job.py`); HSI-VN từ output `fr67-*`.
+
+**Tiêu chí:** C1–C4 như Entry 24 (áp cho R_new), S1–S2 như Entry 24 (áp cho C10). Không có quyết định đổi luật. Đây là xác nhận; nếu C1 trượt,
+ghi rõ nguồn của các run > α.
+
 ## Entry 25 — Phủ quyết theo khối lượng trong 1.6 excl (mN16) thay cho excl: KẾT QUẢ PHÁT TRIỂN PHẲNG, không đăng ký (2026-11-06 16:09 UTC)
 
 **Ý tưởng.** Phủ quyết của C10 dùng mN = khối lượng trong excl quanh ảnh bản đồ. "Ngoài bản đồ" theo giao thức (và theo bán kính bí danh của
