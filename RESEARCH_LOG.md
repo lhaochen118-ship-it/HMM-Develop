@@ -91,6 +91,42 @@ nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo
 
 ## Entry 24 — Xác nhận độc lập OWF-HWA-S5-NT-HQ trên nhóm seed mới 67–69, SOTA ngoài trên CÙNG run, và điểm vận hành an toàn — đăng ký trước (2026-11-06 14:41 UTC)
 
+**KẾT QUẢ (seed 67–69, 144 run; đợt `test67`, 9 phiên L4; ghi 15:25 UTC). Quyết định: R_new = OWF-HWA-S5-NT-HQ XÁC NHẬN (C1–C4 đều đạt).
+Điểm vận hành an toàn C10 XÁC NHẬN (S1 ∧ S2).** Ô = recall / TB segFAR / run > α / sai số (m), trên CÙNG run:
+
+| Dataset | R_new | R_old (S5) | C10 (+ phủ quyết) | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+|---|---|---|---|---|---|---|---|---|
+| Boreas | 0.973 / 0.0012 / 0 / 5.3 | 0.980 / 0.0009 / 0 / 4.1 | 0.968 / 0.0007 / 0 / 2.9 | 0.905 | 0.802 / 0.325 / 10 | 0.702 / 0.071 / 4 | 0.748 / 0.177 / 11 | 0.881 |
+| CMU | 0.803 / 0.0048 / 0 / 3.1 | 0.788 / 0.0076 / 1 / 3.2 | 0.795 / 0.0021 / 0 / 2.9 | 0.651 | 0.913 / 0.372 / 16 | 0.778 / 0.584 / 15 | 0.847 / 0.198 / 15 | 0.924 |
+| Nordland | 0.969 / 0.0029 / 0 / 3.0 | 0.968 / 0.0039 / 0 / 3.2 | 0.968 / 0.0029 / 0 / 3.0 | 0.798 | 0.812 / 0.675 / 18 | 0.749 / 0.030 / 4 | 0.532 / 0.283 / 18 | 0.678 |
+| office | 0.960 / 0.0011 / 0 / 9.9 | 0.967 / 0.0009 / 0 / 9.5 | 0.959 / 0.0000 / 0 / 9.7 | 0.858 | 0.933 / 0.729 / 18 | 0.638 / 0.239 / 9 | 0.786 / 0.147 / 9 | 0.908 |
+| old town | 0.944 / 0.0004 / 0 / 20.2 | 0.956 / 0.0000 / 0 / 18.3 | 0.937 / 0.0000 / 0 / 17.8 | 0.718 | 0.839 / 0.512 / 14 | 0.600 / 0.033 / 4 | 0.731 / 0.175 / 11 | 0.844 |
+| countryside | 0.834 / 0.0037 / 0 / 23.3 | 0.858 / 0.0034 / 0 / 22.7 | 0.808 / 0.0002 / 0 / 32.9 | 0.672 | 0.785 / 0.750 / 18 | 0.304 / 0.236 / 11 | 0.620 / 0.269 / 18 | 0.750 |
+| Oxford | 0.950 / 0.0084 / 0 / 21.0 | 0.953 / 0.0086 / 0 / 20.8 | 0.945 / 0.0010 / 0 / 20.1 | 0.828 | 0.792 / 0.992 / 18 | 0.867 / 0.521 / 18 | 0.808 / 0.164 / 11 | 0.901 |
+| St Lucia | 0.983 / 0.0026 / 0 / 14.6 | 0.978 / 0.0026 / 0 / 14.8 | 0.983 / 0.0000 / 0 / 14.1 | 0.897 | 0.792 / 0.990 / 18 | 0.900 / 0.334 / 16 | 0.830 / 0.186 / 11 | 0.891 |
+| **Gộp** | **0.927 / 0.0031 / 0 / 12.55** | 0.931 / 0.0035 / 1 / 12.07 | 0.920 / **0.0009 / 0** / 12.93 | 0.791 / 0.0030 / 0 / 15.5 | 0.834 / 0.668 / **130** | 0.692 / 0.256 / **81** | 0.738 / 0.200 / **104** | 0.847 |
+
+Tiêu chí:
+- **C1 đạt:** TB segFAR tệ nhất 0.0084 (Oxford); **0/144 run > α**.
+- **C2 đạt:** R_new − HSI-VN = **+0.136**, CI [+0.118, +0.155].
+- **C3 đạt:** TAO'26, Xu'21, Claxton'24 đều KHÔNG hợp lệ (130 / 81 / 104 run > α). Recall của R_new còn cao hơn chúng +0.093 / +0.235 / +0.189,
+  CI đều > 0.
+- **C4 đạt:** 12.55 so với 15.48 m.
+- Nhắc lại Entry 23 (R_new so với R_old): run > α 0 so với 1; TB segFAR 0.0031 so với 0.0035; recall −0.0040 [−0.0073, −0.0009]; điều hướng
+  +0.48 m (countryside / Boreas / old town).
+- **C10:** S1 đạt (0 run > α, TB tệ nhất 0.0029, gộp 0.0009); S2 đạt (−0.0066 [−0.0089, −0.0046]).
+
+**Đọc.**
+- (i) R_new vượt oracle một-frame (0.847) thêm +0.080 recall với 0 run > α.
+- (ii) Mọi đối thủ ngoài đều vượt α trên phần lớn run, dù ngưỡng của họ được chỉnh bằng NHÃN.
+- (iii) Cái giá so với luật cũ nằm đúng chỗ đã biết: đầu phiên khác điều kiện, gồm countryside −0.024 và old town −0.012.
+- (iv) Trên hai nhóm seed mới (64–69, 288 run), R_new có 4 run > α (64–66, CMU, 3 từ nhánh HSI) và 0 run > α (67–69). C10 có 0 + 0.
+
+**Phát triển phụ đã xem trước kết quả này (không đổi luật):**
+- `--lu hsb` (co rút Bayes): đêm old town 0.632, không tốt hơn hsq.
+- `--lu hsqsel` (lấy tập (trung tính, hsq) làm một chiều của ngân hàng, chọn theo evidence): evidence vẫn chọn hsq ở phiên đêm
+  (lsel = 1.0), không đổi kết quả. Cùng kiểu thất bại với ngân hàng β (Entry 16): evidence thưởng cho mô hình linh hoạt hơn.
+
 **Bối cảnh.** Entry 23 đưa OWF-HWA-S5-NT-HQ (R_new) lên luật khuyến nghị trên seed 64–66. Một nhóm seed mới nữa là cần để xác nhận độc
 lập, như Entry 17 đã làm cho luật trước.
 - Kho: `namhunhh/hmm-navcache-r67` (seed 67–72, 288 cache, sinh bằng 20 kernel CPU `fr67-*`).
