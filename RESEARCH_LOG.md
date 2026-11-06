@@ -89,6 +89,36 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 24 — Xác nhận độc lập OWF-HWA-S5-NT-HQ trên nhóm seed mới 67–69, SOTA ngoài trên CÙNG run, và điểm vận hành an toàn — đăng ký trước (2026-11-06 14:41 UTC)
+
+**Bối cảnh.** Entry 23 đưa OWF-HWA-S5-NT-HQ (R_new) lên luật khuyến nghị trên seed 64–66. Một nhóm seed mới nữa là cần để xác nhận độc
+lập, như Entry 17 đã làm cho luật trước.
+- Kho: `namhunhh/hmm-navcache-r67` (seed 67–72, 288 cache, sinh bằng 20 kernel CPU `fr67-*`).
+- Seed 67–69 chưa dùng.
+- Thêm đối thủ ngoài trên CÙNG run (`sota_job.py`): TAO'26, Xu'21, Claxton'24, top-1, oracle một-frame. HSI-VN lấy từ output `fr67-*`.
+
+**Phát triển trước khi đăng ký (chỉ mô tả, đã xem):**
+- Nới bậc ngưỡng trên khung NT-HQ của tập A (399 run): +0.0008 … +0.0043 recall, nhưng run > α tăng tới 3. Lớp quyết định vẫn bão hoà, nên
+  không đổi luật.
+- Co rút Bayes cho hiệu chỉnh đầu phiên (`--lu hsb`): không cứu được đầu phiên đêm old town (0.632 so với 0.664 của hsq). Không dùng.
+
+**Luật kiểm tra:** R_new = OWF-HWA-S5-NT-HQ, đúng cấu hình Entry 23. Tham chiếu: R_old = OWF-HWA-S5. Tất cả trong CÙNG đợt `test67` trên CÙNG 144 run.
+
+**Tiêu chí (như Entry 17, áp cho R_new):**
+- **C1 (hợp lệ tuyệt đối):** TB segFAR ≤ α trên 8/8 dataset và ≤ 2/144 run > α.
+- **C2:** recall R_new − HSI-VN ≥ +0.08 với cận dưới CI 95 % > 0.
+- **C3:** mỗi đối thủ ngoài (TAO'26, Xu'21, Claxton'24) hoặc không hợp lệ, hoặc recall thấp hơn R_new với cận dưới CI > 0.
+- **C4:** sai số điều hướng R_new ≤ HSI-VN.
+
+**Nhắc lại Entry 23 (V1–V3 so với R_old):** báo cáo; không đổi quyết định đã có.
+
+**Điểm vận hành an toàn C10 = R_new + phủ quyết ½ (báo cáo, quyết định riêng):**
+- S1: ≤ 2/144 run > α và TB ≤ α trên 8/8 dataset.
+- S2: recall C10 − R_new ≥ −0.015.
+- S1 ∧ S2 ⇒ C10 được ghi là "điểm vận hành an toàn đã xác nhận" bên cạnh R_new.
+
+**Quy tắc:** C1 ∧ C2 ∧ C3 ∧ C4 ⇒ R_new XÁC NHẬN. Nếu C1 trượt thì ghi rõ dataset / nguồn của các run > α.
+
 ## Entry 23 — Bằng chứng TUYỆT ĐỐI cho ô trống, hiệu chỉnh hồi cứu theo phiên (OWF-NT-HQ, Mệnh đề 7) — đăng ký trước (2026-11-06 08:27 UTC)
 
 **KẾT QUẢ (seed 64–66, 144 run; đợt `test64`, 8 phiên L4; ghi 08:54 UTC). Theo quy tắc đăng ký trước: V1 ∧ V2 ∧ V3 ĐẠT ⇒ C9 =

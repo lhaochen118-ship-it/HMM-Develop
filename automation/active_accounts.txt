@@ -1,9 +1,11 @@
 # Accounts that may receive NEW kernels, in packing order (user rules): fill one account (2 GPU + 5 CPU sessions) before the next.
-# Tokens in ~/.kaggle/tok_<username>, never in git. 2026-11-05 14:55 UTC (new chat session): the user gave 3 accounts, probed with an
-# L4 kernel: 4x NVIDIA L4 (23 GB each), 48 vCPU, 188 GB RAM per GPU session on all three. Earlier accounts (quynhtran35, yuan1103,
-# phatle1578, nguyenmanh0404, yeshenhi, mxuanquy, synchan5704, quynhle07, nguyenhoa99, caotienminh1, nhatlong1103, ...) have no token in
-# this session; their public datasets are still mounted read-only. 2026-11-06: + hieuho669 (user: 4x L4).
+# Tokens in ~/.kaggle/tok_<username>, never in git. 2026-11-06 14:20 UTC: L4 accounts first (namhunhh, duckzuykobip, dinhthinh, hieuho669,
+# nguyenmanh0404, nhatlong1103), then T4-only accounts (mxuanquy, yeshenhi: use for CPU kernels).
 namhunhh
 duckzuykobip
 dinhthinh
 hieuho669
+nguyenmanh0404
+nhatlong1103
+mxuanquy
+yeshenhi

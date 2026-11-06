@@ -102,6 +102,32 @@ def hindsight_lu_causal(seqs, cent_max, samp_true, samp_alias, samp_t, min_n=100
     return lu, nown
 
 
+def _mix_logpdf(own, oth, x, n0):
+    """log of the empirical-Bayes shrinkage density (n_own f_own + n0 f_oth) / (n_own + n0); f_own only once it has >= 5 samples"""
+    lo = _kde_logpdf(oth, x)
+    if len(own) < 5: return lo
+    n = len(own); lw = _kde_logpdf(own, x)
+    return np.logaddexp(np.log(n) + lw, np.log(n0) + lo) - np.log(n + n0)
+
+
+def hindsight_lu_shrink(seqs, cent_max, samp_true, samp_alias, samp_t, n0=100, block=50, min_oth=50):
+    """Entry 24 (hsb): causal per-session calibration with empirical-Bayes shrinkage. For frame t of session k the densities are
+    (n_own f_own + n0 f_others) / (n_own + n0), f_own from the session's own first-pass samples at frames < t, f_others from the run's
+    other sessions (prior of strength n0). The session's own condition enters from its first confident frames instead of after a hard
+    switch at 100 samples (hsq)."""
+    lu = np.zeros(len(cent_max)); nown = 0
+    for k, idx in enumerate(seqs):
+        tro = np.concatenate([samp_true[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
+        alo = np.concatenate([samp_alias[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
+        for b0 in range(0, len(idx), block):
+            sel = samp_t[k] < b0; tr, al = samp_true[k][sel], samp_alias[k][sel]; x = cent_max[idx[b0:b0 + block]]
+            if len(tro) < min_oth or len(alo) < min_oth:
+                if len(tr) >= 100 and len(al) >= 100: lu[idx[b0:b0 + block]] = _kde_logpdf(al, x) - _kde_logpdf(tr, x)
+                continue
+            lu[idx[b0:b0 + block]] = _mix_logpdf(al, alo, x, n0) - _mix_logpdf(tr, tro, x, n0); nown += int(len(tr) >= 5) * len(x)
+    return lu, nown
+
+
 def hindsight_lu(seqs, cent_max, samp_true, samp_alias, min_n=50, loso=True):
     """Entry 23: per-frame log-LR of the unmapped cells from the absolute similarity of the frame's best match.
     cent_max[t] = best similarity of frame t minus the median of its profile. samp_true / samp_alias: per sequence, the same statistic at
@@ -268,7 +294,7 @@ def main():
         zc = 0.5 * float(np.median(np.concatenate([robust_z(Q[idx].astype(np.float32) @ M.T).max(1) for idx in seqs])))
         res["lu"] = dict(mode=luopt, c=zc); print(f"unmapped emission: crossover c = {zc:.2f} robust sd", flush=True)
     luseq = None
-    if luopt in ("hs", "hsm", "hsmp", "hsc", "hsq", "hsr"):                                        # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
+    if luopt in ("hs", "hsm", "hsmp", "hsc", "hsq", "hsr", "hsb"):                                        # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
         beta0 = betas[0]; cent_max = np.zeros(nq); med_all = np.zeros(nq); st_l, sa_l, tt_l = [], [], []; ra = 1.6 * excl
         for idx in seqs:
             S_ = Q[idx].astype(np.float32) @ M.T; med_ = np.median(S_, 1); cent_max[idx] = S_.max(1) - med_; med_all[idx] = med_
@@ -296,6 +322,7 @@ def main():
         if luopt == "hsc": lu_all, nused = hindsight_lu_cond(seqs, np.stack([med_all, cent_max], 1), st_l, sa_l)
         elif luopt == "hsq": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l)   # nused = frames on own-session densities
         elif luopt == "hsr": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l, med=med_all)
+        elif luopt == "hsb": lu_all, nused = hindsight_lu_shrink(seqs, cent_max, st_l, sa_l, tt_l)
         else: lu_all, nused = hindsight_lu(seqs, cent_max, st_l, sa_l, loso=(luopt != "hsmp"))   # hsmp: pooled over the run's sessions, own included
         luseq = lu_all
         res["lu"] = dict(mode=luopt, n_true=int(sum(len(a) for a in st_l)), n_alias=int(sum(len(a) for a in sa_l)), seqs_calibrated=nused,
