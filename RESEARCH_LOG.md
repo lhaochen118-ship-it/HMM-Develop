@@ -117,7 +117,7 @@ Tiêu chí:
 **Tổng trên ba nhóm seed tươi của luật cuối (64–72, 432 run, mỗi nhóm đăng ký trước):**
 - R_new: recall gộp 0.932 / 0.927 / 0.926; **4/432 run > α (0.9 %)**, cả 4 ở CMU seed 64–66 (3 từ nhánh HSI).
 - C10: 0.924 / 0.920 / 0.919; **0/432 run > α**.
-- Luật cũ OWF-HWA-S5 trên 6 nhóm trước (55–72 không tính 70–72): 13/720 run > α (1.8 %).
+- Luật cũ OWF-HWA-S5 trên 5 nhóm tươi 55–69: 1 + 6 + 2 + 4 + 1 = 14/720 run > α (1.9 %).
 
 **Mục đích.** Thêm một nhóm seed tươi (nhóm cuối của `namhunhh/hmm-navcache-r67`, chưa dùng) để ước lượng tỉ lệ run > α của luật cuối trên
 432 run tươi (64–72) thay vì 288. Cấu hình y hệt Entry 24: R_new = OWF-HWA-S5-NT-HQ; R_old = OWF-HWA-S5; C10 = R_new + phủ quyết ½. Tất cả
