@@ -69,6 +69,7 @@ def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12, reentry="pri
     # LOCAL neighbourhood of radius R_LOC excl around the reporting disc: mN = posterior mass on N (what Proposition 2 needs),
     # mNL = mass on N within R_LOC excl of the reporting cell (unambiguous 'near here' integrity)
     near = torch.tensor((F.tree.query(F.cen)[0] <= excl).reshape(shape), device=dev).reshape(-1)
+    near16 = torch.tensor((F.tree.query(F.cen)[0] <= 1.6 * excl).reshape(shape), device=dev).reshape(-1)   # Entry 25: the protocol's off-map distance
     rl = int(np.ceil(R_LOC * excl / g)); offL = np.stack(np.meshgrid(*[np.arange(-rl, rl + 1)] * d, indexing="ij"), -1).reshape(-1, d)
     offL = torch.tensor(offL[np.linalg.norm(offL * g, axis=1) <= R_LOC * excl], device=dev)
     cen = [torch.arange(shape[k], dtype=f64, device=dev) for k in range(d)]
@@ -80,7 +81,7 @@ def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12, reentry="pri
     o_mass = torch.zeros((nb, T), dtype=f64, device=dev); o_cov = torch.zeros_like(o_mass); o_om = torch.zeros_like(o_mass)
     o_lml = torch.zeros_like(o_mass); o_mean = torch.zeros((nb, T, d), dtype=f64, device=dev)
     o_best = torch.zeros((nb, T), dtype=torch.long, device=dev)
-    o_mN = torch.zeros((nb, T), dtype=f64, device=dev); o_mNL = torch.zeros_like(o_mN)
+    o_mN = torch.zeros((nb, T), dtype=f64, device=dev); o_mNL = torch.zeros_like(o_mN); o_mN16 = torch.zeros_like(o_mN)
     ar = [torch.arange(shape[k], device=dev) for k in range(d)]; bi = torch.arange(nb, device=dev)
     for t in range(T):
         if t > 0:                                                                            # ---- predict
@@ -146,9 +147,9 @@ def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12, reentry="pri
         pos = (nbc[bi, best].to(f64) + 0.5) * g + PHt[t][:, None, :]                          # cell centre (relative to origin) + phase
         o_mean[:, t] = (wgt[:, :, None] * pos).sum(1) / torch.clamp(wgt.sum(1), min=1e-300)[:, None] + torch.tensor(F.origin, dtype=f64, device=dev)
         o_cov[:, t] = (Bf * mapped).sum(1); o_om[:, t] = om
-        o_mN[:, t] = (Bf * near).sum(1)
+        o_mN[:, t] = (Bf * near).sum(1); o_mN16[:, t] = (Bf * near16).sum(1)
         nl = cc[bi, best][:, None, :] + offL[None]                                          # (nb, nL, d) local neighbourhood
         okl = ((nl >= 0) & (nl < shp)).all(-1); fll = (torch.minimum(torch.clamp(nl, min=0), shp - 1) * strides).sum(-1)
         o_mNL[:, t] = (torch.gather(Bf, 1, fll) * near[fll] * okl).sum(1)
     cpu = lambda x: x.detach().cpu().numpy()
-    return dict(mass=cpu(o_mass), cov=cpu(o_cov), om=cpu(o_om), lml=cpu(o_lml), mean=cpu(o_mean), best=cpu(o_best), mN=cpu(o_mN), mNL=cpu(o_mNL))
+    return dict(mass=cpu(o_mass), cov=cpu(o_cov), om=cpu(o_om), lml=cpu(o_lml), mean=cpu(o_mean), best=cpu(o_best), mN=cpu(o_mN), mNL=cpu(o_mNL), mN16=cpu(o_mN16))

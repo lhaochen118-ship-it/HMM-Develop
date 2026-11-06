@@ -20,6 +20,7 @@ VETO = float(os.environ.get("OWF_VETO", "0"))                   # OWF_VETO=v: HS
 VETO_FR = os.environ.get("OWF_VETO_FR", "")                    # Entry 22b: take mN from ANOTHER frame set ("dir:ftag", e.g. the alias-aware
                                                                  # filter --lu half) instead of the run's own OWF frames
 VETO_ALL = os.environ.get("OWF_VETO_ALL", "") == "1"             # veto every report (HSI branch AND the OWF tiers), not only HSI
+VETO_KEY = os.environ.get("OWF_VETO_KEY", "mN")                 # Entry 25: mN16 = posterior mass within 1.6 excl of the map (the protocol's off-map distance)
 
 
 def terms(v):
@@ -57,8 +58,8 @@ def one(args):
         if VETO_FR:                                                    # Entry 22b: near-map mass of a second (alias-aware) filter
             vd, vt = VETO_FR.split(":"); vf = os.path.join(vd, f"fr_{base}_s{seed}{vt}_b1.npz")
             if not os.path.exists(vf): return t, None
-            okV = np.asarray(np.load(vf)["mN"], float) >= VETO
-        elif "mN" in fr.files: okV = np.asarray(fr["mN"], float) >= VETO
+            okV = np.asarray(np.load(vf)[VETO_KEY], float) >= VETO
+        elif VETO_KEY in fr.files: okV = np.asarray(fr[VETO_KEY], float) >= VETO
         accH = accH & okV                                              # Entry 21: the open-world filter vetoes the closed-world HSI branch
     excl = float(z["excl"]); MP = z["MP"]; qp = z["q_pos"]; sid, k = z["q_sid"], z["q_k"]
     seqs = [np.where(sid == s)[0][np.argsort(k[sid == s])] for s in np.unique(sid)]
