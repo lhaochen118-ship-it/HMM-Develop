@@ -19,6 +19,7 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | Kho dự trữ seed 19–27 (3 tập × 108 run) | sinh bởi đợt `hsi20`, publish `caotienminh1/hmm-navcache-r19`; **chưa dùng** |
 | Báo cáo `paper/BAO_CAO_HSI.pdf` (15 trang, abstract tiếng Anh) + lý thuyết Mệnh đề 1–7 | xong |
 | Paper hoàn chỉnh | chưa viết (chỉ báo cáo + abstract nháp) |
+| **Entry 19–22 (phiên 2026-11-06)** | xong: NT (E19, seed 58–60), NT-V (E21, seed 61–63) không qua quy tắc; L_vis (E20), điểm giao μ₁/2 (E22) âm ở phát triển; R* = OWF-HWA-S5 giữ nguyên |
 | **Entry 10 — OWF (ý tưởng 2b, bộ lọc thế giới mở)** | xong: Gate 18, đăng ký trước, tập A 404 run + tập quyết định seed 25–27; D3 (điều hướng) trượt ⇒ HSI-VN giữ nguyên; `paper/BAO_CAO_OWF.pdf` |
 
 ## 3. Quyết định đã thống nhất
@@ -81,8 +82,34 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 49–51 | `synchan5704/hmm-navcache-r49` (kho `fr49`) | Entry 14 (OWF-HWA-S: L1–L3 đạt) | đã dùng |
 | seed 52–54 | `synchan5704/hmm-navcache-r49` | Entry 15 (OWF-HWA-S5: M1–M3 đạt) | đã dùng |
 | seed 55–57 | `namhunhh/hmm-navcache-r55` (kho `fr55`, 2026-11-05) | Entry 17 (xác nhận OWF-HWA-S5 + SOTA ngoài trên cùng run) | đã dùng |
-| seed 58–60 | `namhunhh/hmm-navcache-r55` | — | **trống** |
+| seed 58–60 | `namhunhh/hmm-navcache-r55` | Entry 19 (OWF-HWA-S5-NT: N1 trượt — cả R* cũng có 6/144 run > α; R* giữ nguyên) | đã dùng |
+| seed 61–63 | `namhunhh/hmm-navcache-r61` (kho `fr61`, 2026-11-06) | Entry 21 (NT-V: V3 điều hướng trượt; NT: N3 trượt 0.07 m; R* giữ nguyên) | đã dùng |
+| seed 64–66 | `namhunhh/hmm-navcache-r61` | — (kernel `test64-*` đã dựng sẵn trong scratchpad cho R* + NT-LU, KHÔNG push vì Entry 22 âm ở dev) | **trống** |
 | seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
+
+## 6b. Việc tiếp theo — cập nhật phiên 2026-11-06 (đọc trước §6a)
+
+**Đã chốt trong phiên (Entry 19–22, `RESEARCH_LOG.md`; báo cáo `paper/BAO_CAO_S1106.pdf`).**
+- Luật khuyến nghị vẫn là **OWF-HWA-S5**. Trên ba nhóm seed mới 55–63 (432 run): recall 0.927–0.937, TB segFAR gộp 0.0063, 9/432 run > α
+  (2.1 %). 7 trong 9 run là CMU, đến từ hai bố cục lỗ (seed 60, seed 61).
+- Entry 19 (NT, không dịch chuyển tức thời) và Entry 21 (NT-V, OWF phủ quyết nhánh HSI) đều không qua quy tắc đăng ký. NT: recall bằng, TB
+  segFAR thấp hơn, điều hướng ±. NT-V: hợp lệ tốt hơn, nhưng điều hướng countryside tệ hơn.
+- Entry 20 (ℓ = L_vis) và Entry 22 (điểm giao μ₁/2 cho ô trống; phủ quyết chéo) âm ở phát triển.
+- **Phát hiện chính:** bí danh mà odometry không thấy được. Bản sao dịch dọc một đường thẳng khớp yếu (cos 0.34–0.45 so với 0.69–0.77)
+  nhưng nhất quán chuyển động. Mọi bộ lọc chuẩn hoá z theo frame đều đi theo nó (Mệnh đề 6, `paper/owf_theory.md` §9). Trên CMU có hai
+  bản sao như vậy: lệch 204 m (slice 11–12) và 673 m (slice 22 ↔ 24), không đổi qua 10–17 lượt đi.
+
+**Theo thứ tự ưu tiên:**
+1. **Emission hiệu chỉnh tuyệt đối theo điều kiện** (con đường duy nhất đã thấy để loại bí danh dịch chuyển mà không mất recall).
+   - Điểm giao một-hằng-số-mỗi-run (`--lu half`) chứng minh cơ chế: CMU ÷ 4.6 báo sai. Nhưng nó sai mô hình khi điều kiện thay đổi.
+   - Ứng viên: μ₁ ước lượng nhân quả theo từng chuỗi; hoặc LR trên độ tương đồng thô, hiệu chỉnh bằng phân bố "khớp đúng" của chính hậu
+     nghiệm (hindsight) và phân bố "bí danh" của bản đồ (cặp ảnh xa nhau).
+   - Kiểm trên tập A trước (`devlu` là mốc so sánh: `analysis/results/owf/s1106/e22_*`), rồi mới dùng seed 64–66.
+2. **Seed 64–66 của `namhunhh/hmm-navcache-r61` còn trống.** Kernel `test64-*` (R* + NT-LU) đã dựng nhưng không push. Phải dựng lại với ứng
+   viên mới.
+3. Nếu ưu tiên hợp lệ hơn recall: C5 / C6 (phủ quyết bằng bộ lọc LU) là các luật hợp lệ nhất từng đo trên tập A (TB segFAR 0.0012–0.0018,
+   0 run > α), đổi lại −2.6 … −4.5 pp recall. Có thể đăng ký như một điểm vận hành "an toàn" riêng.
+4. VPR-Space: lớp quyết định quá bảo thủ trên triển khai ngắn (Entry 18). Vẫn mở.
 
 ## 6a. Việc tiếp theo — cập nhật phiên 2026-11-05 chiều (đọc trước §6 cũ)
 

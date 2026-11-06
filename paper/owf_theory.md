@@ -182,7 +182,7 @@ belief has lost the true position everywhere (only kidnap and the motion blur ca
 *Observation that motivates it (Entry 21).* On CMU seed 60 the hole covers a straight road (slices 11–12). Every filter (OWF, HSI) follows a
 copy of the true track shifted about 204 m back along the same road. The offset (−188, −78) m is constant over 17 sequences, along the road
 direction, and two independent descriptors pick the same copy (median 4.9 m apart). The copy matches weakly: CosPlace cosine median 0.445
-vs 0.77 at the true place with the full map; robust z median 3.3 vs 7.3 for true matches. But a shift along a straight line is invisible to
+vs 0.77 at the true place with the full map; robust z median 4.1 vs 7.3 for true matches. But a shift along a straight line is invisible to
 the odometry, so the motion model cannot reject it.
 
 *Setting.* Frame t has robust z-scores z_ti over the n map images (median 0, MAD-scaled). The filter of Section 1 uses
@@ -214,7 +214,19 @@ w_t (β z_t,a_t − A_t) − w_t · 0. (c) Algebra. ∎
 
 *Predictions, written before the development wave.*
 - CMU seed 60, CosPlace: μ̂₁ / 2 = 3.02 and copy median z = 3.27. The copy's per-frame evidence drops from about e^2.8 to about e^0.25 but stays
-  positive, so (c) slows the copy without reversing it there.
+  positive, so (c) slows the copy without reversing it there. [Correction, 07:25 UTC, after the wave: the copy's median z is 4.09; 3.27
+  is its 25th percentile. With 4.09 the predicted per-frame evidence is about e^3.6 → e^1.1.]
 - Cost: on-map frames whose true-match z is below μ₁ / 2 now push mass off the map, which lowers recall. The cost should be largest for weak
   descriptors (NetVLAD) and the hardest conditions (CMU, countryside).
 - The open-world veto of Entry 21 turns a lower near-map mass mN into fewer HSI reports, so (c) and the veto act together.
+
+*Measured (Entry 22, development set A, 399 runs; written after the wave).*
+- The predictions held. CMU false segments of the OWF alone at ε = 1e-3 fall 4.6× (segFAR 0.036 → 0.008); on the CMU seed 60 design run
+  they fall to 0 (17 → 0 of 687) and navigation error falls 6.8 → 2.7 m.
+- The cost was larger than hoped. Recall drops on office / old town / Boreas by 11–12 pp, and Nordland false segments RISE
+  (0.018 → 0.046): the belief falls off the map in weak stretches, then re-acquires at a look-alike.
+- In the full system: recall −0.030, navigation +3.4 m. Dropped.
+- Reading: one crossover per run mis-models conditions that vary. In z-space a weak true match (5th percentile 3.9 on CMU) and a strong
+  alias (median 4.1) overlap, while the absolute similarity separates them (true-place cosine 5th percentile 0.54 vs alias median 0.44). The per-frame z normalisation of Section 1 discards
+  exactly the information that rejects odometry-unobservable aliases. Making use of it needs an emission calibrated in absolute similarity
+  per condition. That is open.

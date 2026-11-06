@@ -1,9 +1,19 @@
 # 00 — READ ME FIRST (branch `hmm-2nd-idea`)
 
-*2026-11-04. Repo `lhaochen118-ship-it/hmm-develop` (public). Không tạo PR. Branch dành cho **ý tưởng 2 (HSI)**: lời giải A\* khác hẳn ý tưởng 1
+*2026-11-06 (trước: 2026-11-04). Repo `lhaochen118-ship-it/hmm-develop` (public). Không tạo PR. Branch dành cho **ý tưởng 2 (HSI)**: lời giải A\* khác hẳn ý tưởng 1
 (phẫu thuật bản đồ phản thực, branch `hmm-navigation-5`) cho cùng bài toán định vị chuỗi trên bản đồ ảnh có lỗ.*
 
 **Luật khuyến nghị: HSI-VN** — 0 vi phạm trên 413 run phát triển + 216 run của hai tập kiểm tra mới; +0.065 recall so với ý tưởng 1 (SH).
+
+**Phiên 2026-11-06 (Entry 19–22, `paper/BAO_CAO_S1106.pdf`).** Luật khuyến nghị vẫn là **OWF-HWA-S5**.
+- Ba nhóm seed mới 55–63 (432 run): recall 0.927–0.937, 9/432 run > α (7 là CMU, từ hai bố cục lỗ).
+- Hai ứng viên đăng ký trước không qua quy tắc. NT (không dịch chuyển tức thời): recall bằng, điều hướng ±. NT-V (OWF phủ quyết HSI): hợp lệ
+  tốt hơn, điều hướng countryside tệ hơn.
+- Hai ý tưởng âm ở phát triển: ℓ = L_vis; điểm giao μ₁/2.
+- Phát hiện: **bí danh odometry không thấy được** (bản sao dịch dọc đường thẳng; Mệnh đề 6, `paper/owf_theory.md` §9) là nguồn đuôi hợp
+  lệ còn lại.
+- Kho seed mới `namhunhh/hmm-navcache-r61`; seed 64–66 còn trống.
+- Việc tiếp theo: `03_HANDOFF.md` §6b.
 
 **Phiên 2026-11-05 chiều (Entry 16–17, `paper/BAO_CAO_S1105.pdf`).**
 - Engine GPU cho OWF: 10× nhanh hơn, quyết định trùng bản numpy.

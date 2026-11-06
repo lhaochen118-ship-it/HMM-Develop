@@ -1,6 +1,24 @@
 # 06 — Hướng dẫn cho khung chat mới: đọc repository và việc tiếp theo
 
-*2026-11-04, branch `hmm-2nd-idea` (repo `lhaochen118-ship-it/hmm-develop`, public). Không tạo PR. Thay cho `history/05_NEW_CHAT_GUIDE_idea2-start.md`.*
+*2026-11-06 (trước: 2026-11-04), branch `hmm-2nd-idea` (repo `lhaochen118-ship-it/hmm-develop`, public). Không tạo PR. Thay cho `history/05_NEW_CHAT_GUIDE_idea2-start.md`.*
+
+## 00. Bắt đầu nhanh (phiên 2026-11-06 trở đi)
+
+1. Như §0 bên dưới (fetch / token / `active_accounts.txt`). Bốn tài khoản: `namhunhh`, `duckzuykobip`, `dinhthinh`, `hieuho669`. Mỗi tài khoản
+   có 2 phiên 4×L4.
+2. Đọc `paper/BAO_CAO_S1106.pdf`, `RESEARCH_LOG.md` Entry 19–22, `paper/owf_theory.md` §8–9, rồi `03_HANDOFF.md` §6b (việc tiếp theo).
+3. Công cụ mới của phiên:
+   - `owf.py --pin 0`: NT, Ω hấp thụ.
+   - `owf.py --reentry edge`.
+   - `owf.py --ellx vis`: L_vis, `analysis/vis_length.py`.
+   - `owf.py --lu half`: điểm giao μ₁/2 cho ô trống, cả numpy và torch; mặc định tắt.
+   - Khung OWF có thêm `mN` (khối lượng gần bản đồ) và `mNL`.
+   - `OWF_VETO=v owf_union.py ...`: OWF phủ quyết nhánh HSI khi mN < v.
+   - `OWF_VETO_FR=<dir>:<ftag>`: lấy mN từ một bộ khung khác.
+   - `OWF_VETO_ALL=1`: phủ quyết mọi báo.
+   - `owf_audit.py`: tự kiểm toán theo thời gian, âm.
+4. Kho seed: `namhunhh/hmm-navcache-r61`. Seed 64–66 còn TRỐNG. Một lượt kiểm tra (R* + ứng viên, 6 phiên L4) mất ~20 phút. Các script đánh giá
+   mẫu nằm trong `RESEARCH_LOG.md` Entry 21 (`owf_union.py` + `hcal_board.py`).
 
 ## 0. Bắt đầu nhanh (phiên 2026-11-05 chiều trở đi)
 
@@ -85,6 +103,8 @@ pip install -q kaggle markdown xhtml2pdf scipy scikit-learn matplotlib pypdf
    seeds `19-21` …), ghi kết quả + quyết định, cập nhật `03_HANDOFF.md` §5, báo cáo (`paper/build_hsi_report.py`), commit + push.
 
 ## 5. Việc tiếp theo
+
+**Cập nhật 2026-11-06:** xem `03_HANDOFF.md` §6b. Ưu tiên số 1 là emission hiệu chỉnh tuyệt đối theo điều kiện (Mệnh đề 6). Danh sách bên dưới là của phiên trước.
 
 Chi tiết trong `03_HANDOFF.md` §6. Luật khuyến nghị: **OWF-HWA-S5** (Entry 15; seed 52–54: 0.941 vs HSI-VN 0.823). Kho seed
 mới đã dùng hết (40–54); quyết định tiếp theo cần sinh kho mới bằng `owf_wave.py --set fresh:55-60` (34 kernel CPU, ~2.5 giờ).

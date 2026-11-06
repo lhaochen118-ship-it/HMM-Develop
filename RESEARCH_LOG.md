@@ -129,8 +129,8 @@ Chênh recall so với R*:
 - (ii) Nhưng một điểm giao chung cho cả run là sai mô hình khi điều kiện không đồng nhất. Các frame trên bản đồ có z thật < c (mùa đông, quay
   đầu, che khuất) đẩy khối lượng ra ngoài bản đồ. Ở Nordland, hậu nghiệm mất vết rồi bắt lại sai chỗ, nên báo sai TĂNG. Đây đúng là cái giá
   §9 đã dự báo.
-- (iii) Mô hình phương sai lớn hơn (N(μ₁, σ₁²), σ₁ ≈ 2–3) hạ điểm giao về ≈ 2, thấp hơn z của bí danh (≈ 3.3). Như vậy theo z, khớp đúng yếu và
-  bí danh mạnh chồng nhau: thông tin tách được nằm ở độ tương đồng TUYỆT ĐỐI (CMU: khớp đúng 5 % = 0.59 so với bí danh 0.45). Chuẩn hoá z
+- (iii) Mô hình phương sai lớn hơn (N(μ₁, σ₁²), σ₁ ≈ 2–3) hạ điểm giao về ≈ 2, thấp hơn z của bí danh (trung vị ≈ 4.1). Như vậy theo z, khớp đúng yếu và
+  bí danh mạnh chồng nhau: thông tin tách được nằm ở độ tương đồng TUYỆT ĐỐI (CMU: cos ở đúng chỗ, phân vị 5 % = 0.54, so với trung vị bí danh 0.44). Chuẩn hoá z
   đã bỏ đi thông tin đó.
 - (iv) Phủ quyết chéo (C5, C6) chọn mức hợp lệ cao nhất từng đo trên tập A (TB segFAR 0.0012–0.0018), nhưng recall giảm 2.6–4.5 pp.
 
@@ -201,11 +201,11 @@ m/t giữ nguyên. Cài đặt: `OWF_VETO=0.5 owf_union.py ...` (`analysis/owf_u
 - Cơ chế (kiểm bằng descriptor gốc): lỗ của seed 60 phủ một đoạn đường thẳng ở slice 11–12 của CMU. Ảnh truy vấn trong lỗ khớp với một
   "bản sao dịch chuyển" lùi khoảng 204 m dọc chính con đường đó. Độ lệch (−188, −78) m không đổi trên 17 chuỗi, theo đúng hướng đường. Hai
   descriptor độc lập (MegaLoc, SALAD) chọn cùng một chỗ, lệch nhau trung vị 4.9 m.
-- Khớp này yếu theo giá trị tuyệt đối: cosine trung vị 0.445 (CosPlace), so với 0.77 ở đúng chỗ khi bản đồ đầy đủ; z trung vị 3.3 so với
+- Khớp này yếu theo giá trị tuyệt đối: cosine trung vị 0.445 (CosPlace), so với 0.77 ở đúng chỗ khi bản đồ đầy đủ; z trung vị 4.1 so với
   7.3. Nhưng nó nhất quán với chuyển động: dịch dọc một đường thẳng không quan sát được bằng odometry. Mọi bộ lọc tuần tự vì vậy đều đi
   theo bản sao.
 - Emission tương đối của OWF (z-score trong hồ sơ của chính frame, nghiêng mũ β = 1) cho z ≈ 4 một LR ≈ e^3.5 / frame so với LR = 1 của ô
-  trống. Theo z, phân bố khớp đúng (CMU s58, 5 % = 3.9) chồng lên phân bố bí danh. Độ tương đồng thô tách rõ hơn (khớp đúng 5 % = 0.59;
+  trống. Theo z, phân bố khớp đúng (CMU s58, 5 % = 3.9) chồng lên phân bố bí danh. Độ tương đồng thô tách rõ hơn (cos ở đúng chỗ, 5 % = 0.54;
   ngoài bản đồ trung vị 0.47).
 - Hướng tiếp (CHƯA kiểm): emission hiệu chỉnh tuyệt đối, trong đó trạng thái "ngoài bản đồ" giải thích được một đỉnh bí danh. Khi đó tỉ số
   hậu nghiệm bản đồ : ngoài bản đồ = f₁(đỉnh) / f_bí-danh(đỉnh), thay vì ≈ 1 như hiện nay.

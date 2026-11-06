@@ -1,9 +1,45 @@
 # 01 — Scientific Findings (ý tưởng 2: HSI, branch `hmm-2nd-idea`)
 
-*Cập nhật 2026-11-04. Phạm vi: đóng góp, ý nghĩa khoa học, kết quả tích cực, kết quả tiêu cực / hạn chế, bằng chứng và điều kiện kiểm chứng.
+*Cập nhật 2026-11-06 (trước: 2026-11-04). Phạm vi: đóng góp, ý nghĩa khoa học, kết quả tích cực, kết quả tiêu cực / hạn chế, bằng chứng và điều kiện kiểm chứng.
 Không chứa vận hành (→ `02`) hay kế hoạch (→ `03`). Nguồn đầy đủ: `RESEARCH_LOG.md` Entry 1–9; lý thuyết `paper/hsi_theory.md` Mệnh đề 1–7;
 báo cáo `paper/BAO_CAO_HSI.pdf`. Phát hiện của ý tưởng 1 và của các hướng trước: `history/01_SCIENTIFIC_FINDINGS_idea1_and_idea2-early.md`,
 tóm tắt `07_IDEA1_SUMMARY.md`.*
+
+## 0000000. Phiên 2026-11-06 — Entry 19–22: hợp lệ của luật đương nhiệm trên 3 nhóm mới, bí danh odometry không thấy được
+
+**Luật đương nhiệm OWF-HWA-S5 trên ba nhóm seed mới (55–57, 58–60, 61–63; 432 run, đều đăng ký trước):**
+
+| Nhóm | recall | TB segFAR | run > α | sai số (m) |
+|---|---|---|---|---|
+| 55–57 | 0.937 | 0.0045 | 1 | 12.5 |
+| 58–60 | 0.934 | 0.0101 | 6 | 16.3 |
+| 61–63 | 0.927 | 0.0043 | 2 | 12.9 |
+
+Tổng 9/432 = 2.1 % run > α. 7 trong 9 là CMU, đến từ hai bố cục lỗ: seed 60 (nhánh HSI) và seed 61 (bậc đồng thuận OWF).
+
+**Phát hiện (tích cực, cơ chế): bí danh mà odometry không thấy được** (`paper/owf_theory.md` §9, Mệnh đề 6).
+- Truy từ các run > α: cả hai bố cục lỗ đều phủ một đoạn đường mà ở chỗ khác trên bản đồ có một "bản sao dịch chuyển".
+  - Seed 60: lệch 204 m dọc chính con đường (slice 11–12).
+  - Seed 61: lệch 673 m (slice 22 ↔ 24).
+  - Độ lệch không đổi qua 10–17 lượt đi; hai descriptor độc lập chọn cùng chỗ (lệch nhau trung vị 4.9 m).
+- Khớp yếu theo giá trị tuyệt đối: cos 0.34–0.45, so với 0.69–0.77 ở đúng chỗ.
+- Nhưng dịch dọc một đường thẳng không quan sát được bằng odometry. Emission chuẩn hoá theo hồ sơ của frame có điểm giao ≈ 0.5 SD, nên bản
+  sao tích luỹ không giới hạn.
+
+**Bằng chứng nhân quả:** nâng điểm giao lên μ₁/2 (`--lu half`) chia 4.6 lần báo sai CMU của OWF đơn lẻ trên tập A. Run thiết kế CMU s60:
+17 → 0 đoạn, sai số 6.8 → 2.7 m.
+
+**Kết quả tiêu cực (đều có số đo):**
+- NT (Entry 19, seed 58–60). Mệnh đề 5 đúng: Nordland điều hướng 19.1 → 13.5 m, TB segFAR 0.0101 → 0.0091. Nhưng không qua N1, vì cả R*
+  cũng có 6/144 run > α. Trên seed 61–63 trượt N3 0.07 m.
+- ℓ = L_vis (Entry 20, phát triển): −0.029 recall, 13 run > α. Tương quan bản đồ–bản đồ không phải tương quan bằng chứng truy vấn–bản đồ.
+- OWF phủ quyết nhánh HSI (Entry 21, seed 61–63): TB segFAR −23 %, recall −0.005, điều hướng +0.9 m (countryside).
+- Điểm giao μ₁/2 (Entry 22, phát triển): recall −0.030, Nordland tệ hơn. Một hằng số mỗi run sai mô hình khi điều kiện thay đổi.
+- Phủ quyết chéo: hợp lệ nhất từng đo (TB segFAR 0.0012–0.0018), nhưng recall giảm 2.6–4.5 pp.
+- Tự kiểm toán theo thời gian, luật toàn vẹn cục bộ, hiệu chỉnh tỉ lệ cho điều hướng: âm (ghi chú trong Entry 19).
+
+**Ý nghĩa.** Thông tin loại được bí danh dịch chuyển nằm ở độ tương đồng TUYỆT ĐỐI (CMU: cos ở đúng chỗ, phân vị 5 % = 0.54, so với trung vị bí danh 0.44). Chuẩn
+hoá z theo frame đã bỏ đi thông tin đó. Bước tiếp theo có nguyên tắc là một emission hiệu chỉnh tuyệt đối theo điều kiện.
 
 ## 000000. Phiên 2026-11-05 chiều — Entry 16 (âm), tính tổng quát của OWF-HWA-S5, chẩn đoán khoảng trống, engine GPU
 

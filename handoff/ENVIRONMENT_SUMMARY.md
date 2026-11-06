@@ -1,8 +1,25 @@
 # Datasets & Environment Summary
 
-*Cập nhật 2026-11-04 (branch `hmm-2nd-idea`, ý tưởng 2 HSI). Đọc trước: **§0** (trạng thái hiện hành, thay mọi ghi chú cũ bên dưới khi mâu thuẫn).
+*Cập nhật 2026-11-06 (§000); trước đó 2026-11-04 (branch `hmm-2nd-idea`, ý tưởng 2 HSI). Đọc trước: **§0** (trạng thái hiện hành, thay mọi ghi chú cũ bên dưới khi mâu thuẫn).
 Cách đọc repo và việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Các dataset `hmm-cms-*`, `hmm-fwd-null-*` là của ý tưởng 1
 (baseline). Các mục §1–§5 bên dưới giữ lịch sử (một số acc / luật trong đó đã cũ).*
+
+## 000. Phiên 2026-11-06: tài khoản, kho seed r61
+
+**Tài khoản** (`automation/active_accounts.txt`, thứ tự lấp phiên): `namhunhh`, `duckzuykobip`, `dinhthinh`, `hieuho669`. Mỗi tài khoản có 2 phiên
+GPU (4× L4) + 5 phiên CPU. Token ở `~/.kaggle/tok_<username>` (chmod 600), không vào repo / dataset / báo cáo.
+- `hieuho669`: lúc đầu push L4 bị từ chối ("You must accept this competition's rules ... gemma-4-developer-agent"), nên chỉ chạy CPU. Từ
+  06:23 UTC push L4 thành công (kernel `devlu-1/2`).
+- Nếu lỗi này quay lại: người dùng bấm chấp nhận luật tại https://www.kaggle.com/competitions/gemma-4-developer-agent.
+
+**Dataset mới (public):**
+
+| Slug | Nội dung | Vai trò |
+|---|---|---|
+| `namhunhh/hmm-navcache-r61` | kho seed mới 61–66: bố cục lỗ mới, 8 dataset × 6 descriptor, 288 cache (939 MB). Sinh bằng 20 kernel CPU `fr61-*` (`hsi_fresh.py --keep`) | 61–63 đã dùng (Entry 21); **64–66 chưa dùng** |
+
+**Container:** khởi động lại lúc ~05:18 UTC (mất monitor nền); `central_monitor.py` chạy lại từ state file. Bài học: state file giúp khởi động lại
+không mất kernel. Kernel đã xong mà monitor chưa poll có thể kéo tay bằng `kaggle kernels output <id> -p <dir> --file-pattern ...`.
 
 ## 00. Phiên 2026-11-05 (chiều): tài khoản, máy L4, engine GPU
 

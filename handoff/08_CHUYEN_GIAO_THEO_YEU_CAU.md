@@ -137,7 +137,18 @@ phút thay vì một đợt Kaggle.
 | Mã, cấu hình, log, kết quả lưu có hệ thống | **đạt** | `analysis/`, `automation/`, `analysis/results/`, `RESEARCH_LOG.md` (đăng ký trước + kết quả), `handoff/AUTOLOOP.md` (nhật ký từng bước) |
 | Báo cáo giả thuyết, kết quả, hạn chế, hướng tiếp | **đạt** | `paper/BAO_CAO_HSI.pdf`, `paper/BAO_CAO_OWF.pdf`, `paper/BAO_CAO_AUTOLOOP.pdf`; mục dưới |
 
+**Cập nhật 2026-11-06 (Entry 19–22, `paper/BAO_CAO_S1106.pdf`).**
+- Hiệu quả: luật đương nhiệm được kiểm thêm trên hai nhóm seed mới (58–60, 61–63). Trên 3 nhóm, 432 run: recall 0.927–0.937, 9/432 run > α
+  (2.1 %), TB segFAR 0.0063. Tiêu chuẩn "≤ 2 % run > α" đạt trên 2/3 nhóm.
+- Lý thuyết: thêm Mệnh đề 5 (không dịch chuyển tức thời; kiểm trên seed mới) và Mệnh đề 6 (điểm giao của emission, bí danh odometry
+  không thấy được). Mệnh đề 6 viết trước đợt phát triển; dự báo đúng cả cơ chế lẫn cái giá.
+- Quy trình (yêu cầu §3): 4 vòng trong phiên. Hai vòng đăng ký trước, kiểm trên seed mới, quyết định theo quy tắc (giữ R*). Hai vòng âm ở
+  phát triển nên không đốt seed mới. Nhóm 64–66 còn trống.
+- Kaggle (yêu cầu §4): 4 tài khoản × 2 phiên 4×L4 + CPU. Kho seed `namhunhh/hmm-navcache-r61` (20 kernel CPU). Monitor trung tâm khởi động
+  lại được sau khi container reset.
+
 **Hạn chế còn tồn tại.**
+- (mới) Bí danh odometry không thấy được trên CMU: nguồn 7/9 run > α trên 432 run mới. Cần emission hiệu chỉnh tuyệt đối theo điều kiện.
 - Sai số điều hướng Nordland kém HSI-VN (6.3–9.6 vs 3.6–4.2 m): ~5 % báo thêm của OWF lệch quá excl.
 - Countryside: chuỗi đúng chỉ ~0.87 khung (VIO trôi).
 - CMU vẫn yếu nhất (0.86); một run CMU vượt α ở mọi luật trên seed 52–54.

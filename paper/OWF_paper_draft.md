@@ -57,7 +57,9 @@ maps a probability vector to a probability vector; **nothing is renormalised ove
 **3.2b No teleport (Proposition 5, Entry 19).** Mass that leaves the band goes to the far state Ω and comes back only through the band edge
 (or never). The historical design (Entry 10) returned Ω-mass over the start prior, i.e. onto every map image each frame. Coherent aliasing
 then amplifies those seeds: on the Nordland design run, the reports wrong at 1 − 1e-8 drop from 22 to 0 when the channel is removed.
-*Its pre-registered fresh-seed test is Entry 19.*
+Fresh-seed tests (Entries 19 and 21, seeds 58–63, 288 runs): no change in recall (−0.001) and lower mean segFAR (0.0101 → 0.0091 on 58–60).
+Navigation error is lower on 58–60 (16.3 → 15.6 m) but +0.07 m on 61–63. Under the pre-registered rules it did not replace the incumbent:
+on 58–60 the absolute run-count target failed for both rules, and on 61–63 the navigation criterion failed by 0.07 m.
 
 **3.3 Emission.** For frame z_t with similarities to the n map images, robust z-scores z_{t,i} within the frame's own profile give
 L_{t,i} = exp(β z_{t,i}) / mean_j exp(β z_{t,j}) (mean exactly 1 over the map); a mapped cell gets the mean L of its images, an unmapped
@@ -77,12 +79,27 @@ zero-padded 1-D convolutions, emission updates as scatter-adds); odometry-only b
 10-member bank runs at 2.7–3.4 ms/frame (numpy reference on the same machine: 29 ms/frame) with identical decisions at every threshold
 (`analysis/owf_torch.py`).
 
+**3.3b What the emission cannot reject (Proposition 6, Entries 21–22).** Relative to the unmapped cells, an image gains mass when its
+z-score exceeds A_t/β ≈ 0.5 robust SD. Consider a copy of the true track shifted along a straight road: the odometry cannot see the shift,
+so the copy and the true (unmapped) track have equal motion likelihood, and the copy wins whenever its mean z exceeds the crossover. CMU
+contains two such copies, found by tracing the runs above α:
+- seed 60: 204 m back along slices 11–12;
+- seed 61: 673 m away, slice 22 vs slice 24.
+
+Both have a constant offset over 10–17 traversals, and two independent descriptors agree on the copy. Both match weakly (cosine 0.34–0.45
+vs 0.69–0.77 at the true place). A Gaussian-shift crossover μ₁/2 removes these false fixes (OWF alone: CMU false segments ÷ 4.6). But
+with one crossover per run it costs 3 pp recall and makes Nordland worse, so it was dropped at development (Section 6.4).
+
 ## 4. Theory
 
 Propositions 1–3 and their proofs: `paper/owf_theory.md` §2–4 (no net pull of a diffuse belief; a Ville bound on false reports within an
 off-map stretch under the e-value assumption (E1), with no separate edge term; leaving the map is decided by dead reckoning).
 Proposition 4 (hindsight-calibrated decision, finite-sample, no (E1)): `paper/owf_theory.md` §6. Why (E1) fails in practice — coherent
 perceptual aliasing — is measured in Section 6 (alias episodes).
+Proposition 2′ (Ville bound with an inflation budget K, measured): §7. Proposition 5 (no teleport: re-entry seeds are amplified by
+coherent aliasing): §8. Proposition 6 (the crossover of the per-frame normalised emission; aliases that the odometry cannot see grow
+without bound above it; the Gaussian-shift crossover μ₁/2, with predictions written before its development wave and the measured
+outcome): §9.
 
 ## 5. Protocol
 
@@ -106,6 +123,12 @@ paired against the previous rule on the same runs). Pooled recall / runs above �
 | 49–51 | OWF-HWA-S | 0.933 | +0.012 | 0 | 13.64 |
 | 52–54 | OWF-HWA-S5 | 0.941 | +0.0045 | 1 | 12.67 |
 | 55–57 | OWF-HWA-S5 (confirmation, Entry 17) | 0.937 | +0.131 vs HSI-VN | 1 | 12.48 |
+| 58–60 | OWF-HWA-S5 (reference of Entry 19) | 0.934 | — | 6 | 16.29 |
+| 61–63 | OWF-HWA-S5 (reference of Entry 21) | 0.927 | — | 2 | 12.91 |
+
+Over the three fresh groups that confirm the final rule (55–63, 432 runs), it reached pooled recall 0.927–0.937 with pooled mean segFAR
+0.0063. 9/432 runs (2.1 %) exceed α; 7 of the 9 are CMU, from two hole layouts (seed 60, seed 61) that each cover an odometry-unobservable
+alias (Section 3.3b). The project target "≤ 2 % of runs above α" holds on 2 of the 3 groups.
 
 **6.1b External baselines on the fresh group 55–57** (Entry 17, pre-registered, 144 runs, the same runs for every rule). Cell = pooled
 recall / worst-dataset mean segFAR / runs above α / navigation error (m):
@@ -153,6 +176,14 @@ because coherent aliasing is heavy-tailed (`owf_theory.md` §7).
 - Emission temperature selected by evidence: log-evidence +3300 but segFAR ×1.7 and navigation error ×3 on Nordland.
 - Simplified tiers: recall ±0.005, with more runs above α.
 - Continuous (posterior-mean) fixes: no navigation gain; fix errors are already 2.3–2.5 m.
+- Evidence length from the map's visual decorrelation length L_vis (Entry 20): recall −0.029, 13 runs > α. Map–map correlation (same
+  condition) does not measure query–map evidence correlation.
+- The open-world filter vetoes the hindsight branch where its near-map mass is < ½ (Entry 21, pre-registered, seeds 61–63):
+  - mean segFAR 0.0043 → 0.0033, recall −0.005;
+  - navigation +0.9 m (countryside, where odometry drift spreads the belief and the veto removes correct fixes). Not adopted.
+- Gaussian-shift crossover μ₁/2 for the unmapped cells (Entry 22): CMU false fixes ÷ 4.6, but recall −0.030 and Nordland worse. A veto by
+  that filter only (robust decision over the two emission models) is the most valid rule measured on the development set (mean segFAR
+  0.0012–0.0018), but recall is −0.026 … −0.045.
 
 **6.5 Compute.** The 10-member OWF bank runs at 2.7–3.4 ms/frame on one NVIDIA L4 (numpy: 29 ms/frame). A full evaluation of the system on
 657 runs takes 35 min on six 4×L4 sessions.
@@ -166,4 +197,7 @@ because coherent aliasing is heavy-tailed (`owf_theory.md` §7).
   those frames.
 - The holes are simulated (except NCLT, 4Seasons cross-scene and VPR-Space). On short planetary deployments (VPR-Space) the fixed decision
   layer is far too conservative (0.29 vs single-frame oracle 0.56) although the estimator is right on ≥ 0.93 of frames in most setups.
+- Odometry-unobservable aliases (a weak look-alike shifted along a straight road) defeat every sequential filter that normalises
+  similarities per frame (Proposition 6). They are the source of 7 of the 9 runs above α over the 432 fresh runs. Rejecting them needs an
+  emission calibrated in absolute similarity per condition, which is open.
 - Global descriptors only (no 6-DoF refinement).
