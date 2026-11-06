@@ -89,6 +89,42 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 25 — Phủ quyết theo khối lượng trong 1.6 excl (mN16) thay cho excl: KẾT QUẢ PHÁT TRIỂN PHẲNG, không đăng ký (2026-11-06 16:09 UTC)
+
+**Ý tưởng.** Phủ quyết của C10 dùng mN = khối lượng trong excl quanh ảnh bản đồ. "Ngoài bản đồ" theo giao thức (và theo bán kính bí danh của
+HQ) là xa hơn 1.6 excl. Giả thuyết: VIO trôi ngang (countryside) đặt khối lượng giữa excl và 1.6 excl, nên phủ quyết bỏ nhầm fix HSI đúng.
+`owf_torch.py` xuất thêm `mN16`; `OWF_VETO_KEY=mN16 owf_union.py`.
+
+**Phát triển:** đợt `devh16` (8 phiên L4, tập A, 399 run). Khung NT-HQ trùng hệt đợt `devhq` (tất định).
+
+| | R_new | phủ quyết mN | phủ quyết mN16 | mN16, phủ quyết mọi báo |
+|---|---|---|---|---|
+| recall gộp | 0.929 | 0.923 | 0.923 | 0.923 |
+| TB segFAR | 0.0034 | 0.0013 | 0.0014 | 0.0014 |
+| run > α | 0 | 0 | 0 | 0 |
+| countryside recall / điều hướng (m) | 0.833 / 25.7 | 0.816 / 31.2 | 0.817 / 30.9 | 0.817 / 30.9 |
+
+**Đọc.**
+- Khác biệt không đáng kể (+0.0003 recall). Chi phí ở countryside không do bán kính: ở đó hậu nghiệm OWF thật sự nằm xa bản đồ (VIO trôi,
+  khớp yếu).
+- Phủ quyết mọi báo, gồm cả các bậc OWF, giống hệt chỉ phủ quyết H: trên tập A, các bậc OWF của NT-HQ không báo khi mN16 < ½.
+- Không đăng ký. Seed 70–72 vẫn trống (kernel `test70-*` đã dựng sẵn nhưng không push).
+
+**Chẩn đoán phụ: khoảng trống recall của CMU so với oracle một-frame** (NT-HQ, tập A, 54 run; recall theo quãng đường từ đầu chuỗi):
+
+| quãng đường (excl) | tỉ lệ frame trên bản đồ | luật | top-1 đúng | OWF ≥ 0.99 và đúng | nhánh H |
+|---|---|---|---|---|---|
+| [0, 0.5) | 0.08 | 0.53 | 0.97 | 0.42 | 0.53 |
+| [0.5, 1) | 0.08 | 0.78 | 0.97 | 0.71 | 0.61 |
+| [1, 2) | 0.15 | 0.82 | 0.95 | 0.81 | 0.60 |
+| [2, 4) | 0.25 | 0.89 | 0.95 | 0.90 | 0.75 |
+| [4, 8) | 0.36 | 0.94 | 0.94 | 0.96 | 0.89 |
+
+- Chuỗi CMU ngắn và đa số bắt đầu trên bản đồ. Khoảng trống so với oracle (~0.12) nằm gần hết trong 2 excl đầu.
+- Nguyên nhân là tốc độ đếm bằng chứng theo quãng đường (ℓ = 0.4 excl; frame CMU cách ~2.4 m). Đây là sự thận trọng có nguyên tắc: bỏ ℓ thì
+  mọi run vượt α (Entry 10); trọng số tương quan hồ sơ 1 − r² đã bị loại trước đó.
+- Lấp khoảng này cần một mô hình tương quan bằng chứng tốt hơn. Để mở.
+
 ## Entry 24 — Xác nhận độc lập OWF-HWA-S5-NT-HQ trên nhóm seed mới 67–69, SOTA ngoài trên CÙNG run, và điểm vận hành an toàn — đăng ký trước (2026-11-06 14:41 UTC)
 
 **KẾT QUẢ (seed 67–69, 144 run; đợt `test67`, 9 phiên L4; ghi 15:25 UTC). Quyết định: R_new = OWF-HWA-S5-NT-HQ XÁC NHẬN (C1–C4 đều đạt).
