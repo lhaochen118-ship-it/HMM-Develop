@@ -89,6 +89,39 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 19 — Thế giới mở KHÔNG dịch chuyển tức thời (OWF-NT): bỏ kênh re-entry từ trạng thái xa lên khắp bản đồ — đăng ký trước (2026-11-06 04:47 UTC)
+
+**Chẩn đoán (Mệnh đề 5, `owf_theory.md` §8).** Bộ lọc cũ đưa khối lượng của trạng thái xa Ω quay lại lưới với tốc độ p_in = 0.01 / frame, rải theo
+prior khởi đầu (một nửa lên mọi ảnh bản đồ), tức là "dịch chuyển tức thời". Mỗi frame mọi ảnh nhận một hạt giống nhỏ; một đợt aliasing liên
+tiếp (độ phóng đại K tới 10¹⁰, Mệnh đề 2′) biến hạt giống thành chắc chắn. Run thiết kế Nordland s1:
+- báo sai ở 1 − 1e-5 / 1 − 1e-8: 26 / 22 → **0 / 0**;
+- segFAR ở ε = 1e-3: 0.038 → 0.015;
+- điều hướng: 15.3 → 9.1 m;
+- recall: 0.975 → 0.980.
+
+**Luật đăng ký: OWF-HWA-S5-NT** = OWF-HWA-S5 (Entry 15) với `--pin 0`: Ω hấp thụ; tương đương re-entry qua rìa band, Mệnh đề 5. Mọi phần khác giữ
+nguyên: ngân hàng 5 tỉ lệ × 2 q, OWF-H `xms0.9_16` + HSI-VN, `owf_union.py --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"`. Không có hằng
+số mới.
+
+**Phát triển (tập A):** Đợt `devp0` (luật đầy đủ với `--pin 0`, engine GPU). Lúc đăng ký có 301/399 run; 98 run còn lại sẽ báo cáo khi xong, không đổi quyết
+định. So với OWF-HWA-S5 trên CÙNG run:
+- recall **−0.0004** [−0.0008, −0.0001] (thắng 72 / hoà 119 / thua 110);
+- TB segFAR 0.0045 → 0.0040 (Nordland 0.0061 → 0.0047, countryside 0.0063 → 0.0047, Boreas 0.0024 → 0.0019);
+- **sai số điều hướng 12.8 → 12.5 m** (Nordland 5.6 → 4.5 m);
+- run > α: 1 → 2 (thêm một run CMU; TB CMU 0.0095 → 0.0096).
+
+Trên VPR-Space (đã xem ở Entry 18, chỉ mô tả): recall luật đầy đủ 0.292 → 0.282. Khi bằng chứng yếu, hạt giống re-entry từng giúp; đây là cái
+giá Mệnh đề 5 đã nêu.
+
+**Tập kiểm tra mới:** seed 58–60 của `namhunhh/hmm-navcache-r55` (144 run, chưa dùng). R* = OWF-HWA-S5. R* và C chạy trong CÙNG đợt, trên CÙNG run.
+- **N1 (hợp lệ):** TB segFAR ≤ 0.05 trên 8/8 dataset và ≤ 2/144 run > α.
+- **N2 (không kém recall):** chênh gộp C − R* ≥ −0.003, cận dưới CI 95 % bootstrap ≥ −0.006.
+- **N3 (điều hướng):** sai số gộp của C ≤ R* (không tệ hơn).
+- **N4 (cơ chế, báo cáo):** số frame báo sai ở các bậc OWF (m, t) của C ≤ R*.
+
+**Quy tắc:** N1 ∧ N2 ∧ N3 ⇒ OWF-HWA-S5-NT thay R* (mô hình đúng hơn về vật lý, không thêm hằng số). Nếu thêm cận dưới CI > 0 thì ghi "tốt hơn".
+*Phụ (không quyết định):* lỗ 10 / 50 %, off-map tự nhiên, NCLT, VPR-Space (đã biết: −0.010 recall do mất hạt giống khi bằng chứng yếu).
+
 ## Entry 18 — VPR-Space (ngoài Trái Đất): tổng quát của OWF-HWA-S5 — MÔ TẢ, không đăng ký trước, không quyết định luật (2026-11-05 20:54 UTC)
 
 **Dữ liệu.** VPR-Space (Fechner & Neubert 2026; repo `rfechner/vpr-space`, release v0.1.0, 20.3 GB): 16 cặp db → query, gồm MadMax (sa mạc),
