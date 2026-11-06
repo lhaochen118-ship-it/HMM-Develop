@@ -273,3 +273,11 @@ predict steps are identical, so only the update terms differ. ∎
 On old town, the leave-one-session-out variant (hs) and the pooled variant collapse the night session (recall 0.72 → 0.11 … 0.32). Day
 sessions calibrate f_on high, and a night frame's maximum (true-place cosine above profile 0.20 < look-alike 0.30) looks off-map. The causal
 own-session calibration (hsq) keeps it at 0.66: only its first stretch, before 100 own samples, uses day densities.
+
+*Measured (Entry 23; written after the waves).*
+- Development set A (399 runs, full system): pooled mean segFAR 0.0045 → 0.0034, runs above α 1 → 0, recall −0.004; CMU recall +0.011,
+  Nordland segFAR 0.0069 → 0.0026.
+- Pre-registered fresh test, seeds 64–66 (144 runs): replaced the incumbent by the rule. Mean segFAR 0.0074 → 0.0057, recall −0.0037,
+  navigation 14.67 → 14.51 m. With the veto of the hindsight branch at near-map mass ½: 0/144 runs above α.
+- (b) held where predicted (Nordland better, not worse as with §9).
+- The remaining cost is the start of sessions in an unseen condition, before 100 own samples: old town −0.018, Boreas −0.013.

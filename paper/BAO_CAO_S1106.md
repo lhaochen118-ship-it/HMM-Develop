@@ -5,8 +5,12 @@ thô: `analysis/results/owf/s1106/`. Báo cáo không tuyên bố novelty hay v�
 
 ## 1. Tóm tắt
 
-1. **Luật khuyến nghị không đổi: OWF-HWA-S5.** Nó đã được kiểm trên ba nhóm seed mới, đều đăng ký trước, mỗi nhóm 144 run (8 dataset × 6
-   descriptor):
+0. **LUẬT KHUYẾN NGHỊ MỚI: OWF-HWA-S5-NT-HQ (Entry 23, đăng ký trước, seed 64–66).** Thay OWF-HWA-S5 theo đúng quy tắc (V1–V3 đạt):
+   - TB segFAR 0.0074 → 0.0057; recall −0.0037 [−0.0071, −0.0008]; điều hướng 14.67 → 14.51 m.
+   - CMU: recall +0.009, segFAR −30 %, điều hướng 8.5 → 7.1 m. Nordland: segFAR −44 %, điều hướng 7.5 → 4.1 m.
+   - Biến thể có phủ quyết (C10, chỉ báo cáo): 0/144 run > α, TB segFAR 0.0024, recall −0.012.
+   - Cơ chế: bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu không nhãn, nhân quả theo phiên (Mệnh đề 7).
+1. **Luật cũ OWF-HWA-S5** đã được kiểm trên ba nhóm seed mới, đều đăng ký trước, mỗi nhóm 144 run (8 dataset × 6 descriptor):
 
    | Nhóm | Recall | TB segFAR | Run > α | Sai số điều hướng (m) |
    |---|---|---|---|---|
@@ -153,7 +157,28 @@ Bài học từ các biến thể thất bại trên run thiết kế: hiệu ch
 
 Cái giá nằm ở đầu các phiên có điều kiện khác hẳn (đêm 4Seasons), trước khi phiên đủ mẫu riêng: old town −1.4 pp, countryside −1.9 pp.
 
-*(Kết quả kiểm tra trên seed 64–66: xem §4c.)*
+## 4c. Entry 23 — kiểm tra trên seed 64–66 (đăng ký trước)
+
+| Seed 64–66, 144 run | R* = OWF-HWA-S5 | **C9 = OWF-HWA-S5-NT-HQ** | C10 = C9 + phủ quyết |
+|---|---|---|---|
+| recall gộp | 0.936 | 0.932 | 0.924 |
+| TB segFAR | 0.0074 | **0.0057** | **0.0024** |
+| run > α | 4 | 4 | **0** |
+| điều hướng (m) | 14.67 | **14.51** | 14.90 |
+| CMU recall / segFAR / điều hướng | 0.856 / 0.0364 / 8.5 | **0.865 / 0.0254 / 7.1** | 0.856 / 0.0129 / 5.3 |
+| Nordland segFAR / điều hướng | 0.0064 / 7.5 | **0.0036 / 4.1** | 0.0036 / 4.1 |
+
+**Quyết định theo quy tắc: C9 thay R*.**
+- V1: 4 = 4 run > α; segFAR thấp hơn.
+- V2: −0.0037, CI dưới −0.0071 ≥ −0.010.
+- V3: điều hướng tốt hơn.
+
+Script đánh giá in nhầm luật (sao từ Entry 21). Quyết định được tính lại đúng luật đã commit từ cùng các số
+(`analysis/results/owf/s1106/e23_decision.txt`).
+
+Còn lại:
+- 4 run CMU > α (cả hai luật), 3 trong đó từ nhánh HSI. C10 xoá cả 4, đổi lại −0.012 recall.
+- Recall giảm ở đầu các phiên khác điều kiện (old town −0.018, Boreas −0.013).
 
 ## 5. Vận hành
 
@@ -167,11 +192,13 @@ Cái giá nằm ở đầu các phiên có điều kiện khác hẳn (đêm 4Se
 
 ## 6. Hạn chế và việc tiếp theo
 
-- Đuôi hợp lệ còn lại là bí danh odometry không thấy được (CMU). Luật đương nhiệm đạt "≤ 2 % run > α" trên 2/3 nhóm mới.
-- **Ưu tiên 1:** emission hiệu chỉnh tuyệt đối theo điều kiện.
-  - Ứng viên: μ₁ ước lượng nhân quả theo từng chuỗi, hoặc LR trên độ tương đồng thô.
-  - "Khớp đúng" hiệu chỉnh bằng hậu nghiệm của chính run; "bí danh" hiệu chỉnh bằng cặp ảnh xa nhau của bản đồ.
-  - Mốc so sánh phát triển: `analysis/results/owf/s1106/e22_*`.
-- **Ưu tiên 2:** nếu ưu tiên hợp lệ hơn recall, đăng ký C5 / C6 như một điểm vận hành "an toàn" riêng.
-- Seed 64–66 của `namhunhh/hmm-navcache-r61` còn trống.
+- Bí danh odometry không thấy được (CMU) là nguồn đuôi hợp lệ. Entry 23 giảm nó ở bộ ước lượng (CMU segFAR −30 %). Phủ quyết bằng mN của
+  C9 xoá hết trên seed 64–66, với giá −0.012 recall.
+- Đầu phiên có điều kiện chưa từng thấy (đêm): trước 100 mẫu riêng, phiên dùng phân bố của phiên khác. Cần dự phòng có điều kiện tốt hơn
+  (thử theo trung vị hồ sơ: không đủ).
+- **Ưu tiên 1:** sinh kho seed mới (r61 đã dùng hết) rồi kiểm C10 (C9 + phủ quyết ½) như một điểm vận hành "an toàn" riêng. Trên seed
+  64–66 nó đạt 0/144 run > α.
+- **Ưu tiên 2:** dự phòng đầu phiên cho điều kiện chưa từng thấy. Ví dụ trộn Bayes giữa "trung tính" và "phân bố phiên khác", trọng số theo
+  khả năng dự đoán x_t của chính phiên.
+- **Ưu tiên 3:** tổng quát của C9 trên lỗ 10/50 %, off-map tự nhiên, NCLT. Đợt `genhq` đã chạy; xem RESEARCH_LOG nếu kịp đọc.
 - VPR-Space: lớp quyết định quá bảo thủ trên triển khai ngắn (Entry 18). Vẫn mở.

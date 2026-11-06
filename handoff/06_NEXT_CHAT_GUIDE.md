@@ -12,12 +12,14 @@
    - `owf.py --reentry edge`.
    - `owf.py --ellx vis`: L_vis, `analysis/vis_length.py`.
    - `owf.py --lu half`: điểm giao μ₁/2 cho ô trống, cả numpy và torch; mặc định tắt.
+   - **`owf.py --lu hsq`: luật khuyến nghị mới (Entry 23).** Hai lượt lọc; bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu theo phiên.
+     Các biến thể hs / hsm / hsmp / hsc / hsr là ablation.
    - Khung OWF có thêm `mN` (khối lượng gần bản đồ) và `mNL`.
    - `OWF_VETO=v owf_union.py ...`: OWF phủ quyết nhánh HSI khi mN < v.
    - `OWF_VETO_FR=<dir>:<ftag>`: lấy mN từ một bộ khung khác.
    - `OWF_VETO_ALL=1`: phủ quyết mọi báo.
    - `owf_audit.py`: tự kiểm toán theo thời gian, âm.
-4. Kho seed: `namhunhh/hmm-navcache-r61`. Seed 64–66 còn TRỐNG. Một lượt kiểm tra (R* + ứng viên, 6 phiên L4) mất ~20 phút. Các script đánh giá
+4. Kho seed: `namhunhh/hmm-navcache-r61` đã dùng hết; sinh kho mới trước quyết định tiếp theo. Một lượt kiểm tra (R* + ứng viên, 6 phiên L4) mất ~20 phút. Các script đánh giá
    mẫu nằm trong `RESEARCH_LOG.md` Entry 21 (`owf_union.py` + `hcal_board.py`).
 
 ## 0. Bắt đầu nhanh (phiên 2026-11-05 chiều trở đi)
@@ -104,7 +106,8 @@ pip install -q kaggle markdown xhtml2pdf scipy scikit-learn matplotlib pypdf
 
 ## 5. Việc tiếp theo
 
-**Cập nhật 2026-11-06:** xem `03_HANDOFF.md` §6b. Ưu tiên số 1 là emission hiệu chỉnh tuyệt đối theo điều kiện (Mệnh đề 6). Danh sách bên dưới là của phiên trước.
+**Cập nhật 2026-11-06:** xem `03_HANDOFF.md` §6b. Luật khuyến nghị mới: OWF-HWA-S5-NT-HQ (Entry 23). Ưu tiên tiếp theo: kho seed mới, phủ
+quyết ½, dự phòng đầu phiên. Danh sách bên dưới là của phiên trước.
 
 Chi tiết trong `03_HANDOFF.md` §6. Luật khuyến nghị: **OWF-HWA-S5** (Entry 15; seed 52–54: 0.941 vs HSI-VN 0.823). Kho seed
 mới đã dùng hết (40–54); quyết định tiếp theo cần sinh kho mới bằng `owf_wave.py --set fresh:55-60` (34 kernel CPU, ~2.5 giờ).

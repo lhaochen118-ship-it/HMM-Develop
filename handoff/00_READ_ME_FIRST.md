@@ -5,14 +5,20 @@
 
 **Luật khuyến nghị: HSI-VN** — 0 vi phạm trên 413 run phát triển + 216 run của hai tập kiểm tra mới; +0.065 recall so với ý tưởng 1 (SH).
 
-**Phiên 2026-11-06 (Entry 19–22, `paper/BAO_CAO_S1106.pdf`).** Luật khuyến nghị vẫn là **OWF-HWA-S5**.
+**LUẬT KHUYẾN NGHỊ MỚI (từ 2026-11-06 08:54 UTC, Entry 23): OWF-HWA-S5-NT-HQ** = OWF-HWA-S5 + `owf.py --pin 0 --lu hsq` (Ω hấp thụ;
+bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu theo phiên, Mệnh đề 7). Thay OWF-HWA-S5 trên seed 64–66 theo quy tắc đăng ký trước:
+- TB segFAR 0.0074 → 0.0057; recall −0.0037; điều hướng 14.67 → 14.51 m.
+- CMU segFAR −30 % với recall +0.009. Nordland điều hướng 7.5 → 4.1 m.
+- Thêm phủ quyết ½ (`OWF_VETO=0.5 owf_union.py`): 0/144 run > α, recall −0.012.
+
+**Phiên 2026-11-06 (Entry 19–23, `paper/BAO_CAO_S1106.pdf`).**
 - Ba nhóm seed mới 55–63 (432 run): recall 0.927–0.937, 9/432 run > α (7 là CMU, từ hai bố cục lỗ).
 - Hai ứng viên đăng ký trước không qua quy tắc. NT (không dịch chuyển tức thời): recall bằng, điều hướng ±. NT-V (OWF phủ quyết HSI): hợp lệ
   tốt hơn, điều hướng countryside tệ hơn.
 - Hai ý tưởng âm ở phát triển: ℓ = L_vis; điểm giao μ₁/2.
 - Phát hiện: **bí danh odometry không thấy được** (bản sao dịch dọc đường thẳng; Mệnh đề 6, `paper/owf_theory.md` §9) là nguồn đuôi hợp
   lệ còn lại.
-- Kho seed mới `namhunhh/hmm-navcache-r61`; seed 64–66 còn trống.
+- Kho seed mới `namhunhh/hmm-navcache-r61` (61–66): đã dùng hết (Entry 21, 23).
 - Việc tiếp theo: `03_HANDOFF.md` §6b.
 
 **Phiên 2026-11-05 chiều (Entry 16–17, `paper/BAO_CAO_S1105.pdf`).**
@@ -25,7 +31,7 @@
 - Kho seed mới: `namhunhh/hmm-navcache-r55`; seed 58–60 còn trống.
 - Việc tiếp theo: `03_HANDOFF.md` §6a.
 
-**LUẬT KHUYẾN NGHỊ (từ 2026-11-05 00:25 UTC, Entry 15): OWF-HWA-S5.** Quy trình gồm bốn bước:
+**LUẬT KHUYẾN NGHỊ CŨ (2026-11-05 00:25 → 2026-11-06 08:54 UTC, Entry 15): OWF-HWA-S5.** Quy trình gồm bốn bước:
 1. OWF với ngân hàng tỉ lệ odometry 5 mức (`owf.py --qx 0.005,0.02 --scales 0.94,0.97,1.0,1.03,1.06`; 10 bộ lọc, chọn trực tuyến theo evidence).
 2. OWF-H: chuỗi OWF giao cho HSI-VN khi khối lượng ≥ 0.9 và đã đi ≥ 16·excl (`owf_hybrid.py --mode xms0.9_16 --hsiframes`).
 3. Hợp với các báo OWF cực tự tin: ≥ 1 − 1e-5 sau 16·excl, hoặc ≥ 1 − 1e-8 sau 2·excl.

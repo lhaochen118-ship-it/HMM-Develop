@@ -38,6 +38,18 @@ Tổng 9/432 = 2.1 % run > α. 7 trong 9 là CMU, đến từ hai bố cục l�
 - Phủ quyết chéo: hợp lệ nhất từng đo (TB segFAR 0.0012–0.0018), nhưng recall giảm 2.6–4.5 pp.
 - Tự kiểm toán theo thời gian, luật toàn vẹn cục bộ, hiệu chỉnh tỉ lệ cho điều hướng: âm (ghi chú trong Entry 19).
 
+**Entry 23 (TÍCH CỰC, đăng ký trước, seed 64–66): bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu không nhãn, nhân quả theo phiên
+(Mệnh đề 7).**
+- Ô trống nhận log f_off(x) − log f_on(x), với x = max của frame trừ trung vị hồ sơ.
+- f_on / f_off lấy từ các fix tự tin của lượt 1: max của frame, và max ngoài 1.6 excl ("bí danh khi đúng chỗ bị loại").
+- OWF-HWA-S5-NT-HQ thay OWF-HWA-S5:
+  - TB segFAR 0.0074 → 0.0057; recall −0.0037; điều hướng 14.67 → 14.51 m;
+  - CMU: recall +0.009, segFAR −30 %, điều hướng 8.5 → 7.1 m;
+  - Nordland: điều hướng 7.5 → 4.1 m;
+  - với phủ quyết ½: 0/144 run > α.
+- Ablation then chốt: hiệu chỉnh từ phiên khác làm sập phiên đêm, vì cos đúng chỗ ban đêm thấp hơn bí danh ban ngày; chỉ hiệu chỉnh trong
+  chính phiên mới đúng. Cái giá còn lại: đầu các phiên có điều kiện chưa thấy.
+
 **Ý nghĩa.** Thông tin loại được bí danh dịch chuyển nằm ở độ tương đồng TUYỆT ĐỐI (CMU: cos ở đúng chỗ, phân vị 5 % = 0.54, so với trung vị bí danh 0.44). Chuẩn
 hoá z theo frame đã bỏ đi thông tin đó. Bước tiếp theo có nguyên tắc là một emission hiệu chỉnh tuyệt đối theo điều kiện.
 

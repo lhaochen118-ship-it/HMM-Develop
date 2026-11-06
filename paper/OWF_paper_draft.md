@@ -105,6 +105,12 @@ own session's samples from frames < t once there are 100 of each, otherwise the 
 (night, repetitive stretches), f_on ≈ f_off and the filter reduces to the historical one. Off the map, the on-map hypothesis loses evidence
 at rate KL(f_off ‖ f_on).
 
+Fresh pre-registered test (Entry 23, seeds 64–66, 144 runs): it replaced OWF-HWA-S5 by the rule (validity not worse, recall cost ≤ 0.006,
+navigation not worse by > 0.5 m):
+- mean segFAR 0.0074 → 0.0057, recall −0.0037, navigation 14.67 → 14.51 m;
+- CMU recall +0.009 with segFAR −30 % and navigation 8.5 → 7.1 m; Nordland navigation 7.5 → 4.1 m;
+- with a veto of the hindsight branch where the near-map mass is < ½: 0/144 runs above α.
+
 Development set (399 runs, same runs as the incumbent):
 - pooled mean segFAR 0.0045 → 0.0034, runs above α 1 → 0, recall −0.004;
 - CMU recall +0.011 with segFAR 0.0095 → 0.0066; Nordland segFAR 0.0069 → 0.0026;
@@ -146,6 +152,8 @@ paired against the previous rule on the same runs). Pooled recall / runs above �
 | 55–57 | OWF-HWA-S5 (confirmation, Entry 17) | 0.937 | +0.131 vs HSI-VN | 1 | 12.48 |
 | 58–60 | OWF-HWA-S5 (reference of Entry 19) | 0.934 | — | 6 | 16.29 |
 | 61–63 | OWF-HWA-S5 (reference of Entry 21) | 0.927 | — | 2 | 12.91 |
+| 64–66 | **OWF-HWA-S5-NT-HQ (Entry 23, final rule)** | 0.932 | −0.0037 vs OWF-HWA-S5 (mean segFAR 0.0074 → 0.0057) | 4 | 14.51 (vs 14.67) |
+| 64–66 | OWF-HWA-S5-NT-HQ + veto ½ (reported) | 0.924 | −0.0123 (mean segFAR 0.0024) | **0** | 14.90 |
 
 Over the three fresh groups that confirm the final rule (55–63, 432 runs), it reached pooled recall 0.927–0.937 with pooled mean segFAR
 0.0063. 9/432 runs (2.1 %) exceed α; 7 of the 9 are CMU, from two hole layouts (seed 60, seed 61) that each cover an odometry-unobservable

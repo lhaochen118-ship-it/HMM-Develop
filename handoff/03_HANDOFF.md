@@ -19,7 +19,7 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | Kho dự trữ seed 19–27 (3 tập × 108 run) | sinh bởi đợt `hsi20`, publish `caotienminh1/hmm-navcache-r19`; **chưa dùng** |
 | Báo cáo `paper/BAO_CAO_HSI.pdf` (15 trang, abstract tiếng Anh) + lý thuyết Mệnh đề 1–7 | xong |
 | Paper hoàn chỉnh | chưa viết (chỉ báo cáo + abstract nháp) |
-| **Entry 19–22 (phiên 2026-11-06)** | xong: NT (E19, seed 58–60), NT-V (E21, seed 61–63) không qua quy tắc; L_vis (E20), điểm giao μ₁/2 (E22) âm ở phát triển; R* = OWF-HWA-S5 giữ nguyên |
+| **Entry 19–23 (phiên 2026-11-06)** | xong: NT (E19), NT-V (E21) không qua quy tắc; L_vis (E20), μ₁/2 (E22) âm ở phát triển; **E23 OWF-HWA-S5-NT-HQ thay R* (seed 64–66)** |
 | **Entry 10 — OWF (ý tưởng 2b, bộ lọc thế giới mở)** | xong: Gate 18, đăng ký trước, tập A 404 run + tập quyết định seed 25–27; D3 (điều hướng) trượt ⇒ HSI-VN giữ nguyên; `paper/BAO_CAO_OWF.pdf` |
 
 ## 3. Quyết định đã thống nhất
@@ -84,13 +84,15 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
 | seed 55–57 | `namhunhh/hmm-navcache-r55` (kho `fr55`, 2026-11-05) | Entry 17 (xác nhận OWF-HWA-S5 + SOTA ngoài trên cùng run) | đã dùng |
 | seed 58–60 | `namhunhh/hmm-navcache-r55` | Entry 19 (OWF-HWA-S5-NT: N1 trượt — cả R* cũng có 6/144 run > α; R* giữ nguyên) | đã dùng |
 | seed 61–63 | `namhunhh/hmm-navcache-r61` (kho `fr61`, 2026-11-06) | Entry 21 (NT-V: V3 điều hướng trượt; NT: N3 trượt 0.07 m; R* giữ nguyên) | đã dùng |
-| seed 64–66 | `namhunhh/hmm-navcache-r61` | — (kernel `test64-*` đã dựng sẵn trong scratchpad cho R* + NT-LU, KHÔNG push vì Entry 22 âm ở dev) | **trống** |
+| seed 64–66 | `namhunhh/hmm-navcache-r61` | Entry 23 (OWF-HWA-S5-NT-HQ: V1–V3 đạt ⇒ thay R*) | đã dùng |
 | seed 25–27 | `caotienminh1/hmm-navcache-r19` | Entry 10 (OWF vs HSI-VN: D1 đạt, D2 đạt +0.076, D3 trượt ⇒ HSI-VN giữ nguyên) | đã dùng |
 
 ## 6b. Việc tiếp theo — cập nhật phiên 2026-11-06 (đọc trước §6a)
 
-**Đã chốt trong phiên (Entry 19–22, `RESEARCH_LOG.md`; báo cáo `paper/BAO_CAO_S1106.pdf`).**
-- Luật khuyến nghị vẫn là **OWF-HWA-S5**. Trên ba nhóm seed mới 55–63 (432 run): recall 0.927–0.937, TB segFAR gộp 0.0063, 9/432 run > α
+**Đã chốt trong phiên (Entry 19–23, `RESEARCH_LOG.md`; báo cáo `paper/BAO_CAO_S1106.pdf`).**
+- **Luật khuyến nghị MỚI: OWF-HWA-S5-NT-HQ** (Entry 23, seed 64–66, V1–V3 đạt): TB segFAR 0.0074 → 0.0057, recall −0.0037, điều hướng
+  14.67 → 14.51 m. Biến thể + phủ quyết ½: 0/144 run > α.
+- Luật cũ OWF-HWA-S5. Trên ba nhóm seed mới 55–63 (432 run): recall 0.927–0.937, TB segFAR gộp 0.0063, 9/432 run > α
   (2.1 %). 7 trong 9 run là CMU, đến từ hai bố cục lỗ (seed 60, seed 61).
 - Entry 19 (NT, không dịch chuyển tức thời) và Entry 21 (NT-V, OWF phủ quyết nhánh HSI) đều không qua quy tắc đăng ký. NT: recall bằng, TB
   segFAR thấp hơn, điều hướng ±. NT-V: hợp lệ tốt hơn, nhưng điều hướng countryside tệ hơn.
@@ -99,8 +101,13 @@ toán theo vị trí đạt. Yêu cầu gốc: `HMM_Navigation_Yeu_Cau_Nghien_Cu
   nhưng nhất quán chuyển động. Mọi bộ lọc chuẩn hoá z theo frame đều đi theo nó (Mệnh đề 6, `paper/owf_theory.md` §9). Trên CMU có hai
   bản sao như vậy: lệch 204 m (slice 11–12) và 673 m (slice 22 ↔ 24), không đổi qua 10–17 lượt đi.
 
-**Theo thứ tự ưu tiên:**
-1. **Emission hiệu chỉnh tuyệt đối theo điều kiện** (con đường duy nhất đã thấy để loại bí danh dịch chuyển mà không mất recall).
+**Theo thứ tự ưu tiên (cập nhật 08:55 UTC, sau Entry 23):**
+0. **Sinh kho seed mới** (`owf_wave.py --set fresh:67-72`, 20 kernel CPU, ~1.5 giờ). Kho r61 đã dùng hết. Rồi:
+   - (a) kiểm OWF-HWA-S5-NT-HQ + phủ quyết ½ như điểm vận hành "an toàn";
+   - (b) dự phòng đầu phiên cho điều kiện chưa thấy (đêm);
+   - (c) đọc đợt tổng quát `genhq` (lỗ 10/50 %, tự nhiên, NCLT; script `ghq_cmp.sh` trong scratchpad, có bản sao ở
+     `analysis/results/owf/s1106/`).
+1. *(đã làm ở Entry 23)* **Emission hiệu chỉnh tuyệt đối theo điều kiện** (con đường duy nhất đã thấy để loại bí danh dịch chuyển mà không mất recall).
    - Điểm giao một-hằng-số-mỗi-run (`--lu half`) chứng minh cơ chế: CMU ÷ 4.6 báo sai. Nhưng nó sai mô hình khi điều kiện thay đổi.
    - Ứng viên: μ₁ ước lượng nhân quả theo từng chuỗi; hoặc LR trên độ tương đồng thô, hiệu chỉnh bằng phân bố "khớp đúng" của chính hậu
      nghiệm (hindsight) và phân bố "bí danh" của bản đồ (cặp ảnh xa nhau).
