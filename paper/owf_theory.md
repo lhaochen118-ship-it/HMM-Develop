@@ -230,3 +230,46 @@ w_t (β z_t,a_t − A_t) − w_t · 0. (c) Algebra. ∎
   alias (median 4.1) overlap, while the absolute similarity separates them (true-place cosine 5th percentile 0.54 vs alias median 0.44). The per-frame z normalisation of Section 1 discards
   exactly the information that rejects odometry-unobservable aliases. Making use of it needs an emission calibrated in absolute similarity
   per condition. That is open.
+
+## 10. Proposition 7 (hindsight-calibrated absolute evidence for the unmapped cells; Entry 23, drafted before its development wave is read)
+
+*Observation model.* Let x_t = max_i s_ti − median_i s_ti be the frame's best similarity above its own profile level. If the robot is near
+a mapped place, x_t is the maximum over the true place and the best look-alike, with density f_on. If it is off the map (or in a hole), x_t
+is the best look-alike with the true place absent, with density f_off. The relative emission of Section 1 is unchanged (it says WHERE on the
+map). The unmapped cells and Ω receive the log-LR lu_t = log f_off(x_t) − log f_on(x_t), with the same path weight w_t. By the argument of
+§9(c), this replaces the implicit f_on = f_off of the historical filter (unmapped LR 1).
+
+*Hindsight estimator without labels.* Run the historical filter (first pass). At its confident fixes x̂_t (mass ≥ 1 − 10⁻³):
+- the frame's maximum is a sample of f_on;
+- the best similarity among images farther than 1.6 excl from x̂_t is a sample of f_off. It is the best look-alike of a view whose true place
+  is excluded: same descriptor, same map, same condition.
+
+Densities: Gaussian KDE with ε = 1 % uniform contamination, so the per-frame LR is bounded.
+
+*Causality.* The first pass is causal and does not depend on the second. The densities used at frame t of a session are estimated from
+first-pass samples at frames < t of the SAME session once there are ≥ 100 of each kind (same condition). Before that, they come from the run's
+other sessions (`--lu hsq`).
+
+*Claim.*
+- (a) Drift. Under off-map frames, E_off[−lu_t] = −KL(f_off ‖ f_on) ≤ 0: the on-map hypothesis loses evidence relative to the unmapped
+  cells. Under on-map frames, E_on[−lu_t] = KL(f_on ‖ f_off) ≥ 0.
+- (b) Neutrality. Where the condition makes the true place indistinguishable from look-alikes (f_on ≈ f_off: night, long repetitive
+  stretches), lu_t ≈ 0. The filter then reduces to the historical one, unlike the fixed crossover of §9.
+- (c) The motion-consistent copy of §9(b). Its log ratio against the true unmapped track per frame is now w_t (β z_t,a − A_t + log Λ_t),
+  with Λ_t = f_on / f_off at x_t. The copy loses whenever its mean relative advantage E[β z_a − A] is below KL(f_off ‖ f_on) (tempered
+  alike).
+
+*Proof.* (a) Definition of KL divergence. (b) lu → 0 as f_off / f_on → 1; the contamination bounds |lu| everywhere. (c) As in §9(b), the
+predict steps are identical, so only the update terms differ. ∎
+
+*Measured before the wave (local CPU, single filter q = 0.02 excl, ε = 1e-3, OWF alone):*
+
+| Run | historical | hsq |
+|---|---|---|
+| CMU s60 CosPlace | recall 0.795, segFAR 0.0131, 4.2 m | recall 0.851, segFAR 0, 2.6 m |
+| Nordland s58 | recall 0.925, segFAR 0.0053, 4.3 m | recall 0.930, segFAR 0, 4.1 m |
+| old town s58 | recall 0.905, segFAR 0, 23.0 m | recall 0.889, segFAR 0, 22.8 m |
+
+On old town, the leave-one-session-out variant (hs) and the pooled variant collapse the night session (recall 0.72 → 0.11 … 0.32). Day
+sessions calibrate f_on high, and a night frame's maximum (true-place cosine above profile 0.20 < look-alike 0.30) looks off-map. The causal
+own-session calibration (hsq) keeps it at 0.66: only its first stretch, before 100 own samples, uses day densities.
