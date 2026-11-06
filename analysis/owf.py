@@ -45,6 +45,31 @@ def log_lr(Z, beta):
     return a - (m + np.log(np.mean(np.exp(a - m), 1, keepdims=True)))
 
 
+def _kde_logpdf(samples, x, eps=0.01, n_max=2000, seed=0):
+    """log density of x under a Gaussian KDE of the samples (Silverman bandwidth), contaminated by eps x uniform over the joint range
+    (bounded likelihood ratios; standard robust-likelihood device)"""
+    from scipy.stats import gaussian_kde
+    smp = np.asarray(samples, float); rng = np.random.default_rng(seed)
+    if len(smp) > n_max: smp = rng.choice(smp, n_max, replace=False)
+    k = gaussian_kde(smp); lo, hi = min(smp.min(), np.min(x)), max(smp.max(), np.max(x)); u = 1.0 / max(hi - lo, 1e-6)
+    return np.log((1 - eps) * k(x) + eps * u)
+
+
+def hindsight_lu(seqs, cent_max, samp_true, samp_alias, min_n=50):
+    """Entry 23: per-frame log-LR of the unmapped cells from the absolute similarity of the frame's best match.
+    cent_max[t] = best similarity of frame t minus the median of its profile. samp_true / samp_alias: per sequence, the same statistic at
+    the confident fixes of a first OWF pass: best image within excl of the fix (true place) / best image farther than 1.6 excl (the best
+    alias when the true place is absent). Leave-one-sequence-out: the densities of sequence k come from the OTHER sequences of the run
+    (other sessions on the same map). lu_t = log f_alias(x_t) - log f_true(x_t); 0 (neutral, the historical filter) without enough samples."""
+    lu = np.zeros(len(cent_max)); nused = 0
+    for k, idx in enumerate(seqs):
+        tr = np.concatenate([samp_true[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
+        al = np.concatenate([samp_alias[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
+        if len(tr) < min_n or len(al) < min_n: continue
+        x = cent_max[idx]; lu[idx] = _kde_logpdf(al, x) - _kde_logpdf(tr, x); nused += 1
+    return lu, nused
+
+
 class OpenWorldFilter:
     def __init__(self, MP, g, band, q, s0=0.0, p_kid=1e-4, p_in=0.01, p_omega0=0.1, p_map0=0.5):
         self.MP = np.asarray(MP, float); self.d = self.MP.shape[1]; self.g, self.band, self.q, self.s0 = g, band, q, s0
@@ -195,6 +220,31 @@ def main():
     if luopt == "half":                                               # label-free, from the run's own query stream: typical true-match peak
         zc = 0.5 * float(np.median(np.concatenate([robust_z(Q[idx].astype(np.float32) @ M.T).max(1) for idx in seqs])))
         res["lu"] = dict(mode=luopt, c=zc); print(f"unmapped emission: crossover c = {zc:.2f} robust sd", flush=True)
+    luseq = None
+    if luopt == "hs":                                                 # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
+        beta0 = betas[0]; cent_max = np.zeros(nq); st_l, sa_l = [], []; tree = cKDTree(MP); ra = 1.6 * excl
+        for idx in seqs:
+            S_ = Q[idx].astype(np.float32) @ M.T; med_ = np.median(S_, 1); cent_max[idx] = S_.max(1) - med_
+            Zs = robust_z(S_); LL = log_lr(Zs, beta0); bank = [(qx, sc) for sc in scales for qx in qxs]
+            if engine == "torch":
+                import owf_torch as OT
+                o = OT.run_bank(F, LL, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell, reentry=reentry)
+                xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1); ms_, lm_ = o["mass"], o["lml"]
+            else:
+                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, q=qx * excl, reentry=reentry) for qx, sc in bank]
+                xm = np.stack([r_["xhat"] for r_ in rs]); ms_ = np.stack([r_["mass"] for r_ in rs]); lm_ = np.stack([r_["lml"] for r_ in rs])
+            ks = np.argmax(np.cumsum(lm_, 1), 0); tt = np.arange(len(idx)); m1 = ms_[ks, tt]; x1 = xm[ks, tt]
+            conf = np.flatnonzero((m1 >= 1 - eps0) & (x1 >= 0)); conf = conf[:: max(1, len(conf) // 3000)]; st, sa = [], []
+            for t in conf:
+                d = np.linalg.norm(MP - MP[x1[t]], axis=1)
+                near, far = d <= excl, d > ra
+                if near.any() and far.any(): st.append(S_[t, near].max() - med_[t]); sa.append(S_[t, far].max() - med_[t])
+            st_l.append(np.array(st)); sa_l.append(np.array(sa))
+        lu_all, nused = hindsight_lu(seqs, cent_max, st_l, sa_l)
+        luseq = lu_all
+        res["lu"] = dict(mode="hs", n_true=int(sum(len(a) for a in st_l)), n_alias=int(sum(len(a) for a in sa_l)), seqs_calibrated=nused,
+                         n_seqs=len(seqs), lu_median=float(np.median(lu_all)), lu_p05=float(np.percentile(lu_all, 5)), lu_p95=float(np.percentile(lu_all, 95)))
+        print("hindsight absolute emission:", res["lu"], flush=True)
     for beta in betas:
         t0 = time.time(); out = {k_: np.zeros(nq) for k_ in ("mass", "cov", "om", "lml", "qsel")}; xh = np.zeros(nq, int)
         for idx in seqs:
@@ -202,6 +252,7 @@ def main():
             # unmapped cells: log-LR beta c - A_t in the frame normalisation (A_t = log mean_i exp(beta z_ti)), i.e. relative to the unmapped
             # cells an image gains mass only where z > c (Gaussian-shift crossover between "true match" and "background / alias")
             luq = None if zc is None else (beta * zc - (beta * Zs[:, 0] - LL[:, 0])).astype(np.float64)
+            if luseq is not None: luq = luseq[idx].astype(np.float64)
             wt = corr_weight(Zs, float(temper[4:] or 2))[0] if temper.startswith("corr") else None
             bank = [(qx, sc) for sc in scales for qx in qxs]
             if engine == "torch":                                          # same filter, all bank members in one GPU tensor (owf_torch.py)
