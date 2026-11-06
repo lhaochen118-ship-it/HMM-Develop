@@ -152,3 +152,27 @@ dataset.
   fixed thresholds with path conditions and a calibrated learned branch.
 - A per-run guarantee in this regime needs either a bound on K from the map itself (how strongly and for how long two places of the map
   look alike) or a decision whose risk does not grow with the evidence. Both are open.
+
+## 8. Proposition 5 (no teleport: re-entry seeds and coherent aliasing; Entry 19, drafted before the development wave is read)
+
+*Observation that motivates it.* The filter of Section 1 moves the mass of the far state Ω back into the grid at rate p_in per frame,
+distributed over the START prior (half of it on the map images in proportion to their counts). In steady state the mass leaving the band
+equals the re-entering mass, so every frame seeds every map image with roughly p_in · Ω / n mass, wherever the robot is. A coherent alias
+needs only such a seed: with evidence K ≈ 10¹⁰ over an episode (Nordland, Section 7), a seed of 10⁻⁸ becomes certainty. Measured on the
+Nordland design run (cosplace, seed 1): reports wrong at 1 − 1e-5 / 1 − 1e-8 = 26 / 22 frames with p_in = 0.01; **0 / 0 with p_in = 0**.
+segFAR at ε = 1e-3 falls 0.038 → 0.015, navigation error 15.3 → 9.1 m, and recall rises 0.975 → 0.980.
+
+*Claim.* In Proposition 2, let the seeds be the kidnap redraw (rate p_kid over the prior) and the far-state re-entry (rate p_in over a
+distribution ρ). Then the share of U- and Ω-mass moved into N over a stretch of m frames by seeds alone is
+λ_seed ≤ m (p_kid + p_in · Ω_max · ρ(N)), with Ω_max the largest far-state mass in the stretch. With ρ = the start prior, ρ(N) ≥ p_map0 = 0.5:
+λ_seed grows linearly with the stretch and is multiplied by the evidence inflation K of Proposition 2′. With ρ supported on the band edge,
+ρ(N) = 0 whenever the band is wider than excl (always, band = 12 excl), so λ_seed = m · p_kid (10⁻¹² per frame). With p_in = 0 the far state
+is absorbing, and λ_seed is the same.
+
+*Proof.* Each predict step moves p_kid · tot · prior(N) ≤ p_kid of mass into N by the kidnap redraw and p_in · Ω_t · ρ(N) by re-entry; sum
+over the m steps of the stretch. ∎
+
+*Meaning.* The bound of Proposition 2′ is K · ε (1 + O₀) / ((1 − ε)(1 − λ)) with λ ≥ λ_seed. A re-entry over the map makes the aliasing
+risk depend on how many seeds coherent evidence can amplify; a physical re-entry (from far away the robot can only come back through the band
+edge) removes that channel, leaving the motion tails as the only way mass reaches a look-alike. The price is slower recovery when the
+belief has lost the true position everywhere (only kidnap and the motion blur can re-seed it), which the development wave measures.
