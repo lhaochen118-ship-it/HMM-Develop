@@ -16,6 +16,7 @@ from multiprocessing import Pool
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 DEFAULT = "H;U(1e-3,16);U(1e-4,16);U(1e-5,16);U(1e-4,32);U(1e-5,32)"
+VETO = float(os.environ.get("OWF_VETO", "0"))                   # OWF_VETO=v: HSI reports only where the OWF near-map mass mN >= v
 
 
 def terms(v):
@@ -48,6 +49,8 @@ def one(args):
     if cf is None or not os.path.exists(hf): return t, None
     z = np.load(cf, allow_pickle=True); fr = np.load(ff, allow_pickle=True); hm = np.load(hf)
     n = int(hm["n"]); accH = np.unpackbits(hm[hvar])[:n].astype(bool)
+    if VETO > 0 and "mN" in fr.files:                                 # Entry 21: the open-world filter vetoes the closed-world HSI branch
+        accH = accH & (np.asarray(fr["mN"], float) >= VETO)            # where its near-map mass says the robot is probably off the map
     excl = float(z["excl"]); MP = z["MP"]; qp = z["q_pos"]; sid, k = z["q_sid"], z["q_k"]
     seqs = [np.where(sid == s)[0][np.argsort(k[sid == s])] for s in np.unique(sid)]
     hz = list(z["hz"]); U = z["U"].astype(float); U = U if U.ndim > 1 else U[:, None]

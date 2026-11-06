@@ -89,6 +89,76 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 21 — Bộ lọc thế giới mở PHỦ QUYẾT nhánh thế giới đóng (OWF-NT-V) — đăng ký trước (2026-11-06 05:59 UTC)
+
+**Bối cảnh.** Entry 19: trên seed 58–60, cả R* lẫn C đều có 6/144 run > α; 4 run là CMU seed 60, mọi đoạn báo sai là đoạn đầu chuỗi nằm trong
+lỗ, và ~90 % frame báo sai đến từ nhánh HSI (thế giới đóng). Nhánh HSI không có trạng thái "ngoài bản đồ"; OWF thì có. Đề xuất: HSI chỉ được
+báo ở frame mà OWF cho rằng robot ở gần bản đồ nhiều khả năng hơn là không.
+
+**Luật C2 = OWF-HWA-S5-NT-V.** Như OWF-HWA-S5-NT (Entry 19), nhưng mặt nạ báo của OWF-H/HSI-VN được nhân với điều kiện mN_t ≥ ½. Ở đây
+mN_t là khối lượng hậu nghiệm của OWF trên vùng gần bản đồ (ô trong band có ảnh bản đồ trong excl; `owf_torch.py`, khung `mN`). Các bậc
+m/t giữ nguyên. Cài đặt: `OWF_VETO=0.5 owf_union.py ...` (`analysis/owf_union.py`).
+- Hằng số ½ là quyết định Bayes cho biến cố nhị phân "gần bản đồ" dưới mất mát 0–1. Không chỉnh: ½ là giá trị đầu tiên thử. 0.9 / 0.99
+  được báo cáo bên dưới, tệ hơn về recall.
+
+**Phát triển (tập A, 301 run `devp0`, so với R* = OWF-HWA-S5 trên CÙNG run).** Ô = recall / TB segFAR / run > α / sai số (m):
+
+| | R* (S5) | C1 = NT | C2 = NT-V (½) | NT-V (0.9) |
+|---|---|---|---|---|
+| gộp | 0.933 / 0.0045 / 1 / 12.8 | 0.933 / 0.0040 / 2 / 12.5 | 0.929 / **0.0024 / 0** / 12.6 | 0.922 / 0.0020 / 0 / 12.3 |
+| CMU | 0.855 / 0.0095 / 1 | 0.855 / 0.0096 / 2 | 0.851 / 0.0089 / 0 | 0.815 / 0.0079 / 0 |
+| countryside | 0.851 / 0.0063 | 0.850 / 0.0047 | 0.837 / 0.0003 | 0.831 / 0.0003 |
+| Oxford | 0.950 / 0.0081 | 0.950 / 0.0080 | 0.949 / 0.0015 | 0.948 / 0.0006 |
+
+- C2 − R*: recall **−0.0044** [−0.0056, −0.0034]; TB segFAR giảm gần một nửa (0.0045 → 0.0024); run > α 1 → 0; điều hướng −0.18 m.
+- Phủ quyết chỉ bỏ báo, không thêm báo; nên recall chỉ có thể giảm, và hợp lệ không thể tệ đi trên cùng run.
+
+**Chẩn đoán trên seed 58–60 (ĐÃ DÙNG ở Entry 19; chỉ mô tả, không quyết định).** C2 − R*: recall −0.0040 [−0.0054, −0.0027], TB segFAR
+0.0101 → 0.0067, run > α 6 → 5 (St Lucia hết; 4 run CMU s60 còn), điều hướng −0.50 m.
+- **Phủ quyết KHÔNG sửa được CMU seed 60.** Ở các frame báo sai, OWF cũng tin chắc mình trên bản đồ (mN trung vị 1.0, khối lượng đĩa
+  trung vị 1.0).
+- Cơ chế (kiểm bằng descriptor gốc): lỗ của seed 60 phủ một đoạn đường thẳng ở slice 11–12 của CMU. Ảnh truy vấn trong lỗ khớp với một
+  "bản sao dịch chuyển" lùi khoảng 204 m dọc chính con đường đó. Độ lệch (−188, −78) m không đổi trên 17 chuỗi, theo đúng hướng đường. Hai
+  descriptor độc lập (MegaLoc, SALAD) chọn cùng một chỗ, lệch nhau trung vị 4.9 m.
+- Khớp này yếu theo giá trị tuyệt đối: cosine trung vị 0.445 (CosPlace), so với 0.77 ở đúng chỗ khi bản đồ đầy đủ; z trung vị 3.3 so với
+  7.3. Nhưng nó nhất quán với chuyển động: dịch dọc một đường thẳng không quan sát được bằng odometry. Mọi bộ lọc tuần tự vì vậy đều đi
+  theo bản sao.
+- Emission tương đối của OWF (z-score trong hồ sơ của chính frame, nghiêng mũ β = 1) cho z ≈ 4 một LR ≈ e^3.5 / frame so với LR = 1 của ô
+  trống. Theo z, phân bố khớp đúng (CMU s58, 5 % = 3.9) chồng lên phân bố bí danh. Độ tương đồng thô tách rõ hơn (khớp đúng 5 % = 0.59;
+  ngoài bản đồ trung vị 0.47).
+- Hướng tiếp (CHƯA kiểm): emission hiệu chỉnh tuyệt đối, trong đó trạng thái "ngoài bản đồ" giải thích được một đỉnh bí danh. Khi đó tỉ số
+  hậu nghiệm bản đồ : ngoài bản đồ = f₁(đỉnh) / f_bí-danh(đỉnh), thay vì ≈ 1 như hiện nay.
+
+**Tập kiểm tra mới:** seed 61–63 của `namhunhh/hmm-navcache-r61` (144 run, chưa dùng; 8 dataset × 6 descriptor). R*, C1, C2 chạy trong CÙNG
+đợt (`test61`: S5 và NT trên GPU; C2 tính từ khung NT bằng `OWF_VETO=0.5`).
+- **V1 (hợp lệ, tương đối):** run > α của C2 ≤ của R*, VÀ TB segFAR gộp của C2 ≤ của R*.
+- **V2 (giá recall có giới hạn):** chênh gộp C2 − R* ≥ −0.006, VÀ cận dưới CI 95 % bootstrap ≥ −0.010.
+- **V3 (điều hướng):** sai số gộp của C2 ≤ R* + 0.5 m.
+- **V4 (mục tiêu tuyệt đối của dự án, báo cáo):** TB segFAR ≤ α trên 8/8 dataset và ≤ 2/144 run > α.
+- **C1 (NT) trên nhóm mới, với N1 viết tương đối** (đã nêu ở Entry 19 (iii); viết TRƯỚC khi xem seed 61–63). N1′: run > α của C1 ≤ R* và
+  TB segFAR dataset tệ nhất của C1 ≤ max(α, của R*). N2, N3 như Entry 19.
+
+**Quy tắc.**
+- V1 ∧ V2 ∧ V3 ⇒ C2 là luật khuyến nghị (ưu tiên hợp lệ).
+- Nếu không, N1′ ∧ N2 ∧ N3 ⇒ C1 thay R*.
+- Nếu không, R* giữ nguyên.
+- V4 được báo cáo trong mọi trường hợp. Nếu V1 có run > α giảm ngặt, ghi "an toàn hơn".
+
+## Entry 20 — Chiều dài tương quan thị giác L_vis làm độ dài bằng chứng ℓ (cùng `--pin 0`): KẾT QUẢ PHÁT TRIỂN ÂM (2026-11-06 05:59 UTC)
+
+**Ý tưởng.** Hiện ℓ = 0.4 excl (cố định), là quãng đường mà một frame được tính là một đơn vị bằng chứng mới. Thay bằng L_vis, đo trên bản
+đồ trước khi triển khai, không nhãn (`analysis/vis_length.py`): khoảng cách mà độ tương đồng VƯỢT nền của hai ảnh bản đồ giảm còn 1/e
+(`owf.py --ellx vis`).
+**Phát triển:** đợt `devvis` (6 phiên L4, tập A). So với R* trên 200 run chung lúc đọc (devvis-3/5/6 còn chạy):
+- recall **−0.029** [−0.035, −0.024];
+- **13 run > α** (countryside 13/27, TB 0.069);
+- điều hướng +1.3 m.
+
+**Cơ chế.** L_vis trung bình: countryside 4.7 m, nhỏ hơn 10 m mặc định. Bằng chứng bị đếm dày hơn, hậu nghiệm quá tự tin, sinh báo sai. Các
+dataset khác L_vis ≈ 16–30 m, bằng chứng bị đếm thưa hơn, recall giảm. Tương quan giữa các ảnh bản đồ (cùng điều kiện) không đo đúng tương
+quan của bằng chứng truy vấn–bản đồ (khác điều kiện).
+**Loại.** Không đăng ký kiểm tra.
+
 ## Entry 19 — Thế giới mở KHÔNG dịch chuyển tức thời (OWF-NT): bỏ kênh re-entry từ trạng thái xa lên khắp bản đồ — đăng ký trước (2026-11-06 04:47 UTC)
 
 **KẾT QUẢ (seed 58–60, 144 run; đợt `test58`; ghi 05:30 UTC). Quyết định theo quy tắc đăng ký trước: R* GIỮ NGUYÊN (N1 trượt).** Ô = recall /
