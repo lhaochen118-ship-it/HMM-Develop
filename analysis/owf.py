@@ -55,7 +55,49 @@ def _kde_logpdf(samples, x, eps=0.01, n_max=2000, seed=0):
     return np.log((1 - eps) * k(x) + eps * u)
 
 
-def hindsight_lu(seqs, cent_max, samp_true, samp_alias, min_n=50):
+def _kde2_logpdf(samples, x, eps=0.01, n_max=2000, seed=0):
+    """2-D version of _kde_logpdf: Gaussian KDE (scipy bandwidth on the sample covariance) + eps x uniform over the joint bounding box.
+    Where neither density has calibration samples (an unseen condition), both fall to eps x uniform and the ratio tends to 1."""
+    from scipy.stats import gaussian_kde
+    smp = np.asarray(samples, float); rng = np.random.default_rng(seed)
+    if len(smp) > n_max: smp = smp[rng.choice(len(smp), n_max, replace=False)]
+    k = gaussian_kde(smp.T); allp = np.vstack([smp, x]); area = float(np.prod(np.maximum(allp.max(0) - allp.min(0), 1e-6)))
+    return np.log((1 - eps) * k(x.T) + eps / area)
+
+
+def hindsight_lu_cond(seqs, feat, samp_true, samp_alias, min_n=50):
+    """Entry 23 (hsc): as hindsight_lu, with the densities CONDITIONED on the frame's condition through a joint 2-D density of
+    (profile median, best similarity - profile median); leave-one-sequence-out."""
+    lu = np.zeros(len(feat)); nused = 0
+    for k, idx in enumerate(seqs):
+        tr = [samp_true[j] for j in range(len(seqs)) if j != k and len(samp_true[j])]; al = [samp_alias[j] for j in range(len(seqs)) if j != k and len(samp_alias[j])]
+        tr = np.concatenate(tr) if tr else np.zeros((0, 2)); al = np.concatenate(al) if al else np.zeros((0, 2))
+        if len(tr) < min_n or len(al) < min_n: continue
+        x = feat[idx]; lu[idx] = _kde2_logpdf(al, x) - _kde2_logpdf(tr, x); nused += 1
+    return lu, nused
+
+
+def hindsight_lu_causal(seqs, cent_max, samp_true, samp_alias, samp_t, min_n=100, block=50):
+    """Entry 23 (hsq): CAUSAL per-session calibration. The first pass (historical filter) is causal and does not depend on the second,
+    so the samples of frames < t of the SAME session are available at frame t. Densities for frame t: the session's own first-pass
+    samples from frames before t once there are >= min_n of each kind (same condition), otherwise the other sessions of the run (LOSO).
+    samp_t[k]: frame index (within the session) of each sample of session k. Evaluated in blocks of `block` frames."""
+    lu = np.zeros(len(cent_max)); nown = 0
+    for k, idx in enumerate(seqs):
+        tro = np.concatenate([samp_true[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
+        alo = np.concatenate([samp_alias[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
+        oth = None
+        for b0 in range(0, len(idx), block):
+            sel = samp_t[k] < b0; tr, al = samp_true[k][sel], samp_alias[k][sel]
+            x = cent_max[idx[b0:b0 + block]]
+            if len(tr) >= min_n and len(al) >= min_n: lu[idx[b0:b0 + block]] = _kde_logpdf(al, x) - _kde_logpdf(tr, x); nown += len(x)
+            elif len(tro) >= min_n and len(alo) >= min_n:
+                if oth is None: oth = (tro, alo)
+                lu[idx[b0:b0 + block]] = _kde_logpdf(alo, x) - _kde_logpdf(tro, x)
+    return lu, nown
+
+
+def hindsight_lu(seqs, cent_max, samp_true, samp_alias, min_n=50, loso=True):
     """Entry 23: per-frame log-LR of the unmapped cells from the absolute similarity of the frame's best match.
     cent_max[t] = best similarity of frame t minus the median of its profile. samp_true / samp_alias: per sequence, the same statistic at
     the confident fixes of a first OWF pass: best image within excl of the fix (true place) / best image farther than 1.6 excl (the best
@@ -63,8 +105,8 @@ def hindsight_lu(seqs, cent_max, samp_true, samp_alias, min_n=50):
     (other sessions on the same map). lu_t = log f_alias(x_t) - log f_true(x_t); 0 (neutral, the historical filter) without enough samples."""
     lu = np.zeros(len(cent_max)); nused = 0
     for k, idx in enumerate(seqs):
-        tr = np.concatenate([samp_true[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
-        al = np.concatenate([samp_alias[j] for j in range(len(seqs)) if j != k] or [np.zeros(0)])
+        tr = np.concatenate([samp_true[j] for j in range(len(seqs)) if j != k or not loso] or [np.zeros(0)])
+        al = np.concatenate([samp_alias[j] for j in range(len(seqs)) if j != k or not loso] or [np.zeros(0)])
         if len(tr) < min_n or len(al) < min_n: continue
         x = cent_max[idx]; lu[idx] = _kde_logpdf(al, x) - _kde_logpdf(tr, x); nused += 1
     return lu, nused
@@ -221,10 +263,10 @@ def main():
         zc = 0.5 * float(np.median(np.concatenate([robust_z(Q[idx].astype(np.float32) @ M.T).max(1) for idx in seqs])))
         res["lu"] = dict(mode=luopt, c=zc); print(f"unmapped emission: crossover c = {zc:.2f} robust sd", flush=True)
     luseq = None
-    if luopt == "hs":                                                 # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
-        beta0 = betas[0]; cent_max = np.zeros(nq); st_l, sa_l = [], []; tree = cKDTree(MP); ra = 1.6 * excl
+    if luopt in ("hs", "hsm", "hsmp", "hsc", "hsq"):                                        # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
+        beta0 = betas[0]; cent_max = np.zeros(nq); med_all = np.zeros(nq); st_l, sa_l, tt_l = [], [], []; ra = 1.6 * excl
         for idx in seqs:
-            S_ = Q[idx].astype(np.float32) @ M.T; med_ = np.median(S_, 1); cent_max[idx] = S_.max(1) - med_
+            S_ = Q[idx].astype(np.float32) @ M.T; med_ = np.median(S_, 1); cent_max[idx] = S_.max(1) - med_; med_all[idx] = med_
             Zs = robust_z(S_); LL = log_lr(Zs, beta0); bank = [(qx, sc) for sc in scales for qx in qxs]
             if engine == "torch":
                 import owf_torch as OT
@@ -234,15 +276,23 @@ def main():
                 rs = [F.run(LL, U[idx] * sc, excl, ell=ell, q=qx * excl, reentry=reentry) for qx, sc in bank]
                 xm = np.stack([r_["xhat"] for r_ in rs]); ms_ = np.stack([r_["mass"] for r_ in rs]); lm_ = np.stack([r_["lml"] for r_ in rs])
             ks = np.argmax(np.cumsum(lm_, 1), 0); tt = np.arange(len(idx)); m1 = ms_[ks, tt]; x1 = xm[ks, tt]
-            conf = np.flatnonzero((m1 >= 1 - eps0) & (x1 >= 0)); conf = conf[:: max(1, len(conf) // 3000)]; st, sa = [], []
+            conf = np.flatnonzero((m1 >= 1 - eps0) & (x1 >= 0)); conf = conf[:: max(1, len(conf) // 3000)]; st, sa, tq = [], [], []
             for t in conf:
                 d = np.linalg.norm(MP - MP[x1[t]], axis=1)
                 near, far = d <= excl, d > ra
-                if near.any() and far.any(): st.append(S_[t, near].max() - med_[t]); sa.append(S_[t, far].max() - med_[t])
-            st_l.append(np.array(st)); sa_l.append(np.array(sa))
-        lu_all, nused = hindsight_lu(seqs, cent_max, st_l, sa_l)
+                # hs: on-map sample = best image at the fixed place; hsm (the observation model): on-map sample = the frame's maximum
+                # (max of the true place and the best alias), off-map sample = best image farther than 1.6 excl (true place absent)
+                if near.any() and far.any():
+                    a_ = (S_[t, near].max() if luopt == "hs" else S_[t].max()) - med_[t]; b_ = S_[t, far].max() - med_[t]
+                    if luopt == "hsc": st.append((med_[t], a_)); sa.append((med_[t], b_))
+                    else: st.append(a_); sa.append(b_)
+                    tq.append(t)
+            st_l.append(np.array(st)); sa_l.append(np.array(sa)); tt_l.append(np.array(tq, int))
+        if luopt == "hsc": lu_all, nused = hindsight_lu_cond(seqs, np.stack([med_all, cent_max], 1), st_l, sa_l)
+        elif luopt == "hsq": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l)   # nused = frames on own-session densities
+        else: lu_all, nused = hindsight_lu(seqs, cent_max, st_l, sa_l, loso=(luopt != "hsmp"))   # hsmp: pooled over the run's sessions, own included
         luseq = lu_all
-        res["lu"] = dict(mode="hs", n_true=int(sum(len(a) for a in st_l)), n_alias=int(sum(len(a) for a in sa_l)), seqs_calibrated=nused,
+        res["lu"] = dict(mode=luopt, n_true=int(sum(len(a) for a in st_l)), n_alias=int(sum(len(a) for a in sa_l)), seqs_calibrated=nused,
                          n_seqs=len(seqs), lu_median=float(np.median(lu_all)), lu_p05=float(np.percentile(lu_all, 5)), lu_p95=float(np.percentile(lu_all, 95)))
         print("hindsight absolute emission:", res["lu"], flush=True)
     for beta in betas:
