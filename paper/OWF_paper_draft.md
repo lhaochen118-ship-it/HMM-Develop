@@ -54,6 +54,11 @@ motion adds no numerical diffusion); process noise q|u_t| per axis accumulates a
 (g/2)²; mass that leaves the band moves to Ω; a negligible kidnap rate and an Ω re-entry rate redistribute mass over the prior. Every step
 maps a probability vector to a probability vector; **nothing is renormalised over the mapped cells**.
 
+**3.2b No teleport (Proposition 5, Entry 19).** Mass that leaves the band goes to the far state Ω and comes back only through the band edge
+(or never). The historical design (Entry 10) returned Ω-mass over the start prior, i.e. onto every map image each frame. Coherent aliasing
+then amplifies those seeds: on the Nordland design run, the reports wrong at 1 − 1e-8 drop from 22 to 0 when the channel is removed.
+*Its pre-registered fresh-seed test is Entry 19.*
+
 **3.3 Emission.** For frame z_t with similarities to the n map images, robust z-scores z_{t,i} within the frame's own profile give
 L_{t,i} = exp(β z_{t,i}) / mean_j exp(β z_{t,j}) (mean exactly 1 over the map); a mapped cell gets the mean L of its images, an unmapped
 cell and Ω get 1. Evidence is weighted by the distance travelled, w_t = min(1, |u_t| / 0.4 excl), so a stopped robot does not count the
