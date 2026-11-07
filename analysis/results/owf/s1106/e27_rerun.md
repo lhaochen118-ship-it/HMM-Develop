@@ -66,3 +66,14 @@ dev set A: 399 runs in common (hsq2 399, hsq 399, S5 399)
 | holes 50 % (108) | 0.873 / 0.030 / 4 | 0.873 / 0.030 / 4 | 0.894 / 0.032 / 4 | 31/108 |
 | natural off-map (36) | 0.943 / 0.003 / 0 | 0.943 / 0.003 / 0 | 0.952 / 0.010 / 2 | 16/36 |
 | NCLT (6) | 0.770 / 0.002 / 0 | 0.768 / 0.001 / 0 | 0.781 / 0.005 / 0 | 0/6 |
+
+## Seeds 70-72 with the old-rule reference (t70ref, reported late)
+\`\`\`
+== seeds 70-72, Q2 (causal hsq2), 144 runs
+   R_new: recall 0.9255, mean segFAR 0.0035, runs>a 0, worst 0.0092, nav 13.97
+   C10  : recall 0.9181, mean segFAR 0.0013, runs>a 0, worst 0.0042, nav 14.56
+   vs tested hsq: identical runs 35/144; hsq recall 0.9259 msf 0.0034 runs>a 0; delta recall -0.0004 [-0.0005, -0.0002]
+   Entry 23 rule vs R_old (144 runs): V1 MET (0 vs 1, 0.0035 vs 0.0053); V2 MET (-0.0053 [-0.0088, -0.0022]); V3 MET (13.97 vs 14.19)
+   Entry 24/26 rule (144 runs): C1 MET; C2 MET (+0.1169 [+0.1006, +0.1337]); C3 MET (TAO26 valid=False runs>a 126 diff +0.087; Xu21 valid=False runs>a 83 diff +0.229; Claxton24 valid=False runs>a 101 diff +0.186); C4 MET (13.97 vs 15.24) -> CONFIRMED
+   safe point C10: S1 MET (0 runs>a, worst 0.0042); S2 MET (-0.0074) -> CONFIRMED
+\`\`\`

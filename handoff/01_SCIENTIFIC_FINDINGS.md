@@ -61,7 +61,8 @@ Mỗi nhóm 144 run (8 dataset × 6 descriptor × 3 seed), quyết định đăn
 | 67–69 | 24 | 0.927 / 0.0029 / **0** / 12.53 | 0.920 / 0.0009 / **0** / 12.93 | vs HSI-VN: +0.136 [+0.118, +0.154] | xác nhận (C1–C4, S1–S2 đạt) |
 | 70–72 | 26 | 0.926 / 0.0035 / **0** / 13.97 | 0.918 / 0.0013 / **0** / 14.56 | vs HSI-VN: +0.117 [+0.101, +0.134] | xác nhận (C1–C4, S1–S2 đạt) |
 
-Tổng: **4/432 run > α (0.9 %)**, cả 4 ở CMU seed 64–66; với phủ quyết **0/432**. Luật cũ OWF-HWA-S5 trên 5 nhóm tươi 55–69: 14/720 (1.9 %).
+Tổng: **4/432 run > α (0.9 %)**, cả 4 ở CMU seed 64–66; với phủ quyết **0/432**. Luật cũ OWF-HWA-S5 trên 6 nhóm tươi 55–72: 15/864 (1.7 %);
+trên 70–72 nó có 1 run > α, TB segFAR 0.0053 (luật cuối 0, 0.0035).
 
 ### 2.2 So với phương pháp ngoài trên cùng run (seed 67–72, 288 run)
 

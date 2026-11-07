@@ -124,6 +124,9 @@ văn (script `analysis/results/owf/s1106/e27_rq_eval.py`).
 | tập A (399) | hsq2 | 0.9285 / 0.0034 / 0 / — / 13.01 | — | −0.0002 [−0.0003, −0.0000] | (phát triển) |
 
 - Tổng 432 run tươi, hsq2: **4/432 run > α** (cả 4 ở CMU seed 64–66, như trước); C10: **0/432**.
+- Tham chiếu luật cũ S5 trên 70–72 (đợt `t70ref`, báo muộn ở Entry 26): 0.931 / 0.0053 / 1 run > α / 14.19 m. Luật cuối so với nó: run > α 1 → 0, TB
+  segFAR 0.0053 → 0.0035, recall −0.0053 [−0.0088, −0.0022], điều hướng 14.19 → 13.97 m (V1–V3 của Entry 23 cũng đạt trên nhóm này).
+  Luật cũ trên 6 nhóm tươi 55–72: 15/864 run > α (1.7 %); luật cuối trên 64–72: 4/432 (0.9 %).
 - So với HSI-VN (67–72): +0.136 [+0.118, +0.154] và +0.117 [+0.101, +0.134]. Đối thủ ngoài không đổi (không dùng HQ).
 - Tập A, hsq2 so với S5: TB segFAR 0.0045 → 0.0034, run > α 1 → 0, recall −0.004; CMU 0.852 / 0.0095 → 0.862 / 0.0066; Nordland segFAR
   0.0069 → 0.0026 (như Entry 23 dev).
