@@ -1,98 +1,65 @@
 # Datasets & Environment Summary
 
-*Cập nhật 2026-11-06 (§000); trước đó 2026-11-04 (branch `hmm-2nd-idea`, ý tưởng 2 HSI). Đọc trước: **§0** (trạng thái hiện hành, thay mọi ghi chú cũ bên dưới khi mâu thuẫn).
-Cách đọc repo và việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md`, `handoff/03_HANDOFF.md`. Các dataset `hmm-cms-*`, `hmm-fwd-null-*` là của ý tưởng 1
-(baseline). Các mục §1–§5 bên dưới giữ lịch sử (một số acc / luật trong đó đã cũ).*
+*Cập nhật 2026-11-07 (branch `hmm-2nd-idea`).*
+- **§0 là trạng thái hiện hành** và thay mọi ghi chú cũ khi mâu thuẫn.
+- §1–§5 bên dưới giữ cấu trúc dump / dataset / container lịch sử để tra cứu (một số tài khoản trong đó đã cũ).
+- Bản đầy đủ trước khi hợp nhất: `history/ENVIRONMENT_SUMMARY_through_2026-11-06.md`.
+- Cách đọc repo và việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md`.
 
-## 0000. Phiên 2026-11-06 (chiều, từ 14:17 UTC): thêm tài khoản, kho seed r67
+## 0. Trạng thái hiện hành (2026-11-07)
 
-**Tài khoản** (`automation/active_accounts.txt`, thứ tự lấp phiên): `namhunhh`, `duckzuykobip`, `dinhthinh`, `hieuho669`, `nguyenmanh0404`,
-`nhatlong1103`, `mxuanquy`, `yeshenhi`. Token ở `~/.kaggle/tok_<username>` (chmod 600), không vào repo.
-- `nguyenmanh0404`: 4× L4.
-- `nhatlong1103`: hết hạn mức GPU tuần (30 giờ) lúc 14:54 UTC; chỉ dùng CPU (và là chủ của các dataset công khai cũ).
-- `mxuanquy`, `yeshenhi`: người dùng báo chỉ có T4, nhưng kernel cấu hình L4 vẫn được nhận và chạy (đợt `ablhn`).
-- Các tài khoản đều có kernel `vprspace-*` do một phiên khác tạo. Không đụng tới.
+### 0.1 Tài khoản Kaggle
 
-**Dataset mới:** `namhunhh/hmm-navcache-r73` (seed 73–78, 288 cache, 24 kernel CPU `fr73-*`; chưa dùng). `namhunhh/hmm-navcache-r67` (seed 67–72, 288 cache, 942 MB, 20 kernel CPU `fr67-*`).
-- Seed 67–69: Entry 24.
-- Seed 70–72: Entry 26.
-- Kết quả HSI-VN của kho nằm trong `results.tar` của từng kernel `fr67-*` (không phải file rời).
+Thứ tự lấp phiên ở `automation/active_accounts.txt`. Mỗi tài khoản có 2 phiên GPU + 5 phiên CPU, 30 GPU-giờ / tuần. Token chỉ ở
+`~/.kaggle/tok_<username>` (chmod 600) **trong container của phiên chat**. Phiên mới phải xin người dùng token lại; không bao giờ đưa token vào
+repo / dataset / báo cáo.
 
-**Đĩa scratchpad:** hạn mức ~40 GB. Output kernel giải nén rất lớn (1–2 GB mỗi đợt). Xoá `runs/*/<kernel>_out` sau khi đã trích khung
-sang `w/`. Lúc đĩa đầy, `fetch_done.py` ghi file cụt mà vẫn đánh dấu là đã kéo, nên phải kiểm `np.load` từng file.
-
-## 000. Phiên 2026-11-06: tài khoản, kho seed r61
-
-**Tài khoản** (`automation/active_accounts.txt`, thứ tự lấp phiên): `namhunhh`, `duckzuykobip`, `dinhthinh`, `hieuho669`. Mỗi tài khoản có 2 phiên
-GPU (4× L4) + 5 phiên CPU. Token ở `~/.kaggle/tok_<username>` (chmod 600), không vào repo / dataset / báo cáo.
-- `hieuho669`: lúc đầu push L4 bị từ chối ("You must accept this competition's rules ... gemma-4-developer-agent"), nên chỉ chạy CPU. Từ
-  06:23 UTC push L4 thành công (kernel `devlu-1/2`).
-- Nếu lỗi này quay lại: người dùng bấm chấp nhận luật tại https://www.kaggle.com/competitions/gemma-4-developer-agent.
-
-**Dataset mới (public):**
-
-| Slug | Nội dung | Vai trò |
+| Tài khoản | GPU | Ghi chú |
 |---|---|---|
-| `namhunhh/hmm-navcache-r61` | kho seed mới 61–66: bố cục lỗ mới, 8 dataset × 6 descriptor, 288 cache (939 MB). Sinh bằng 20 kernel CPU `fr61-*` (`hsi_fresh.py --keep`) | 61–63 (Entry 21), 64–66 (Entry 23): đã dùng hết |
+| `namhunhh` | 4× L4 | chủ các kho seed mới r55 / r61 / r67 / r73 |
+| `duckzuykobip` | 4× L4 | |
+| `dinhthinh` | 4× L4 | chủ các kernel VPR-Space của Entry 18 |
+| `hieuho669` | 4× L4 | phải chấp nhận luật cuộc thi `gemma-4-developer-agent` mới push được L4 (đã chấp nhận 2026-11-06) |
+| `nguyenmanh0404` | 4× L4 | thêm 2026-11-06 |
+| `nhatlong1103` | 4× L4 | chủ các dataset công khai cũ; từng hết hạn mức tuần (2026-11-06 14:54), đã reset |
+| `mxuanquy`, `yeshenhi` | người dùng báo "chỉ T4" | nhận kernel L4 nhưng chạy rất chậm; dùng cho CPU |
 
-**Kho seed 67–72 (đang sinh lúc kết thúc phiên, 08:58 UTC):** 20 kernel CPU `fr67-1 … fr67-20` (`hsi_fresh.py --keep navcache_r67`, ước ~1.5–2
-giờ), xếp theo `active_accounts.txt`. Có thể bị monitor chuyển tài khoản, nên tìm bằng `kaggle kernels list --mine` trên từng tài khoản.
-Khi xong:
-1. Kéo `kaggle kernels output <acc>/fr67-k -p <dir> --file-pattern '^navcache_.*\.npz$'`. Kiểm đủ 288 file (48 cấu hình × 6 seed).
-2. `publish_dataset.py <dir> hmm-navcache-r67 ... --owner namhunhh`.
+Mọi tài khoản đều có kernel `vprspace-*` của một phiên khác. Không đụng tới.
 
-**Container:** khởi động lại lúc ~05:18 UTC (mất monitor nền); `central_monitor.py` chạy lại từ state file. Bài học: state file giúp khởi động lại
-không mất kernel. Kernel đã xong mà monitor chưa poll có thể kéo tay bằng `kaggle kernels output <id> -p <dir> --file-pattern ...`.
+Máy L4 (đo bằng kernel thăm dò): 4× NVIDIA L4 23 GB, 48 vCPU, 188 GB RAM, `/kaggle/working` 20 GB, torch 2.11 + CUDA 13. Cấu hình kernel L4:
+`machine_shape = NvidiaL4`, `competition_sources = ["gemma-4-developer-agent"]`, internet tắt.
 
-## 00. Phiên 2026-11-05 (chiều): tài khoản, máy L4, engine GPU
+### 0.2 Dataset công khai dùng cho ý tưởng 2
 
-**Tài khoản của phiên này** (`automation/active_accounts.txt`, thứ tự lấp phiên): `namhunhh`, `duckzuykobip`, `dinhthinh`. Token ở
-`~/.kaggle/tok_<username>` (chmod 600), không bao giờ vào repo. Các tài khoản cũ (bảng §0 bên dưới) không có token trong phiên này; dataset công
-khai của chúng vẫn mount được. `namhunhh` có kernel của người dùng khác chạy song song: monitor tự bỏ qua slot CPU đang bận ("no free cpu session").
-
-**Máy L4 đo bằng kernel thăm dò (cả ba tài khoản, 2026-11-05 14:52 UTC):** 4 × NVIDIA L4 (23 GB mỗi GPU), 48 vCPU, 188 GB RAM, 20 GB đĩa
-`/kaggle/working`, torch 2.11 + CUDA 13. Kernel L4: `machine_shape = NvidiaL4`, `competition_sources = ["gemma-4-developer-agent"]`, internet tắt.
-
-**Engine GPU của OWF** (`analysis/owf_torch.py`, `owf.py --engine torch`): mọi bộ lọc của ngân hàng (q × tỉ lệ) chạy trong một tensor float64 trên
-một GPU. L4: 2.7–3.4 ms/frame cho ngân hàng 10 bộ lọc (numpy trên cùng máy: 29 ms/frame); Boreas 76k frame 4.6 phút. Tương đương bản numpy ở mức
-quyết định (vị trí báo trùng, quyết định trùng ở mọi ngưỡng 1−0.2 … 1−1e-8, đường cong vận hành trùng; |Δ khối lượng| ≤ 1e-4 ở 1-D, ≤ 7e-7 ở 2-D).
-Runner của `make_eval_kernel.py` chia job vòng tròn lên 4 GPU (`CUDA_VISIBLE_DEVICES = i % 4`); `--par 24` = 6 job / GPU, phần HSI chạy trên CPU
-của cùng phiên.
-
-**Dataset mới (public):**
-
-| Slug | Nội dung | Vai trò |
+| Slug | Nội dung | Vai trò / trạng thái |
 |---|---|---|
-| `namhunhh/hmm-navcache-r55` | kho seed mới 55–60: bố cục lỗ mới, 8 dataset × 6 descriptor, 288 cache; sinh bằng đợt `fr55` (`hsi_fresh.py --keep`); HSI-VN / VMN / oracle cùng cache nằm trong output các kernel `fr55-*` | 55–57: Entry 17 (xác nhận + SOTA); 58–60: CHƯA dùng |
-| `<acc>/dive-vpr-owf` (3 tài khoản) | code dataset của phiên (`VPR_CODE_DS=dive-vpr-owf`) | tự đồng bộ khi dựng kernel |
+| `nhatlong1103/vpr-descriptor-dumps`, `vpr-dumps-4seasons`, `boreas-vpr-dump` | dump descriptor (runner mount mặc định) | nguồn cho mọi cache |
+| `nhatlong1103/nclt-vpr-dump`, `oxford-robotcar-vpr-dump`, `stlucia-vpr-dump` | dump NCLT, Oxford, St Lucia | thêm bằng `--ds` |
+| `nhatlong1103/hmm-navcache-v2` | cache 7 dataset × 6 descriptor × seed 0–9 (NCLT seed 0) | **tập phát triển A** (+ Oxford, St Lucia) |
+| `nhatlong1103/hmm-e37-caches` | cache Oxford (45 run) + St Lucia (30 run) | tập A |
+| `nhatlong1103/hmm-navcache-holes` | lỗ 10 % (`d10/`), 50 % (`d50/`), seed 0–2 | tổng quát |
+| `nhatlong1103/hmm-natural-cache` | 4Seasons chéo cảnh (36 run) | off-map tự nhiên |
+| `caotienminh1/hmm-navcache-r19` | seed 19–27 | 19–21, 22–24 chưa dùng cho OWF; 25–27 đã dùng |
+| `synchan5704/hmm-navcache-r40`, `r49` | seed 40–54 | đã dùng (Entry 11–15) |
+| `namhunhh/hmm-navcache-r55` | seed 55–60 | đã dùng (Entry 17, 19) |
+| `namhunhh/hmm-navcache-r61` | seed 61–66 | đã dùng (Entry 21, 23) |
+| `namhunhh/hmm-navcache-r67` | seed 67–72 | đã dùng (Entry 24, 26) |
+| `namhunhh/hmm-navcache-r73` | seed 73–78 (288 cache) | **chưa dùng**: hai nhóm 73–75, 76–78 |
+| `<tài khoản>/dive-vpr-owf` | code dataset của phiên (`VPR_CODE_DS=dive-vpr-owf`) | tự đồng bộ khi dựng kernel |
 
-## 0. Trạng thái hiện hành (2026-11-04)
+- Kho seed mới: 8 dataset (Boreas, CMU, Nordland, 4Seasons office / old town / countryside, Oxford, St Lucia) × 6 descriptor × 6 seed.
+- HSI-VN của kho nằm trong `results.tar` của các kernel `frXX-*`.
+- Mount trong kernel: token `DIR:navcache_@<dataset>`.
+- VPR-Space (Entry 18): dump 6 descriptor do kernel `dinhthinh/vprspace-desc` sinh. Bản cục bộ ở scratchpad (mất khi hết phiên); dựng lại
+  theo Entry 18 trong `RESEARCH_LOG.md`.
 
-**Tài khoản Kaggle đang dùng** (`automation/active_accounts.txt`, theo thứ tự lấp phiên): `synchan5704`, `yeshenhi` (thêm 2026-11-04 cho Entry 10;
-`yeshenhi` chỉ T4 khi xin GPU, CPU bình thường), `quynhle07`, `nguyenhoa99`, `quynhtran35`, `yuan1103`, `caotienminh1` — mỗi acc 2 phiên GPU + 5 phiên CPU.
-Code dataset của kernel: `<acc>/dive-vpr-analysis` (mặc định, phiên HSI) và `<acc>/dive-vpr-owf` (Entry 10; chọn bằng `export VPR_CODE_DS=...`). Token ở `~/.kaggle/tok_<acc>` (chmod 600) **chỉ trong container của phiên chat**; phiên mới phải
-xin user token lại (không bao giờ đưa token vào repo / dataset / báo cáo). Không có token `nhatlong1103` ⇒ dataset mới đăng dưới **caotienminh1**
-(`automation/publish_dataset.py --owner caotienminh1`). Ý tưởng 2 chỉ dùng phiên CPU (không tốn hạn mức GPU).
+### 0.3 Container phiên chat
 
-**Dataset dùng cho ý tưởng 2 (đều PUBLIC):**
-
-| Slug | Nội dung | Vai trò |
-|---|---|---|
-| `nhatlong1103/hmm-navcache-v2` | cache `nav_demo --cache`, 7 dataset × 6 descriptor × seed 0–9 (NCLT seed 0), 366 file | thiết kế (seed 0 × 4 desc) + phát triển |
-| `nhatlong1103/hmm-e37-caches` | cache Oxford (45 run) + St Lucia (30 run) | phát triển |
-| `nhatlong1103/hmm-navcache-holes` | lỗ 10 % (`d10/`) và 50 % (`d50/`), 6 dataset × 6 desc × seed 0–2 | độ bền |
-| `nhatlong1103/hmm-natural-cache` | 4Seasons chéo cảnh (`navcache_4sx_*`, 36 run) | off-map tự nhiên |
-| `caotienminh1/hmm-navcache-f13` | bố cục lỗ mới seed 13–15, 6 dataset × 6 desc (108 file, 377 MB) | đã dùng (Entry 8) |
-| `caotienminh1/hmm-navcache-f16` | seed 16–18 (108 file) | đã dùng (Entry 9) |
-| `caotienminh1/hmm-navcache-r19` | **kho dự trữ** seed 19–27 (324 file, 1.2 GB, đã kiểm đủ và đọc được), chia nhóm 19–21 / 22–24 / 25–27 | 19–21, 22–24 **chưa dùng**; 25–27 đã dùng (Entry 10, OWF) |
-| `nhatlong1103/vpr-descriptor-dumps`, `vpr-dumps-4seasons`, `boreas-vpr-dump` | dump descriptor (runner mount mặc định) | sinh cache mới (`hsi_fresh.py`, `nav_demo.py`) |
-| `nhatlong1103/nclt-vpr-dump` | dump NCLT + FOG | cần cho việc mở rộng NCLT (`--ds` thêm) |
-
-Mount trong kernel: `--nodumps --ds <slug>` và token `DIR:navcache_` (một dataset) hoặc `DIR:navcache_@<thư mục>` (nhiều dataset cùng tên file).
-
-**Container phiên chat:** 4 lõi CPU, không GPU, đĩa ~30 GB có hạn mức; scratchpad mất khi phiên kết thúc (kết quả cần giữ phải ở repo:
-`analysis/results/hsi/*.tgz`). Gói phải cài mỗi phiên: `pip install kaggle markdown xhtml2pdf scipy scikit-learn matplotlib pypdf`. md → pdf:
-`python3 automation/md2pdf.py <in.md> <out.pdf>`. Kaggle CLI 2.2.5 hỗ trợ `kernels output --file-pattern`.
+- 4 lõi CPU, không GPU. Scratchpad có hạn mức ~40 GB và mất khi phiên kết thúc; kết quả cần giữ phải nằm trong repo (`analysis/results/owf/`).
+- Container có thể khởi động lại giữa chừng (đã gặp 3 lần): `central_monitor.py` chạy lại được từ state file.
+- Cài mỗi phiên: `pip install kaggle markdown xhtml2pdf scipy matplotlib pypdf torch` (torch CPU để chạy engine GPU ở chế độ CPU cục bộ).
+- md → pdf: `python3 automation/md2pdf.py <in.md> <out.pdf>` (một file mỗi lệnh).
+- Dump cục bộ để thử nhanh (CosPlace: CMU, Nordland, 4Seasons old town): kéo từ các dump công khai vào `scratchpad/data/dump`.
 
 ## 1. Dataset quan trọng nhất: descriptor dumps (PUBLIC)
 

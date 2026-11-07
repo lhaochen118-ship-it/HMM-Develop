@@ -1,11 +1,34 @@
 # 08 — Tài liệu chuyển giao theo `HMM_Navigation_Yeu_Cau_Nghien_Cuu_Cap_Nhat.docx`
 
-*2026-11-05, branch `hmm-2nd-idea` (repo `lhaochen118-ship-it/hmm-develop`). Tài liệu đi theo đúng 5 mục của file yêu cầu. Với mỗi mục, tài liệu
+*2026-11-07 (trước: 2026-11-05), branch `hmm-2nd-idea` (repo `lhaochen118-ship-it/hmm-develop`). Tài liệu đi theo đúng 5 mục của file yêu cầu. Với mỗi mục, tài liệu
 ghi: đã làm gì, bằng chứng nằm ở đâu, và điều gì CHƯA đạt. Chi tiết nằm trong các file được dẫn:
 - số liệu: `01_SCIENTIFIC_FINDINGS`;
 - vận hành: `02_ENGINEERING_OPS_NOTES`;
 - quyết định, sổ dùng tập kiểm tra: `03_HANDOFF`;
 - cách bắt đầu phiên mới: `06_NEXT_CHAT_GUIDE`.*
+
+## 0. Cập nhật 2026-11-07: tự đánh giá mức A\* (trung thực)
+
+| Tiêu chí reviewer | Hiện trạng | Điểm (1–5) |
+|---|---|---|
+| Novelty cốt lõi | Bộ lọc thế giới mở (vùng trống trong trạng thái mét, hiện diện theo vị trí): Gate 18 không thấy trùng. Phân tích bí danh odometry không thấy được (Mệnh đề 6): mới cho bài toán. HQ: nguyên lý trùng CMS / trạng thái OFF có hiệu chỉnh của chính ý tưởng 1; mới ở dạng mật độ trong ô trống | 3.5 |
+| Soundness lý thuyết | Mệnh đề 1–7. Cận Ville cần (E1′), không kiểm được; không có bảo đảm theo run cho lớp quyết định | 3 |
+| Thực nghiệm | 432 run tươi đăng ký trước; 8 dataset × 6 descriptor; SOTA ngoài trên cùng run; ablation; tổng quát (lỗ 10/50 %, tự nhiên, NCLT, VPR-Space); kiểm toán nhân quả + chạy lại | 4.5 |
+| Độ sạch phương pháp | Lớp quyết định = HSI-VN ∪ ba bậc cố định + nhiều hằng số. Reviewer A\* sẽ gọi là kỹ thuật | 2.5 |
+| Tính thực tế | Lỗ mô phỏng; chỉ descriptor toàn cục; lợi ích HQ trên CMU cần hiệu chỉnh từ các phiên cùng môi trường (Entry 27) | 3 |
+| Trình bày | Bản thảo có abstract, phương pháp, bảng; chưa viết paper hoàn chỉnh | 3 |
+
+**Kết luận:**
+- Với dạng hiện tại, đủ cho một bài RA-L / ICRA / IROS có khả năng chấp nhận tốt nhờ thực nghiệm mạnh.
+- **Chưa đủ chắc cho A\*** (CVPR / NeurIPS / RSS). Ước lượng chủ quan 20–30 %.
+
+Điều kiện để lên A\*:
+- (1) Thay union HSI ∪ bậc bằng một luật quyết định thống nhất có bảo đảm.
+- (2) Gate tài liệu hệ thống và định vị rõ so với ý tưởng 1.
+- (3) Dữ liệu lỗ thật.
+- (4) Có thể thêm hình học 6DOF để loại bí danh.
+
+So sánh novelty với ý tưởng 1 (≈ 35–40 % trùng, chi tiết ở báo cáo phiên): `paper/BAO_CAO_S1106.md` §7.
 
 ## 1. Mục tiêu nghiên cứu (yêu cầu §1: nâng cao novelty)
 

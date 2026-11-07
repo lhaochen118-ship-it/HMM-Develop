@@ -89,6 +89,63 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 27 — Kiểm toán mã, công thức và lý thuyết; sửa hai rò rỉ nhân quả của HQ; chạy lại mọi kết quả (2026-11-07 04:05 UTC)
+
+**Bối cảnh.** Người dùng yêu cầu tự kiểm tra mã, công thức, định lý trước mọi bước khác, sửa và chạy lại đến khi đúng hết.
+
+**Phạm vi kiểm toán:**
+- metric (`nav_demo.rule_metrics`: recall, segFAR theo đoạn H frame, dải mơ hồ) — khớp mô tả; không sửa;
+- bộ lọc OWF (`owf.py`, `owf_torch.py`): bảo toàn khối lượng, Ω hấp thụ khi `--pin 0`, chọn ngân hàng theo evidence nhân quả — không sửa;
+- lớp quyết định (`owf_union.py`): ngưỡng, thời gian tích luỹ, phủ quyết — không sửa;
+- HQ (`--lu hsq`, Mệnh đề 7): **hai rò rỉ tương lai** (dưới);
+- lý thuyết (`paper/owf_theory.md`): Mệnh đề 2 chưa phủ trường hợp ô trống có LR ≠ 1; Mệnh đề 7(a) cần giả thiết niềm tin khuếch tán. Đã sửa (§10, §11).
+
+**Hai rò rỉ trong mã HQ đã kiểm tra (`--lu hsq`, dùng ở Entry 23, 24, 26):**
+1. Sàn nhiễm 1 % của KDE chia cho biên độ lấy trên mẫu VÀ 50 frame của khối đang đánh giá → LR của frame t phụ thuộc tới 49 frame sau.
+2. Mẫu lượt 1 được thưa với bước ⌊(số frame tự tin của cả phiên) / 3000⌋ → mẫu quá khứ nào được dùng phụ thuộc tương lai của phiên.
+
+**Sửa:** `--lu hsq2` (`hindsight_lu_causal2`): sàn chỉ từ mẫu; dùng mọi frame tự tin. Biến thể nghiêm ngặt `--lu hsq2s`: dự phòng chỉ từ các
+phiên TRƯỚC (phiên đầu không có dự phòng), để tách giả định "xuyên phiên" (một đội xe đã đi bản đồ; không phải rò rỉ trong phiên).
+
+**Kiểm thử** `analysis/tests/test_hq_causality.py` (đổi tương lai của một phiên, so log-LR quá khứ): hsq đổi tới 0.673 (rò rỉ xác nhận);
+hsq2 và hsq2s đổi 0 → PASS.
+
+**Chạy lại (đợt `rq`, `rqdev`, `t70ref`; mã hsq2 / hsq2s, cùng run, cùng giao thức).** Quy tắc quyết định của Entry 23, 24, 26 áp lại nguyên
+văn (script `analysis/results/owf/s1106/e27_rq_eval.py`).
+
+| Nhóm | Mã | R_new recall / TB segFAR / run > α / tệ nhất / điều hướng | C10 (+ phủ quyết ½) | Δrecall so với hsq [CI 95 %] | Quyết định |
+|---|---|---|---|---|---|
+| 64–66 | hsq2 | 0.9323 / 0.0059 / 4 / 0.0254 / 14.56 | 0.9235 / 0.0024 / **0** | −0.0001 [−0.0002, +0.0001] | Entry 23: V1, V2, V3 ĐẠT (giữ nguyên) |
+| 64–66 | hsq2s | 0.9321 / 0.0071 / 5 / 0.0366 / 14.80 | 0.9231 / 0.0044 / 4 | −0.0002 [−0.0007, +0.0002] | V1 TRƯỢT (5 vs 4 run > α) |
+| 67–69 | hsq2 | 0.9268 / 0.0029 / 0 / 0.0085 / 12.53 | 0.9201 / 0.0009 / 0 | −0.0001 [−0.0003, +0.0001] | Entry 24: C1–C4 ĐẠT; S1, S2 ĐẠT |
+| 67–69 | hsq2s | 0.9266 / 0.0032 / 0 / 0.0080 / 12.54 | 0.9197 / 0.0011 / 0 | −0.0004 [−0.0010, +0.0003] | C1–C4, S1, S2 ĐẠT |
+| 70–72 | hsq2 | 0.9255 / 0.0035 / 0 / 0.0092 / 13.97 | 0.9181 / 0.0013 / 0 | −0.0004 [−0.0005, −0.0002] | Entry 26: C1–C4 ĐẠT; S1, S2 ĐẠT |
+| 70–72 | hsq2s | 0.9252 / 0.0041 / 0 / 0.0121 / 14.06 | 0.9184 / 0.0020 / 0 | −0.0007 [−0.0013, −0.0001] | C1–C4, S1, S2 ĐẠT |
+| tập A (399) | hsq2 | 0.9285 / 0.0034 / 0 / — / 13.01 | — | −0.0002 [−0.0003, −0.0000] | (phát triển) |
+
+- Tổng 432 run tươi, hsq2: **4/432 run > α** (cả 4 ở CMU seed 64–66, như trước); C10: **0/432**.
+- So với HSI-VN (67–72): +0.136 [+0.118, +0.154] và +0.117 [+0.101, +0.134]. Đối thủ ngoài không đổi (không dùng HQ).
+- Tập A, hsq2 so với S5: TB segFAR 0.0045 → 0.0034, run > α 1 → 0, recall −0.004; CMU 0.852 / 0.0095 → 0.862 / 0.0066; Nordland segFAR
+  0.0069 → 0.0026 (như Entry 23 dev).
+- Số run trùng khít với hsq: 33 / 39 / 35 trên 144 (tươi), 96 / 399 (tập A); chênh tuyệt đối recall theo run tối đa 0.008.
+
+**Phát hiện từ biến thể nghiêm ngặt hsq2s.**
+- Khác hsq2 chỉ đáng kể ở CMU seed 64–66: segFAR tệ nhất 0.0254 → 0.0366 (luật cũ S5: 0.0364), 5 run > α; C10 4 run > α.
+- ⇒ Lợi ích hợp lệ của HQ ở CMU **dựa một phần vào hiệu chỉnh xuyên phiên** (transductive, cùng môi trường). Trên 67–72 hsq2s ngang hsq2.
+- Paper phải nêu rõ giả định triển khai (một đội xe / nhiều phiên trên cùng bản đồ) và báo cả hai biến thể.
+
+**Lý thuyết đã sửa (`paper/owf_theory.md`):**
+- §10 Mệnh đề 7(a): thêm điều kiện "niềm tin khuếch tán".
+- §11 (mới): (i) hai rò rỉ và kiểm thử; (ii) giả định xuyên phiên; (iii) Mệnh đề 2 khi có HQ cần (E1′): E[(L_t(c) Λ_t)^{w_t} | 𝓕] ≤ 1 với
+  Λ_t = f_on/f_off; Λ_t là e-value dưới mật độ ngoài bản đồ thật; (iv) hằng số 1.6 excl trùng off_d của giao thức trên dữ liệu đường phố,
+  chưa đo độ nhạy.
+
+**Tổng quát (lỗ 10 / 50 %, off-map tự nhiên, NCLT) chạy lại bằng hsq2:** lỗ 10 % 0.932 / 0.005 / 0, lỗ 50 % 0.873 / 0.030 / 4, off-map tự nhiên 0.943 / 0.003 / 0, NCLT 0.770 / 0.002 / 0 (recall / TB segFAR tệ nhất / run > α) — trùng mã hsq ở ba tập đầu (37/108, 31/108, 16/36 run trùng khít, số gộp như nhau), NCLT 0.768 / 0.001 → 0.770 / 0.002.
+
+**Kết luận.** Luật khuyến nghị giữ nguyên: OWF-HWA-S5-NT-HQ, nay là **mã đã kiểm toán `--pin 0 --lu hsq2`**. Mọi quyết định đăng ký trước của
+Entry 23, 24, 26 vẫn đúng khi tính lại. Hạn chế mới phải báo: phần lợi ích CMU phụ thuộc hiệu chỉnh xuyên phiên. Kết quả lưu ở
+`analysis/results/owf/s1106/e27_*`.
+
 ## Entry 26 — Xác nhận độc lập lần ba của OWF-HWA-S5-NT-HQ trên seed 70–72 — đăng ký trước (2026-11-06 16:28 UTC)
 
 **KẾT QUẢ (seed 70–72, 144 run; đợt `test70b`; ghi 16:56 UTC). Quyết định: R_new XÁC NHẬN lần ba (C1–C4 đạt); điểm an toàn C10 XÁC NHẬN (S1 ∧

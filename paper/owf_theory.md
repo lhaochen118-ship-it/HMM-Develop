@@ -196,8 +196,8 @@ roughly the 70th percentile of the background gains mass.
 *Claim (b): a track the odometry cannot see.* Let a = (a_t) be a motion-consistent copy of the true trajectory, with all of its positions
 unmapped except the copy's images (straight road, shift s along the road), and let the true positions be unmapped (hole). The motion
 likelihoods of the true track and the copy are equal. Their posterior log ratio after m frames is therefore
-Σ_t w_t β (z_t,a_t − c_t) (copy minus true), which grows without bound whenever the copy's mean z exceeds c ≈ 1/2. No decision threshold
-fixes this, because the copy's mass converges to 1.
+Σ_t w_t β (z_t,a_t − c_t) (copy minus true), which grows without bound whenever the copy's mean z exceeds c ≈ 1/2. When the copy is the only competitor,
+no decision threshold fixes this: its mass tends to 1.
 
 *Claim (c): Gaussian-shift crossover.* Suppose the true-match score is N(μ₁, 1) and every other image is background N(0, 1). The exact LR is
 exp(μ₁ z − μ₁² / 2). Tempering it to the filter's slope β (correlated evidence, Section 7) gives log L_ti = β (z_ti − μ₁ / 2). The crossover
@@ -251,8 +251,9 @@ first-pass samples at frames < t of the SAME session once there are ≥ 100 of e
 other sessions (`--lu hsq`).
 
 *Claim.*
-- (a) Drift. Under off-map frames, E_off[−lu_t] = −KL(f_off ‖ f_on) ≤ 0: the on-map hypothesis loses evidence relative to the unmapped
-  cells. Under on-map frames, E_on[−lu_t] = KL(f_on ‖ f_off) ≥ 0.
+- (a) Drift. Under off-map frames, E_off[−lu_t] = −KL(f_off ‖ f_on) ≤ 0: for a diffuse belief over the map (Proposition 1, where the
+  relative term has mean 1) the on-map hypothesis loses evidence relative to the unmapped cells. For a concentrated belief the relative
+  term adds to it; see (c). Under on-map frames, E_on[−lu_t] = KL(f_on ‖ f_off) ≥ 0.
 - (b) Neutrality. Where the condition makes the true place indistinguishable from look-alikes (f_on ≈ f_off: night, long repetitive
   stretches), lu_t ≈ 0. The filter then reduces to the historical one, unlike the fixed crossover of §9.
 - (c) The motion-consistent copy of §9(b). Its log ratio against the true unmapped track per frame is now w_t (β z_t,a − A_t + log Λ_t),
@@ -281,3 +282,38 @@ own-session calibration (hsq) keeps it at 0.66: only its first stretch, before 1
   navigation 14.67 → 14.51 m. With the veto of the hindsight branch at near-map mass ½: 0/144 runs above α.
 - (b) held where predicted (Nordland better, not worse as with §9).
 - The remaining cost is the start of sessions in an unseen condition, before 100 own samples: old town −0.018, Boreas −0.013.
+
+## 11. Audit of 2026-11-07 (corrections to Sections 9–10 and their code)
+
+**(i) Two causality leaks in the tested implementation (`--lu hsq`, Entries 23, 24, 26).**
+- The KDE contamination floor ε / (range) took its range over the samples AND the 50 evaluated frames of the block. A frame's log-LR thus
+  depended on up to 49 later frames.
+- The first-pass samples were thinned with a stride of ⌊(number of confident frames of the whole session) / 3000⌋. Which past frames
+  were used thus depended on the session's future.
+
+Both are fixed in `--lu hsq2` (floor from the samples only; every confident frame used).
+`analysis/tests/test_hq_causality.py` perturbs the future of one session and checks that no earlier log-LR changes:
+- hsq changes by up to 0.67 (leak confirmed);
+- hsq2 and hsq2s change by 0.
+
+On the three design runs the decisions of hsq and hsq2 are identical on every frame (the disc mass differs by up to 0.43 below the
+decision levels). Every reported number was re-run with hsq2 (Entry 27).
+
+**(ii) Calibration across sessions.**
+- Before a session has 100 own samples, hsq / hsq2 use the first-pass samples of the run's OTHER sessions, including sessions recorded
+  later. This is a transductive assumption: a fleet that has driven the same map. It is not a leak within the session.
+- The strictly online variant `--lu hsq2s` uses only the sessions that come before the current one; the first session gets no fallback.
+  Entry 27 reports both.
+
+**(iii) Proposition 2 with the absolute evidence.**
+- Section 3 assumed LR 1 on U. With HQ the unmapped cells and Ω have LR exp(w_t lu_t) = Λ_t^{−w_t}, with Λ_t = f_on(x_t) / f_off(x_t).
+- Dividing every cell by this common factor leaves the posterior unchanged and restores LR 1 on U. The supermartingale argument then holds
+  under (E1′): E[(L_t(c) Λ_t)^{w_t} | 𝓕_{t−1}] ≤ 1 for every near-map cell c while the robot is off the map.
+- If f_off is the true off-map density of x_t, then E_off[Λ_t] = ∫ f_on = 1, so Λ_t is itself an e-value. (E1′) asks that the product with
+  the relative term stays one. It can still fail under coherent aliasing, but alias-like frames (low Λ_t) now shrink the product instead of
+  leaving it unchanged. This is the mechanism measured in Entries 23–26.
+
+**(iv) Constants.**
+- The "other place" radius 1.6 excl equals the protocol's off-map distance on the street datasets (40 m at excl 25 m; Nordland 8 vs 10
+  frames). It is a method constant shared by all datasets, but its sensitivity has not been measured.
+- The 100-sample switch and the 1 % contamination were fixed before the development wave and not tuned.

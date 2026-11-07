@@ -1,122 +1,70 @@
-# 06 — Hướng dẫn cho khung chat mới: đọc repository và việc tiếp theo
+# 06 — Hướng dẫn khung chat mới: đọc repository và việc tiếp theo
 
-*2026-11-06 (trước: 2026-11-04), branch `hmm-2nd-idea` (repo `lhaochen118-ship-it/hmm-develop`, public). Không tạo PR. Thay cho `history/05_NEW_CHAT_GUIDE_idea2-start.md`.*
+*2026-11-07, branch `hmm-2nd-idea` (repo `lhaochen118-ship-it/hmm-develop`, public).*
+- Không tạo PR. Chỉ commit / push lên `hmm-2nd-idea`.
+- Bản trước: `history/06_NEXT_CHAT_GUIDE_through_2026-11-06.md`.
 
-## 00. Bắt đầu nhanh (phiên 2026-11-06 trở đi)
+## 1. Bắt đầu nhanh (10 phút)
 
-1. Như §0 bên dưới (fetch / token / `active_accounts.txt`). Bốn tài khoản: `namhunhh`, `duckzuykobip`, `dinhthinh`, `hieuho669`. Mỗi tài khoản
-   có 2 phiên 4×L4.
-2. Đọc `paper/BAO_CAO_S1106.pdf`, `RESEARCH_LOG.md` Entry 19–22, `paper/owf_theory.md` §8–9, rồi `03_HANDOFF.md` §6b (việc tiếp theo).
-3. Công cụ mới của phiên:
-   - `owf.py --pin 0`: NT, Ω hấp thụ.
-   - `owf.py --reentry edge`.
-   - `owf.py --ellx vis`: L_vis, `analysis/vis_length.py`.
-   - `owf.py --lu half`: điểm giao μ₁/2 cho ô trống, cả numpy và torch; mặc định tắt.
-   - **`owf.py --lu hsq`: luật khuyến nghị mới (Entry 23).** Hai lượt lọc; bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu theo phiên.
-     Các biến thể hs / hsm / hsmp / hsc / hsr là ablation.
-   - Khung OWF có thêm `mN` (khối lượng gần bản đồ) và `mNL`.
-   - `OWF_VETO=v owf_union.py ...`: OWF phủ quyết nhánh HSI khi mN < v.
-   - `OWF_VETO_FR=<dir>:<ftag>`: lấy mN từ một bộ khung khác.
-   - `OWF_VETO_ALL=1`: phủ quyết mọi báo.
-   - `owf_audit.py`: tự kiểm toán theo thời gian, âm.
-4. Kho seed: `namhunhh/hmm-navcache-r61` đã dùng hết; sinh kho mới trước quyết định tiếp theo. Một lượt kiểm tra (R* + ứng viên, 6 phiên L4) mất ~20 phút. Các script đánh giá
-   mẫu nằm trong `RESEARCH_LOG.md` Entry 21 (`owf_union.py` + `hcal_board.py`).
+1. `git fetch origin hmm-2nd-idea && git status`. Nếu local cũ và không có thay đổi riêng: `git reset --hard origin/hmm-2nd-idea`.
+2. Cài gói: `pip install kaggle markdown xhtml2pdf scipy matplotlib pypdf torch`.
+3. Xin người dùng token Kaggle. Lưu từng token vào `~/.kaggle/tok_<username>` (chmod 600), cập nhật `automation/active_accounts.txt` (tài khoản L4
+   trước). Kiểm: `KAGGLE_API_TOKEN=$(cat ~/.kaggle/tok_X) kaggle kernels list --mine --page-size 1`.
+4. Đọc theo thứ tự ở §2 (≈ 40 phút). Rồi làm việc ở §4.
 
-## 0. Bắt đầu nhanh (phiên 2026-11-05 chiều trở đi)
+## 2. Đọc theo thứ tự
 
-1. `git fetch origin hmm-2nd-idea && git log --oneline HEAD..origin/hmm-2nd-idea`. Nếu local không có gì riêng:
-   `git reset --hard origin/hmm-2nd-idea` (phiên này bắt đầu ở một checkout cũ, lịch sử khác hẳn remote).
-2. Token: lưu `~/.kaggle/tok_<username>` (chmod 600). Username lấy từ `kaggle kernels list --mine` (ví dụ token "DuckZuy" là `duckzuykobip`).
-   Ghi các tài khoản vào `automation/active_accounts.txt` theo thứ tự lấp phiên. Thăm dò máy bằng một kernel L4 nhỏ (`02` §8).
-3. Đọc `paper/BAO_CAO_S1105.pdf` (phiên gần nhất), `RESEARCH_LOG.md` Entry 16–17, `03_HANDOFF.md` §6a (việc tiếp theo).
-4. Công cụ mới:
-   - `owf.py --engine torch`: OWF trên GPU.
-   - `owf_wave.py --set inc:<sets>`: luật đương nhiệm trên GPU cho tập A / lỗ / tự nhiên / NCLT / `fresh<a>-<b>`; `--sota` thêm đối thủ ngoài;
-     `--bankscales`.
-   - `owf_hcal.py`, `owf_union.py`, `hcal_board.py`: quyết định ngoại tuyến và bảng.
-   - `sota_job.py`: TAO'26, Xu'21, Claxton'24, top-1, oracle.
-   - `e17_board.py`: tiêu chí đăng ký trước.
-   - `make_vprspace_kernel.py`: VPR-Space bước 2.
-5. Kho seed mới: `namhunhh/hmm-navcache-r55`, seed 58–60 còn TRỐNG. Đánh giá một luật mới trên đó mất ~20 phút (4 phiên L4, kèm SOTA).
+| # | File | Đọc để biết |
+|---|---|---|
+| 1 | `handoff/00_READ_ME_FIRST.md` | trạng thái một trang, luật khuyến nghị |
+| 2 | `handoff/03_HANDOFF.md` (PDF 3) | mục tiêu, tiến độ, quyết định, vị trí mã / dữ liệu / kết quả, sổ dùng seed, việc tiếp theo |
+| 3 | `handoff/01_SCIENTIFIC_FINDINGS.md` (PDF 1) | đóng góp, kết quả, hạn chế, bằng chứng |
+| 4 | `paper/OWF_paper_draft.md` | câu chuyện paper; §3 phương pháp, §6 thực nghiệm |
+| 5 | `paper/owf_theory.md` | Mệnh đề 1–7 và mục kiểm toán §11 |
+| 6 | `handoff/02_ENGINEERING_OPS_NOTES.md` (PDF 2) | cách chạy một đợt Kaggle, lỗi đã gặp |
+| 7 | `handoff/ENVIRONMENT_SUMMARY.md` §0 | tài khoản, dataset công khai, container |
+| 8 | `RESEARCH_LOG.md` Entry 19–27 (mới nhất ở trên cùng) | đăng ký trước + kết quả từng vòng |
+| — | `handoff/04_RESEARCH_WORKFLOW.md`, `HMM_Navigation_Yeu_Cau_Nghien_Cuu_Cap_Nhat.docx` | quy trình và nguyên tắc người dùng yêu cầu |
+| — | `handoff/07_IDEA1_SUMMARY.md` | ý tưởng 1 (branch `hmm-navigation-5`), baseline và phần trùng lặp |
 
-## 1. Đọc theo thứ tự (≈ 30 phút)
+## 3. Bản đồ repository
 
-1. `handoff/03_HANDOFF.pdf` — mục tiêu, quyết định đã chốt, vị trí mọi thứ, sổ dùng tập kiểm tra, **việc tiếp theo** (§6).
-2. `handoff/01_SCIENTIFIC_FINDINGS.pdf` — đóng góp, số liệu, kết quả âm (để không lặp lại hướng đã bác).
-3. `handoff/02_ENGINEERING_OPS_NOTES.pdf` — công cụ, cách chạy một đợt Kaggle, lỗi đã gặp.
-4. `handoff/ENVIRONMENT_SUMMARY.pdf` §0 — tài khoản, dataset công khai, gói cần cài.
-5. `paper/BAO_CAO_HSI.pdf` (15 trang) — câu chuyện đầy đủ, bảng, hình; `paper/hsi_theory.md` — Mệnh đề 1–7.
-6. Khi cần chi tiết một vòng: `RESEARCH_LOG.md` (Entry mới ở trên cùng; Entry 1–9 = HSI, Entry 10 = OWF).
-6b. Ý tưởng 2b (OWF): `paper/BAO_CAO_OWF.pdf`, `paper/owf_theory.md` (Mệnh đề 1–3), `LITERATURE_GATE.md` Gate 18.
-6c. **Luật khuyến nghị hiện tại và cách tới đó:** `paper/BAO_CAO_AUTOLOOP.pdf` (vòng lặp 12 giờ, Entry 11–15), `handoff/AUTOLOOP.md` (nhật ký
-    trạng thái), `RESEARCH_LOG.md` Entry 11–15.
-7. Yêu cầu gốc của user: `HMM_Navigation_Yeu_Cau_Nghien_Cuu_Cap_Nhat.docx`; quy trình: `handoff/04_RESEARCH_WORKFLOW.pdf`.
+| Đường dẫn | Nội dung |
+|---|---|
+| `analysis/owf.py` | **bộ lọc thế giới mở** (lưới mét + Ω), main chạy một run; `--pin 0` (không dịch chuyển tức thời), `--lu hsq2` (bằng chứng tuyệt đối HQ, mã đã kiểm toán) |
+| `analysis/owf_torch.py` | engine GPU: cả ngân hàng bộ lọc trong một tensor; xuất `mN`, `mN16` |
+| `analysis/owf_hsi_job.py` | một job Kaggle: OWF rồi OWF-H / HSI-VN (`owf_hybrid.py`) trên cùng run |
+| `analysis/owf_union.py` | lớp quyết định cuối: union HSI ∪ các bậc OWF; `OWF_VETO`, `OWF_VETO_KEY`, `OWF_VETO_ALL` |
+| `analysis/hsi.py`, `hsi_eval.py` | nhánh HSI (tự giám sát hồi cứu + conformal; ý tưởng 2a) |
+| `analysis/sota_job.py`, `tao.py`, `safevpr26*.py` | đối thủ ngoài (TAO'26, Xu'21, Claxton'24, SafeVPR'26), top-1, oracle |
+| `analysis/nav_demo.py`, `position_audit.py`, `vprlib.py`, `sc_eval.py` | giao thức: cache, metric, kiểm toán vị trí, loader dataset |
+| `analysis/hcal_board.py` | bảng so sánh có CI bootstrap theo run |
+| `analysis/tests/test_hq_causality.py` | kiểm thử tính nhân quả của HQ (chạy trước mọi thay đổi HQ) |
+| `analysis/fig_shifted_alias.py` | hình bí danh dịch chuyển (Mệnh đề 6) |
+| `analysis/results/owf/s1106/` | kết quả Entry 19–27 (bảng `.md`, JSON `.tgz`, script đánh giá) |
+| `automation/owf_wave.py`, `fanout.py`, `central_monitor.py`, `fetch_done.py`, `publish_dataset.py`, `md2pdf.py` | vận hành Kaggle (xem PDF 2) |
+| `paper/` | bản thảo paper, lý thuyết, báo cáo phiên (`BAO_CAO_S1106.pdf` mới nhất), hình |
+| `RESEARCH_LOG.md`, `LITERATURE_GATE.md` | nhật ký đăng ký trước; các gate novelty |
+| `history/` | tài liệu cũ (ý tưởng 1, các phiên trước) |
 
-## 2. Bản đồ repository (chỉ phần dùng cho ý tưởng 2)
+## 4. Việc tiếp theo (chi tiết và lý do ở `03_HANDOFF.md` §6)
 
-```
-analysis/hsi.py            phương pháp (online_v2 + các cờ), chứng chỉ hình học, cầu hồi cứu, hiệu chuẩn conformal
-analysis/hsi_eval.py       VARIANTS (HSI-VN = luật khuyến nghị) + đánh giá một (dataset, descriptor, seeds)
-analysis/hsi_compare.py    bảng so sánh biến thể theo dataset (+ SH với --base)
-analysis/hsi_summary.py    H1–H5 so với SH;  hsi_entry8_test.py  tiêu chí T1–T4;  hsi_alpha.py  quét α
-analysis/hsi_fresh.py      sinh tập kiểm tra mới (bố cục lỗ mới) từ dump descriptor rồi đánh giá
-analysis/nav_demo.py       HMM + giao thức + cache (dùng chung với ý tưởng 1);  vprlib.py  loader dataset
-automation/                hsi_wave.py, fanout.py, central_monitor.py, hsi_collect.py, fetch_outputs.py, publish_dataset.py, md2pdf.py
-paper/                     BAO_CAO_HSI.(md|pdf), hsi_report_text.md, build_hsi_report.py, hsi_theory.md, tables/, figures/
-analysis/results/hsi/      kết quả thô (JSON mỗi run + mặt nạ báo theo frame), baselines_idea1/ (SH, CST-JS của ý tưởng 1)
-analysis/owf.py            ý tưởng 2b: bộ lọc thế giới mở (OpenWorldFilter + main: một run từ navcache + dump)
-analysis/owf_summary.py    so sánh cặp với SH / CST-JS / HSI-VN, kiểm toán vị trí, giả thuyết H1–H9, tiêu chí D1–D3 (--decide)
-automation/owf_wave.py     nhóm job (main / abl / holes / design / r19 / r19hsi), owf_collect.py  gom JSON theo tập
-analysis/results/owf/      JSON mỗi run của Entry 10 (tập A, tập B + HSI-VN cùng run, ablation, lỗ) và Entry 11–15 (tgz phát triển / kiểm tra)
-analysis/owf_hybrid.py     chuỗi lai OWF → HSI (thay est_c của cache khi OWF tự tin + ổn định; --mode xms0.9_16) rồi chạy hsi_eval (--hsiframes: mặt nạ)
-analysis/owf_hsi_job.py    một job của tập mới: owf.py (khung) → owf_hybrid.py trong cùng kernel
-analysis/owf_union.py      lớp quyết định ngoại tuyến: H ∨ m(e,D) ∨ t(e,D) (đồng thuận ba nguồn) từ khung OWF + mặt nạ HSI + navcache
-analysis/owf_decide.py     biến thể quyết định riêng của OWF (âm tính: không đạt V2 / N1); owf_score.py, autoloop_board.py  bảng Score V1/V2/N1
-automation/owf_wave.py     + fresh:A-B (kho seed mới), fresh_owf:A-B --pool --bank/--banks --hsiframes (đợt kiểm tra); fetch_done.py (kéo dần cache)
-RESEARCH_LOG.md, LITERATURE_GATE.md (Gate 17 HSI, Gate 18 OWF), handoff/, history/ (tài liệu cũ, ý tưởng 1)
-```
+1. **Literature gate cho OWF + HQ** (`LITERATURE_GATE.md`, chỉ đọc paper). Cần đối chiếu:
+   - MCL / grid localization có trạng thái "ngoài bản đồ" hoặc "lost";
+   - topometric localization;
+   - open-set VPR;
+   - change detection trên bản đồ;
+   - CMS / trạng thái OFF có hiệu chỉnh của chính ý tưởng 1 (Entry 28, 31 trong `history/RESEARCH_LOG_idea1.md`).
+2. **Một luật quyết định thống nhất** thay union HSI ∪ bậc cố định. Đây là điểm yếu novelty lớn nhất (tổ hợp kỹ thuật).
+3. **Đầu chuỗi CMU:** mô hình tương quan bằng chứng giữa các frame liền kề thay ℓ cố định.
+4. **Đầu phiên ở điều kiện chưa thấy:** dự phòng có điều kiện cho HQ.
+5. **Kiểm tra tiếp:** kho `namhunhh/hmm-navcache-r73` (seed 73–78) chưa dùng. Mỗi quyết định mới: đăng ký trước, rồi dùng một nhóm 3 seed.
 
-## 3. Khởi động phiên mới (≈ 10 phút)
+## 5. Quy tắc bắt buộc (từ người dùng và từ dự án)
 
-```bash
-pip install -q kaggle markdown xhtml2pdf scipy scikit-learn matplotlib pypdf
-```
-
-- Xin user token Kaggle của 7 acc (`quynhle07, nguyenhoa99, quynhtran35, yuan1103, caotienminh1`, + `synchan5704, yeshenhi` từ Entry 10); lưu
-  `~/.kaggle/tok_<acc>` (chmod 600). Không ghi token ở bất kỳ đâu khác.
-- **Kiểm tra trước khi làm gì:** `git fetch origin hmm-2nd-idea && git log HEAD..origin/hmm-2nd-idea` — Entry 10 được làm từ một checkout CŨ (không
-  thấy Entry 1–9) và hai phiên chat đã chạy song song trên cùng branch / cùng acc. Đặt `export VPR_CODE_DS=<tên riêng>` cho mọi kernel của mình
-  (code dataset riêng, `make_eval_kernel.py`) để không ghi đè code của phiên khác.
-- Tái tạo số liệu chính không cần Kaggle: giải nén `analysis/results/hsi/hsi_results_json.tgz` và `analysis/results/baselines_idea1/e37/oc_e37.tgz`,
-  `e38/oc_e38.tgz` vào scratchpad rồi chạy, ví dụ
-  `python3 analysis/hsi_compare.py <x>/main HSI-VN,HSI-rot-m-sc --base <x>/oc37 <x>/oc38` và
-  `python3 analysis/hsi_entry8_test.py <x>/test_s16_18 HSI-VN` (phải ra "ALL PASS").
-- Dữ liệu thiết kế cục bộ (28 cache seed 0, ~300 MB) cho thử nghiệm nhanh: tải từ `nhatlong1103/hmm-navcache-v2` bằng
-  `kaggle datasets download nhatlong1103/hmm-navcache-v2 -f <tên file> -p <dir>` (KHÔNG để `-f` rỗng — sẽ kéo cả 1.3 GB).
-
-## 4. Cách làm một vòng nghiên cứu (đã kiểm chứng)
-
-1. Chẩn đoán cơ chế trên dữ liệu thiết kế / phát triển bằng script nhỏ (`analysis/`, cục bộ, vài phút).
-2. Hiện thực thành MỘT cờ mới trong `online_v2` (mặc định = hành vi cũ) + biến thể có tên trong `VARIANTS`; kiểm hồi quy (biến thể cũ cho đúng
-   số cũ) và smoke test trên 2–4 run thiết kế.
-3. Đợt phát triển trên seed 0–9 (`hsi_wave.py` → `fanout.py --build-only --cpu --nodumps` → `central_monitor.py`), 15–40 phút.
-4. Viết đăng ký trước vào `RESEARCH_LOG.md` (tiêu chí theo thước đo kết quả, quy tắc quyết định), commit + push.
-5. Đánh giá trên **một nhóm seed chưa dùng** của `caotienminh1/hmm-navcache-r19` (19–21, 22–24 còn trống; 25–27 đã dùng ở Entry 10) (token `DIR:navcache_`, `--nodumps --ds caotienminh1/hmm-navcache-r19`,
-   seeds `19-21` …), ghi kết quả + quyết định, cập nhật `03_HANDOFF.md` §5, báo cáo (`paper/build_hsi_report.py`), commit + push.
-
-## 5. Việc tiếp theo
-
-**Cập nhật 2026-11-06:** xem `03_HANDOFF.md` §6b. Luật khuyến nghị mới: OWF-HWA-S5-NT-HQ (Entry 23). Ưu tiên tiếp theo: kho seed mới, phủ
-quyết ½, dự phòng đầu phiên. Danh sách bên dưới là của phiên trước.
-
-Chi tiết trong `03_HANDOFF.md` §6. Luật khuyến nghị: **OWF-HWA-S5** (Entry 15; seed 52–54: 0.941 vs HSI-VN 0.823). Kho seed
-mới đã dùng hết (40–54); quyết định tiếp theo cần sinh kho mới bằng `owf_wave.py --set fresh:55-60` (34 kernel CPU, ~2.5 giờ).
-
-1. **Countryside:** chuỗi tốt nhất chỉ đúng ~0.87 khung (VIO trôi); sai số điều hướng 21.7 m (HSI-VN 20.0). Hướng tiếp: ước lượng tỉ lệ liên tục
-   (trạng thái tỉ lệ trong bộ lọc thay cho lưới), mô hình trôi tỉ lệ theo thời gian.
-2. **Nordland điều hướng:** 9.6 m vs HSI-VN 4.2 m trên seed 49–51. Các báo OWF tự tin nhưng lệch vài chục mét kéo bộ Kalman; thử báo với bán kính
-   đĩa nhỏ hơn cho fix điều hướng (điểm vận hành riêng, như HSI-VMN).
-3. **Điểm vận hành điều hướng:** luật hợp hai bậc trên mặt nạ HSI-VMN (phát triển 0.892 / 12.66 m) chưa được kiểm trên tập mới.
-4. **NCLT:** không có trong kho mới (off-map tự nhiên); cần cấu hình đánh giá riêng.
-5. **Áp dụng lên 16 bộ VPR-Space** (https://github.com/rfechner/VPR-Space): tải release → trích 6 descriptor (GPU, ước GPU-giờ trước) → loader +
-   odometry từ pose → giao thức bản đồ = db, truy vấn = query → cache → đánh giá luật khuyến nghị.
+- Đăng ký trước mọi quyết định (commit + push trước khi kernel kiểm tra chạy); mỗi nhóm seed mới chỉ dùng một lần.
+- Không ghép heuristic thuần; mọi thành phần cần lý do / mệnh đề; một cấu hình chung cho mọi dataset.
+- Không tuyên bố novelty / SOTA khi chưa có bằng chứng.
+- Dùng hết tài khoản Kaggle theo thứ tự lấp; một monitor duy nhất; quy tắc kẹt hàng đợi (PDF 2 §1).
+- Token không bao giờ vào repo; `git grep KGAT_` trước khi kết thúc.
+- Commit message kết thúc bằng các dòng attribution mà hệ thống yêu cầu.

@@ -1,6 +1,6 @@
-# 04 — Research Workflow (cập nhật 2026-11-04)
+# 04 — Research Workflow (cập nhật 2026-11-07)
 
-*Cập nhật 2026-11-04 (branch `hmm-2nd-idea`). Quy trình chuẩn của dự án (giữ tinh thần bản gốc `RESEARCH_WORKFLOW_original.pdf`) và trạng thái hiện tại của từng
+*Cập nhật 2026-11-07 (branch `hmm-2nd-idea`; bản trước: `history/04_RESEARCH_WORKFLOW_through_2026-11-06.md`). Quy trình chuẩn của dự án (giữ tinh thần bản gốc `RESEARCH_WORKFLOW_original.pdf`) và trạng thái hiện tại của từng
 phase. Không lặp chi tiết vận hành (`02`) hay việc tiếp theo cụ thể (`00`).*
 
 ## Mục tiêu
@@ -24,16 +24,16 @@ thuyết phục, câu chuyện ở mức paper.
 6. **Viết paper và bàn giao.** Bảng sinh tự động từ `analysis/results/`. Tài liệu bàn giao 00–04 cùng
    environment summary.
 
-## Trạng thái theo phase — ý tưởng 2 (HSI, branch `hmm-2nd-idea`, 2026-11-04)
+## Trạng thái theo phase — ý tưởng 2b (OWF, luật cuối OWF-HWA-S5-NT-HQ), 2026-11-07
 
 | Phase | Trạng thái |
 |---|---|
-| 1 | **Xong Gate 17** (`LITERATURE_GATE.md`): gần nhất Lajoie & Beltrame RA-L'23, TF-VPR, Carson'23, Claxton'24, ACI phản hồi trễ. Cần gate mới nếu thêm thành phần (vd. cho VPR-Space hoặc cho lời giải CMU). |
-| 2 | **Ý tưởng chốt:** HSI = chứng chỉ hình học + nhãn hồi cứu (kể cả off-map) + conformal trên excursion thật; hai nguyên lý mới: chứng nhận rồi hiệu chuẩn, căn chỉnh Neyman–Pearson. |
-| 3 | **Lý thuyết:** Mệnh đề 1–7 (`paper/hsi_theory.md`). Thiếu: bảo đảm có điều kiện theo vị trí (hiện chỉ kiểm toán thực nghiệm), phân tích độ bảo thủ của null tập cha. |
-| 4 | 9 dataset × 6 descriptor (cache công khai); lỗ 10/30/50 %; off-map tự nhiên (NCLT, 4Seasons chéo cảnh); ba tập kiểm tra đã dùng + kho dự trữ seed 19–27. **Mở:** NCLT mới 2 run; VPR-Space (16 cặp) chưa có dump. |
-| 5 | **Xong 9 vòng đăng ký trước**; luật khuyến nghị HSI-VN đạt 4/4 tiêu chí trên seed 16–18. Ablation đầy đủ, quét α, độ bền, tham chiếu có nhãn. |
-| 6 | Báo cáo `paper/BAO_CAO_HSI.pdf` + abstract tiếng Anh nháp; bàn giao 00–04, 06 + `ENVIRONMENT_SUMMARY`. **Chưa viết paper.** |
+| 1 | Gate 17 (HSI), Gate 18 (OWF): không thấy công trình có (i) không gian trống trong trạng thái mét + (ii) hiện diện là hàm của vị trí. **Còn thiếu:** gate cho HQ. HQ trùng nguyên lý với CMS / trạng thái OFF có hiệu chỉnh của chính ý tưởng 1 (Entry 28, 31), cần nêu rõ. Còn thiếu một vòng quét hệ thống (MCL với vùng chưa vẽ, topometric, open-set VPR) |
+| 2 | Ý tưởng chốt: bộ lọc thế giới mở + tự hiệu chỉnh odometry + không dịch chuyển tức thời + bằng chứng tuyệt đối hiệu chỉnh hồi cứu (HQ) |
+| 3 | Lý thuyết `paper/owf_theory.md`: Mệnh đề 1–7, kiểm toán §11 ((E1′) cho Mệnh đề 2 khi có HQ). Thiếu: bảo đảm theo run cho lớp quyết định (union HSI ∪ bậc cố định vẫn là kỹ thuật) |
+| 4 | 8 dataset × 6 descriptor; lỗ 10/30/50 %; off-map tự nhiên (4Seasons chéo cảnh, NCLT); VPR-Space (ngoài Trái Đất); các kho seed tươi r55–r73 |
+| 5 | Đăng ký trước Entry 19–26. Luật cuối thay luật cũ ở Entry 23 và được xác nhận ở Entry 24, 26. Entry 27 (kiểm toán): sửa hai rò rỉ nhân quả, chạy lại mọi số trên mã đã sửa |
+| 6 | Bản thảo `paper/OWF_paper_draft.md` (abstract, phương pháp, thực nghiệm, hạn chế); báo cáo `paper/BAO_CAO_S1106.pdf`; bàn giao 00–08. **Chưa viết paper hoàn chỉnh** |
 
 Trạng thái theo phase của ý tưởng 1 và các hướng trước: `07_IDEA1_SUMMARY.md`, `history/`.
 
@@ -58,4 +58,8 @@ Trạng thái theo phase của ý tưởng 1 và các hướng trước: `07_IDE
   thuyết để tránh kiểm lại tới khi đạt.
 - **Chẩn đoán cơ chế trước khi đề xuất** (vd. vì sao nhánh học tắt hẳn ở CMU): đo trên dữ liệu thiết kế / phát triển bằng script nhỏ, loại ý tưởng
   không có tín hiệu trước khi tốn tài nguyên Kaggle.
+- **Kiểm thử tính nhân quả** (bổ sung 2026-11-07) cho mọi ước lượng dùng dữ liệu của chính phiên: đổi tương lai, quá khứ phải không đổi. Mắt
+  không thấy rò rỉ; kiểm thử thì thấy.
+- **Script đánh giá viết từ văn bản đăng ký**, in tên luật và tiêu chí. Không sao chép script của entry trước mà không đổi luật.
+- **Trước khi tuyên bố novelty: so sánh với các nhánh cũ của chính dự án.** HQ trùng nguyên lý với CMS của ý tưởng 1.
 

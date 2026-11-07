@@ -1,78 +1,48 @@
 # 00 — READ ME FIRST (branch `hmm-2nd-idea`)
 
-*2026-11-06 (trước: 2026-11-04). Repo `lhaochen118-ship-it/hmm-develop` (public). Không tạo PR. Branch dành cho **ý tưởng 2 (HSI)**: lời giải A\* khác hẳn ý tưởng 1
-(phẫu thuật bản đồ phản thực, branch `hmm-navigation-5`) cho cùng bài toán định vị chuỗi trên bản đồ ảnh có lỗ.*
+*2026-11-07. Repo `lhaochen118-ship-it/hmm-develop` (public). Không tạo PR; chỉ push `hmm-2nd-idea`. Bản trước:
+`history/` (các file `*_through_2026-11-06.md`).*
 
-**Luật khuyến nghị: HSI-VN** — 0 vi phạm trên 413 run phát triển + 216 run của hai tập kiểm tra mới; +0.065 recall so với ý tưởng 1 (SH).
+**Bài toán.** Robot camera đơn + odometry định vị theo chuỗi trên bản đồ ảnh có lỗ. Mỗi frame quyết định có báo fix hay không. Mục tiêu:
+- segFAR ≤ α = 0.05 trên từng run;
+- recall cao, sai số điều hướng thấp;
+- không nhãn, một cấu hình cho mọi dataset.
 
-**LUẬT KHUYẾN NGHỊ MỚI (từ 2026-11-06 08:54 UTC, Entry 23): OWF-HWA-S5-NT-HQ** = OWF-HWA-S5 + `owf.py --pin 0 --lu hsq` (Ω hấp thụ;
-bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu theo phiên, Mệnh đề 7). Thay OWF-HWA-S5 trên seed 64–66 theo quy tắc đăng ký trước:
-- TB segFAR 0.0074 → 0.0057; recall −0.0037; điều hướng 14.67 → 14.51 m.
-- CMU segFAR −30 % với recall +0.009. Nordland điều hướng 7.5 → 4.1 m.
-- Thêm phủ quyết ½ (`OWF_VETO=0.5 owf_union.py`): 0/144 run > α, recall −0.012.
-- **Entry 26 (seed 70–72): XÁC NHẬN lần ba.** 0/144 run > α, +0.117 so với HSI-VN, SOTA ngoài không hợp lệ (126 / 83 / 101 run > α).
-  Tổng 432 run tươi (64–72): 4 run > α (0.9 %); với phủ quyết: 0/432.
-- **Entry 24 (14:30–15:25 UTC, seed 67–69): XÁC NHẬN độc lập.**
-  - 0/144 run > α; +0.136 recall so với HSI-VN; điều hướng 12.55 m so với 15.48 m.
-  - TAO'26 / Xu'21 / Claxton'24 trên cùng run vượt α ở 130 / 81 / 104 run.
-  - Điểm vận hành an toàn (+ phủ quyết): TB segFAR 0.0009, 0 run > α, recall −0.0066.
+**Luật khuyến nghị: OWF-HWA-S5-NT-HQ**, mã đã kiểm toán `--pin 0 --lu hsq2`. Gồm:
+- bộ lọc thế giới mở trên lưới mét (vùng có bản đồ + vùng trống + trạng thái xa);
+- tự hiệu chỉnh odometry;
+- không dịch chuyển tức thời;
+- bằng chứng tuyệt đối hiệu chỉnh hồi cứu cho ô trống;
+- lớp quyết định HSI-VN ∪ ba bậc tin cậy OWF.
 
-**Phiên 2026-11-06 (Entry 19–23, `paper/BAO_CAO_S1106.pdf`).**
-- Ba nhóm seed mới 55–63 (432 run): recall 0.927–0.937, 9/432 run > α (7 là CMU, từ hai bố cục lỗ).
-- Hai ứng viên đăng ký trước không qua quy tắc. NT (không dịch chuyển tức thời): recall bằng, điều hướng ±. NT-V (OWF phủ quyết HSI): hợp lệ
-  tốt hơn, điều hướng countryside tệ hơn.
-- Hai ý tưởng âm ở phát triển: ℓ = L_vis; điểm giao μ₁/2.
-- Phát hiện: **bí danh odometry không thấy được** (bản sao dịch dọc đường thẳng; Mệnh đề 6, `paper/owf_theory.md` §9) là nguồn đuôi hợp
-  lệ còn lại.
-- Kho seed mới `namhunhh/hmm-navcache-r61` (61–66): đã dùng hết (Entry 21, 23).
-- Việc tiếp theo: `03_HANDOFF.md` §6b.
+Điểm vận hành an toàn: thêm `OWF_VETO=0.5`.
 
-**Phiên 2026-11-05 chiều (Entry 16–17, `paper/BAO_CAO_S1105.pdf`).**
-- Engine GPU cho OWF: 10× nhanh hơn, quyết định trùng bản numpy.
-- Entry 16: mọi hướng "nguyên tắc hoá" lớp quyết định / ước lượng đều âm hoặc phẳng trên 399 run phát triển. Các hướng đó gồm ngưỡng conformal
-  hồi cứu, β theo evidence, ngân hàng tỉ lệ ±15 %.
-- **Entry 17 XÁC NHẬN OWF-HWA-S5 trên seed mới 55–57:** 0.937, 1/144 run > α, 12.5 m, so với HSI-VN 0.806. SOTA ngoài trên cùng run
-  (TAO'26, Xu'21, Claxton'24) đều vượt α trên 75–129 / 144 run.
-- Tổng quát: lỗ 10/50 %, off-map tự nhiên, NCLT đều hợp lệ trung bình.
-- Kho seed mới: `namhunhh/hmm-navcache-r55`; seed 58–60 còn trống.
-- Việc tiếp theo: `03_HANDOFF.md` §6a.
+**Bằng chứng.** Ba nhóm seed tươi 64–72 (432 run, đăng ký trước):
+- recall ≈ 0.93;
+- 4/432 run > α; với phủ quyết: 0;
+- hơn HSI-VN +0.12 … +0.14;
+- TAO'26 / Xu'21 / Claxton'24 (ngưỡng chỉnh bằng nhãn) vượt α trên 56–90 % số run.
 
-**LUẬT KHUYẾN NGHỊ CŨ (2026-11-05 00:25 → 2026-11-06 08:54 UTC, Entry 15): OWF-HWA-S5.** Quy trình gồm bốn bước:
-1. OWF với ngân hàng tỉ lệ odometry 5 mức (`owf.py --qx 0.005,0.02 --scales 0.94,0.97,1.0,1.03,1.06`; 10 bộ lọc, chọn trực tuyến theo evidence).
-2. OWF-H: chuỗi OWF giao cho HSI-VN khi khối lượng ≥ 0.9 và đã đi ≥ 16·excl (`owf_hybrid.py --mode xms0.9_16 --hsiframes`).
-3. Hợp với các báo OWF cực tự tin: ≥ 1 − 1e-5 sau 16·excl, hoặc ≥ 1 − 1e-8 sau 2·excl.
-4. Bậc đồng thuận ba nguồn: ảnh OWF trùng chuỗi tô-pô VÀ truy hồi top-1, kèm khối lượng ≥ 1 − 3e-4 sau 0.5·excl.
+Kiểm toán 2026-11-07 (Entry 27): sửa hai rò rỉ nhân quả, chạy lại mọi số (432 run tươi + 399 tập A + 258 tổng quát). Mọi quyết định đăng ký
+trước giữ nguyên; số trên là số chạy lại (`01` §2.1, §3.6).
 
-Bước 3–4 là một lệnh: `owf_union.py --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"`. Một job Kaggle cho bước 1–2: `owf_hsi_job.py`.
+**Chưa đạt / đang mở:**
+- lớp quyết định vẫn là tổ hợp kỹ thuật;
+- HQ trùng nguyên lý với CMS của ý tưởng 1;
+- lợi ích CMU của HQ dựa một phần vào hiệu chỉnh từ các phiên khác cùng môi trường (biến thể chỉ-phiên-trước mất nó trên seed 64–66);
+- đầu chuỗi CMU và đầu phiên ban đêm mất recall;
+- lỗ mô phỏng.
 
-**Vòng lặp tự động 12 giờ** (`handoff/AUTOLOOP.md`, báo cáo `paper/BAO_CAO_AUTOLOOP.pdf`): 5 luật đăng ký trước, cả 5 đều ĐẠT trên nhóm seed mới
-của mình. Bảng dưới là recall gộp / số run > α / sai số điều hướng (m) trên 144 run mỗi nhóm; mọi luật đều hợp lệ trên mọi dataset:
-
-| Nhóm mới | HSI-VN | OWF-H (E11) | OWF-HU (E12) | OWF-HW-S (E13) | OWF-HWA-S (E14) | OWF-HWA-S5 (E15) |
-|---|---|---|---|---|---|---|
-| seed 40–42 | 0.811 / 1 / 15.35 | **0.885** / 1 / 14.46 | | | | |
-| seed 43–45 | 0.805 / 1 / 15.92 | 0.878 / 1 / 15.73 | **0.896** / 1 / 14.94 | | | |
-| seed 46–48 | 0.786 / 1 / 14.72 | 0.860 / 1 / 14.62 | 0.878 / 1 / 13.61 | **0.902** / 1 / 12.75 | | |
-| seed 49–51 | 0.804 / 0 / 14.34 | 0.882 / 0 / 15.37 | 0.903 / 1 / 14.68 | 0.921 / 0 / 13.78 | **0.933** / 0 / 13.64 | |
-| seed 52–54 | 0.823 / 1 / 14.32 | | | | 0.937 / 1 / 13.11 | **0.941** / 1 / 12.67 |
-
-**Entry 10 — ý tưởng 2b, bộ lọc thế giới mở (OWF, `analysis/owf.py`):** lưới mét phủ cả vùng có bản đồ và vùng trống, hiện diện suy từ vị trí.
-Hợp lệ (TB), recall cao nhất: tập A 404 run 0.863 (HSI-VN 0.791, SH 0.726), tập quyết định mới seed 25–27: +0.076 so với HSI-VN (CI [+0.054,
-+0.099]) — nhưng sai số điều hướng kém HSI-VN ở 4/6 dataset và 4.7 % run vượt α (CMU, Nordland) ⇒ **theo quy tắc đăng ký trước HSI-VN vẫn là luật
-khuyến nghị**; OWF là luật hợp lệ có recall cao nhất. Báo cáo: `paper/BAO_CAO_OWF.pdf`; nhật ký `RESEARCH_LOG.md` Entry 10; Gate 18.
-
-**Bắt đầu: `06_NEXT_CHAT_GUIDE.md`** (thứ tự đọc, bản đồ repo, khởi động phiên, cách làm một vòng, việc tiếp theo).
+Việc tiếp theo: `03_HANDOFF.md` §6.
 
 | File | Phạm vi (không trùng nhau) |
 |---|---|
-| `06_NEXT_CHAT_GUIDE.md` | cách đọc repo, khởi động phiên mới, quy trình một vòng, tóm tắt việc tiếp theo |
-| `01_SCIENTIFIC_FINDINGS.md` (.pdf) | đóng góp, ý nghĩa, kết quả tích cực / tiêu cực, bằng chứng, điều kiện kiểm chứng |
-| `02_ENGINEERING_OPS_NOTES.md` (.pdf) | lập trình, môi trường, Kaggle, tổ chức thử nghiệm, lỗi và cách sửa, bài học |
-| `03_HANDOFF.md` (.pdf) | mục tiêu, tiến độ, quyết định, vị trí mã / dữ liệu / kết quả, sổ dùng tập kiểm tra, việc tiếp theo chi tiết |
-| `04_RESEARCH_WORKFLOW.md` (.pdf) + `RESEARCH_WORKFLOW_original.pdf` | quy trình theo phase, trạng thái phase, nguyên tắc |
+| `06_NEXT_CHAT_GUIDE.md` | **bắt đầu ở đây**: khởi động phiên, thứ tự đọc, bản đồ repo, tóm tắt việc tiếp theo |
+| `01_SCIENTIFIC_FINDINGS.md` (.pdf) — PDF 1 | đóng góp, ý nghĩa, kết quả tích cực / tiêu cực, bằng chứng, điều kiện kiểm chứng |
+| `02_ENGINEERING_OPS_NOTES.md` (.pdf) — PDF 2 | lập trình, môi trường, Kaggle, tổ chức thử nghiệm, lỗi và cách sửa, bài học |
+| `03_HANDOFF.md` (.pdf) — PDF 3 | mục tiêu, tiến độ, quyết định, vị trí mã / dữ liệu / kết quả, sổ dùng seed, việc tiếp theo |
+| `04_RESEARCH_WORKFLOW.md` (.pdf) | quy trình theo phase, trạng thái phase, nguyên tắc |
 | `ENVIRONMENT_SUMMARY.md` (.pdf) | tài khoản, dataset công khai, container (§0 = hiện hành) |
-| `07_IDEA1_SUMMARY.md` (.pdf) | ý tưởng 1: giao thức, baseline cần đánh bại, bài học |
-| `08_CHUYEN_GIAO_THEO_YEU_CAU.md` (.pdf) | chuyển giao theo 5 mục của file yêu cầu docx: đã làm gì, bằng chứng, chưa đạt gì; tình trạng 22 tài khoản Kaggle |
-| `../paper/BAO_CAO_HSI.pdf` | báo cáo đầy đủ của ý tưởng 2a (HSI) |
-| `../paper/BAO_CAO_OWF.pdf`, `../paper/owf_theory.md` | báo cáo + lý thuyết của ý tưởng 2b (OWF, Entry 10) |
-| `../history/` | tài liệu cũ (phát hiện / vận hành của ý tưởng 1, hướng dẫn đầu ý tưởng 2) |
+| `07_IDEA1_SUMMARY.md` (.pdf) | ý tưởng 1 (baseline, phần trùng lặp) |
+| `08_CHUYEN_GIAO_THEO_YEU_CAU.md` (.pdf) | đối chiếu với 5 mục của file yêu cầu docx, tự đánh giá mức A\* |
+| `../paper/OWF_paper_draft.md`, `../paper/owf_theory.md`, `../paper/BAO_CAO_S1106.pdf` | bản thảo paper, lý thuyết, báo cáo phiên |

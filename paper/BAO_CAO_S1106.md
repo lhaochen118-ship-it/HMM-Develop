@@ -1,15 +1,16 @@
-# Báo cáo phiên 2026-11-06 — Entry 19–26: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được, bằng chứng tuyệt đối hiệu chỉnh hồi cứu
+# Báo cáo phiên 2026-11-06 → 07 — Entry 19–27: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được, bằng chứng tuyệt đối hiệu chỉnh hồi cứu, kiểm toán
 
-*Branch `hmm-2nd-idea`. Nhật ký đầy đủ: `RESEARCH_LOG.md` Entry 19–22. Lý thuyết: `paper/owf_theory.md` §8 (Mệnh đề 5), §9 (Mệnh đề 6). Số liệu
+*Branch `hmm-2nd-idea`. Nhật ký đầy đủ: `RESEARCH_LOG.md` Entry 19–27. Lý thuyết: `paper/owf_theory.md` §8 (Mệnh đề 5), §9 (Mệnh đề 6), §10 (Mệnh đề 7), §11 (kiểm toán). Số liệu
 thô: `analysis/results/owf/s1106/`. Báo cáo không tuyên bố novelty hay vượt SOTA ngoài những gì các bảng dưới chứng minh trên đúng giao thức này.*
 
 ## 1. Tóm tắt
 
 0. **LUẬT KHUYẾN NGHỊ MỚI: OWF-HWA-S5-NT-HQ (Entry 23, đăng ký trước, seed 64–66).** Thay OWF-HWA-S5 theo đúng quy tắc (V1–V3 đạt):
-   - TB segFAR 0.0074 → 0.0057; recall −0.0037 [−0.0071, −0.0008]; điều hướng 14.67 → 14.51 m.
+   - TB segFAR 0.0074 → 0.0059; recall −0.0038 [−0.0071, −0.0010]; điều hướng 14.67 → 14.56 m (số chạy lại bằng mã đã kiểm toán, §4f).
    - CMU: recall +0.009, segFAR −30 %, điều hướng 8.5 → 7.1 m. Nordland: segFAR −44 %, điều hướng 7.5 → 4.1 m.
    - Biến thể có phủ quyết (C10, chỉ báo cáo): 0/144 run > α, TB segFAR 0.0024, recall −0.012.
-   - Cơ chế: bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu không nhãn, nhân quả theo phiên (Mệnh đề 7).
+   - Cơ chế: bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu không nhãn, nhân quả trong phiên (Mệnh đề 7).
+   - **Entry 27 (kiểm toán, 2026-11-07):** sửa hai rò rỉ nhân quả trong mã HQ (`--lu hsq2`), chạy lại 432 + 399 + 258 run: mọi quyết định giữ nguyên (§4f).
    - **Entry 24 xác nhận độc lập trên seed 67–69:** 0/144 run > α, +0.136 so với HSI-VN; TAO'26 / Xu'21 / Claxton'24 không hợp lệ.
 1. **Luật cũ OWF-HWA-S5** đã được kiểm trên ba nhóm seed mới, đều đăng ký trước, mỗi nhóm 144 run (8 dataset × 6 descriptor):
 
@@ -240,6 +241,30 @@ cell = pooled recall / worst-dataset mean segFAR / runs > alpha
 - **Đầu chuỗi CMU:** 31 % số frame trên bản đồ nằm trong 2 excl đầu. Ở đó luật báo 53–82 %, trong khi top-1 đúng 95–97 %. Nguyên nhân là đếm
   bằng chứng theo quãng đường (cần thiết, Entry 10). Đây là hướng có khoảng trống lớn nhất còn lại.
 
+## 4f. Entry 27 — kiểm toán mã, công thức, lý thuyết (2026-11-07)
+
+**Đã kiểm:** metric, bộ lọc OWF, ngân hàng, lớp quyết định, HQ, Mệnh đề 1–7.
+
+**Sai tìm thấy và đã sửa:**
+1. Mã HQ đã kiểm tra (`--lu hsq`) có **hai rò rỉ tương lai**: sàn KDE lấy biên từ cả khối 50 frame; mẫu được thưa theo tổng số frame tự tin của
+   cả phiên. Kiểm thử `analysis/tests/test_hq_causality.py`: hsq đổi tới 0.67 log-LR ở quá khứ khi đổi tương lai; mã sửa `hsq2` đổi 0.
+2. Mệnh đề 2 giả định LR = 1 trên ô trống; với HQ cần điều kiện (E1′) (`owf_theory.md` §11 (iii)). Mệnh đề 7(a) thêm "niềm tin khuếch tán".
+3. Mô tả "nhân quả theo phiên" chưa chính xác: dự phòng dùng các phiên khác của cùng run (giả định đội xe, transductive). Thêm biến thể
+   nghiêm ngặt `hsq2s` (chỉ phiên trước).
+
+**Chạy lại** (cùng run, quy tắc đăng ký trước áp lại nguyên văn). Ô = recall / TB segFAR / run > α / điều hướng (m):
+
+| Nhóm | hsq2 (mã khuyến nghị) | + phủ quyết ½ | hsq2s (nghiêm ngặt) | Quyết định |
+|---|---|---|---|---|
+| 64–66 | 0.932 / 0.0059 / 4 / 14.56 | 0.924 / 0.0024 / 0 / 14.91 | 0.932 / 0.0071 / 5 / 14.80 | Entry 23 giữ (V1–V3 đạt); hsq2s trượt V1 |
+| 67–69 | 0.927 / 0.0029 / 0 / 12.53 | 0.920 / 0.0009 / 0 / 12.93 | 0.927 / 0.0032 / 0 / 12.54 | Entry 24 giữ (C1–C4, S1–S2) |
+| 70–72 | 0.926 / 0.0035 / 0 / 13.97 | 0.918 / 0.0013 / 0 / 14.56 | 0.925 / 0.0041 / 0 / 14.06 | Entry 26 giữ (C1–C4, S1–S2) |
+| tập A (399) | 0.929 / 0.0034 / 0 / 13.01 | — | — | (phát triển) |
+
+- hsq2 so với hsq: Δrecall ≤ 0.0004 mỗi nhóm; run > α không đổi; tổng quát trùng (NCLT 0.768 → 0.770).
+- hsq2s chỉ khác ở CMU 64–66 (segFAR tệ nhất 0.025 → 0.037, ngang luật cũ 0.036): **một phần lợi ích CMU của HQ đến từ hiệu chỉnh xuyên
+  phiên**. Đây là hạn chế phải báo trong paper.
+
 ## 5. Vận hành
 
 - Kho seed mới `namhunhh/hmm-navcache-r61` (seed 61–66, 288 cache, 20 kernel CPU).
@@ -262,3 +287,61 @@ cell = pooled recall / worst-dataset mean segFAR / runs > alpha
   khả năng dự đoán x_t của chính phiên.
 - **Ưu tiên 3:** tổng quát của C9 trên lỗ 10/50 %, off-map tự nhiên, NCLT. Đợt `genhq` đã chạy; xem RESEARCH_LOG nếu kịp đọc.
 - VPR-Space: lớp quyết định quá bảo thủ trên triển khai ngắn (Entry 18). Vẫn mở.
+
+## 7. So sánh novelty với ý tưởng 1 (branch `hmm-navigation-5`), không tính dataset / giao thức
+
+Bài toán, giao thức và metric giống hệt nhau (hạ tầng chung, không tính vào novelty). So sánh từng thành phần của luật cuối với thứ gần nhất
+trong ý tưởng 1. Trọng số là mức đóng góp của thành phần vào novelty của luật cuối (đánh giá chủ quan).
+
+| Thành phần luật cuối | Trọng số | Thứ gần nhất trong ý tưởng 1 | Mức trùng |
+|---|---|---|---|
+| Bộ lọc thế giới mở: vùng trống trong trạng thái mét, hiện diện theo vị trí, bảo toàn khối lượng, dead-reckoning qua lỗ | 30 % | trạng thái OFF không có vị trí (Entry 31); "ghost" dead-reckoning làm cổng (Gate 8); lỗ ảo trong phẫu thuật tiến (CST-F) | ~20 % |
+| HQ: bằng chứng tuyệt đối cho ô trống, null "bí danh khi chỗ đúng vắng mặt" lấy bằng cách loại vùng quanh fix tự tin, hiệu chỉnh theo phiên | 25 % | **CMS** (Entry 28: xoá hành lang ρ quanh niềm tin để lấy null ngoài bản đồ theo điều kiện truy vấn, Mondrian theo điều kiện); **HMM có trạng thái OFF với emission hiệu chỉnh bằng CMS** (Entry 31) | **~65 %** |
+| Lớp quyết định HSI-VN ∪ bậc OWF ∪ đồng thuận ba nguồn | 20 % | SelfCal / CPC (presence có hiệu chỉnh conformal / e-value), cổng đồng thuận G, phép thử hình dạng SH / CST | ~40 % |
+| Lý thuyết (Ville / e-value, Mệnh đề 1–7) | 15 % | Định lý 6 / 6′ / 6″ (chuỗi hiện diện e-value + Ville), Mệnh đề 13 | ~35 % (công cụ chung; Mệnh đề 3, 5, 6, 7 mới) |
+| Ngân hàng tự hiệu chỉnh odometry | 5 % | không có | 0 % |
+| Không dịch chuyển tức thời | 5 % | biến thể "reset" / "temper" của re-entry (Entry 31) | ~20 % |
+
+**Mức trùng gộp ≈ 0.30·0.20 + 0.25·0.65 + 0.20·0.40 + 0.15·0.35 + 0.05·0 + 0.05·0.20 ≈ 0.37, tức khoảng 35–40 %.**
+
+- Phần khác biệt chính là bộ ước lượng thế giới mở (ý tưởng 1 giữ HMM tô-pô, kiểm hiện diện bằng phép thử).
+- Phần trùng nhiều nhất là HQ: cùng nguyên lý "null ngoài bản đồ từ chính luồng truy vấn bằng cách loại vùng quanh niềm tin, theo điều kiện".
+  Khác ở ba điểm:
+  - thống kê (max − trung vị so với route cost / độ đặc trưng không gian);
+  - ước lượng (mật độ KDE từ các fix tự tin của lượt 1, không phẫu thuật lại bản đồ mỗi frame, không conformal);
+  - chỗ đặt (LR của ô trống trong lưới mét, thay vì trạng thái OFF không vị trí).
+- Paper phải ghi rõ quan hệ này.
+
+## 8. Tóm tắt phương pháp dễ hiểu
+
+- **Bài toán.** Robot có camera và đo quãng đường (odometry). Nó so ảnh đang thấy với một bản đồ ảnh có toạ độ, nhưng bản đồ có những chỗ trống
+  chưa từng chụp. Mỗi khoảnh khắc, robot phải quyết định có tin vị trí tìm được để báo cho bộ dẫn đường hay không. Báo sai khi đang ở chỗ trống
+  thì rất có hại.
+- **Ý chính 1: thế giới mở.** Thay vì chỉ hỏi "mình đang ở ảnh bản đồ nào", robot giữ một bản đồ xác suất về vị trí trên lưới mét phủ cả chỗ có
+  ảnh lẫn chỗ trống. Khi robot lái vào chỗ trống, đo quãng đường tự đẩy xác suất vào vùng trống. Robot biết mình "ra khỏi bản đồ" nhờ tính
+  toán vị trí, không cần một phép thử riêng.
+- **Ý chính 2: tự hiệu chỉnh đo quãng đường.** Chạy song song 10 bộ lọc với các giả thuyết khác nhau về nhiễu và tỉ lệ sai của odometry, rồi theo
+  bộ lọc giải thích dữ liệu tốt nhất.
+- **Ý chính 3: bằng chứng tuyệt đối có hiệu chỉnh (HQ).** Có những con đường thẳng mà một đoạn ở chỗ khác trông hơi giống. Odometry không
+  phân biệt được hai đoạn vì chúng chỉ lệch nhau theo chiều đường. Vì thế robot học hai phân bố từ chính lần chạy thứ nhất, ở những chỗ nó đã
+  chắc chắn:
+  - "ảnh giống nhất trông thế nào khi đúng chỗ";
+  - "ảnh giống nhất trông thế nào khi chỗ đúng bị loại đi", tức bí danh.
+
+  Khi khớp tốt nhất chỉ ở mức bí danh, xác suất được dồn về vùng trống thay vì về chỗ giống.
+- **Quyết định.** Báo khi nhánh học hồi cứu (HSI) báo, hoặc khi bộ lọc chắc chắn ở mức cực cao. Chế độ an toàn: nhánh học chỉ được báo khi bộ
+  lọc thế giới mở cũng cho rằng robot ở gần bản đồ.
+
+## 9. Hướng hoàn thiện / cải tiến
+
+1. **Luật quyết định thống nhất** thay union HSI ∪ bậc: ngưỡng posterior suy từ cận Ville với ngân sách phóng đại K ước lượng từ bản đồ, hoặc
+   e-process trên (E1′). Đây là việc quan trọng nhất cho novelty.
+2. **Mô hình tương quan bằng chứng** giữa frame liền kề thay ℓ cố định, để lấp khoảng trống đầu chuỗi CMU (53–82 % so với top-1 95–97 %).
+3. **Hiệu chỉnh HQ có điều kiện và trực tuyến thật sự:** chọn phiên tham chiếu cùng môi trường / điều kiện (embedding điều kiện từ descriptor),
+   hoặc ước lượng f_off từ chính bản đồ (ảnh bản đồ truy vấn bản đồ, loại 1.6 excl) trước khi phiên có mẫu riêng, để biến thể nghiêm ngặt
+   giữ được lợi ích trên CMU (Entry 27).
+4. **Kiểm chứng hình học** (local feature / 6DOF) cho các fix có bí danh, trên dataset có ảnh gốc (Boreas, 4Seasons, NCLT, St Lucia).
+5. **Lỗ thật** (bản đồ cũ, môi trường đổi) và đánh giá độ nhạy hằng số HQ (1.6 excl, 100 mẫu).
+6. **VPR-Space:** lớp quyết định thích nghi với triển khai ngắn.
+7. **Gate tài liệu hệ thống** cho OWF + HQ (MCL với vùng chưa vẽ, topometric, open-set VPR, change detection) và định vị rõ so với CMS.
+
