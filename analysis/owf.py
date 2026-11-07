@@ -45,13 +45,17 @@ def log_lr(Z, beta):
     return a - (m + np.log(np.mean(np.exp(a - m), 1, keepdims=True)))
 
 
-def _kde_logpdf(samples, x, eps=0.01, n_max=2000, seed=0):
-    """log density of x under a Gaussian KDE of the samples (Silverman bandwidth), contaminated by eps x uniform over the joint range
-    (bounded likelihood ratios; standard robust-likelihood device)"""
+def _kde_logpdf(samples, x, eps=0.01, n_max=2000, seed=0, causal=False):
+    """log density of x under a Gaussian KDE of the samples (Silverman bandwidth), contaminated by eps x uniform (bounded likelihood
+    ratios; standard robust-likelihood device). causal=False (historical hs* modes): the uniform spans the joint range of the samples AND
+    the evaluated points, so a frame's value depends on the other frames of its block (a leak found in the 2026-11-07 audit).
+    causal=True (hsq2*): the uniform spans the samples' range only, so the value at x depends on x and the samples alone."""
     from scipy.stats import gaussian_kde
     smp = np.asarray(samples, float); rng = np.random.default_rng(seed)
     if len(smp) > n_max: smp = rng.choice(smp, n_max, replace=False)
-    k = gaussian_kde(smp); lo, hi = min(smp.min(), np.min(x)), max(smp.max(), np.max(x)); u = 1.0 / max(hi - lo, 1e-6)
+    k = gaussian_kde(smp)
+    lo, hi = (smp.min(), smp.max()) if causal else (min(smp.min(), np.min(x)), max(smp.max(), np.max(x)))
+    u = 1.0 / max(hi - lo, 1e-6)
     return np.log((1 - eps) * k(x) + eps * u)
 
 
@@ -99,6 +103,26 @@ def hindsight_lu_causal(seqs, cent_max, samp_true, samp_alias, samp_t, min_n=100
             elif len(tro) >= min_n and len(alo) >= min_n:
                 if oth is None: oth = (tro, alo)
                 lu[idx[b0:b0 + block]] = _kde_logpdf(alo, x) - _kde_logpdf(tro, x)
+    return lu, nown
+
+
+def hindsight_lu_causal2(seqs, cent_max, samp_true, samp_alias, samp_t, min_n=100, block=50, strict=False):
+    """Entry 27 (hsq2 / hsq2s; 2026-11-07 audit fix of hsq). Same model as hindsight_lu_causal, with every quantity at frame t a function
+    of the past only: KDE contamination floor from the samples (no evaluated points), all first-pass confident frames used (no stride
+    chosen from the session's total count). strict=True (hsq2s): the fallback uses only the sessions BEFORE the current one in the run's
+    order, i.e. a fleet that has driven the map before; the first session gets no fallback (neutral until its own samples suffice)."""
+    lu = np.zeros(len(cent_max)); nown = 0
+    for k, idx in enumerate(seqs):
+        js = [j for j in range(len(seqs)) if (j < k if strict else j != k)]
+        tro = np.concatenate([samp_true[j] for j in js] or [np.zeros(0)])
+        alo = np.concatenate([samp_alias[j] for j in js] or [np.zeros(0)])
+        for b0 in range(0, len(idx), block):
+            sel = samp_t[k] < b0; tr, al = samp_true[k][sel], samp_alias[k][sel]
+            x = cent_max[idx[b0:b0 + block]]
+            if len(tr) >= min_n and len(al) >= min_n:
+                lu[idx[b0:b0 + block]] = _kde_logpdf(al, x, causal=True) - _kde_logpdf(tr, x, causal=True); nown += len(x)
+            elif len(tro) >= min_n and len(alo) >= min_n:
+                lu[idx[b0:b0 + block]] = _kde_logpdf(alo, x, causal=True) - _kde_logpdf(tro, x, causal=True)
     return lu, nown
 
 
@@ -294,7 +318,7 @@ def main():
         zc = 0.5 * float(np.median(np.concatenate([robust_z(Q[idx].astype(np.float32) @ M.T).max(1) for idx in seqs])))
         res["lu"] = dict(mode=luopt, c=zc); print(f"unmapped emission: crossover c = {zc:.2f} robust sd", flush=True)
     luseq = None
-    if luopt in ("hs", "hsm", "hsmp", "hsc", "hsq", "hsr", "hsb", "hsqsel"):                                        # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
+    if luopt in ("hs", "hsm", "hsmp", "hsc", "hsq", "hsr", "hsb", "hsqsel", "hsq2", "hsq2s"):                                        # Entry 23: hindsight-calibrated absolute emission for the unmapped cells
         beta0 = betas[0]; cent_max = np.zeros(nq); med_all = np.zeros(nq); st_l, sa_l, tt_l = [], [], []; ra = 1.6 * excl
         for idx in seqs:
             S_ = Q[idx].astype(np.float32) @ M.T; med_ = np.median(S_, 1); cent_max[idx] = S_.max(1) - med_; med_all[idx] = med_
@@ -307,7 +331,15 @@ def main():
                 rs = [F.run(LL, U[idx] * sc, excl, ell=ell, q=qx * excl, reentry=reentry) for qx, sc in bank]
                 xm = np.stack([r_["xhat"] for r_ in rs]); ms_ = np.stack([r_["mass"] for r_ in rs]); lm_ = np.stack([r_["lml"] for r_ in rs])
             ks = np.argmax(np.cumsum(lm_, 1), 0); tt = np.arange(len(idx)); m1 = ms_[ks, tt]; x1 = xm[ks, tt]
-            conf = np.flatnonzero((m1 >= 1 - eps0) & (x1 >= 0)); conf = conf[:: max(1, len(conf) // 3000)]; st, sa, tq = [], [], []
+            conf = np.flatnonzero((m1 >= 1 - eps0) & (x1 >= 0)); st, sa, tq = [], [], []
+            if luopt in ("hsq2", "hsq2s"):                              # all confident frames (causal), vectorised in chunks
+                for c0 in range(0, len(conf), 2000):
+                    cc = conf[c0:c0 + 2000]; dd = np.linalg.norm(MP[None, :, :] - MP[x1[cc]][:, None, :], axis=2) if MP.ndim > 1 else np.abs(MP[None, :] - MP[x1[cc]][:, None])
+                    far = dd > ra; okc = far.any(1) & (dd <= excl).any(1)
+                    smax = S_[cc].max(1) - med_[cc]; sfar = np.where(far, S_[cc], -np.inf).max(1) - med_[cc]
+                    st += list(smax[okc]); sa += list(sfar[okc]); tq += list(cc[okc])
+                conf = conf[:0]
+            else: conf = conf[:: max(1, len(conf) // 3000)]
             for t in conf:
                 d = np.linalg.norm(MP - MP[x1[t]], axis=1)
                 near, far = d <= excl, d > ra
@@ -324,6 +356,7 @@ def main():
         elif luopt == "hsr": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l, med=med_all)
         elif luopt == "hsb": lu_all, nused = hindsight_lu_shrink(seqs, cent_max, st_l, sa_l, tt_l)
         elif luopt == "hsqsel": lu_all, nused = hindsight_lu_causal(seqs, cent_max, st_l, sa_l, tt_l)   # + bank dimension {neutral, hsq} (Entry 26)
+        elif luopt in ("hsq2", "hsq2s"): lu_all, nused = hindsight_lu_causal2(seqs, cent_max, st_l, sa_l, tt_l, strict=(luopt == "hsq2s"))
         else: lu_all, nused = hindsight_lu(seqs, cent_max, st_l, sa_l, loso=(luopt != "hsmp"))   # hsmp: pooled over the run's sessions, own included
         luseq = lu_all
         res["lu"] = dict(mode=luopt, n_true=int(sum(len(a) for a in st_l)), n_alias=int(sum(len(a) for a in sa_l)), seqs_calibrated=nused,
