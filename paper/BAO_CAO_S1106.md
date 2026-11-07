@@ -1,6 +1,6 @@
-# Báo cáo phiên 2026-11-06 → 07 — Entry 19–27: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được, bằng chứng tuyệt đối hiệu chỉnh hồi cứu, kiểm toán
+# Báo cáo phiên 2026-11-06 → 07 — Entry 19–28: không dịch chuyển tức thời, phủ quyết thế giới mở, bí danh mà odometry không thấy được, bằng chứng tuyệt đối hiệu chỉnh hồi cứu, kiểm toán
 
-*Branch `hmm-2nd-idea`. Nhật ký đầy đủ: `RESEARCH_LOG.md` Entry 19–27. Lý thuyết: `paper/owf_theory.md` §8 (Mệnh đề 5), §9 (Mệnh đề 6), §10 (Mệnh đề 7), §11 (kiểm toán). Số liệu
+*Branch `hmm-2nd-idea`. Nhật ký đầy đủ: `RESEARCH_LOG.md` Entry 19–28. Lý thuyết: `paper/owf_theory.md` §8 (Mệnh đề 5), §9 (Mệnh đề 6), §10 (Mệnh đề 7), §11–12 (kiểm toán). Số liệu
 thô: `analysis/results/owf/s1106/`. Báo cáo không tuyên bố novelty hay vượt SOTA ngoài những gì các bảng dưới chứng minh trên đúng giao thức này.*
 
 ## 1. Tóm tắt
@@ -11,6 +11,8 @@ thô: `analysis/results/owf/s1106/`. Báo cáo không tuyên bố novelty hay v�
    - Biến thể có phủ quyết (C10, chỉ báo cáo): 0/144 run > α, TB segFAR 0.0024, recall −0.012.
    - Cơ chế: bằng chứng tuyệt đối cho ô trống, hiệu chỉnh hồi cứu không nhãn, nhân quả trong phiên (Mệnh đề 7).
    - **Entry 27 (kiểm toán, 2026-11-07):** sửa hai rò rỉ nhân quả trong mã HQ (`--lu hsq2`), chạy lại 432 + 399 + 258 run: mọi quyết định giữ nguyên (§4f).
+   - **Entry 28 (kiểm toán lần hai):** nhánh HSI-VN nhìn trước trong nhãn hồi cứu → sửa `HSI-VNc`, kiểm thử đầu-cuối; chạy lại nhánh HSI mọi tập:
+     mọi quyết định giữ nguyên, run > α 4 → 3/432 (§4g).
    - **Entry 24 xác nhận độc lập trên seed 67–69:** 0/144 run > α, +0.136 so với HSI-VN; TAO'26 / Xu'21 / Claxton'24 không hợp lệ.
 1. **Luật cũ OWF-HWA-S5** đã được kiểm trên ba nhóm seed mới, đều đăng ký trước, mỗi nhóm 144 run (8 dataset × 6 descriptor):
 
@@ -264,6 +266,42 @@ cell = pooled recall / worst-dataset mean segFAR / runs > alpha
 - hsq2 so với hsq: Δrecall ≤ 0.0004 mỗi nhóm; run > α không đổi; tổng quát trùng (NCLT 0.768 → 0.770).
 - hsq2s chỉ khác ở CMU 64–66 (segFAR tệ nhất 0.025 → 0.037, ngang luật cũ 0.036): **một phần lợi ích CMU của HQ đến từ hiệu chỉnh xuyên
   phiên**. Đây là hạn chế phải báo trong paper.
+
+## 4g. Entry 28 — kiểm toán lần hai (2026-11-07)
+
+**Sai tìm thấy:** nhánh HSI-VN (nhánh học của mọi luật union) tạo nhãn hồi cứu bằng đại lượng của cả đợt triển khai:
+- s0 / κ của cầu nối là trung vị toàn đợt;
+- nhãn khoảng trống chốt trước khi đoạn phải dùng để khớp được xác minh;
+- bước odometry trung vị toàn đợt.
+
+Vòng lặp trực tuyến chỉ dùng nhãn đã chốt, nên lỗi này không lộ khi kiểm từng hàm. Nó chỉ lộ khi kiểm **đầu-cuối**
+(`analysis/tests/test_hsi_causality.py`): thay dữ liệu sau mốc R bằng rác thì HSI-VN đổi 3–2839 quyết định trước R, còn bản sửa `HSI-VNc`
+đổi 0.
+
+**Chạy lại nhánh HSI** (frame OWF giữ nguyên; luật cũ và đường cơ sở HSI đứng riêng cũng dùng HSI-VNc). Ô = recall / TB segFAR / run > α / điều hướng (m):
+
+| Nhóm | Luật cuối | + phủ quyết ½ | Quyết định |
+|---|---|---|---|
+| 64–66 | 0.933 / 0.0058 / 3 / 14.88 | 0.924 / 0.0026 / 0 / 15.34 | Entry 23 giữ (vs luật cũ 0.936 / 0.0076 / 4 / 15.15) |
+| 67–69 | 0.928 / 0.0029 / 0 / 12.58 | 0.920 / 0.0007 / 0 / 12.93 | Entry 24 giữ (+0.133 vs HSI-VNc) |
+| 70–72 | 0.926 / 0.0034 / 0 / 14.01 | 0.919 / 0.0013 / 0 / 14.62 | Entry 26 giữ (+0.117 vs HSI-VNc) |
+| tập A (399) | 0.929 / 0.0032 / 0 / 13.54 | — | (phát triển) |
+
+Tổng quát (mọi cột dùng HSI-VNc; recall / TB segFAR tệ nhất / run > α):
+
+| Tập | Luật cuối | Luật cũ S5 | HSI-VNc đứng riêng |
+|---|---|---|---|
+| lỗ 10 % (108) | 0.932 / 0.004 / 0 | 0.933 / 0.008 / 1 | 0.777 / 0.003 / 0 |
+| lỗ 50 % (108) | 0.872 / 0.028 / 4 | 0.894 / 0.030 / 4 | 0.751 / 0.027 / 4 |
+| off-map tự nhiên (36) | 0.945 / 0.004 / 0 | 0.954 / 0.012 / 1 | 0.756 / 0.011 / 0 |
+| NCLT (6) | 0.769 / 0.001 / 0 | 0.780 / 0.003 / 0 | — |
+
+Tập A với HSI-VNc ở cả hai luật: S5 0.933 / 0.0040 / 0 / 12.4 m → luật cuối 0.929 / 0.0032 / 0 / 13.5 m. **Điều hướng tập A tệ hơn 1.2 m**
+(old town 20.9 → 29.1 m): giá của HQ ở đầu phiên điều kiện chưa thấy, nay rõ hơn trước. Biến thể nghiêm ngặt: 5/432 (phủ quyết 4/432),
+như Entry 27.
+
+**Đã kiểm lại và đúng:** bộ lọc OWF + engine GPU, lớp quyết định, chuỗi tô-pô, đặc trưng HSI, metric, đối thủ ngoài, Mệnh đề 1–7 (sửa hai
+phát biểu, nêu một thiên lệch). Quy ước cần ghi: điều hướng khởi tạo bằng vị trí thật; không báo sai số điều hướng trên tập off-map tự nhiên.
 
 ## 5. Vận hành
 

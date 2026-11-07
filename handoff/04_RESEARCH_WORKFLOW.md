@@ -60,6 +60,8 @@ Trạng thái theo phase của ý tưởng 1 và các hướng trước: `07_IDE
   không có tín hiệu trước khi tốn tài nguyên Kaggle.
 - **Kiểm thử tính nhân quả** (bổ sung 2026-11-07) cho mọi ước lượng dùng dữ liệu của chính phiên: đổi tương lai, quá khứ phải không đổi. Mắt
   không thấy rò rỉ; kiểm thử thì thấy.
+- **Kiểm thử nhân quả đầu-cuối cho mỗi nhánh quyết định** (bổ sung 2026-11-07, Entry 28): cắt ở hạng R, thay mọi dữ liệu sau R bằng rác, quyết
+  định trước R phải không đổi. Kiểm từng hàm không bắt được tham số toàn cục dùng để TẠO nhãn hồi cứu.
 - **Script đánh giá viết từ văn bản đăng ký**, in tên luật và tiêu chí. Không sao chép script của entry trước mà không đổi luật.
 - **Trước khi tuyên bố novelty: so sánh với các nhánh cũ của chính dự án.** HQ trùng nguyên lý với CMS của ý tưởng 1.
 

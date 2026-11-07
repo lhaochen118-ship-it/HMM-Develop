@@ -93,6 +93,9 @@ class Cfg:
         for k, v in kw.items(): setattr(self, k, v)
         if getattr(self, "metric_windows", False):   # windows in metres of path (the frame values above assume ~1 m per frame)
             O = z["o_q"]; st = float(np.median(np.linalg.norm(np.diff(O, axis=0), axis=1)))
+            if getattr(self, "causal_step", False):  # 2026-11-07 audit (L3): the step from the first 20 increments of the deployment only
+                s0_ = deployment_seqs(z)[0][:21]      # (the median above runs over every frame of the deployment, future included)
+                st = float(np.median(np.linalg.norm(np.diff(O[s0_], axis=0), axis=1))) if len(s0_) > 1 else 1.0
             st = st if np.isfinite(st) and st > 0 else 1.0; f = lambda m: max(1, int(round(m / max(st, 1.0))))   # never finer than 1 m
             self.step = st; self.lags_c = tuple(sorted({f(k) for k in self.lags_c})); self.lags_h = tuple(sorted({f(k) for k in self.lags_h}))
             self.span = max(2, f(self.span)); self.W = max(4, f(self.W)); self.P_over = max(4, f(self.P_over)); self.unit = max(30, f(self.unit))
@@ -692,6 +695,7 @@ def hindsight_bridge(z, seqs, cfg, ver, zz=2.0):
     uncertainty follows a Brownian bridge, sd = s0 + kappa * dl dr / (dl + dr); one-sided gaps: s0 + kappa * d. Gaps whose
     closure fails (left prediction of the right run off by more than tau + zz kappa gap) stay unlabelled (one of the runs
     is wrong). kappa: median one-sided prediction error / path over closed gaps (label-free); s0: median fit residual."""
+    if getattr(cfg, "causal_bridge", False): return hindsight_bridge_causal(z, seqs, cfg, ver, zz)
     MP, est, O = z["MP"], z["est_c"], z["o_q"]; n = len(est); hz = horiz(MP); W = cfg.W
     order = np.concatenate(seqs); rank = np.empty(n, np.int64); rank[order] = np.arange(n)
     gaps, fitres, clos = [], [], []
@@ -732,3 +736,63 @@ def hindsight_bridge(z, seqs, cfg, ver, zz=2.0):
             xt[idx[gi]] = x; sd[idx[gi]] = s; av[gi] = a
         lab = av >= 0; avail[idx[lab]] = rank[idx[av[lab]]]
     return xt, sd, avail, kappa, s0, len(cl)
+
+
+def hindsight_bridge_causal(z, seqs, cfg, ver, zz=2.0):
+    """2026-11-07 audit fix of hindsight_bridge (variant HSI-VNc). Same bridges, with every label a function of the data up to the
+    deployment rank at which it becomes available:
+      (L1) s0 and kappa were medians over EVERY run and closure of the deployment (future included); here the label of a frame that
+           becomes final at rank A uses the fit residuals and closures already available at A (defaults 0.05 / tau / 2 until 5 / 1 exist);
+      (L2) a gap closed by the right run r1 was marked final at r1[0] + span, although the right fit uses r1[:W] (frames verified only at
+           r1[W-1] + span); it is now final at r1[min(W, |r1|) - 1] + span (same for the closure that measures kappa).
+    A fit residual of run r is available once the run is known to have ended (r[-1] + 1 + span)."""
+    MP, est, O = z["MP"], z["est_c"], z["o_q"]; n = len(est); hz = horiz(MP); W = cfg.W; S = cfg.span
+    order = np.concatenate(seqs); rank = np.empty(n, np.int64); rank[order] = np.arange(n)
+    fit = lambda ii, idx: kabsch(O[idx[ii]][:, hz], MP[est[idx[ii]]][:, hz])
+    fr_v, fr_a, cl_v, cl_a, gaps = [], [], [], [], []
+    for si, idx in enumerate(seqs):
+        L = len(idx); vi = np.flatnonzero(ver[idx])
+        if not len(vi): continue
+        path = np.r_[0, np.cumsum(np.linalg.norm(np.diff(O[idx], axis=0), axis=1))]
+        runs = np.split(vi, np.flatnonzero(np.diff(vi) > 1) + 1)
+        for r in runs:
+            Rm, tv = fit(r[-W:], idx)
+            fr_v.append(np.median(np.linalg.norm((Rm @ O[idx[r[-W:]]][:, hz].T).T + tv - MP[est[idx[r[-W:]]]][:, hz], axis=1)))
+            fr_a.append(rank[idx[min(r[-1] + 1 + S, L - 1)]])
+        for r0, r1 in zip(runs[:-1], runs[1:]):
+            R0, t0 = fit(r0[-W:], idx); pr = (R0 @ O[idx[r1[:W]]][:, hz].T).T + t0
+            cl_v.append(float(np.median(np.linalg.norm(pr - MP[est[idx[r1[:W]]]][:, hz], axis=1))) / max(path[r1[0]] - path[r0[-1]], 1.0))
+            cl_a.append(rank[idx[min(r1[min(W, len(r1)) - 1] + S, L - 1)]])
+        gaps.append((idx, L, vi, runs, path))
+    fr_v, fr_a, cl_v, cl_a = map(np.asarray, (fr_v, fr_a, cl_v, cl_a))
+    def s0_at(A):
+        v = fr_v[fr_a <= A] if len(fr_v) else fr_v
+        return float(np.clip(np.median(v) if len(v) else cfg.tau / 2, 0.05 * cfg.excl, cfg.tau))
+    def kappa_at(A):
+        v = cl_v[cl_a <= A] if len(cl_v) else cl_v
+        return float(np.clip(np.median(v), 0.005, 0.2)) if len(v) >= 5 else 0.05
+    xt = np.full((n, MP.shape[1]), np.nan); sd = np.full(n, np.inf); avail = np.full(n, BIG)
+    for idx, L, vi, runs, path in gaps:
+        av = np.full(L, -1, np.int64)
+        xt[idx[vi]] = MP[est[idx[vi]]]; av[vi] = np.minimum(vi + S, L - 1)
+        for i_ in vi: sd[idx[i_]] = s0_at(rank[idx[av[i_]]])
+        for r0, r1 in zip([None] + runs, runs + [None]):
+            if r0 is None and r1 is None: continue
+            lo = 0 if r0 is None else r0[-1] + 1; hi = L if r1 is None else r1[0]
+            if hi <= lo: continue
+            gi = np.arange(lo, hi); base = MP[est[idx[gi]]].astype(float)
+            a = min(r1[min(W, len(r1)) - 1] + S, L - 1) if r1 is not None else L - 1
+            A = rank[idx[a]]; s0, kappa = s0_at(A), kappa_at(A)
+            if r0 is not None: R0, t0 = fit(r0[-W:], idx); xl = base.copy(); xl[:, hz] = (R0 @ O[idx[gi]][:, hz].T).T + t0; dl = path[gi] - path[r0[-1]]
+            if r1 is not None: R1, t1 = fit(r1[:W], idx); xr = base.copy(); xr[:, hz] = (R1 @ O[idx[gi]][:, hz].T).T + t1; dr = path[r1[0]] - path[gi]
+            if r0 is not None and r1 is not None:
+                g = path[r1[0]] - path[r0[-1]]; prl = (R0 @ O[idx[r1[0]]][hz]) + t0
+                if np.linalg.norm(prl - MP[est[idx[r1[0]]]][hz]) > cfg.tau + zz * kappa * g: continue      # closure failed
+                w = (dl / np.maximum(dl + dr, 1e-9))[:, None]; x = (1 - w) * xl + w * xr
+                s = s0 + kappa * dl * dr / np.maximum(dl + dr, 1e-9)
+            elif r0 is not None: x, s = xl, s0 + kappa * dl
+            else: x, s = xr, s0 + kappa * dr
+            xt[idx[gi]] = x; sd[idx[gi]] = s; av[gi] = a
+        lab = av >= 0; avail[idx[lab]] = rank[idx[av[lab]]]
+    kap_end = kappa_at(n); s0_end = s0_at(n)
+    return xt, sd, avail, kap_end, s0_end, int(len(cl_v))

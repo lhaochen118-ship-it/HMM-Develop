@@ -25,10 +25,11 @@ với segFAR ≤ α = 0.05 trên từng run, recall cao, sai số điều hướ
 | Xác nhận độc lập + SOTA | 24, 26 | xác nhận trên 67–69 và 70–72; điểm an toàn (+ phủ quyết) xác nhận |
 | Ablation, mN16, tổng quát, VPR-Space | 25, 26 | HQ mang gần hết lợi ích |
 | **Kiểm toán** | **27** | sửa 2 rò rỉ nhân quả (`--lu hsq2`), chạy lại mọi số; biến thể nghiêm ngặt `hsq2s` |
+| **Kiểm toán lần hai** | **28** | nhánh HSI nhìn trước trong nhãn hồi cứu → `HSI-VNc`; kiểm thử đầu-cuối; chạy lại nhánh HSI mọi tập |
 
 ## 3. Quyết định đã thống nhất
 
-- **Luật khuyến nghị: OWF-HWA-S5-NT-HQ với mã đã kiểm toán (`--pin 0 --lu hsq2`).** Lệnh: `02` §6.
+- **Luật khuyến nghị: OWF-HWA-S5-NT-HQ với mã đã kiểm toán hai lần (`--pin 0 --lu hsq2` + nhánh `HSI-VNc`).** Lệnh: `02` §6.
 - **Điểm vận hành an toàn:** thêm `OWF_VETO=0.5` (HSI chỉ báo khi khối lượng gần bản đồ của OWF ≥ ½). Dùng khi ưu tiên hợp lệ tuyệt đối.
 - Giao thức không đổi:
   - 8 dataset × 6 descriptor;
@@ -41,7 +42,7 @@ với segFAR ≤ α = 0.05 trên từng run, recall cao, sai số điều hướ
   - mỗi nhóm seed tươi dùng một lần;
   - phát triển chỉ trên tập A;
   - mọi thành phần mới phải có lý do / mệnh đề, một cấu hình chung;
-  - kiểm thử tính nhân quả cho mọi ước lượng dùng dữ liệu phiên.
+  - kiểm thử tính nhân quả cho mọi ước lượng dùng dữ liệu phiên, và kiểm thử ĐẦU-CUỐI cho mỗi nhánh quyết định (`tests/test_hsi_causality.py`).
 - Tài nguyên:
   - dùng mọi tài khoản theo thứ tự lấp;
   - một monitor;
@@ -54,9 +55,9 @@ với segFAR ≤ α = 0.05 trên từng run, recall cao, sai số điều hướ
 |---|---|
 | Mã phương pháp | `analysis/owf.py` (lọc, HQ: `hindsight_lu_causal2`), `owf_torch.py` (GPU), `owf_hsi_job.py`, `owf_hybrid.py`, `owf_union.py`, `hsi.py` |
 | Đối thủ / giao thức | `analysis/sota_job.py`, `nav_demo.py`, `position_audit.py`, `vprlib.py`, `sc_eval.py`, `hcal_board.py` |
-| Kiểm thử | `analysis/tests/test_hq_causality.py` |
+| Kiểm thử | `analysis/tests/test_hq_causality.py`, `analysis/tests/test_hsi_causality.py` |
 | Vận hành Kaggle | `automation/owf_wave.py`, `fanout.py`, `central_monitor.py`, `fetch_done.py`, `publish_dataset.py` |
-| Kết quả | `analysis/results/owf/s1105/` (Entry 16–18), `analysis/results/owf/s1106/` (Entry 19–27: bảng `.md`, JSON `.tgz`, script đánh giá) |
+| Kết quả | `analysis/results/owf/s1105/` (Entry 16–18), `analysis/results/owf/s1106/` (Entry 19–28: bảng `.md`, JSON `.tgz`, script đánh giá; `e28_*` = số hiện hành) |
 | Lý thuyết / paper / báo cáo | `paper/owf_theory.md`, `paper/OWF_paper_draft.md`, `paper/BAO_CAO_S1106.pdf`, `paper/figures/owf_shifted_alias.png` |
 | Nhật ký / novelty | `RESEARCH_LOG.md` (mới nhất ở trên), `LITERATURE_GATE.md` (Gate 17–18) |
 | Dataset công khai | `ENVIRONMENT_SUMMARY.md` §0.2 |
@@ -72,7 +73,7 @@ với segFAR ≤ α = 0.05 trên từng run, recall cao, sai số điều hướ
 | 40–54 | `synchan5704/hmm-navcache-r40`, `r49` | Entry 11–15 | đã dùng |
 | 55–57, 58–60 | `namhunhh/hmm-navcache-r55` | Entry 17, 19 | đã dùng |
 | 61–63, 64–66 | `namhunhh/hmm-navcache-r61` | Entry 21, 23 | đã dùng |
-| 67–69, 70–72 | `namhunhh/hmm-navcache-r67` | Entry 24, 26 | đã dùng (cả chạy lại kiểm toán Entry 27) |
+| 67–69, 70–72 | `namhunhh/hmm-navcache-r67` | Entry 24, 26 | đã dùng (cả chạy lại kiểm toán Entry 27, 28) |
 | **73–75, 76–78** | `namhunhh/hmm-navcache-r73` | — | **trống** |
 
 ## 6. Việc tiếp theo (theo ưu tiên)

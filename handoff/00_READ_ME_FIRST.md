@@ -8,23 +8,27 @@
 - recall cao, sai số điều hướng thấp;
 - không nhãn, một cấu hình cho mọi dataset.
 
-**Luật khuyến nghị: OWF-HWA-S5-NT-HQ**, mã đã kiểm toán `--pin 0 --lu hsq2`. Gồm:
+**Luật khuyến nghị: OWF-HWA-S5-NT-HQ**, mã đã kiểm toán hai lần: `--pin 0 --lu hsq2` + nhánh HSI nhân quả `HSI-VNc`. Gồm:
 - bộ lọc thế giới mở trên lưới mét (vùng có bản đồ + vùng trống + trạng thái xa);
 - tự hiệu chỉnh odometry;
 - không dịch chuyển tức thời;
 - bằng chứng tuyệt đối hiệu chỉnh hồi cứu cho ô trống;
-- lớp quyết định HSI-VN ∪ ba bậc tin cậy OWF.
+- lớp quyết định HSI-VNc ∪ ba bậc tin cậy OWF.
 
 Điểm vận hành an toàn: thêm `OWF_VETO=0.5`.
 
 **Bằng chứng.** Ba nhóm seed tươi 64–72 (432 run, đăng ký trước):
 - recall ≈ 0.93;
-- 4/432 run > α; với phủ quyết: 0;
-- hơn HSI-VN +0.12 … +0.14;
+- 3/432 run > α; với phủ quyết: 0;
+- hơn nhánh HSI-VNc đứng riêng +0.12 … +0.13;
 - TAO'26 / Xu'21 / Claxton'24 (ngưỡng chỉnh bằng nhãn) vượt α trên 56–90 % số run.
 
-Kiểm toán 2026-11-07 (Entry 27): sửa hai rò rỉ nhân quả, chạy lại mọi số (432 run tươi + 399 tập A + 258 tổng quát). Mọi quyết định đăng ký
-trước giữ nguyên; số trên là số chạy lại (`01` §2.1, §3.6).
+Kiểm toán 2026-11-07:
+- Entry 27: sửa hai rò rỉ nhân quả trong HQ;
+- Entry 28: sửa nhìn trước trong nhãn hồi cứu của nhánh HSI (HSI-VNc), thêm kiểm thử nhân quả đầu-cuối.
+
+Mọi số đã chạy lại (432 run tươi + 399 tập A + 258 tổng quát + tham chiếu). Mọi quyết định đăng ký trước giữ nguyên; số trên là số chạy lại
+(`01` §2.1, §3.6, §3.7).
 
 **Chưa đạt / đang mở:**
 - lớp quyết định vẫn là tổ hợp kỹ thuật;

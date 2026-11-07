@@ -3,7 +3,7 @@
 *Cập nhật 2026-11-07.*
 - **Phạm vi:** đóng góp, ý nghĩa khoa học, kết quả tích cực, kết quả tiêu cực / hạn chế, bằng chứng và điều kiện kiểm chứng. Không chứa vận
   hành (→ `02`) hay kế hoạch (→ `03`).
-- Nguồn: `RESEARCH_LOG.md` (Entry 10–27), `paper/owf_theory.md` (Mệnh đề 1–7, §11 kiểm toán), `paper/OWF_paper_draft.md`.
+- Nguồn: `RESEARCH_LOG.md` (Entry 10–28), `paper/owf_theory.md` (Mệnh đề 1–7, §11–12 kiểm toán), `paper/OWF_paper_draft.md`.
 - Bản trước (đầy đủ các phiên 2026-11-04 → 06): `history/01_SCIENTIFIC_FINDINGS_through_2026-11-06.md`. Ý tưởng 1: `07_IDEA1_SUMMARY.md`.
 
 ## 0. Một trang
@@ -20,16 +20,16 @@ cho bộ lọc điều hướng hay không. Mục tiêu:
 2. Ngân hàng tự hiệu chỉnh odometry, chọn theo evidence.
 3. Không dịch chuyển tức thời (NT).
 4. Bằng chứng tuyệt đối hiệu chỉnh hồi cứu cho ô trống (HQ).
-5. Lớp quyết định: nhánh HSI-VN (tự giám sát hồi cứu + conformal) hợp với các bậc tin cậy cực đoan của OWF.
+5. Lớp quyết định: nhánh HSI-VNc (tự giám sát hồi cứu + conformal, dạng nhân quả của HSI-VN) hợp với các bậc tin cậy cực đoan của OWF.
 
 **Bằng chứng chính.** Ba nhóm seed tươi (64–72; 432 run; 8 dataset × 6 descriptor; quyết định đăng ký trước mỗi lần):
-- recall 0.926–0.932 (mã đã kiểm toán);
-- 4/432 run vượt α; với phủ quyết thế giới mở: 0/432;
-- hơn HSI-VN +0.117 … +0.136;
+- recall 0.926–0.933 (mã đã kiểm toán hai lần);
+- 3/432 run vượt α; với phủ quyết thế giới mở: 0/432;
+- hơn HSI-VNc (nhánh học đứng riêng) +0.117 … +0.133;
 - vượt oracle một-frame (~0.85);
 - ba phương pháp ngoài có ngưỡng chỉnh bằng nhãn (TAO'26, Xu'21, Claxton'24) vượt α trên 56–90 % số run.
 
-Mọi con số đã được **chạy lại bằng mã đã kiểm toán** (Entry 27, §3.6).
+Mọi con số đã được **chạy lại bằng mã đã kiểm toán hai lần** (Entry 27, §3.6; Entry 28, §3.7).
 
 **Giới hạn chính:**
 - lớp quyết định vẫn là tổ hợp kỹ thuật;
@@ -53,43 +53,49 @@ Mọi con số đã được **chạy lại bằng mã đã kiểm toán** (Entr
 
 ### 2.1 Luật cuối trên ba nhóm seed tươi (đăng ký trước; mã đã kiểm toán, Entry 27)
 
-Mỗi nhóm 144 run (8 dataset × 6 descriptor × 3 seed), quyết định đăng ký trước; số dưới đây là số **chạy lại bằng mã đã kiểm toán** (`--lu hsq2`).
+Mỗi nhóm 144 run (8 dataset × 6 descriptor × 3 seed), quyết định đăng ký trước; số dưới đây là số **chạy lại bằng mã đã kiểm toán hai lần**
+(`--lu hsq2`, Entry 27; nhánh HSI nhân quả `HSI-VNc`, Entry 28).
 
 | Nhóm | Entry | Luật cuối: recall / TB segFAR / run > α / điều hướng (m) | + phủ quyết ½ | So sánh cặp | Quyết định |
 |---|---|---|---|---|---|
-| 64–66 | 23 | 0.932 / 0.0059 / 4 / 14.56 | 0.924 / 0.0024 / **0** / 14.91 | vs luật cũ S5: −0.0038 [−0.0071, −0.0010], TB segFAR 0.0074 → 0.0059 | thay luật cũ (V1–V3 đạt) |
-| 67–69 | 24 | 0.927 / 0.0029 / **0** / 12.53 | 0.920 / 0.0009 / **0** / 12.93 | vs HSI-VN: +0.136 [+0.118, +0.154] | xác nhận (C1–C4, S1–S2 đạt) |
-| 70–72 | 26 | 0.926 / 0.0035 / **0** / 13.97 | 0.918 / 0.0013 / **0** / 14.56 | vs HSI-VN: +0.117 [+0.101, +0.134] | xác nhận (C1–C4, S1–S2 đạt) |
+| 64–66 | 23 | 0.933 / 0.0058 / 3 / 14.88 | 0.924 / 0.0026 / **0** / 15.34 | vs luật cũ S5 (cùng nhánh HSI-VNc): −0.0035 [−0.0068, −0.0006], TB segFAR 0.0076 → 0.0058, run > α 4 → 3 | thay luật cũ (V1–V3 đạt) |
+| 67–69 | 24 | 0.928 / 0.0029 / **0** / 12.58 | 0.920 / 0.0007 / **0** / 12.93 | vs HSI-VNc độc lập: +0.133 [+0.115, +0.151] | xác nhận (C1–C4, S1–S2 đạt) |
+| 70–72 | 26 | 0.926 / 0.0034 / **0** / 14.01 | 0.919 / 0.0013 / **0** / 14.62 | vs HSI-VNc độc lập: +0.117 [+0.100, +0.133] | xác nhận (C1–C4, S1–S2 đạt) |
 
-Tổng: **4/432 run > α (0.9 %)**, cả 4 ở CMU seed 64–66; với phủ quyết **0/432**. Luật cũ OWF-HWA-S5 trên 6 nhóm tươi 55–72: 15/864 (1.7 %);
-trên 70–72 nó có 1 run > α, TB segFAR 0.0053 (luật cuối 0, 0.0035).
+Tổng: **3/432 run > α (0.7 %)**, cả 3 ở CMU seed 64–66; với phủ quyết **0/432**. Luật cũ OWF-HWA-S5 cùng nhánh HSI-VNc trên 64–72:
+6/432 (64–66: 4; 67–69: 1; 70–72: 1).
 
 ### 2.2 So với phương pháp ngoài trên cùng run (seed 67–72, 288 run)
 
 | | Ours | + phủ quyết | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle một-frame |
 |---|---|---|---|---|---|---|---|
-| recall (67–69 / 70–72) | 0.927 / 0.926 | 0.920 / 0.918 | 0.791 / 0.809 | 0.834 / 0.839 | 0.692 / 0.696 | 0.738 / 0.739 | 0.847 / 0.848 |
+| recall (67–69 / 70–72) | 0.928 / 0.926 | 0.920 / 0.919 | 0.795 / 0.810 | 0.834 / 0.839 | 0.692 / 0.696 | 0.738 / 0.739 | 0.847 / 0.848 |
 | run > α (trên 144) | 0 / 0 | 0 / 0 | 0 / 0 | 130 / 126 | 81 / 83 | 104 / 101 | 0 / 0 |
-| điều hướng (m) | 12.5 / 14.0 | 12.9 / 14.6 | 15.5 / 15.2 | 110 / 115 | 51 / 57 | 44 / 49 | 10.6 / 11.7 |
+| điều hướng (m) | 12.6 / 14.0 | 12.9 / 14.6 | 14.5 / 15.4 | 110 / 115 | 51 / 57 | 44 / 49 | 10.6 / 11.7 |
 
-Đối thủ ngoài dùng ngưỡng chỉnh bằng NHÃN như trong bài báo gốc. Hai cột đầu là số chạy lại bằng mã đã kiểm toán; đối thủ không dùng HQ nên không đổi.
+Đối thủ ngoài dùng ngưỡng chỉnh bằng NHÃN như trong bài báo gốc. Ba cột đầu là số chạy lại bằng mã đã kiểm toán hai lần (cột HSI-VN nay là
+HSI-VNc độc lập); đối thủ không dùng HQ / HSI nên không đổi.
 
-### 2.3 Tổng quát trên các tập không dùng để chỉnh (cùng run; recall / TB segFAR tệ nhất / run > α; cột Ours chạy lại bằng mã đã kiểm toán)
+### 2.3 Tổng quát trên các tập không dùng để chỉnh (cùng run; recall / TB segFAR tệ nhất / run > α; ba cột đầu chạy lại bằng mã đã kiểm toán hai lần, mọi cột dùng HSI-VNc)
 
-| Tập | Ours | Luật cũ (S5) | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+| Tập | Ours | Luật cũ (S5) | HSI-VNc | TAO'26 | Xu'21 | Claxton'24 | oracle |
 |---|---|---|---|---|---|---|---|
-| lỗ 10 % (108) | **0.932 / 0.005 / 0** | 0.933 / 0.008 / 1 | 0.772 / 0.002 / 0 | 0.843 / 0.775 / 92 | 0.646 / 0.145 / 35 | 0.737 / 0.517 / 86 | 0.827 |
-| lỗ 50 % (108) | **0.873 / 0.030 / 4** | 0.894 / 0.032 / 4 | 0.754 / 0.030 / 4 | 0.842 / 0.754 / 93 | 0.609 / 0.381 / 30 | 0.678 / 0.133 / 60 | 0.829 |
-| off-map tự nhiên (36) | **0.943 / 0.003 / 0** | 0.952 / 0.010 / 2 | 0.742 / 0.004 / 0 | 0.578 / 0.075 / 4 | 0.581 / 0.037 / 10 | 0.678 / 0.020 / 5 | 0.822 |
-| NCLT (6) | **0.770 / 0.002 / 0** | 0.781 / 0.005 / 0 | — | 0.756 / 0.713 / 6 | 0.526 / 0.021 / 1 | 0.663 / 0.213 / 5 | 0.724 |
+| lỗ 10 % (108) | **0.932 / 0.004 / 0** | 0.933 / 0.008 / 1 | 0.777 / 0.003 / 0 | 0.843 / 0.775 / 92 | 0.646 / 0.145 / 35 | 0.737 / 0.517 / 86 | 0.827 |
+| lỗ 50 % (108) | **0.872 / 0.028 / 4** | 0.894 / 0.030 / 4 | 0.751 / 0.027 / 4 | 0.842 / 0.754 / 93 | 0.609 / 0.381 / 30 | 0.678 / 0.133 / 60 | 0.829 |
+| off-map tự nhiên (36) | **0.945 / 0.004 / 0** | 0.954 / 0.012 / 1 | 0.756 / 0.011 / 0 | 0.578 / 0.075 / 4 | 0.581 / 0.037 / 10 | 0.678 / 0.020 / 5 | 0.822 |
+| NCLT (6) | **0.769 / 0.001 / 0** | 0.780 / 0.003 / 0 | — | 0.756 / 0.713 / 6 | 0.526 / 0.021 / 1 | 0.663 / 0.213 / 5 | 0.724 |
 
 ### 2.4 Ablation (tập A, 399 run cùng run; recall / TB segFAR / run > α / điều hướng m)
 
 | S5 (luật cũ) | + NT | + HQ | + NT + HQ (cuối) |
 |---|---|---|---|
-| 0.933 / 0.0045 / 1 / 12.7 | 0.932 / 0.0040 / 2 / 12.4 | 0.930 / 0.0034 / 0 / 12.9 (mã hsq) | 0.929 / 0.0034 / 0 / 13.0 (chạy lại hsq2: 0.9285 / 0.0034 / 0 / 13.0) |
+| 0.933 / 0.0045 / 1 / 12.7 | 0.932 / 0.0040 / 2 / 12.4 | 0.930 / 0.0034 / 0 / 12.9 (mã hsq) | 0.929 / 0.0034 / 0 / 13.0 (chạy lại hsq2 + HSI-VNc: 0.9287 / 0.0032 / 0 / 13.5) |
 
 HQ mang gần hết lợi ích hợp lệ. CMU: 0.852 / 0.0095 → 0.863 / 0.0066. Nordland: segFAR 0.0069 → 0.0026.
+
+Chạy lại với nhánh HSI-VNc ở CẢ HAI cột (Entry 28): S5 0.9328 / 0.0040 / 0 / 12.4 → luật cuối 0.9287 / 0.0032 / 0 / 13.5 (Δrecall −0.0041
+[−0.0061, −0.0022]). CMU 0.848 / 0.0092 → 0.859 / 0.0062; Nordland segFAR 0.0069 → 0.0026. **Điều hướng tập A tệ hơn 1.2 m**, chủ yếu old town
+(20.9 → 29.1 m) và Boreas (5.3 → 6.6 m): giá của HQ ở đầu phiên điều kiện chưa thấy, nay rõ hơn (trước kiểm toán lần hai: +0.35 m).
 
 ### 2.5 Cơ chế đã xác nhận
 
@@ -120,6 +126,8 @@ HQ mang gần hết lợi ích hợp lệ. CMU: 0.852 / 0.0095 → 0.863 / 0.006
   Mệnh đề 2 cần (E1′), và (E1′) không được kiểm.
 - **Đầu chuỗi CMU:** trong 2 excl đầu luật báo 53–82 % số frame trên bản đồ, top-1 đúng 95–97 %. Nguyên nhân là đếm bằng chứng theo quãng đường
   (ℓ cố định).
+- **Điều hướng trên tập A tệ hơn luật cũ 1.2 m** (13.5 so với 12.4; old town 29.1 so với 20.9 m) khi cả hai dùng nhánh HSI-VNc (Entry 28). Trên seed
+  tươi luật cuối vẫn tốt hơn hoặc ngang (V3 đạt cả ba nhóm).
 - **Đầu phiên ở điều kiện chưa thấy** (đêm): trước khi phiên có 100 mẫu riêng, HQ dùng phân bố của các phiên khác. Old town −0.012 … −0.018,
   countryside −0.006 … −0.024 so với luật cũ.
 - **Hiệu chỉnh xuyên phiên:** dự phòng dùng các phiên khác của cùng run (một đội xe đã đi bản đồ). Biến thể nghiêm ngặt chỉ dùng phiên trước:
@@ -146,8 +154,26 @@ HQ mang gần hết lợi ích hợp lệ. CMU: 0.852 / 0.0095 → 0.863 / 0.006
   - 64–66: CMU segFAR tệ nhất 0.0254 → 0.0366 (luật cũ 0.0364), 5 run > α, phủ quyết 4 run → V1 của Entry 23 trượt.
   - ⇒ **lợi ích hợp lệ của HQ ở CMU dựa một phần vào hiệu chỉnh xuyên phiên** (transductive trong một đợt triển khai). Phải báo cùng giả định.
 - **Lý thuyết:** Mệnh đề 2 khi có HQ cần (E1′) (`owf_theory.md` §11 (iii)); Mệnh đề 7(a) thêm điều kiện niềm tin khuếch tán.
-- **Tổng quát** chạy lại bằng hsq2: lỗ 10 % 0.932 / 0.005 / 0, lỗ 50 % 0.873 / 0.030 / 4, off-map tự nhiên 0.943 / 0.003 / 0, NCLT 0.770 / 0.002 / 0 (recall / TB segFAR tệ nhất / run > α) — trùng mã hsq ở ba tập đầu (37/108, 31/108, 16/36 run trùng khít, số gộp như nhau), NCLT 0.768 / 0.001 → 0.770 / 0.002.
+- **Tổng quát** chạy lại bằng hsq2 (nhánh HSI-VN cũ): lỗ 10 % 0.932 / 0.005 / 0, lỗ 50 % 0.873 / 0.030 / 4, off-map tự nhiên 0.943 / 0.003 / 0, NCLT 0.770 / 0.002 / 0 (recall / TB segFAR tệ nhất / run > α) — trùng mã hsq ở ba tập đầu (37/108, 31/108, 16/36 run trùng khít, số gộp như nhau), NCLT 0.768 / 0.001 → 0.770 / 0.002.
 - Bảng đầy đủ: `RESEARCH_LOG.md` Entry 27, `analysis/results/owf/s1106/e27_*`.
+
+### 3.7 Kiểm toán lần hai 2026-11-07 (Entry 28)
+
+- **Nhánh HSI-VN có nhìn trước trong nhãn hồi cứu** (dùng trong mọi luật union từ Entry 11):
+  - s0 / κ của cầu nối là trung vị trên cả đợt triển khai;
+  - nhãn khoảng trống được chốt trước khi đoạn phải dùng để khớp được xác minh;
+  - bước odometry để đổi cửa sổ mét sang frame lấy từ cả đợt.
+- **Sửa:** biến thể `HSI-VNc`. Kiểm thử đầu-cuối `analysis/tests/test_hsi_causality.py` (thay dữ liệu sau mốc R bằng rác, đếm quyết định trước
+  R bị đổi): HSI-VN đổi 3–2839, HSI-VNc đổi 0.
+- **Chạy lại nhánh HSI** cho mọi tập (frame OWF giữ nguyên):
+  - Δrecall của luật cuối so với Entry 27: +0.0005 / +0.0007 / +0.0008 (seed tươi), +0.0002 (tập A), −0.0005 … +0.0019 (tổng quát);
+  - run > α: 4 → **3/432**; phủ quyết 0/432; mọi quyết định đăng ký trước vẫn đúng;
+  - đường cơ sở HSI-VNc độc lập: 0.795 / 0.810 (trước 0.791 / 0.809).
+- Biến thể nghiêm ngặt với HSI-VNc: 5/432 run > α, phủ quyết 4/432, chỉ ở CMU 64–66 (như Entry 27). Luật cũ S5 cùng nhánh HSI-VNc trên 64–72: 6/432.
+- Các phần kiểm lại và đúng: bộ lọc + engine GPU, lớp quyết định, `est_c`, đặc trưng HSI, metric, đối thủ. Lý thuyết: sửa phát biểu N (Mệnh đề
+  2) và λ_seed (Mệnh đề 5), nêu thiên lệch của mẫu f_off (Mệnh đề 7).
+- **Quy ước phải ghi trong paper:** điều hướng khởi tạo bằng vị trí thật; sai số điều hướng vô nghĩa trên tập off-map tự nhiên (hai hệ toạ độ)
+  nên không báo.
 
 ## 4. Điều kiện kiểm chứng
 

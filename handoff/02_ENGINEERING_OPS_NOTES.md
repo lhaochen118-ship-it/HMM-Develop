@@ -25,6 +25,7 @@
 2. **Nhóm job:** `automation/owf_wave.py <groups.txt> --set inc:<tập> [--pool rXX] --tag <T> --owfextra "<cờ owf.py>" [--sota] --kernels N --par 24`.
    - Tập: `setA` (phát triển, 405 job), `fresh<a>-<b>` (nhóm seed mới), `holes`, `natural`, `nclt`.
    - `--sota` thêm `sota_job.py` (TAO'26, Xu'21, Claxton'24, top-1, oracle) trên cùng run.
+2b. Luật cuối: thêm `--hsimodes HSI-VNc` khi dựng nhóm job (nhánh HSI nhân quả, Entry 28).
 3. **Dựng kernel:** `VPR_CODE_DS=dive-vpr-owf automation/fanout.py <work> <prefix> <groups.txt> --groups --build-only --l4 --par 24 --nocopy
    --ds <dataset nguồn>`. Bước này tự đồng bộ code dataset của mọi tài khoản và chờ "ready".
    - Tập A cần `nhatlong1103/hmm-navcache-v2, hmm-e37-caches, nclt-vpr-dump, oxford-robotcar-vpr-dump, stlucia-vpr-dump`.
@@ -35,7 +36,8 @@
    - `owf_union.py <fr> <h> <navcache> <out.json> --tag <tag>xms09_16 --ftag _<tag> --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5);H"`;
      thêm `OWF_VETO=0.5` cho điểm vận hành an toàn;
    - so sánh: `hcal_board.py <merged.json> --ref <R> --variants ...` (bootstrap CI theo run).
-6. **Kiểm mã đúng phiên bản:** mỗi JSON `owf_*.json` của luật cuối phải có `lu.mode = "hsq2"`. `owf.py` bỏ qua giá trị lạ của `--lu`, nên
+6. **Kiểm mã đúng phiên bản:** mỗi JSON `owf_*.json` của luật cuối phải có `lu.mode = "hsq2"`, và mỗi `hsifr_*.npz` phải có khoá `HSI-VNc`
+   (`owf_union.py --hvar HSI-VNc` báo thiếu khoá nếu kernel chạy mã cũ). `owf.py` bỏ qua giá trị lạ của `--lu`, nên
    kernel chạy mã cũ vẫn ra kết quả nhưng sai luật.
 
 Chi phí đo được (L4):
@@ -64,11 +66,16 @@ Chi phí đo được (L4):
 - **Một cờ cho mỗi thay đổi**, mặc định = hành vi cũ (`--pin`, `--lu`, `OWF_VETO*`). Ablation và tái lập vì thế dễ.
 - **Kiểm thử tính nhân quả** cho mọi ước lượng "từ dữ liệu của chính phiên": đổi tương lai, quá khứ phải không đổi
   (`analysis/tests/test_hq_causality.py`). Bài kiểm này bắt được hai rò rỉ mà mắt không thấy (Entry 27).
+- **Kiểm thử nhân quả ĐẦU-CUỐI** cho cả một nhánh quyết định (`analysis/tests/test_hsi_causality.py`): cắt ở hạng R, thay mọi dữ liệu sau R
+  bằng rác, đếm quyết định trước R bị đổi. Kiểm từng hàm không đủ: rò rỉ của HSI nằm ở tham số toàn cục dùng để TẠO nhãn (Entry 28).
+- **Chạy lại một nhánh mà không chạy lại GPU:** frame OWF (`fr_*_b1.npz`) đã có cục bộ, nên nhánh HSI chạy lại bằng
+  `owf_hybrid.py ... --variants HSI-VNc --hsiframes` song song 4 tiến trình (`OMP_NUM_THREADS=1`), ~27 run/phút; rồi `owf_union.py --hvar HSI-VNc`.
 
 ## 4. Lỗi đã gặp và cách sửa (phiên 2026-11-05 → 07)
 
 | Lỗi | Triệu chứng | Sửa / phòng |
 |---|---|---|
+| Nhãn hồi cứu của HSI-VN dùng tham số toàn phiên (s0, κ, bước odometry) và chốt nhãn sớm hơn dữ liệu nó dùng | Đổi tương lai làm đổi tới hàng nghìn quyết định quá khứ (kiểm thử đầu-cuối) | `HSI-VNc` + `tests/test_hsi_causality.py`; chạy lại nhánh HSI cục bộ trên frame OWF có sẵn (Entry 28) |
 | Rò rỉ tương lai trong hiệu chỉnh HQ | LR ở frame t phụ thuộc frame sau (sàn KDE lấy biên từ khối 50 frame; stride thưa mẫu theo tổng số frame tự tin của phiên) | `--lu hsq2` + kiểm thử nhân quả; chạy lại mọi kết quả (Entry 27) |
 | Script đánh giá sao chép | In dòng DECISION của luật khác | Tính lại từ luật đã commit; ghi chú trong log |
 | Đọc nhầm phân vị | Ghi trung vị z bí danh 3.27 (thật ra phân vị 25 %; trung vị 4.09) | In thống kê có nhãn rõ; đã đính chính |
@@ -90,11 +97,11 @@ Chi phí đo được (L4):
 - Mọi khẳng định "nhân quả", "không nhãn", "không chỉnh theo dataset" cần một kiểm thử hoặc một dòng mã chứng minh. Không đủ nếu chỉ dựa vào
   mô tả.
 
-## 6. Lệnh của luật cuối (OWF-HWA-S5-NT-HQ, mã đã kiểm toán)
+## 6. Lệnh của luật cuối (OWF-HWA-S5-NT-HQ, mã đã kiểm toán hai lần: `--lu hsq2` + nhánh `HSI-VNc`)
 
 ```
-owf_hsi_job.py <cache> <dump> <ds> <desc> <seed> --tag T --modes xms0.9_16:HSI-VN --hsiframes \
+owf_hsi_job.py <cache> <dump> <ds> <desc> <seed> --tag T --modes xms0.9_16:HSI-VNc --hsiframes \
     --qx 0.005,0.02 --scales 0.94,0.97,1.0,1.03,1.06 --engine torch --pin 0 --lu hsq2
-owf_union.py <fr_dir> <hsifr_dir> <navcache_dir> out.json --tag Txms09_16 --ftag _T --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"
+owf_union.py <fr_dir> <hsifr_dir> <navcache_dir> out.json --tag Txms09_16 --ftag _T --hvar HSI-VNc --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"
 OWF_VETO=0.5 owf_union.py ...          # điểm vận hành an toàn
 ```

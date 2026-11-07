@@ -35,11 +35,11 @@
 | `analysis/owf_torch.py` | engine GPU: cả ngân hàng bộ lọc trong một tensor; xuất `mN`, `mN16` |
 | `analysis/owf_hsi_job.py` | một job Kaggle: OWF rồi OWF-H / HSI-VN (`owf_hybrid.py`) trên cùng run |
 | `analysis/owf_union.py` | lớp quyết định cuối: union HSI ∪ các bậc OWF; `OWF_VETO`, `OWF_VETO_KEY`, `OWF_VETO_ALL` |
-| `analysis/hsi.py`, `hsi_eval.py` | nhánh HSI (tự giám sát hồi cứu + conformal; ý tưởng 2a) |
+| `analysis/hsi.py`, `hsi_eval.py` | nhánh HSI (tự giám sát hồi cứu + conformal; ý tưởng 2a); biến thể dùng: `HSI-VNc` (nhân quả, Entry 28) |
 | `analysis/sota_job.py`, `tao.py`, `safevpr26*.py` | đối thủ ngoài (TAO'26, Xu'21, Claxton'24, SafeVPR'26), top-1, oracle |
 | `analysis/nav_demo.py`, `position_audit.py`, `vprlib.py`, `sc_eval.py` | giao thức: cache, metric, kiểm toán vị trí, loader dataset |
 | `analysis/hcal_board.py` | bảng so sánh có CI bootstrap theo run |
-| `analysis/tests/test_hq_causality.py` | kiểm thử tính nhân quả của HQ (chạy trước mọi thay đổi HQ) |
+| `analysis/tests/test_hq_causality.py`, `test_hsi_causality.py` | kiểm thử nhân quả của HQ và kiểm thử đầu-cuối của nhánh HSI (chạy trước mọi thay đổi) |
 | `analysis/fig_shifted_alias.py` | hình bí danh dịch chuyển (Mệnh đề 6) |
 | `analysis/results/owf/s1106/` | kết quả Entry 19–27 (bảng `.md`, JSON `.tgz`, script đánh giá) |
 | `automation/owf_wave.py`, `fanout.py`, `central_monitor.py`, `fetch_done.py`, `publish_dataset.py`, `md2pdf.py` | vận hành Kaggle (xem PDF 2) |

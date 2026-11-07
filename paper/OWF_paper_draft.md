@@ -4,7 +4,7 @@
 filled only from pre-registered experiments (`RESEARCH_LOG.md`). Nothing here claims A\*-level novelty or state-of-the-art performance
 beyond what the cited experiments show.*
 
-## Abstract (draft, 2026-11-07, from pre-registered results only; numbers from the audited re-run, Entry 27)
+## Abstract (draft, 2026-11-07, from pre-registered results only; numbers from the twice-audited re-run, Entries 27–28)
 
 A robot localizing against an image map with holes must decide, frame by frame, whether to report a position fix. A false fix while it
 is off the map corrupts navigation. We propose an open-world filter: a mass-conserving Bayes filter on a metric grid that covers mapped and
@@ -19,8 +19,8 @@ samples, from the run's other sessions).
 On three groups of fresh hole layouts (8 datasets, 6 global descriptors, 432 runs; decisions pre-registered before each test), the final
 system:
 - reports correct fixes on 0.93 of on-map frames, above a single-frame oracle (0.85 on the group where it was measured);
-- exceeds the false-report target on 4 of 432 runs (0.9 %), and on none with an open-world veto of its learned branch;
-- achieves navigation errors 8–19 % lower than our closed-world, hindsight-calibrated baseline (HSI-VN; 12.5 vs 15.5 m and 14.0 vs 15.2 m).
+- exceeds the false-report target on 3 of 432 runs (0.7 %), and on none with an open-world veto of its learned branch;
+- achieves navigation errors 9–13 % lower than our closed-world, hindsight-calibrated baseline (HSI-VNc; 12.6 vs 14.5 m and 14.0 vs 15.4 m).
 
 Three published integrity / off-map methods, tuned with labels, exceed the target on 56–90 % of the same runs (two groups, 288 runs).
 
@@ -132,7 +132,7 @@ at rate KL(f_off ‖ f_on).
 
 Fresh pre-registered test (Entry 23, seeds 64–66, 144 runs): it replaced OWF-HWA-S5 by the rule (validity not worse, recall cost ≤ 0.006,
 navigation not worse by > 0.5 m):
-- mean segFAR 0.0074 → 0.0059, recall −0.0038, navigation 14.67 → 14.56 m (audited re-run, Entry 27);
+- mean segFAR 0.0076 → 0.0058, recall −0.0035, navigation 15.15 → 14.88 m (re-run with the twice-audited code, Entries 27–28);
 - CMU recall +0.009 with segFAR −30 % and navigation 8.5 → 7.1 m; Nordland navigation 7.5 → 4.1 m;
 - with a veto of the hindsight branch where the near-map mass is < ½: 0/144 runs above α.
 - on the sets never used for tuning (holes 10/50 %, natural off-map, NCLT), it is more valid everywhere (runs above α 7 → 4, all CMU at
@@ -153,15 +153,15 @@ Development set (399 runs, same runs as the incumbent):
 3. Second pass: the same bank with unmapped / Ω log-LR log f_off(x_t) − log f_on(x_t).
    - Densities come from the session's own earlier samples (≥ 100), else from the run's other sessions.
    - KDE with 1 % uniform contamination, evaluated in blocks of 50 frames.
-4. Decision: the hindsight branch HSI-VN on the OWF-handed chain (mass ≥ 0.9 after 16 excl), OR the OWF reports at:
+4. Decision: the hindsight branch (HSI-VNc, the causal form of HSI-VN, Entry 28) on the OWF-handed chain (mass ≥ 0.9 after 16 excl), OR the OWF reports at:
    - 1 − 10⁻⁵ after 16 excl;
    - 1 − 10⁻⁸ after 2 excl;
    - 1 − 3·10⁻⁴ with three-way agreement after 0.5 excl.
 5. Optional safe operating point: the hindsight branch reports only where the OWF near-map mass is ≥ ½.
 
 Every constant is shared by all datasets and descriptors. The tiers come from Entries 12–15; 1.6 excl, 1 %, 100 and 50 from Entry 23. One
-command per run: `owf_hsi_job.py <cache> <dump> <ds> <desc> <seed> --modes xms0.9_16:HSI-VN --hsiframes --qx 0.005,0.02 --scales
-0.94,0.97,1.0,1.03,1.06 --engine torch --pin 0 --lu hsq2`, then `owf_union.py ... --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"`
+command per run: `owf_hsi_job.py <cache> <dump> <ds> <desc> <seed> --modes xms0.9_16:HSI-VNc --hsiframes --qx 0.005,0.02 --scales
+0.94,0.97,1.0,1.03,1.06 --engine torch --pin 0 --lu hsq2`, then `owf_union.py ... --hvar HSI-VNc --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"`
 (with `OWF_VETO=0.5` for the safe point). Cost: two passes of the 10-member bank, about 6 ms/frame on one L4.
 
 ## 4. Theory
@@ -187,6 +187,9 @@ One configuration for every dataset; no per-dataset tuning.
 
 ## 6. Experiments (filled only from pre-registered entries or from sets never used for tuning)
 
+*Rows before seeds 64 (Entries 11–21) used the historical hindsight branch HSI-VN, whose labels looked ahead (Entry 28); they document the
+development path and are not re-run.*
+
 **6.1 Pre-registered fresh-seed tests of the full system** (`RESEARCH_LOG.md` Entries 11–15; 144 runs per group, 8 datasets × 6 descriptors,
 paired against the previous rule on the same runs). Pooled recall / runs above α / navigation error:
 
@@ -200,39 +203,39 @@ paired against the previous rule on the same runs). Pooled recall / runs above �
 | 55–57 | OWF-HWA-S5 (confirmation, Entry 17) | 0.937 | +0.131 vs HSI-VN | 1 | 12.48 |
 | 58–60 | OWF-HWA-S5 (reference of Entry 19) | 0.934 | — | 6 | 16.29 |
 | 61–63 | OWF-HWA-S5 (reference of Entry 21) | 0.927 | — | 2 | 12.91 |
-| 64–66 | **OWF-HWA-S5-NT-HQ (Entry 23, final rule)** | 0.932 | −0.0038 vs OWF-HWA-S5 (mean segFAR 0.0074 → 0.0059) | 4 | 14.56 (vs 14.67) |
-| 64–66 | OWF-HWA-S5-NT-HQ + veto ½ (reported) | 0.924 | −0.0088 vs final rule (mean segFAR 0.0024) | **0** | 14.91 |
-| 67–69 | **OWF-HWA-S5-NT-HQ (confirmation, Entry 24)** | 0.927 | +0.136 vs HSI-VN | **0** | 12.53 |
-| 67–69 | OWF-HWA-S5-NT-HQ + veto ½ (safe point, Entry 24) | 0.920 | −0.0067 vs final rule (mean segFAR 0.0009) | **0** | 12.93 |
-| 70–72 | **OWF-HWA-S5-NT-HQ (third confirmation, Entry 26)** | 0.926 | +0.117 vs HSI-VN | **0** | 13.97 |
-| 70–72 | OWF-HWA-S5-NT-HQ + veto ½ (safe point) | 0.918 | −0.0074 vs final rule (mean segFAR 0.0013) | **0** | 14.56 |
+| 64–66 | **OWF-HWA-S5-NT-HQ (Entry 23, final rule)** | 0.933 | −0.0035 vs OWF-HWA-S5 (mean segFAR 0.0076 → 0.0058) | 3 | 14.88 (vs 15.15) |
+| 64–66 | OWF-HWA-S5-NT-HQ + veto ½ (reported) | 0.924 | −0.0090 vs final rule (mean segFAR 0.0026) | **0** | 15.34 |
+| 67–69 | **OWF-HWA-S5-NT-HQ (confirmation, Entry 24)** | 0.928 | +0.133 vs HSI-VNc | **0** | 12.58 |
+| 67–69 | OWF-HWA-S5-NT-HQ + veto ½ (safe point, Entry 24) | 0.920 | −0.0071 vs final rule (mean segFAR 0.0007) | **0** | 12.93 |
+| 70–72 | **OWF-HWA-S5-NT-HQ (third confirmation, Entry 26)** | 0.926 | +0.117 vs HSI-VNc | **0** | 14.01 |
+| 70–72 | OWF-HWA-S5-NT-HQ + veto ½ (safe point) | 0.919 | −0.0075 vs final rule (mean segFAR 0.0013) | **0** | 14.62 |
 
 Over the three fresh groups that confirm the final rule (55–63, 432 runs), it reached pooled recall 0.927–0.937 with pooled mean segFAR
 0.0063. 9/432 runs (2.1 %) exceed α; 7 of the 9 are CMU, from two hole layouts (seed 60, seed 61) that each cover an odometry-unobservable
 alias (Section 3.3b). The project target "≤ 2 % of runs above α" holds on 2 of the 3 groups.
 
-Rows 64–72 are the re-run with the audited implementation (`--lu hsq2`, Entry 27). It differs from the tested one by at most 0.0004 in
-pooled recall per group; runs above α and every pre-registered decision are unchanged. Over the three groups: 4/432 runs above α, all CMU
-seed 64–66; 0/432 with the veto.
+Rows 64–72 are the re-run with the twice-audited implementation (`--lu hsq2`, Entry 27; causal hindsight branch HSI-VNc, Entry 28), and
+the comparisons use the old rule and the standalone hindsight branch with the same causal branch. Every pre-registered decision is
+unchanged. Over the three groups: 3/432 runs above α, all CMU seed 64–66; 0/432 with the veto.
 
-**6.1d Strictly online calibration** (Entry 27, same 432 runs). The fallback before a session has 100 own samples uses the run's other
+**6.1d Strictly online calibration** (Entries 27–28, same 432 runs, causal hindsight branch). The fallback before a session has 100 own samples uses the run's other
 sessions (a fleet that has driven the map). With the fallback restricted to earlier sessions (`--lu hsq2s`):
 
 | Group | Final rule (hsq2): recall / worst-dataset mean segFAR / runs > α | Strict (hsq2s) | Strict + veto ½ |
 |---|---|---|---|
-| 64–66 | 0.932 / 0.025 / 4 | 0.932 / 0.037 / 5 | 0.923 / 0.028 / 4 |
-| 67–69 | 0.927 / 0.009 / 0 | 0.927 / 0.008 / 0 | 0.920 / 0.004 / 0 |
-| 70–72 | 0.926 / 0.009 / 0 | 0.925 / 0.012 / 0 | 0.918 / 0.008 / 0 |
+| 64–66 | 0.933 / 0.026 / 3 | 0.932 / 0.036 / 5 | 0.923 / 0.028 / 4 |
+| 67–69 | 0.928 / 0.010 / 0 | 0.927 / 0.010 / 0 | 0.920 / 0.003 / 0 |
+| 70–72 | 0.926 / 0.009 / 0 | 0.926 / 0.012 / 0 | 0.919 / 0.007 / 0 |
 
-The strict variant matches on 67–72 but loses the CMU validity gain on 64–66 (worst 0.037, as the old rule's 0.036): part of HQ's benefit
+The strict variant matches on 67–72 but loses the CMU validity gain on 64–66 (CMU mean segFAR 0.036, as the old rule's 0.036; final rule 0.026): part of HQ's benefit
 on CMU comes from calibrating on the same environment's other sessions. We report this as a deployment assumption.
 
 **6.1c External baselines on the fresh group 67–69 for the final rule** (Entry 24, pre-registered, 144 runs, same runs for every rule).
 Cell = pooled recall / worst-dataset mean segFAR / runs above α / navigation error (m):
 
-| Ours (OWF-HWA-S5-NT-HQ) | + veto (safe point) | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+| Ours (OWF-HWA-S5-NT-HQ) | + veto (safe point) | HSI-VNc | TAO'26 | Xu'21 | Claxton'24 | oracle |
 |---|---|---|---|---|---|---|
-| **0.927** / 0.009 / **0** / 12.5 | 0.920 / 0.003 / **0** / 12.9 | 0.791 / – / 0 / 15.5 | 0.834 / 0.992 / 130 / 109.5 | 0.692 / 0.584 / 81 / 51.0 | 0.738 / 0.283 / 104 / 44.3 | 0.847 / 0 / 0 / 10.6 |
+| **0.928** / 0.010 / **0** / 12.6 | 0.920 / 0.003 / **0** / 12.9 | 0.795 (HSI-VNc) / – / 0 / 14.5 | 0.834 / 0.992 / 130 / 109.5 | 0.692 / 0.584 / 81 / 51.0 | 0.738 / 0.283 / 104 / 44.3 | 0.847 / 0 / 0 / 10.6 |
 
 **6.1b External baselines on the fresh group 55–57** (Entry 17, pre-registered, 144 runs, the same runs for every rule). Cell = pooled
 recall / worst-dataset mean segFAR / runs above α / navigation error (m):
@@ -255,20 +258,21 @@ conditions, as in their papers; oracle = report exactly the correct top-1 retrie
 Ours is the only rule that is valid and has high recall. It exceeds the single-frame oracle by 0.06–0.13 because sequence evidence recovers
 frames whose top-1 retrieval is wrong. Its runs above α (CMU at 50 % holes, two natural runs) coincide with its HSI branch.
 
-**6.2a The final rule on the same generality sets** (Entry 23 generality wave, re-run with the audited code in Entry 27; external baselines from 6.2 on the same runs). Cell = pooled
+**6.2a The final rule on the same generality sets** (Entry 23 generality wave, re-run with the twice-audited code in Entries 27–28, every rule with the causal hindsight branch; external baselines from 6.2 on the same runs). Cell = pooled
 recall / worst-dataset mean segFAR / runs above α:
 
-| Set | Ours (OWF-HWA-S5-NT-HQ) | OWF-HWA-S5 | HSI-VN | TAO'26 | Xu'21 | Claxton'24 | oracle |
+| Set | Ours (OWF-HWA-S5-NT-HQ) | OWF-HWA-S5 | HSI-VNc | TAO'26 | Xu'21 | Claxton'24 | oracle |
 |---|---|---|---|---|---|---|---|
-| holes 10 % (108) | **0.932 / 0.005 / 0** | 0.933 / 0.008 / 1 | 0.772 / 0.002 / 0 | 0.843 / 0.775 / 92 | 0.646 / 0.145 / 35 | 0.737 / 0.517 / 86 | 0.827 |
-| holes 50 % (108) | **0.873 / 0.030 / 4** | 0.894 / 0.032 / 4 | 0.754 / 0.030 / 4 | 0.842 / 0.754 / 93 | 0.609 / 0.381 / 30 | 0.678 / 0.133 / 60 | 0.829 |
-| natural off-map (36) | **0.943 / 0.003 / 0** | 0.952 / 0.010 / 2 | 0.742 / 0.004 / 0 | 0.578 / 0.075 / 4 | 0.581 / 0.037 / 10 | 0.678 / 0.020 / 5 | 0.822 |
-| NCLT (6) | **0.770 / 0.002 / 0** | 0.781 / 0.005 / 0 | — | 0.756 / 0.713 / 6 | 0.526 / 0.021 / 1 | 0.663 / 0.213 / 5 | 0.724 |
+| holes 10 % (108) | **0.932 / 0.004 / 0** | 0.933 / 0.008 / 1 | 0.777 / 0.003 / 0 | 0.843 / 0.775 / 92 | 0.646 / 0.145 / 35 | 0.737 / 0.517 / 86 | 0.827 |
+| holes 50 % (108) | **0.872 / 0.028 / 4** | 0.894 / 0.030 / 4 | 0.751 / 0.027 / 4 | 0.842 / 0.754 / 93 | 0.609 / 0.381 / 30 | 0.678 / 0.133 / 60 | 0.829 |
+| natural off-map (36) | **0.945 / 0.004 / 0** | 0.954 / 0.012 / 1 | 0.756 / 0.011 / 0 | 0.578 / 0.075 / 4 | 0.581 / 0.037 / 10 | 0.678 / 0.020 / 5 | 0.822 |
+| NCLT (6) | **0.769 / 0.001 / 0** | 0.780 / 0.003 / 0 | — | 0.756 / 0.713 / 6 | 0.526 / 0.021 / 1 | 0.663 / 0.213 / 5 | 0.724 |
 
 cell = pooled recall / worst-dataset mean segFAR / runs > alpha
 
-The final rule is valid on average everywhere and is the most valid rule on every set. Its runs above α fall from 7 to 4, all of them CMU at
-50 % holes, where every label-free rule has 4. Recall is −0.001 … −0.021 below the previous rule; the largest drop is at 50 % holes.
+The final rule is valid on average everywhere and is the most valid rule on every set except the standalone hindsight branch at 10 % holes
+(0.003 vs 0.004, at recall 0.777 vs 0.932). Its runs above α fall from 6 to 4, all of them CMU at 50 % holes, where every label-free rule has
+4. Recall is −0.001 … −0.022 below the previous rule; the largest drop is at 50 % holes.
 
 **6.2b VPR-Space (planetary / lunar / volcanic; descriptive, Entry 18).** 16 db → query setups × 6 descriptors, natural off-map, the
 protocol scaled by each setup's own ground-truth tolerance τ:

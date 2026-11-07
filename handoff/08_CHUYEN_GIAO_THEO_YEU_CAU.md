@@ -13,7 +13,7 @@ ghi: đã làm gì, bằng chứng nằm ở đâu, và điều gì CHƯA đạt
 |---|---|---|
 | Novelty cốt lõi | Bộ lọc thế giới mở (vùng trống trong trạng thái mét, hiện diện theo vị trí): Gate 18 không thấy trùng. Phân tích bí danh odometry không thấy được (Mệnh đề 6): mới cho bài toán. HQ: nguyên lý trùng CMS / trạng thái OFF có hiệu chỉnh của chính ý tưởng 1; mới ở dạng mật độ trong ô trống | 3.5 |
 | Soundness lý thuyết | Mệnh đề 1–7. Cận Ville cần (E1′), không kiểm được; không có bảo đảm theo run cho lớp quyết định | 3 |
-| Thực nghiệm | 432 run tươi đăng ký trước; 8 dataset × 6 descriptor; SOTA ngoài trên cùng run; ablation; tổng quát (lỗ 10/50 %, tự nhiên, NCLT, VPR-Space); kiểm toán nhân quả + chạy lại | 4.5 |
+| Thực nghiệm | 432 run tươi đăng ký trước; 8 dataset × 6 descriptor; SOTA ngoài trên cùng run; ablation; tổng quát (lỗ 10/50 %, tự nhiên, NCLT, VPR-Space); hai vòng kiểm toán nhân quả (HQ, nhánh HSI; kiểm thử đầu-cuối) + chạy lại mọi số | 4.5 |
 | Độ sạch phương pháp | Lớp quyết định = HSI-VN ∪ ba bậc cố định + nhiều hằng số. Reviewer A\* sẽ gọi là kỹ thuật | 2.5 |
 | Tính thực tế | Lỗ mô phỏng; chỉ descriptor toàn cục; lợi ích HQ trên CMU cần hiệu chỉnh từ các phiên cùng môi trường (Entry 27) | 3 |
 | Trình bày | Bản thảo có abstract, phương pháp, bảng; chưa viết paper hoàn chỉnh | 3 |

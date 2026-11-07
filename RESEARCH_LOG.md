@@ -89,6 +89,84 @@ countryside 7.8 % (và 23 % báo có sai số 10–25 m: fix "đúng" nhưng th�
 CMU — chính là chỗ HSI có cổng nhất quán ngắn hạn) và (ii) hậu nghiệm quá tự tin trên countryside (VIO trôi, đường lặp). Hướng sửa (cổng
 nhất quán theo dead-reckoning giữa hai lần báo, tính quá tự tin theo độ trôi) phải kiểm trên tập MỚI (không còn nhóm dự trữ sau 25–27).
 
+## Entry 28 — Kiểm toán lần hai: nhánh HSI-VN có nhìn trước trong nhãn hồi cứu; sửa (HSI-VNc), kiểm thử đầu-cuối, chạy lại (2026-11-07 07:00 UTC)
+
+**Bối cảnh.** Người dùng yêu cầu chạy lại bước tự kiểm tra một lần nữa. Lần này soát cả những phần Entry 27 chỉ kiểm sơ: nhánh HSI-VN, lớp
+quyết định, chuỗi tô-pô `est_c`, đặc trưng của HSI, engine GPU, metric, điều hướng, đối thủ, và lại toàn bộ Mệnh đề 1–7.
+
+**Sai tìm thấy (nhánh HSI-VN, dùng trong mọi luật union từ Entry 11):** vòng lặp trực tuyến chỉ dùng nhãn đã chốt (`avail < T`), nhưng
+chính nhãn được tạo bằng đại lượng của cả đợt triển khai:
+- (L1) `hindsight_bridge`: s0 (nhiễu khớp) và κ (độ trôi) là trung vị trên MỌI đoạn đã xác minh / mọi lần khép cầu, kể cả tương lai;
+  chúng quyết định biên độ nhãn, tập null hiệu chỉnh và phép thử khép cầu;
+- (L2) khoảng trống khép bởi đoạn phải r1 được chốt tại r1[0] + span, nhưng phép khớp phải dùng r1[:W] (chỉ xác minh xong ở r1[W−1] + span);
+- (L3) bước odometry để đổi cửa sổ mét sang frame là trung vị trên cả đợt.
+
+**Sửa:** biến thể `HSI-VNc` (cờ `causal_bridge`, `causal_step`; mặc định giữ hành vi cũ để tái lập): nhãn chốt ở hạng A chỉ dùng phần dư
+khớp và lần khép cầu đã có ở A; khoảng trống chốt ở r1[min(W, |r1|) − 1] + span; bước odometry từ 20 bước đầu của đợt.
+
+**Kiểm thử đầu-cuối** `analysis/tests/test_hsi_causality.py`: cắt ở hạng R, thay mọi dữ liệu sau R (chuỗi tô-pô, odometry, đặc trưng
+ảnh) bằng rác, đếm quyết định trước R bị đổi.
+
+| Run thiết kế | cắt | HSI-VN: quyết định quá khứ đổi | HSI-VNc |
+|---|---|---|---|
+| CMU s64 CosPlace | 0.2 / 0.5 / 0.8 | 1837 / 2839 / 988 | 0 / 0 / 0 |
+| Nordland s65 | 0.2 / 0.5 / 0.8 | 730 / 197 / 3 | 0 / 0 / 0 |
+| old town s67 | 0.2 / 0.5 / 0.8 | 586 / 508 / 165 | 0 / 0 / 0 |
+
+Nhiễu loạn cực đoan nên con số phóng đại; trên dữ liệu thật ba run thiết kế: recall HSI-VN → HSI-VNc 0.866 → 0.870, 0.921 → 0.921,
+0.909 → 0.921; segFAR 0 ở cả hai.
+
+**Các phần kiểm lại và đúng:** bộ lọc OWF + engine GPU (chỉ tiến; chọn ngân hàng theo evidence tích luỹ); lớp quyết định (quãng đường từ
+đầu, persistence, đồng thuận ba nguồn); `est_c` (DiagFilter tiến); đặc trưng HSI (`running` chỉ nhìn lùi); metric; đối thủ ngoài (chỉnh bằng
+nhãn trên điều kiện dễ của cùng run, như mô tả). Mệnh đề 1, 2, 2′, 3, 5, 6, 7: chứng minh đúng; sửa hai phát biểu (N gồm nửa đường chéo ô;
+λ_seed là tỉ lệ) và nêu một thiên lệch (mẫu f_off loại một đĩa 1.6 excl) — `paper/owf_theory.md` §1, §8, §10, §12.
+
+**Chạy lại nhánh HSI bằng HSI-VNc** trên frame OWF có sẵn (mã hsq2 của Entry 27; cục bộ, 4 lõi). Quy tắc của Entry 23 / 24 / 26 áp lại
+nguyên văn (`analysis/results/owf/s1106/e28_eval2.py`); đường cơ sở HSI cho C2 / C4 cũng là HSI-VNc độc lập. Ô = recall / TB segFAR /
+run > α / tệ nhất / điều hướng (m):
+
+| Nhóm | Luật cuối (hsq2 + HSI-VNc) | + phủ quyết ½ | Δrecall so với HSI-VN (Entry 27) | Quyết định |
+|---|---|---|---|---|
+| 64–66 | 0.9327 / 0.0058 / 3 / 0.0255 / 14.88 | 0.9237 / 0.0026 / **0** / 15.34 | +0.0005 [−0.0005, +0.0014] | Entry 23: V1, V2, V3 ĐẠT so với luật cũ cùng nhánh HSI-VNc (0.9362 / 0.0076 / 4 / 15.15) |
+| 67–69 | 0.9275 / 0.0029 / **0** / 0.0096 / 12.58 | 0.9204 / 0.0007 / **0** / 12.93 | +0.0007 [−0.0002, +0.0015] | Entry 24: C1–C4, S1, S2 ĐẠT |
+| 70–72 | 0.9263 / 0.0034 / **0** / 0.0087 / 14.01 | 0.9188 / 0.0013 / **0** / 14.62 | +0.0008 [−0.0001, +0.0017] | Entry 26: C1–C4, S1, S2 ĐẠT |
+
+- Tổng 432 run tươi: **3/432 run > α** (trước: 4); phủ quyết **0/432**.
+- Đường cơ sở HSI-VNc độc lập (67–69 / 70–72): 0.795 / 0.810, 0 run > α, điều hướng 14.5 / 15.4 m. Luật cuối hơn nó +0.133 [+0.115, +0.151]
+  và +0.117 [+0.100, +0.133].
+- Entry 23 so với luật cũ cùng nhánh HSI-VNc: run > α 4 → 3, TB segFAR 0.0076 → 0.0058, recall −0.0035 [−0.0068, −0.0006], điều hướng
+  15.15 → 14.88 m.
+
+**Tập A và tổng quát (luật cuối, HSI-VNc so với HSI-VN của Entry 27, cùng run).** Ô = recall / TB segFAR tệ nhất / run > α:
+
+| Tập | HSI-VNc | HSI-VN (Entry 27) | Δrecall [CI 95 %] |
+|---|---|---|---|
+| tập A (399) | 0.9287 / 0.0093 / 0 (TB 0.0032; điều hướng 13.54 m) | 0.9285 / 0.0089 / 0 (TB 0.0034; 13.01 m) | +0.0002 [−0.0005, +0.0008] |
+| lỗ 10 % (108) | 0.932 / 0.004 / 0 | 0.932 / 0.005 / 0 | +0.0002 [−0.0006, +0.0009] |
+| lỗ 50 % (108) | 0.872 / 0.028 / 4 | 0.873 / 0.030 / 4 | −0.0003 [−0.0021, +0.0013] |
+| off-map tự nhiên (36) | 0.945 / 0.004 / 0 | 0.943 / 0.003 / 0 | +0.0019 [+0.0004, +0.0036] |
+| NCLT (6) | 0.769 / 0.001 / 0 | 0.770 / 0.002 / 0 | −0.0005 [−0.0015, +0.0004] |
+
+- Tập A theo dataset: thay đổi ≤ 0.003 recall; CMU 0.862 → 0.859, countryside segFAR 0.0049 → 0.0024. Điều hướng tập A +0.5 m (13.0 → 13.5).
+- **Mọi cột so sánh cũng dùng HSI-VNc** (đợt P4): tổng quát — luật cuối / luật cũ S5 / HSI-VNc đứng riêng: lỗ 10 % 0.932 / 0.004 / 0 | 0.933 / 0.008 / 1 |
+  0.777 / 0.003 / 0; lỗ 50 % 0.872 / 0.028 / 4 | 0.894 / 0.030 / 4 | 0.751 / 0.027 / 4; tự nhiên 0.945 / 0.004 / 0 | 0.954 / 0.012 / 1 | 0.756 / 0.011 / 0;
+  NCLT 0.769 / 0.001 / 0 | 0.780 / 0.003 / 0.
+- Tập A, S5 + HSI-VNc → luật cuối: TB segFAR 0.0040 → 0.0032, run > α 0 → 0, recall −0.0041 [−0.0061, −0.0022], **điều hướng 12.4 → 13.5 m**
+  (old town 20.9 → 29.1, Boreas 5.3 → 6.6, CMU 4.3 → 3.7, Nordland 6.2 → 5.0). Khoảng cách điều hướng lớn hơn trước kiểm toán (+0.35 m): phải
+  báo như hạn chế (đầu phiên điều kiện chưa thấy).
+- **Quy ước đánh giá (không phải lỗi phương pháp):** trên tập off-map tự nhiên (hai cảnh 4Seasons, hệ toạ độ khác nhau), một fix sai trong
+  cảnh lạ kéo bộ lọc Kalman đi hàng chục km, nên sai số điều hướng vô nghĩa ở tập này (trung vị ~10⁵ m với CẢ hai phiên bản; các run có
+  segFAR 0 cho 25–96 m). Con số này chưa từng được báo; chỉ báo recall / segFAR cho tập này.
+
+**Biến thể nghiêm ngặt (hsq2s) với HSI-VNc** (cùng run): 64–66 0.932 / 0.0075 / 5 run > α / tệ nhất 0.036 (phủ quyết 4); 67–69 0.927 / 0 run > α;
+70–72 0.926 / 0 run > α. Tổng 5/432 (phủ quyết 4/432) — như Entry 27: phụ thuộc hiệu chỉnh xuyên phiên ở CMU 64–66 không đổi.
+
+**Tham chiếu luật cũ S5 với cùng nhánh HSI-VNc:** 64–66 0.936 / 0.0076 / 4; 67–69 0.931 / 0.0033 / 1; 70–72 0.931 / 0.0049 / 1 → 6/432 run > α
+(luật cuối 3/432). V1–V3 của Entry 23 cũng đạt trên 67–69 và 70–72.
+
+**Kết luận.** Luật khuyến nghị giữ nguyên về cấu trúc; mã khuyến nghị nay là `--pin 0 --lu hsq2` + nhánh `HSI-VNc`. Mọi quyết định đăng ký
+trước của Entry 23, 24, 26 vẫn đúng khi tính lại bằng mã nhân quả ở cả hai nhánh. Kết quả: `analysis/results/owf/s1106/e28_*`.
+
 ## Entry 27 — Kiểm toán mã, công thức và lý thuyết; sửa hai rò rỉ nhân quả của HQ; chạy lại mọi kết quả (2026-11-07 04:05 UTC)
 
 **Bối cảnh.** Người dùng yêu cầu tự kiểm tra mã, công thức, định lý trước mọi bước khác, sửa và chạy lại đến khi đúng hết.

@@ -6,7 +6,8 @@
 
 **State.** A grid G of cells c (size g = excl / 5) over the map's bounding box grown by a band B, cells farther than B from every map image
 removed, plus a far state Ω. Map images i = 1..n with positions m_i. A cell is *mapped* (c ∈ 𝓜) when it contains at least one image.
-N = cells within excl of some image (𝓜 ⊂ N); U = G \ N ∪ {Ω}.
+N = cells whose centre lies within excl + g√d/2 of some image (𝓜 ⊂ N; every reporting disc, centred on a mapped cell, lies in N, since an
+image can sit anywhere in its cell — corrected in the second audit of 2026-11-07, previously "within excl"); U = G \ N ∪ {Ω}.
 
 **Motion (mass-conserving).** b⁻_t = K_t b_{t−1}: shift by the odometry increment u_t, Gaussian blur with variance
 q|u_t| + drift²(2L_s|u_t| + |u_t|²) per axis, mass leaving the band moved to Ω, kidnap: (1 − p_kid) b + p_kid π₀, Ω re-entry p_in Ω π₀.
@@ -33,7 +34,8 @@ w_t < 1, Jensen gives Σ_i (1/n) L_{t,i}^{w} ≤ 1: distance weighting adds a sl
 ## 3. Proposition 2 (false reports in an off-map stretch)
 
 *Setting.* An off-map stretch is a time interval [t₀, t₁] during which the robot is farther than off_d from every image. A report at t
-implies b_t(N) ≥ 1 − ε (the reporting disc lies in N). Let π̃_t be the UNNORMALISED filter: π̃_t = K_t π̃_{t−1} ⊙ L_t^{w_t} (π̃_{t₀} = b_{t₀}).
+implies b_t(N) ≥ 1 − ε (the reporting disc lies in N). Let π̃_t be the UNNORMALISED filter: π̃_t = K_t π̃_{t−1} ⊙ L_t^{w_t} (π̃_{t₀} = b_{t₀}). The filtration 𝓕_{t−1} contains the frames up to t − 1
+and the odometry up to t (the odometry is exogenous), so K_t and w_t are 𝓕_{t−1}-measurable.
 Let λ ∈ [0, 1) bound a.s. the share of the U-mass that the motion and the seeds move into N during the stretch.
 
 *Assumption (E1).* For every cell c of N and every t in the stretch, E[L_t(c)^{w_t} | 𝓕_{t−1}] ≤ 1 (the weighted LR of every near-map cell is a
@@ -163,8 +165,9 @@ Nordland design run (cosplace, seed 1): reports wrong at 1 − 1e-5 / 1 − 1e-8
 segFAR at ε = 1e-3 falls 0.038 → 0.015, navigation error 15.3 → 9.1 m, and recall rises 0.975 → 0.980.
 
 *Claim.* In Proposition 2, let the seeds be the kidnap redraw (rate p_kid over the prior) and the far-state re-entry (rate p_in over a
-distribution ρ). Then the share of U- and Ω-mass moved into N over a stretch of m frames by seeds alone is
-λ_seed ≤ m (p_kid + p_in · Ω_max · ρ(N)), with Ω_max the largest far-state mass in the stretch. With ρ = the start prior, ρ(N) ≥ p_map0 = 0.5:
+distribution ρ). Then the MASS moved into N over a stretch of m frames by seeds alone is at most
+m (p_kid + p_in · Ω_max · ρ(N)), with Ω_max the largest far-state mass in the stretch; as a share of the U-mass (the λ of Proposition 2) it
+is λ_seed ≤ m (p_kid + p_in · Ω_max · ρ(N)) / min_t π̃_t(U). With ρ = the start prior, ρ(N) ≥ p_map0 = 0.5:
 λ_seed grows linearly with the stretch and is multiplied by the evidence inflation K of Proposition 2′. With ρ supported on the band edge,
 ρ(N) = 0 whenever the band is wider than excl (always, band = 12 excl), so λ_seed = m · p_kid (10⁻¹² per frame). With p_in = 0 the far state
 is absorbing, and λ_seed is the same.
@@ -246,9 +249,14 @@ map). The unmapped cells and Ω receive the log-LR lu_t = log f_off(x_t) − log
 
 Densities: Gaussian KDE with ε = 1 % uniform contamination, so the per-frame LR is bounded.
 
+*Bias of the f_off samples.* A sample of f_off is the best image OUTSIDE a 1.6-excl disc around the fix, whereas a truly off-map frame takes
+its maximum over all n images. The off-map x_t is therefore stochastically larger than the samples by the contribution of the excluded disc
+(a few dozen of the thousands of map images). The bias is towards "on the map", i.e. anti-conservative for validity, and small when the disc
+holds a small share of the map; it is not corrected.
+
 *Causality.* The first pass is causal and does not depend on the second. The densities used at frame t of a session are estimated from
 first-pass samples at frames < t of the SAME session once there are ≥ 100 of each kind (same condition). Before that, they come from the run's
-other sessions (`--lu hsq`).
+other sessions (`--lu hsq2`; the tested `--lu hsq` leaked, see §11).
 
 *Claim.*
 - (a) Drift. Under off-map frames, E_off[−lu_t] = −KL(f_off ‖ f_on) ≤ 0: for a diffuse belief over the map (Proposition 1, where the
@@ -279,7 +287,7 @@ own-session calibration (hsq) keeps it at 0.66: only its first stretch, before 1
 - Development set A (399 runs, full system): pooled mean segFAR 0.0045 → 0.0034, runs above α 1 → 0, recall −0.004; CMU recall +0.011,
   Nordland segFAR 0.0069 → 0.0026.
 - Pre-registered fresh test, seeds 64–66 (144 runs): replaced the incumbent by the rule. Mean segFAR 0.0074 → 0.0057, recall −0.0037,
-  navigation 14.67 → 14.51 m. With the veto of the hindsight branch at near-map mass ½: 0/144 runs above α.
+  navigation 14.67 → 14.51 m (tested code; audited re-runs in §11). With the veto of the hindsight branch at near-map mass ½: 0/144 runs above α.
 - (b) held where predicted (Nordland better, not worse as with §9).
 - The remaining cost is the start of sessions in an unseen condition, before 100 own samples: old town −0.018, Boreas −0.013.
 
@@ -317,3 +325,30 @@ decision levels). Every reported number was re-run with hsq2 (Entry 27).
 - The "other place" radius 1.6 excl equals the protocol's off-map distance on the street datasets (40 m at excl 25 m; Nordland 8 vs 10
   frames). It is a method constant shared by all datasets, but its sensitivity has not been measured.
 - The 100-sample switch and the 1 % contamination were fixed before the development wave and not tuned.
+
+## 12. Second audit of 2026-11-07 (the HSI branch, the decision layer, the evaluation, Propositions 2, 5, 7)
+
+**(v) Look-ahead in the hindsight labels of the HSI branch (HSI-VN, used by every union rule since Entry 11).** HSI's online loop only uses
+labels whose `avail` rank has passed, but the labels themselves were built with quantities from the whole deployment:
+- (L1) the bridge noise s0 and drift κ were medians over EVERY verified run and closure, future ones included;
+- (L2) a gap closed by a right run r1 was final at r1[0] + span, while the right fit uses r1[:W] (verified only at r1[W−1] + span);
+- (L3) the frame step that converts the metric windows to frames was the median over the whole deployment.
+Fixed in the variant `HSI-VNc` (`hsi.hindsight_bridge_causal`, `Cfg.causal_step`): a label final at rank A uses the fit residuals and closures
+available at A; gaps become final at r1[min(W, |r1|) − 1] + span; the step comes from the first 20 increments of the deployment.
+`analysis/tests/test_hsi_causality.py` replaces every frame after a cut R (place chain, odometry, appearance features) by garbage and counts
+changed reports before R: HSI-VN changes 3–2839 past reports on the three design runs (extreme perturbation), HSI-VNc changes 0 (PASS).
+On unperturbed data the effect is small (design runs: recall +0.004 / 0 / +0.012, segFAR 0 for both). Results re-run with HSI-VNc: Entry 28.
+
+**(vi) Checked and correct:** the OWF filter and the GPU engine (forward only; bank selection by cumulative evidence); the decision layer
+(path since start, persistence, three-way agreement: all functions of the past); the place chain `est_c` (forward DiagFilter) and the
+features of HSI (`running` uses a backward window only); the metrics (`nav_demo.rule_metrics`); the external baselines (label-tuned on the
+benign conditions of the same run, as described). Propositions 1, 2, 2′, 3, 5, 6, 7: proofs re-derived step by step; two statements made
+precise (N in §1 includes the cell half-diagonal; λ_seed in §8 is a share of the U-mass) and one bias stated (§10, f_off samples).
+
+**(vii) Conventions to state in the paper (not errors).**
+- Navigation error: the Kalman filter starts from the true pose (σ = 1 m) for every method; on datasets without real odometry it simulates its
+  own odometry noise (seed + 7), independent of the odometry the localiser saw.
+- HSI defines its null with the protocol's off-map distance off_d (40 m streets, 20 m NCLT, 10 frames Nordland), as HQ uses 1.6 excl.
+- On the natural cross-scene set the two scenes have unrelated coordinate frames: one false fix in the other scene moves the Kalman estimate by
+  tens of km, so navigation error is not meaningful there and is not reported.
+- The near-map mass mN of the veto uses radius excl at grid phase 0, a slightly smaller set than N of §1; the veto constant ½ was set with it.
