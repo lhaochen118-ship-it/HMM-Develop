@@ -282,6 +282,19 @@ def yaw_drift(z, sigma_deg=None):
     return z
 
 
+def select_member(lml, U, mem=np.inf):
+    """index of the followed bank member at every frame (causal). mem = inf: largest cumulative log evidence sum_{s<=t} log p(z_s | z_<s)
+    (historical; ties -> first member). Finite mem (Entry 30): evidence with forgetting, E_t = exp(-|u_t| / mem) E_{t-1} + log p(z_t | z_<t),
+    i.e. the members are compared on the last ~mem metres of path: the right heading offset changes along a drifting trajectory, and
+    a cumulative score would stay locked on the offset of the sequence start."""
+    lml = np.asarray(lml, float)
+    if not np.isfinite(mem): return np.argmax(np.cumsum(lml, 1), 0)
+    du = np.linalg.norm(np.asarray(U, float), axis=1); a = np.exp(-du / mem); E = np.zeros(lml.shape[0]); ks = np.zeros(lml.shape[1], int)
+    for t in range(lml.shape[1]):
+        E = a[t] * E + lml[:, t]; ks[t] = int(np.argmax(E))
+    return ks
+
+
 def load_run(cache_dir, dump, ds, desc, seed):
     """navcache of (ds, desc, seed) (holes, odometry, labels; nav_demo --cache) + the query / reduced-map descriptors
     (env ODO_YAWRW: heading-drift ablation of the simulated odometry, yaw_drift)"""
@@ -307,6 +320,8 @@ def main():
     betas = [float(b) for b in opt("--beta", "1").split(",")]; ellx = opt("--ellx", "0.4"); drift = float(opt("--drift", "0"))
     qxs, pkid = [float(x) for x in opt("--qx", "0.005,0.02,0.08").split(",")], float(opt("--pkid", "1e-12"))
     scales = [float(x) for x in opt("--scales", "1").split(",")]      # AUTOLOOP iteration 3: odometry scale hypotheses (bank = q x scale)
+    heads = [float(x) for x in opt("--headings", "0").split(",")]      # Entry 30: constant heading-offset hypotheses (deg; bank = q x scale x heading)
+    selmem = float(opt("--selmem", "inf"))                             # Entry 30: member selection by evidence with forgetting over selmem excl of path
     bandx, pin = float(opt("--bandx", "1")), float(opt("--pin", "0.01")); temper = opt("--temper", "ell")
     closed = "--closed" in sys.argv; eps0 = float(opt("--eps0", "1e-3")); tag = opt("--tag", ""); xmode = opt("--xhat", "mean")
     eps_l = [float(e) for e in opt("--eps", "0.2,0.1,0.05,0.02,0.01,0.005,0.002,0.001,5e-4,2e-4,1e-4,1e-5").split(",")]
@@ -343,15 +358,16 @@ def main():
         beta0 = betas[0]; cent_max = np.zeros(nq); med_all = np.zeros(nq); st_l, sa_l, tt_l = [], [], []; ra = 1.6 * excl
         for idx in seqs:
             S_ = Q[idx].astype(np.float32) @ M.T; med_ = np.median(S_, 1); cent_max[idx] = S_.max(1) - med_; med_all[idx] = med_
-            Zs = robust_z(S_); LL = log_lr(Zs, beta0); bank = [(qx, sc) for sc in scales for qx in qxs]
+            Zs = robust_z(S_); LL = log_lr(Zs, beta0); bank = [(qx, sc, hd) for hd in heads for sc in scales for qx in qxs]
             if engine == "torch":
                 import owf_torch as OT
-                o = OT.run_bank(F, LL, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell, reentry=reentry)
+                o = OT.run_bank(F, LL, U[idx], [(qx * excl, sc, hd) for qx, sc, hd in bank], excl, ell, reentry=reentry)
                 xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1); ms_, lm_ = o["mass"], o["lml"]
             else:
-                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, q=qx * excl, reentry=reentry) for qx, sc in bank]
+                import owf_torch as OT
+                rs = [F.run(LL, OT.rot_u(U[idx] * sc, hd), excl, ell=ell, q=qx * excl, reentry=reentry) for qx, sc, hd in bank]
                 xm = np.stack([r_["xhat"] for r_ in rs]); ms_ = np.stack([r_["mass"] for r_ in rs]); lm_ = np.stack([r_["lml"] for r_ in rs])
-            ks = np.argmax(np.cumsum(lm_, 1), 0); tt = np.arange(len(idx)); m1 = ms_[ks, tt]; x1 = xm[ks, tt]
+            ks = select_member(lm_, U[idx], selmem * excl); tt = np.arange(len(idx)); m1 = ms_[ks, tt]; x1 = xm[ks, tt]
             conf = np.flatnonzero((m1 >= 1 - eps0) & (x1 >= 0)); st, sa, tq = [], [], []
             if luopt in ("hsq2", "hsq2s"):                              # all confident frames (causal), vectorised in chunks
                 for c0 in range(0, len(conf), 2000):
@@ -392,7 +408,7 @@ def main():
             luq = None if zc is None else (beta * zc - (beta * Zs[:, 0] - LL[:, 0])).astype(np.float64)
             if luseq is not None: luq = luseq[idx].astype(np.float64)
             wt = corr_weight(Zs, float(temper[4:] or 2))[0] if temper.startswith("corr") else None
-            bank = [(qx, sc) for sc in scales for qx in qxs]
+            bank = [(qx, sc, hd) for hd in heads for sc in scales for qx in qxs]
             if engine == "torch":                                          # same filter, all bank members in one GPU tensor (owf_torch.py)
                 assert wt is None and drift == 0 and not closed and xmode == "mean", "--engine torch: default filter configuration only"
                 import owf_torch as OT
@@ -400,18 +416,19 @@ def main():
                 lus = [None, luq] if luopt == "hsqsel" else [luq]            # Entry 26: {neutral, hsq} as a bank dimension selected by evidence
                 for bb, luv in [(b_, l_) for b_ in (bbank or [beta]) for l_ in lus]:   # --bbank: emission temperature as a bank dimension (2026-11-05)
                     LLb = LL if bb == beta else log_lr(Zs, bb)
-                    o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc) for qx, sc in bank], excl, ell, reentry=reentry, lu=luv)
+                    o = OT.run_bank(F, LLb, U[idx], [(qx * excl, sc, hd) for qx, sc, hd in bank], excl, ell, reentry=reentry, lu=luv)
                     xm = F.tree.query(o["mean"].reshape(-1, F.d))[1].reshape(len(bank), -1)
                     rs += [dict(mass=o["mass"][j], xhat=xm[j], cov=o["cov"][j], om=o["om"][j], lml=o["lml"][j], mean=o["mean"][j], mN=o["mN"][j], mNL=o["mNL"][j], mN16=o["mN16"][j]) for j in range(len(bank))]
-                bank = [(qx, sc) for bb in (bbank or [beta]) for _l in lus for qx, sc in bank]; bsel_l = [bb for bb in (bbank or [beta]) for _ in range(len(rs) // len(bbank or [beta]))]
+                bank = [b_ for bb in (bbank or [beta]) for _l in lus for b_ in bank]; bsel_l = [bb for bb in (bbank or [beta]) for _ in range(len(rs) // len(bbank or [beta]))]
                 lsel_l = [li for _b in (bbank or [beta]) for li in range(len(lus)) for _ in range(len(rs) // (len(bbank or [beta]) * len(lus)))]
             else:
                 lus = [None, luq] if luopt == "hsqsel" else [luq]
-                rs = [F.run(LL, U[idx] * sc, excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode, reentry=reentry, lu=luv) for luv in lus for qx, sc in bank]
-                bank = [(qx, sc) for _l in lus for qx, sc in bank]; lsel_l = [li for li in range(len(lus)) for _ in range(len(rs) // len(lus))]
+                import owf_torch as OT
+                rs = [F.run(LL, OT.rot_u(U[idx] * sc, hd), excl, ell=ell, drift=drift, w=wt, q=qx * excl, closed=closed, xmode=xmode, reentry=reentry, lu=luv) for luv in lus for qx, sc, hd in bank]
+                bank = [b_ for _l in lus for b_ in bank]; lsel_l = [li for li in range(len(lus)) for _ in range(len(rs) // len(lus))]
             # ONLINE self-calibration of the odometry noise (and scale): at frame t follow the filter with the largest cumulative log evidence
             # sum_{s<=t} log p(z_s | z_<s) (causal; ties -> the first = smallest q, first scale)
-            cum = np.cumsum(np.stack([r_["lml"] for r_ in rs]), 1); ks = np.argmax(cum, 0); tt = np.arange(len(idx))
+            ks = select_member(np.stack([r_["lml"] for r_ in rs]), U[idx], selmem * excl); tt = np.arange(len(idx))
             for k_ in ("mass", "cov", "om", "lml"): out[k_][idx] = np.stack([r_[k_] for r_ in rs])[ks, tt]
             xh[idx] = np.stack([r_["xhat"] for r_ in rs])[ks, tt]; out["qsel"][idx] = np.array([b[0] for b in bank])[ks]
             for k_ in ("mN", "mNL", "mN16"):
@@ -419,6 +436,7 @@ def main():
             if "mean" in rs[0]:                                          # posterior mean of the reporting disc (metric, not snapped)
                 out.setdefault("xmean", np.full((nq, F.d), np.nan))[idx] = np.stack([r_["mean"] for r_ in rs])[ks, tt]
             out.setdefault("ssel", np.ones(nq))[idx] = np.array([b[1] for b in bank])[ks]
+            if len(heads) > 1: out.setdefault("hsel", np.zeros(nq))[idx] = np.array([b[2] for b in bank])[ks]
             if bbank: out.setdefault("bsel", np.ones(nq))[idx] = np.array(bsel_l)[ks]
             if luopt == "hsqsel": out.setdefault("lsel", np.zeros(nq))[idx] = np.array(lsel_l)[ks]      # 1 = the hsq member is followed
         dt = (time.time() - t0) / nq * 1e3
@@ -443,12 +461,13 @@ def main():
                        pos={cl: (int(sum(bool(acc0[g].any()) for g, c_ in segs if c_ == cl)), int(sum(1 for _, c_ in segs if c_ == cl))) for cl in PA.CLASSES})
         print(f"   DEFAULT eps {eps0:g}: recall {default['recall']:.3f} segFAR {default['seg_FAR']:.4f} FL {default['FL']:.4f} err_mean {default['err_mean']:.1f} m p95 {default['err_p95']:.1f}", flush=True)
         if fr_out:
-            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh, **({"xmean": out["xmean"]} if "xmean" in out else {}), qsel=out["qsel"], ssel=out.get("ssel", np.ones(nq)), **{k_: out[k_] for k_ in ("mN", "mNL", "mN16") if k_ in out}, **({"bsel": out["bsel"]} if "bsel" in out else {}), **({"lsel": out["lsel"]} if "lsel" in out else {}),
+            np.savez_compressed(fr_out + f"_b{beta:g}.npz", mass=out["mass"], cov=out["cov"], om=out["om"], lml=out["lml"], xhat=xh, **({"xmean": out["xmean"]} if "xmean" in out else {}), qsel=out["qsel"], ssel=out.get("ssel", np.ones(nq)), **{k_: out[k_] for k_ in ("mN", "mNL", "mN16") if k_ in out}, **({"bsel": out["bsel"]} if "bsel" in out else {}), **({"hsel": out["hsel"]} if "hsel" in out else {}), **({"lsel": out["lsel"]} if "lsel" in out else {}),
                                 err=err, inm=inm, offm=offm, q_sid=sid, q_k=k, q_pos=qp, cond=z["cond"])
         res["runs"][str(beta)] = dict(ms_per_frame=dt, logml=float(out["lml"].sum()), map_correct_on=ceil, curve=rows, default=default,
                                       qsel={str(x): float(np.mean(out["qsel"] == x)) for x in qxs},
                                       ssel={str(x): float(np.mean(out.get("ssel", np.ones(nq)) == x)) for x in scales},
                                       bsel={str(x): float(np.mean(out["bsel"] == x)) for x in bbank} if bbank else {},
+                                      hsel={str(x): float(np.mean(out["hsel"] == x)) for x in heads} if "hsel" in out else {},
                                       lsel=float(np.mean(out["lsel"])) if "lsel" in out else None)
         print(f"{ds}/{desc} s{seed} beta {beta}: {dt:.1f} ms/frame logml {out['lml'].sum():.1f} MAP-correct(on) {ceil:.3f} q-share",
               {x: round(float(np.mean(out["qsel"] == x)), 2) for x in qxs}, flush=True)

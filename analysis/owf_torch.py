@@ -43,16 +43,23 @@ def _odometry_plan(U, g, q, ell, d):
     return sh, sig, ph, w
 
 
+def rot_u(U, deg):
+    """odometry increments rotated by a constant heading offset (degrees; 2-D only; Entry 30 heading dimension of the bank)"""
+    if not deg or U.ndim != 2 or U.shape[1] != 2: return U
+    a = np.deg2rad(deg); c, s = np.cos(a), np.sin(a)
+    return np.stack([c * U[:, 0] - s * U[:, 1], s * U[:, 0] + c * U[:, 1]], 1)
+
+
 R_LOC = 3.0                                                                                  # local neighbourhood radius (excl units)
 
 
 def run_bank(F, logL, U, members, excl, ell, device=None, top_c=12, reentry="prior", lu=None):
     """F: OpenWorldFilter (grid, band, prior, p_kid, p_in, p_omega0); logL (T, n) item log-LRs of one sequence; U (T, d) odometry
-    increments; members: list of (q, scale) (q in metres, as F.run's q); returns stacked outputs in member order."""
+    increments; members: list of (q, scale[, heading offset deg]) (q in metres, as F.run's q); returns stacked outputs in member order."""
     dev = torch.device(device or ("cuda" if torch.cuda.is_available() else "cpu")); f64 = torch.float64
     T, n = logL.shape; d = F.d; g = F.g; shape = tuple(F.shape); nb = len(members); ncell = int(np.prod(shape))
     assert d in (1, 2), "grid dimension"
-    plans = [_odometry_plan(np.asarray(U, float) * sc, g, q, ell, d) for q, sc in members]
+    plans = [_odometry_plan(rot_u(np.asarray(U, float) * m[1], m[2] if len(m) > 2 else 0.0), g, m[0], ell, d) for m in members]
     SH = np.stack([p[0] for p in plans], 1); SIG = np.stack([p[1] for p in plans], 1)           # (T, nb, d), (T, nb)
     PH = np.stack([p[2] for p in plans], 1); W = np.stack([p[3] for p in plans], 1)            # (T, nb, d), (T, nb)
     # ---- static tensors
