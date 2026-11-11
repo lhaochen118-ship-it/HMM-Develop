@@ -4,6 +4,39 @@
 thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý tưởng 1 (Entry 0–39): `history/RESEARCH_LOG_idea1.md`; tóm tắt:
 `handoff/07_IDEA1_SUMMARY.md`.*
 
+## Entry 29 — Kiểm toán lần ba: điểm vận hành của baseline ngoài; giả định heading của odometry mô phỏng (ĐĂNG KÝ TRƯỚC, 2026-11-11)
+
+**Bối cảnh.** Người dùng yêu cầu kiểm tra mã có lỗi làm sai score không. Chi tiết: `handoff/09_KIEM_TOAN_2026-11-11.md`.
+- Không tìm thấy lỗi mã nào ở luật cuối.
+  - Engine GPU so với numpy trên dữ liệu tổng hợp: quyết định khác nhau ở 0 frame tại ba ngưỡng.
+  - Thử nghiệm đầu-cuối mới của OWF + HQ: tương lai của một phiên không đổi quá khứ của nó.
+  - `tests/test_hq_causality.py`: PASS.
+- Có lỗi ở **điểm vận hành của baseline**: Xu'21 chỉnh cho FL theo frame, Claxton'24 dùng P > 0.5, TAO'26 dùng cận inlier 3σ, trong khi giao
+  thức chấm segFAR theo đoạn.
+- Có một **giả định giao thức** có lợi cho OWF: odometry mô phỏng dùng heading thật.
+
+**Đăng ký trước (commit trước khi chạy bất kỳ kernel nào của entry này).** Không quyết định gì về phương pháp; chỉ đo lại phép so sánh.
+
+**E29a — baseline ở mục tiêu đúng.**
+- Dữ liệu: seed 67–72 (288 run, cùng run của C3 Entry 24 / 26) với `baseline_recal.py` và `sota_job.py --scores`.
+- Báo cho TAO'26 / Xu'21 / Claxton'24 ba điểm `@pub` / `@seg` / `@orc`: recall, TB segFAR, run > α, điều hướng.
+- Luật cuối lấy từ `un2_t67Q2.json` (không chạy lại).
+- Đọc:
+  - (i) `@seg` hợp lệ (TB segFAR tệ nhất theo dataset ≤ α và ≤ 2 run > α): so recall cặp với luật cuối, CI bootstrap như C3.
+  - (ii) `@orc` là cận trên. Nếu luật cuối có recall ≥ `@orc` của một baseline (CI dưới > 0), ghi "vượt cả ngưỡng oracle của baseline đó".
+    Ngược lại, ghi đúng khoảng cách.
+  - (iii) Thay câu "vượt α trên 56–90 % run" trong paper bằng bảng ba điểm vận hành, dù kết quả thế nào.
+
+**E29b — ablation trôi heading** (tập A; không dùng nhóm seed tươi).
+- Cấu hình: `ODO_YAWRW` ∈ {0, 0.13, 0.3} độ/√m; CMU, Oxford, St Lucia; trước hết CosPlace + MegaLoc, seed 1–3.
+- Đo luật cuối (lệnh `02` §6), HSI-VNc độc lập và TAO dưới cùng odometry.
+- Đọc:
+  - Ở 0.13 (mức trôi `nav_demo.track` tự mô phỏng): nếu recall luật cuối giảm ≤ 0.02 và không có run > α, ghi "bền với trôi heading ở mức
+    của bộ lọc điều hướng".
+  - Ngược lại: chạy đủ 129 run, ghi là hạn chế. Ứng viên sửa có lý do: thêm chiều heading-offset vào ngân hàng tự hiệu chỉnh, chọn theo
+    evidence như q / tỉ lệ (dev trước, rồi một nhóm r73).
+- 0.3 là mức thử sức, chỉ mô tả.
+
 **Độ bền tỉ lệ lỗ (phụ, không quyết định; `hmm-navcache-holes` seed 0–2 × 6 dataset × 6 desc, 216 run; ghi 11:39 UTC).**
 
 | lỗ | Dataset | runs | OWF recall / segFAR | run > α | SH | HSI-VN | err OWF / SH / HSI-VN (m) |

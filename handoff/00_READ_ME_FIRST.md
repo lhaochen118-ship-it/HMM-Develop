@@ -48,5 +48,6 @@ Việc tiếp theo: `03_HANDOFF.md` §6.
 | `04_RESEARCH_WORKFLOW.md` (.pdf) | quy trình theo phase, trạng thái phase, nguyên tắc |
 | `ENVIRONMENT_SUMMARY.md` (.pdf) | tài khoản, dataset công khai, container (§0 = hiện hành) |
 | `07_IDEA1_SUMMARY.md` (.pdf) | ý tưởng 1 (baseline, phần trùng lặp) |
+| `09_KIEM_TOAN_2026-11-11.md` | kiểm toán lần ba: thuật ngữ (localization, không phải navigation), tên phương pháp (LACUNA), lỗi điểm vận hành baseline, giả định heading, kế hoạch chạy lại (Entry 29) |
 | `08_CHUYEN_GIAO_THEO_YEU_CAU.md` (.pdf) | đối chiếu với 5 mục của file yêu cầu docx, tự đánh giá mức A\* |
 | `../paper/OWF_paper_draft.md`, `../paper/owf_theory.md`, `../paper/BAO_CAO_S1106.pdf` | bản thảo paper, lý thuyết, báo cáo phiên |

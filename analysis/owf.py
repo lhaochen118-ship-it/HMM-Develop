@@ -262,8 +262,29 @@ class OpenWorldFilter:
         return dict(mass=mass, xhat=xhat, cov=cov, om=oms, lml=lml)
 
 
+def yaw_drift(z, sigma_deg=None):
+    """Audit 2026-11-11 ablation. The simulated odometry of CMU / Oxford / St Lucia / VPR-Space (cert_seq.odometry_sim) re-rotates every
+    increment by the GROUND-TRUTH heading (only scale + step noise), while nav_demo.track simulates heading drift for the navigation filter.
+    With env ODO_YAWRW = s (deg / sqrt(m)) the horizontal increments of every sequence are rotated by a heading error that random-walks with
+    the path, theta_t = theta_{t-1} + N(0, s^2 |u_t|); U and o_q are updated consistently. Simulated-odometry 2-D runs only (real VIO /
+    wheel odometry already drift; Nordland is 1-D). Deterministic per (run seed, sequence). Default (unset / 0): no change."""
+    s = float(os.environ.get("ODO_YAWRW", "0") if sigma_deg is None else sigma_deg)
+    hz = list(z["hz"])
+    if s <= 0 or bool(z["real"]) or len(hz) != 2 or "yawrw" in z: return z          # "yawrw": already applied (hybrid caches)
+    z = dict(z); z["yawrw"] = s; U = np.asarray(z["U"], float).copy(); O = np.asarray(z["o_q"], float).copy(); sid, k = z["q_sid"], z["q_k"]
+    for j, sq in enumerate(np.unique(sid)):
+        idx = np.where(sid == sq)[0][np.argsort(k[sid == sq])]; u = U[idx][:, hz]
+        rng = np.random.default_rng([int(z["seed"]), j, 7919])
+        th = np.cumsum(rng.normal(0, 1, len(idx)) * np.deg2rad(s) * np.sqrt(np.linalg.norm(u, axis=1)))
+        c, sn = np.cos(th), np.sin(th); ur = np.stack([c * u[:, 0] - sn * u[:, 1], sn * u[:, 0] + c * u[:, 1]], 1)
+        U[np.ix_(idx, hz)] = ur; O[np.ix_(idx, hz)] = O[idx[0]][hz] + np.cumsum(ur, 0)
+    z["U"], z["o_q"] = U.astype(np.asarray(z["U"]).dtype), O.astype(np.asarray(z["o_q"]).dtype)
+    return z
+
+
 def load_run(cache_dir, dump, ds, desc, seed):
-    """navcache of (ds, desc, seed) (holes, odometry, labels; nav_demo --cache) + the query / reduced-map descriptors"""
+    """navcache of (ds, desc, seed) (holes, odometry, labels; nav_demo --cache) + the query / reduced-map descriptors
+    (env ODO_YAWRW: heading-drift ablation of the simulated odometry, yaw_drift)"""
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
     import vprlib as V
     z = dict(np.load(os.path.join(cache_dir, f"navcache_{ds.replace(':', '_')}_{desc}_s{seed}.npz"), allow_pickle=True))
@@ -277,7 +298,7 @@ def load_run(cache_dir, dump, ds, desc, seed):
     else: ep = V.LOADERS[ds](dump, desc)
     assert np.allclose(ep.q_pos, z["q_pos"]), "query order differs from the cache"
     M = ep.m[z["kidx"]].astype(np.float32)
-    return z, ep.q, M
+    return yaw_drift(z), ep.q, M
 
 
 def main():

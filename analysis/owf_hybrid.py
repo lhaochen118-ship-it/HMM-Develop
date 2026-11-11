@@ -36,6 +36,8 @@ def settled(z, xh, mass, kind, D):
 
 def build(frames, cache, out, mode):
     z = dict(np.load(cache, allow_pickle=True)); fr = np.load(frames, allow_pickle=True)
+    sys.path.insert(0, HERE); import owf as _OWF
+    z = _OWF.yaw_drift(z)                                   # env ODO_YAWRW (audit 2026-11-11): the HSI branch sees the same odometry as the OWF
     xh = np.asarray(fr["xhat"]).astype(int); bad = xh < 0; mass = np.asarray(fr["mass"], float); conf = False
     if mode.startswith(("xma", "xms")):                     # xma[c]<t>_<D> / xms[c]<t>_<D>: confident AND settled (track age / path from start)
         rest = mode[3:]; conf = rest.startswith("c"); t, D = rest.lstrip("c").split("_")

@@ -30,7 +30,8 @@ def topk(Q, M, K=100):
 def main():
     cdir, dump, ds, desc, seed = sys.argv[1:6]; seed = int(seed)
     tag = sys.argv[sys.argv.index("--tag") + 1] if "--tag" in sys.argv else "sota"
-    sys.argv = sys.argv[:1]
+    save_sc = "--scores" in sys.argv       # audit 2026-11-11: save per-frame TAO cost (sotasc_*.npz) and add the segment-FAR-calibrated
+    sys.argv = sys.argv[:1]                # (@seg) and per-run oracle (@orc) operating points of TAO26 / Xu21 / Claxton24 (baseline_recal.py)
     import owf, nav_demo as N, tao as TAO, position_audit as PA
     t0 = time.time()
     z, Q, M = owf.load_run(cdir, dump, ds, desc, seed)
@@ -48,6 +49,12 @@ def main():
     rules["Claxton24"] = (N.claxton_rule(z["srt10"], z["Smean"], z["Sstd"], z["bsel"], z["good"], bad_top, int(z["seed"])), MP[z["top"]])
     rules["Xu21"] = (z["acc_h"].astype(bool), z["x_hmm"])
     rules["top1"] = (np.ones(len(qp), bool), MP[z["top"]]); rules["oracle"] = (z["good"].astype(bool), MP[z["top"]])
+    if save_sc:                                                        # previous names and numbers above are unchanged
+        import baseline_recal as BR
+        sc = dict(cost=np.asarray(r["cost"], float), j=np.asarray(r["j"]), x_fix=xt, acc_pub=rules["TAO26"][0], tau=tau)
+        os.makedirs("results", exist_ok=True); np.savez_compressed(f"results/sotasc_{ds.replace(':', '_')}_{desc}_s{seed}_{tag}.npz", **sc)
+        for nm, (acc, xf, _thr) in BR.variants(z, sc).items():
+            if not nm.endswith("@pub"): rules[nm] = (acc, xf)
     q2 = qp if qp.ndim > 1 else qp[:, None]
     for name, (acc, xf) in rules.items():
         xf = np.asarray(xf, float); xf2 = xf if xf.ndim > 1 else xf[:, None]
