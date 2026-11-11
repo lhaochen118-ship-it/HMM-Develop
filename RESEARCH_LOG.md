@@ -7,6 +7,36 @@ thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý t�
 *2026-11-11: Entry 1–22 (HSI, OWF, AUTOLOOP, NT, phủ quyết, bí danh dịch chuyển) và các bảng kết quả của Entry 10 (trước đây
 nằm nhầm ở đầu log) đã chuyển sang `history/RESEARCH_LOG_idea2_entries01-22.md`, nội dung giữ nguyên.*
 
+## Entry 30 — Chiều lệch heading trong ngân hàng tự hiệu chỉnh: KẾT QUẢ PHÁT TRIỂN (tập A, không đăng ký; 2026-11-11 13:30 UTC)
+
+**Lý do.** Entry 29b: trôi heading 0.13°/√m làm recall giảm 0.048 (St Lucia −0.145). Ngân hàng chỉ có q × tỉ lệ, không biểu diễn được lệch
+heading.
+
+**Phương pháp** (`owf.py --headings`, `--selmem`; mặc định = hành vi cũ, kiểm giống hệt trên dữ liệu tổng hợp).
+- Mỗi thành viên quay bước odometry một góc cố định θ ∈ {−6, −3, 0, 3, 6}°, nên ngân hàng có 2 × 5 × 5 = 50 thành viên.
+- Theo dõi thành viên có evidence lớn nhất (H5).
+- Hoặc evidence có quên E_t = e^{−|u_t|/L} E_{t−1} + log p(z_t | z_<t), L = 20 excl (H5m). Lý do: trôi là bước ngẫu nhiên, nên θ đúng thay
+  đổi dọc đường.
+
+**Kết quả** (18 run: CMU / Oxford / St Lucia × CosPlace / MegaLoc × seed 1–3; so cặp với luật cuối trên cùng run, Entry 29; ô = recall /
+TB segFAR / run > α / điều hướng):
+
+| trôi | luật cuối | H5 | Δ H5 | H5m | Δ H5m |
+|---|---|---|---|---|---|
+| 0 | 0.960 / 0.0018 / 0 / 11.4 | 0.959 / 0.0021 / 0 / 11.4 | −0.0005 [−0.0011, +0.0001] | 0.961 / 0.0023 / 0 / 11.4 | +0.0009 [+0.0001, +0.0016] |
+| 0.13 | 0.917 / 0.0025 / 0 / 16.3 | 0.933 / 0.0026 / 0 / 14.4 | +0.0155 [+0.0087, +0.0234] | 0.937 / 0.0040 / 0 / 14.0 | +0.0198 [+0.0114, +0.0293] |
+
+- Ở trôi 0.13: H5m lấy lại 0.020 trong số 0.043 bị mất. St Lucia +0.041 (mất 0.102); Oxford +0.017; CMU không đổi.
+- Không mất gì khi không trôi. Vẫn 0 run > α, điều hướng 16.3 → 14.0 m.
+- TB segFAR tăng nhẹ (0.0025 → 0.0040).
+
+**Đọc.**
+- Có lý do và có ích, nhưng chỉ khôi phục được khoảng nửa: lưới 3° và ±6° hữu hạn; St Lucia trôi tới khoảng ±10° trên chuỗi dài.
+- Ứng viên cho một quyết định mới, chưa đăng ký: H5m (có thể lưới rộng ±9°).
+- Kiểm tra theo quy trình: đăng ký trước, rồi nhóm r73 ở trôi 0 (không được tệ hơn) và trôi 0.13 (phải tốt hơn).
+- Chi phí ngân hàng ×5: một nhóm 144 run mất khoảng 4–5 giờ trên 4 phiên L4 hiện có.
+- Bảng: `analysis/results/owf/s1111/e30_dev_18runs.md`; JSON: `e30_dev_json.tgz`.
+
 ## Entry 29 — Kiểm toán lần ba: điểm vận hành của baseline ngoài; giả định heading của odometry mô phỏng (ĐĂNG KÝ TRƯỚC, 2026-11-11)
 
 **Bối cảnh.** Người dùng yêu cầu kiểm tra mã có lỗi làm sai score không. Chi tiết: `handoff/09_KIEM_TOAN_2026-11-11.md`.
