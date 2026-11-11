@@ -30,6 +30,7 @@ def topk(Q, M, K=100):
 def main():
     cdir, dump, ds, desc, seed = sys.argv[1:6]; seed = int(seed)
     tag = sys.argv[sys.argv.index("--tag") + 1] if "--tag" in sys.argv else "sota"
+    if "--yawrw" in sys.argv: os.environ["ODO_YAWRW"] = sys.argv[sys.argv.index("--yawrw") + 1]   # heading-drift ablation (owf.load_run)
     save_sc = "--scores" in sys.argv       # audit 2026-11-11: save per-frame TAO cost (sotasc_*.npz) and add the segment-FAR-calibrated
     sys.argv = sys.argv[:1]                # (@seg) and per-run oracle (@orc) operating points of TAO26 / Xu21 / Claxton24 (baseline_recal.py)
     import owf, nav_demo as N, tao as TAO, position_audit as PA
