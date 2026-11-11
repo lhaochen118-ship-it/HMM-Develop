@@ -4,15 +4,15 @@
 
 **LACUNA: Open-World Sequential Visual Localization on Maps with Holes** · *paper in preparation* · [[GitHub]](https://github.com/nhatlong113/LACUNA---Localization-Aware-of-Coverage-and-UNmapped-Areas)
 
-- Proposed **LACUNA**, an open-world Bayes filter that models unmapped space as part of a metric state. A robot localizing on an incomplete image map therefore *predicts* when it leaves the map by dead reckoning, instead of committing to look-alike places and reporting false position fixes. Added label-free, causally calibrated evidence that rejects odometry-unobservable aliasing.
-- On 432 pre-registered runs (8 datasets incl. Oxford RobotCar, Nordland, CMU Seasons, 4Seasons; 6 VPR descriptors), achieved **93% recall** while exceeding the 5% false-report budget on only **0.7%** of runs. Outperformed SOTA (TAO'26, Claxton RA-L'24, Xu RA-L'21) by **+26–28 pp** recall with **2–3× lower** navigation error, even when their thresholds were tuned on test labels.
+- Proposed **LACUNA**, an open-world Bayes filter that models unmapped space as part of a metric state. A robot localizing on an incomplete image map therefore *predicts* when it leaves the map by dead reckoning, instead of committing to look-alike places and reporting false position fixes. Added label-free evidence, calibrated causally within each session, that suppresses odometry-unobservable aliasing.
+- On 432 pre-registered runs (8 environments from 6 datasets incl. Oxford RobotCar, Nordland, CMU Seasons, 4Seasons; 6 VPR descriptors), achieved **93% recall** while exceeding the 5% false-report budget on only **0.7%** of runs. Outperformed SOTA (TAO'26, Claxton RA-L'24, Xu RA-L'21) by **+26–28 pp** recall with **2–3× lower** navigation error, even when their thresholds were tuned on test labels.
 
 ## Short version (3 lines, when space is tight)
 
 **LACUNA: Open-World Visual Localization on Maps with Holes** · *paper in preparation* · [[GitHub]](https://github.com/nhatlong113/LACUNA---Localization-Aware-of-Coverage-and-UNmapped-Areas)
 
 - Proposed an open-world Bayes filter that models unmapped areas in the state, so a robot predicts leaving an incomplete map instead of reporting false position fixes. No labels are needed at deployment.
-- 93% recall on 8 datasets × 6 descriptors, with the false-report budget exceeded on only 0.7% of runs. +26–28 pp recall over SOTA (TAO'26, Claxton RA-L'24, Xu RA-L'21), even with their thresholds tuned on test labels.
+- 93% recall on 8 environments (6 datasets) × 6 descriptors, with the false-report budget exceeded on only 0.7% of runs. +26–28 pp recall over SOTA (TAO'26, Claxton RA-L'24, Xu RA-L'21), even with their thresholds tuned on test labels.
 
 ## Where each number comes from
 
