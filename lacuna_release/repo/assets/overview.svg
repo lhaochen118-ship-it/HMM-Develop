@@ -1,0 +1,152 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 500" width="1200" height="500" font-family="-apple-system, 'Segoe UI', Helvetica, Arial, sans-serif">
+  <defs>
+    <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#64748b"/>
+    </marker>
+    <marker id="arrowRed" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="#dc2626"/>
+    </marker>
+    <radialGradient id="belief" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#16a34a" stop-opacity="0.85"/>
+      <stop offset="55%" stop-color="#22c55e" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#22c55e" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+      <path d="M20,0 L0,0 L0,20" fill="none" stroke="#e2e8f0" stroke-width="1"/>
+    </pattern>
+
+    <!-- shared scene: two streets, a hole on the main street, map images -->
+    <g id="scene">
+      <!-- hole -->
+      <rect x="200" y="175" width="170" height="100" rx="10" fill="#fef3c7" fill-opacity="0.85" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="6 4"/>
+      <text x="285" y="267" font-size="12" fill="#b45309" text-anchor="middle">unmapped area (hole)</text>
+      <!-- streets -->
+      <line x1="40" y1="125" x2="540" y2="125" stroke="#d1d5db" stroke-width="10" stroke-linecap="round"/>
+      <line x1="40" y1="220" x2="540" y2="220" stroke="#d1d5db" stroke-width="10" stroke-linecap="round"/>
+      <text x="40" y="106" font-size="12" fill="#64748b">look-alike street (mapped)</text>
+      <!-- map images on the look-alike street -->
+      <g fill="#6b7280">
+        <circle cx="50" cy="125" r="4"/><circle cx="70" cy="125" r="4"/><circle cx="90" cy="125" r="4"/><circle cx="110" cy="125" r="4"/>
+        <circle cx="130" cy="125" r="4"/><circle cx="150" cy="125" r="4"/><circle cx="170" cy="125" r="4"/><circle cx="190" cy="125" r="4"/>
+        <circle cx="210" cy="125" r="4"/><circle cx="230" cy="125" r="4"/><circle cx="250" cy="125" r="4"/><circle cx="270" cy="125" r="4"/>
+        <circle cx="290" cy="125" r="4"/><circle cx="310" cy="125" r="4"/><circle cx="330" cy="125" r="4"/><circle cx="350" cy="125" r="4"/>
+        <circle cx="370" cy="125" r="4"/><circle cx="390" cy="125" r="4"/><circle cx="410" cy="125" r="4"/><circle cx="430" cy="125" r="4"/>
+        <circle cx="450" cy="125" r="4"/><circle cx="470" cy="125" r="4"/><circle cx="490" cy="125" r="4"/><circle cx="510" cy="125" r="4"/>
+        <circle cx="530" cy="125" r="4"/>
+      </g>
+      <!-- map images on the main street, none inside the hole -->
+      <g fill="#6b7280">
+        <circle cx="50" cy="220" r="4"/><circle cx="70" cy="220" r="4"/><circle cx="90" cy="220" r="4"/><circle cx="110" cy="220" r="4"/>
+        <circle cx="130" cy="220" r="4"/><circle cx="150" cy="220" r="4"/><circle cx="170" cy="220" r="4"/><circle cx="190" cy="220" r="4"/>
+        <circle cx="390" cy="220" r="4"/><circle cx="410" cy="220" r="4"/><circle cx="430" cy="220" r="4"/><circle cx="450" cy="220" r="4"/>
+        <circle cx="470" cy="220" r="4"/><circle cx="490" cy="220" r="4"/><circle cx="510" cy="220" r="4"/><circle cx="530" cy="220" r="4"/>
+      </g>
+      <!-- robot path and robot -->
+      <line x1="50" y1="220" x2="300" y2="220" stroke="#2563eb" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="300" cy="220" r="7" fill="#2563eb" stroke="#ffffff" stroke-width="2"/>
+      <text x="288" y="207" font-size="12" fill="#2563eb" text-anchor="end" font-weight="600">robot</text>
+    </g>
+  </defs>
+
+  <!-- background (keeps the figure readable in GitHub dark mode) -->
+  <rect x="0" y="0" width="1200" height="500" rx="16" fill="#ffffff"/>
+
+  <!-- ===================== (a) closed-world filter ===================== -->
+  <g transform="translate(20,0)">
+    <rect x="0" y="20" width="570" height="300" rx="12" fill="#ffffff" stroke="#e5e7eb" stroke-width="1.5"/>
+    <text x="20" y="50" font-size="17" font-weight="700" fill="#0f172a">(a) Closed-world filter</text>
+    <text x="20" y="72" font-size="13" fill="#64748b">all belief must sit on map places</text>
+    <use href="#scene"/>
+    <!-- belief forced onto look-alike map images -->
+    <g fill="#dc2626" fill-opacity="0.9">
+      <rect x="265" y="102" width="10" height="16" rx="2"/>
+      <rect x="285" y="88" width="10" height="30" rx="2"/>
+      <rect x="305" y="94" width="10" height="24" rx="2"/>
+      <rect x="325" y="108" width="10" height="10" rx="2"/>
+    </g>
+    <line x1="300" y1="210" x2="300" y2="137" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 3" marker-end="url(#arrowRed)"/>
+    <text x="352" y="98" font-size="13" font-weight="700" fill="#dc2626">✗ confident false fix</text>
+    <!-- legend -->
+    <g font-size="12" fill="#475569">
+      <circle cx="28" cy="300" r="4" fill="#6b7280"/><text x="38" y="304">map image</text>
+      <line x1="118" y1="300" x2="138" y2="300" stroke="#2563eb" stroke-width="3"/><text x="144" y="304">robot path</text>
+      <rect x="226" y="293" width="9" height="14" rx="2" fill="#dc2626"/><text x="242" y="304">belief over map places</text>
+    </g>
+  </g>
+
+  <!-- ===================== (b) LACUNA open-world filter ===================== -->
+  <g transform="translate(610,0)">
+    <rect x="0" y="20" width="570" height="300" rx="12" fill="#ffffff" stroke="#16a34a" stroke-width="2"/>
+    <text x="20" y="50" font-size="17" font-weight="700" fill="#0f172a">(b) LACUNA: open-world filter</text>
+    <text x="20" y="72" font-size="13" fill="#64748b">belief lives on a metric grid over mapped and unmapped space</text>
+    <rect x="30" y="90" width="520" height="190" fill="url(#grid)"/>
+    <use href="#scene"/>
+    <!-- far state -->
+    <circle cx="530" cy="56" r="14" fill="#ffffff" stroke="#64748b" stroke-width="1.5"/>
+    <text x="530" y="61" font-size="14" fill="#334155" text-anchor="middle">Ω</text>
+    <text x="508" y="61" font-size="11" fill="#64748b" text-anchor="end">far state</text>
+    <!-- belief follows dead reckoning into the hole -->
+    <ellipse cx="300" cy="220" rx="48" ry="30" fill="url(#belief)"/>
+    <circle cx="300" cy="220" r="7" fill="#2563eb" stroke="#ffffff" stroke-width="2"/>
+    <g font-size="13" fill="#15803d">
+      <text x="384" y="250" font-weight="700">✓ off-map is predicted</text>
+      <text x="384" y="267">by dead reckoning</text>
+      <text x="384" y="284">→ abstain, no false fix</text>
+    </g>
+    <!-- legend -->
+    <g font-size="12" fill="#475569">
+      <circle cx="28" cy="300" r="4" fill="#6b7280"/><text x="38" y="304">map image</text>
+      <line x1="118" y1="300" x2="138" y2="300" stroke="#2563eb" stroke-width="3"/><text x="144" y="304">robot path</text>
+      <ellipse cx="232" cy="300" rx="10" ry="7" fill="url(#belief)"/><text x="248" y="304">belief over metric cells</text>
+    </g>
+  </g>
+
+  <!-- ===================== pipeline ===================== -->
+  <g font-size="13" text-anchor="middle">
+    <!-- box 1 -->
+    <rect x="20" y="350" width="208" height="128" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="124" y="378" font-size="14" font-weight="700" fill="#0f172a">Input</text>
+    <text x="124" y="402" fill="#334155">monocular image sequence</text>
+    <text x="124" y="420" fill="#334155">+ odometry</text>
+    <text x="124" y="448" font-size="11" fill="#64748b">geo-referenced image map</text>
+    <text x="124" y="463" font-size="11" fill="#64748b">with unknown holes</text>
+
+    <!-- box 2 -->
+    <rect x="258" y="350" width="208" height="128" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="362" y="378" font-size="14" font-weight="700" fill="#0f172a">Place retrieval</text>
+    <text x="362" y="402" fill="#334155">global-descriptor similarity</text>
+    <text x="362" y="420" fill="#334155">to every map image</text>
+    <text x="362" y="448" font-size="11" fill="#64748b">NetVLAD · CosPlace · MixVPR</text>
+    <text x="362" y="463" font-size="11" fill="#64748b">SALAD · MegaLoc · DINOv2</text>
+
+    <!-- box 3 -->
+    <rect x="496" y="350" width="208" height="128" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8"/>
+    <text x="600" y="378" font-size="14" font-weight="700" fill="#15803d">Open-world Bayes filter</text>
+    <text x="600" y="402" fill="#334155">mass-conserving belief on</text>
+    <text x="600" y="420" fill="#334155">mapped ∪ unmapped ∪ Ω</text>
+    <text x="600" y="448" font-size="11" fill="#64748b">self-calibrating odometry bank</text>
+    <text x="600" y="463" font-size="11" fill="#64748b">(process noise × scale)</text>
+
+    <!-- box 4 -->
+    <rect x="734" y="350" width="208" height="128" rx="10" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.8"/>
+    <text x="838" y="378" font-size="14" font-weight="700" fill="#15803d">Calibrated evidence</text>
+    <text x="838" y="402" fill="#334155">absolute log-likelihood ratio</text>
+    <text x="838" y="420" fill="#334155">for unmapped cells</text>
+    <text x="838" y="448" font-size="11" fill="#64748b">label-free · causal · per session</text>
+    <text x="838" y="463" font-size="11" fill="#64748b">rejects shifted look-alikes</text>
+
+    <!-- box 5 -->
+    <rect x="972" y="350" width="208" height="128" rx="10" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5"/>
+    <text x="1076" y="378" font-size="14" font-weight="700" fill="#0f172a">Decision</text>
+    <text x="1076" y="402" fill="#334155">report a position fix</text>
+    <text x="1076" y="420" fill="#334155">or abstain</text>
+    <text x="1076" y="448" font-size="11" fill="#64748b">false-report rate ≤ α per run</text>
+    <text x="1076" y="463" font-size="11" fill="#64748b">one config for all datasets</text>
+  </g>
+  <g stroke="#64748b" stroke-width="1.8" marker-end="url(#arrow)">
+    <line x1="231" y1="414" x2="254" y2="414"/>
+    <line x1="469" y1="414" x2="492" y2="414"/>
+    <line x1="707" y1="414" x2="730" y2="414"/>
+    <line x1="945" y1="414" x2="968" y2="414"/>
+  </g>
+</svg>
