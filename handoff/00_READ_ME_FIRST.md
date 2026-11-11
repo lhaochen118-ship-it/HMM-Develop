@@ -21,7 +21,12 @@
 - recall ≈ 0.93;
 - 3/432 run > α; với phủ quyết: 0;
 - hơn nhánh HSI-VNc đứng riêng +0.12 … +0.13;
-- TAO'26 / Xu'21 / Claxton'24 (ngưỡng chỉnh bằng nhãn) vượt α trên 56–90 % số run.
+- TAO'26 / Xu'21 / Claxton'24 vượt α trên 57–89 % số run ở điểm vận hành gốc. Điểm vận hành đó KHÔNG nhắm segFAR (Entry 29).
+  - Ở ngưỡng oracle theo run (cận trên, nhãn của chính run test), cả ba hợp lệ nhưng recall chỉ 0.65–0.67.
+  - Luật cuối hơn +0.26…+0.28 trên cùng 288 run.
+- Hạn chế mới (Entry 29b): trôi heading 0.13°/√m làm recall giảm 0.048 trên CMU / Oxford / St Lucia (St Lucia −0.145).
+  - Hợp lệ giữ nguyên.
+  - Odometry mô phỏng của bốn dataset vốn dùng heading thật.
 
 Kiểm toán 2026-11-07:
 - Entry 27: sửa hai rò rỉ nhân quả trong HQ;

@@ -98,5 +98,10 @@ với segFAR ≤ α = 0.05 trên từng run, recall cao, sai số điều hướ
 7. **Viết paper** từ `paper/OWF_paper_draft.md`: câu chuyện "thế giới mở + bằng chứng tuyệt đối hiệu chỉnh hồi cứu"; bảng sinh từ
    `analysis/results/owf/s1106/`.
 
+8. **Trôi heading (Entry 29b):** recall −0.048 ở 0.13°/√m (St Lucia −0.145). Thêm chiều lệch heading vào ngân hàng tự hiệu chỉnh.
+   Phát triển trên tập A với `ODO_YAWRW=0.13` (`owf_hsi_job.py --yawrw`), rồi đăng ký và kiểm trên r73.
+9. **So sánh SOTA:** dùng bảng ba điểm vận hành (`baseline_recal.py`, `sota_job.py --scores`). Kiểm lại bản tái hiện TAO (recall < top-1
+   ở 5/8 dataset).
+
 Mỗi quyết định mới: đăng ký trước, rồi một nhóm từ kho r73 (73–75, rồi 76–78). Khi hết: sinh kho mới bằng
 `owf_wave.py --set fresh:79-84` (CPU, ~1.5 giờ).

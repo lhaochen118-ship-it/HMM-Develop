@@ -22,7 +22,18 @@ system:
 - exceeds the false-report target on 3 of 432 runs (0.7 %), and on none with an open-world veto of its learned branch;
 - achieves navigation errors 9–13 % lower than our closed-world, hindsight-calibrated baseline (HSI-VNc; 12.6 vs 14.5 m and 14.0 vs 15.4 m).
 
-Three published integrity / off-map methods, tuned with labels, exceed the target on 56–90 % of the same runs (two groups, 288 runs).
+Against three published integrity / off-map methods on the same 288 runs, each thresholded to the protocol's segment false-report
+target with labels of the TEST run (an oracle upper bound for that method; Entry 29), the system reports more correct fixes:
+- +0.26 vs Claxton'24 (0.670 at that oracle threshold);
+- +0.28 vs Xu'21 (0.651);
+- +0.28 vs TAO'26 (0.651).
+
+At their published operating points the three methods exceed the target on 57–89 % of the runs. Those operating points do not target
+the segment rate: frame-level rate for Xu'21, P > 0.5 for Claxton'24, a 3-sigma inlier bound for TAO'26.
+
+The simulated odometry of four datasets keeps the true heading. With a heading random walk of 0.13 deg/sqrt(m) (the drift our
+navigation filter simulates), recall on those datasets falls by 0.048 (St Lucia: 0.145) and validity is unchanged. The system then still
+exceeds the oracle-thresholded baselines (Entry 29b).
 
 
 ## 1. Introduction

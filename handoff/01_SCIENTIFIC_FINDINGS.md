@@ -27,7 +27,8 @@ cho bộ lọc điều hướng hay không. Mục tiêu:
 - 3/432 run vượt α; với phủ quyết thế giới mở: 0/432;
 - hơn HSI-VNc (nhánh học đứng riêng) +0.117 … +0.133;
 - vượt oracle một-frame (~0.85);
-- ba phương pháp ngoài có ngưỡng chỉnh bằng nhãn (TAO'26, Xu'21, Claxton'24) vượt α trên 56–90 % số run.
+- ba phương pháp ngoài (TAO'26, Xu'21, Claxton'24) vượt α trên 57–89 % số run ở điểm vận hành gốc. Điểm vận hành đó không nhắm segFAR.
+  Ở ngưỡng oracle theo run (cận trên), recall của chúng chỉ 0.65–0.67, kém luật cuối 0.26–0.28 (Entry 29a, §3.8).
 
 Mọi con số đã được **chạy lại bằng mã đã kiểm toán hai lần** (Entry 27, §3.6; Entry 28, §3.7).
 
@@ -174,6 +175,36 @@ Chạy lại với nhánh HSI-VNc ở CẢ HAI cột (Entry 28): S5 0.9328 / 0.0
   2) và λ_seed (Mệnh đề 5), nêu thiên lệch của mẫu f_off (Mệnh đề 7).
 - **Quy ước phải ghi trong paper:** điều hướng khởi tạo bằng vị trí thật; sai số điều hướng vô nghĩa trên tập off-map tự nhiên (hai hệ toạ độ)
   nên không báo.
+
+### 3.8 Kiểm toán lần ba 2026-11-11 (Entry 29)
+
+- **Không có lỗi mã ở luật cuối.**
+  - Engine GPU so với numpy: quyết định khác nhau ở 0 frame.
+  - OWF + HQ nhân quả đầu-cuối trong phiên.
+  - Chạy lại 18 run tập A khớp Entry 28: recall chênh tối đa 0.004 / run, trung bình −0.0002 (phép cộng nguyên tử trên GPU không tất định).
+- **Baseline ngoài bị đặt sai mục tiêu.**
+  - Xu'21 nhắm FL theo frame; Claxton'24 dùng P > 0.5; TAO'26 dùng cận inlier 3σ.
+  - Đo lại trên 288 run (seed 67–72), recall / run > α:
+
+| Baseline | điểm gốc | hiệu chỉnh segFAR trên điều kiện dễ (@seg) | oracle theo run (@orc, cận trên) | luật cuối − @orc |
+|---|---|---|---|---|
+| Claxton'24 | 0.738 / 205 | 0.684 / 142 | 0.670 / 0 | +0.257 [+0.229, +0.284] |
+| Xu'21 | 0.694 / 164 | 0.642 / 106 | 0.651 / 0 | +0.276 [+0.248, +0.307] |
+| TAO'26 | 0.836 / 256 | 0.629 / 53 | 0.651 / 0 | +0.276 [+0.250, +0.303] |
+
+  Luật cuối: 0.927 / 0. Hiệu chỉnh nhãn trên điều kiện dễ không giữ được α ở điều kiện khó (dịch phân bố). Kể cả ngưỡng tốt nhất có thể,
+  các baseline vẫn kém xa.
+- **Hạn chế mới: trôi heading.**
+  - Thiết lập: odometry mô phỏng của CMU / Oxford / St Lucia dùng heading thật. Ablation `ODO_YAWRW` = 0.13°/√m (mức `nav_demo.track` tự mô
+    phỏng) trên 129 run tập A.
+  - Luật cuối: recall 0.918 → 0.870 (−0.048 [−0.062, −0.035]), 0 run > α, điều hướng 11.7 → 14.4 m.
+  - Theo dataset: CMU −0.000, Oxford −0.040, St Lucia −0.145.
+  - HSI-VNc độc lập cũng giảm −0.042 (St Lucia −0.166).
+  - Mức 0.3°/√m (18 run, mô tả): −0.19.
+  - Kết luận theo quy tắc đăng ký: không bền (ngưỡng 0.02), ghi là hạn chế. Trôi càng hại khi chuỗi càng dài (St Lucia).
+  - Vẫn hơn Claxton'24 @orc +0.086 và Xu'21 @orc +0.141 khi trôi.
+  - TAO'26 không bị ảnh hưởng (khớp phép quay trên cửa sổ 20 frame).
+  - Ứng viên sửa có lý do: thêm chiều lệch heading vào ngân hàng tự hiệu chỉnh.
 
 ## 4. Điều kiện kiểm chứng
 

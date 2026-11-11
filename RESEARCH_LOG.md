@@ -37,6 +37,50 @@ thí nghiệm, kết quả (kể cả âm), kết luận. Nhật ký của ý t�
     evidence như q / tỉ lệ (dev trước, rồi một nhóm r73).
 - 0.3 là mức thử sức, chỉ mô tả.
 
+**Kết quả E29 (ghi 2026-11-11 10:07 UTC; kernel L4 trên `duylnng` / `caotienminh1`; không dùng nhóm seed tươi).**
+Bảng đầy đủ: `analysis/results/owf/s1111/` (`e29a_board_s67_72.md`, `e29b_subset18.md`, `e29b_full129.md`, JSON trong các `.tgz`).
+
+*E29a — 288 run seed 67–72.* Ô = recall / TB segFAR / run > α / điều hướng (m). Luật cuối lấy từ `un2_t67Q2.json`, không chạy lại.
+- `@pub` tái lập đúng số cũ (Claxton 0.738 / 205, Xu'21 0.694 / 164, TAO 0.836 / 256).
+- Ba cột Claxton / Xu'21 tính cục bộ và trong kernel cho số trùng nhau.
+
+| Luật | Điểm gốc (@pub) | @seg (segFAR trên 2 điều kiện dễ) | @orc (oracle theo run, cận trên) | luật cuối − @orc |
+|---|---|---|---|---|
+| luật cuối | 0.927 / 0.0031 / 0 / 13.3 | | | |
+| Claxton'24 | 0.738 / 0.193 / 205 / 46.6 | 0.684 / 0.073 / 142 / 30.3 | 0.670 / 0.048 / 0 / 28.1 | +0.257 [+0.229, +0.284] |
+| Xu'21 | 0.694 / 0.256 / 164 / 53.8 | 0.642 / 0.051 / 106 / 44.6 | 0.651 / 0.048 / 0 / 44.5 | +0.276 [+0.248, +0.307] |
+| TAO'26 | 0.836 / 0.663 / 256 / 112.2 | 0.629 / 0.040 / 53 / 37.3 | 0.651 / 0.048 / 0 / 37.1 | +0.276 [+0.250, +0.303] |
+
+Đọc theo đăng ký:
+- (i) không `@seg` nào hợp lệ. Hiệu chỉnh nhãn trên điều kiện dễ không chuyển sang điều kiện khó.
+- (ii) luật cuối vượt cả ngưỡng oracle của từng baseline, CI dưới > 0.
+- (iii) đã thay câu "vượt α trên 56–90 % run" trong paper / handoff bằng bảng ba điểm vận hành.
+- TAO tái hiện vẫn có recall < top-1 ở 5/8 dataset (ghi chú, chưa sửa).
+
+*E29b — trôi heading* (tập A, CMU / Oxford / St Lucia; mức 0 tham chiếu = `un2_aQ2.json` của Entry 28).
+- Chạy lại 18 run ở mức 0: recall chênh tối đa 0.004 / run, trung bình −0.0002. Do phép cộng nguyên tử trên GPU, không phải lỗi.
+- 18 run × 3 mức, recall / TB segFAR / run > α / điều hướng:
+  - luật cuối: 0.960 / 0.0018 / 0 / 11.4 → 0.917 / 0.0025 / 0 / 16.3 → 0.766 / 0.0034 / 0 / 35.0;
+  - HSI-VNc: 0.864 → 0.800 → 0.653;
+  - TAO'26 không đổi (khớp phép quay trên cửa sổ 20 frame).
+- Mức 0.13 giảm −0.042 > 0.02, nên theo quy tắc chạy đủ 129 run:
+
+| Tập | luật cuối, trôi 0 | luật cuối, trôi 0.13 | Δrecall [CI 95 %] | HSI-VNc 0 → 0.13 |
+|---|---|---|---|---|
+| CMU (54) | 0.859 / 0.0062 / 0 / 3.7 | 0.859 / 0.0056 / 0 / 3.6 | −0.0003 [−0.0013, +0.0009] | 0.752 → 0.751 |
+| Oxford (45) | 0.942 / 0.0093 / 0 / 18.3 | 0.903 / 0.0087 / 0 / 19.4 | −0.040 [−0.048, −0.032] | 0.805 → 0.795 |
+| St Lucia (30) | 0.985 / 0.0016 / 0 / 16.3 | 0.840 / 0.0019 / 0 / 26.4 | −0.145 [−0.179, −0.111] | 0.914 → 0.748 |
+| tất cả (129) | 0.918 / 0.0062 / 0 / 11.7 | 0.870 / 0.0058 / 0 / 14.4 | −0.048 [−0.062, −0.035] | 0.808 → 0.766 |
+
+**Kết luận E29b.**
+- Không bền với trôi heading ở mức của bộ lọc điều hướng: ghi là hạn chế. Tính hợp lệ giữ nguyên (0/129 run > α; phủ quyết TB segFAR 0.0022).
+- Mất mát tăng theo độ dài chuỗi: CMU (chuỗi ngắn) không đổi, St Lucia (chuỗi dài) mất nhiều nhất. HSI-VNc mất tương tự, dù chuỗi tô-pô
+  `est_c` của nó vẫn tính bằng odometry sạch.
+- Khi trôi, luật cuối vẫn hơn Claxton'24 @orc (0.783) +0.086 [+0.060, +0.114] và Xu'21 @orc (0.729, odometry KHÔNG trôi) +0.141
+  [+0.104, +0.179]. Riêng St Lucia: Xu'21 @orc 0.859 > 0.840.
+- Việc tiếp theo có lý do: thêm chiều lệch heading vào ngân hàng tự hiệu chỉnh, chọn theo evidence như q / tỉ lệ (giả thuyết, chưa kiểm:
+  lệch heading làm giảm evidence tích luỹ nên chọn được theo lml). Phát triển trên tập A ở `ODO_YAWRW=0.13`, rồi đăng ký và kiểm trên r73.
+
 **Độ bền tỉ lệ lỗ (phụ, không quyết định; `hmm-navcache-holes` seed 0–2 × 6 dataset × 6 desc, 216 run; ghi 11:39 UTC).**
 
 | lỗ | Dataset | runs | OWF recall / segFAR | run > α | SH | HSI-VN | err OWF / SH / HSI-VN (m) |
