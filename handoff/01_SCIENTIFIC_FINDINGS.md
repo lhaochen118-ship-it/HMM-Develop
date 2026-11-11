@@ -4,7 +4,7 @@
 - **Phạm vi:** đóng góp, ý nghĩa khoa học, kết quả tích cực, kết quả tiêu cực / hạn chế, bằng chứng và điều kiện kiểm chứng. Không chứa vận
   hành (→ `02`) hay kế hoạch (→ `03`).
 - Nguồn: `RESEARCH_LOG.md` (Entry 10–28), `paper/owf_theory.md` (Mệnh đề 1–7, §11–12 kiểm toán), `paper/OWF_paper_draft.md`.
-- Bản trước (đầy đủ các phiên 2026-11-04 → 06): `history/01_SCIENTIFIC_FINDINGS_through_2026-11-06.md`. Ý tưởng 1: `07_IDEA1_SUMMARY.md`.
+- Bản trước (đầy đủ các phiên 2026-11-04 → 06): `git show cf5abef:history/01_SCIENTIFIC_FINDINGS_through_2026-11-06.md`. Ý tưởng 1: `07_IDEA1_SUMMARY.md`.
 
 ## 0. Một trang
 

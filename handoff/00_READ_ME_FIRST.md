@@ -1,7 +1,7 @@
 # 00 — READ ME FIRST (branch `hmm-2nd-idea`)
 
 *2026-11-07. Repo `lhaochen118-ship-it/hmm-develop` (public). Không tạo PR; chỉ push `hmm-2nd-idea`. Bản trước:
-`history/` (các file `*_through_2026-11-06.md`).*
+trong git (`git show cf5abef:history/<file>_through_2026-11-06.md`; đã xoá khỏi cây 2026-11-11).*
 
 **Bài toán.** Robot camera đơn + odometry định vị theo chuỗi trên bản đồ ảnh có lỗ. Mỗi frame quyết định có báo fix hay không. Mục tiêu:
 - segFAR ≤ α = 0.05 trên từng run;

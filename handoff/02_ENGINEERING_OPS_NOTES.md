@@ -4,8 +4,8 @@
 - **Phạm vi:** lập trình, môi trường, Kaggle, tổ chức thử nghiệm, lỗi đã gặp và cách sửa, bài học. Không chứa kết quả khoa học (→ `01`) hay kế
   hoạch (→ `03`).
 - Bảng tài khoản / dataset: `ENVIRONMENT_SUMMARY.md`.
-- Bản đầy đủ trước đó: `history/02_ENGINEERING_OPS_NOTES_through_2026-11-06.md` (ý tưởng 2a HSI, AUTOLOOP, engine GPU) và
-  `history/02_ENGINEERING_OPS_NOTES_full_through_2026-11-03.md` (ý tưởng 1).
+- Bản đầy đủ trước đó (đã xoá khỏi cây, còn trong git): `git show cf5abef:history/02_ENGINEERING_OPS_NOTES_through_2026-11-06.md`
+  (ý tưởng 2a HSI, AUTOLOOP, engine GPU) và `..._full_through_2026-11-03.md` (ý tưởng 1).
 
 ## 1. Tài nguyên và quy tắc dùng (theo `HMM_Navigation_Yeu_Cau_Nghien_Cuu_Cap_Nhat.docx`, đã kiểm chứng)
 

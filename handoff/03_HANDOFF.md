@@ -3,7 +3,7 @@
 *Cập nhật 2026-11-07.*
 - **Phạm vi:** mục tiêu, tiến độ, quyết định đã thống nhất, vị trí mã / dữ liệu / kết quả, sổ dùng nhóm seed, việc tiếp theo. Không lặp kết quả
   (→ `01`) hay vận hành (→ `02`).
-- Bản trước: `history/03_HANDOFF_through_2026-11-06.md`.
+- Bản trước: `git show cf5abef:history/03_HANDOFF_through_2026-11-06.md`.
 
 ## 1. Mục tiêu nghiên cứu
 

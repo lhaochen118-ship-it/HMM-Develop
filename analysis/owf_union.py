@@ -9,7 +9,7 @@ Fix position: OWF-H's position where it reports (hybrid chain = OWF image where 
 elsewhere), the OWF image otherwise. Inputs: OWF frames (fr_*_b1.npz: mass, xhat), OWF-H masks (hsifr_*_<tag>.npz from hsi_eval --frames
 via owf_hybrid --hsiframes), navcaches. Usage:
   owf_union.py <owf_frames_dir> <hsifr_dir> <navcache_dir>[,dir2] <out.json> [--tag hfr0916] [--variants "U(1e-4,16);U(1e-5,32)"] [--ftag ""]
-Output in the owf_decide.py JSON format (variant names prefixed OWF: by owf_score.py --decide)."""
+Output in the owf_decide.py JSON format (read by hcal_board.py)."""
 import sys, os, glob, json
 import numpy as np
 from multiprocessing import Pool
