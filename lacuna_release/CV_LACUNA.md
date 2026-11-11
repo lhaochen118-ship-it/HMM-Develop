@@ -1,11 +1,11 @@
 # LACUNA: CV entry
 
-## Main version (4 lines, for the "Research Experience" or "Projects" section)
+## Main version (2 bullets, about 3 lines each)
 
 **LACUNA: Open-World Sequential Visual Localization on Maps with Holes** · *paper in preparation* · [[GitHub]](https://github.com/nhatlong113/LACUNA---Localization-Aware-of-Coverage-and-UNmapped-Areas)
 
-- Proposed **LACUNA**, an open-world Bayes filter that models unmapped space as part of a metric state. A robot localizing on an incomplete image map therefore *predicts* when it leaves the map by dead reckoning, instead of committing to look-alike places and reporting false position fixes. Added label-free evidence, calibrated causally within each session, that suppresses odometry-unobservable aliasing.
-- On 432 pre-registered runs (8 environments from 6 datasets incl. Oxford RobotCar, Nordland, CMU Seasons, 4Seasons; 6 VPR descriptors), achieved **93% recall** while exceeding the 5% false-report budget on only **0.7%** of runs. Outperformed SOTA (TAO'26, Claxton RA-L'24, Xu RA-L'21) by **+26–28 pp** recall with **2–3× lower** navigation error, even when their thresholds were tuned on test labels.
+- Proposed **LACUNA**, an open-world Bayes filter that models unmapped space in its metric state. A robot on an incomplete image map thus *predicts* when it leaves the map by dead reckoning, instead of reporting false fixes at look-alike places. Label-free calibrated evidence suppresses shifted aliases.
+- On 432 runs (8 environments incl. Oxford RobotCar, Nordland, CMU Seasons; 6 VPR descriptors), reached **93% recall**, with the 5% false-report budget exceeded on only **0.7%** of runs. Beat SOTA (TAO'26, Claxton RA-L'24, Xu RA-L'21) by **+26–28 pp** recall with **2–3× lower** navigation error, even with their thresholds tuned on test labels.
 
 ## Short version (3 lines, when space is tight)
 
