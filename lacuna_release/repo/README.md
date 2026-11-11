@@ -2,7 +2,7 @@
 
 # LACUNA
 
-**L**ocalization-**A**ware of **C**overage and **UN**mapped **A**reas
+**L**ocalization **A**ware of **C**overage and **UN**mapped **A**reas
 
 ### Open-World Sequential Visual Localization on Maps with Holes
 
@@ -40,11 +40,11 @@ online by Bayesian model selection over a filter bank. We further identify a fai
 evidence per frame: *odometry-unobservable aliasing*, in which a weakly similar copy of the trajectory, shifted along a straight road,
 accumulates evidence without bound. We resolve it by giving the unmapped cells an absolute likelihood ratio that is calibrated causally,
 and without labels, from the filter's own confident fixes. In pre-registered experiments on freshly sampled hole layouts spanning eight
-datasets and six global descriptors (432 runs), LACUNA reports correct fixes on 93% of on-map frames. This exceeds a single-frame retrieval
-oracle by about 8 points and its closed-world counterpart by 12–13 points, and the 5% false-report budget is exceeded on only 0.7% of runs.
-Under the same protocol, three recent integrity-monitoring and off-map detection methods, tuned with ground-truth labels, violate the
-budget on 56–90% of runs and incur 3.5–8.7× larger navigation errors. A batched GPU implementation runs the complete two-pass system at
-about 6 ms per frame.
+datasets and six global descriptors (432 runs), LACUNA reports correct fixes on 93% of on-map frames, 12–13 points more than its
+closed-world counterpart, and exceeds a 5% false-report budget on only 0.7% of runs. On 288 of these runs, we compare against three recent
+integrity-monitoring and off-map detection methods. Even when their decision thresholds are tuned on the labels of each test run, they
+report 26–28 points fewer correct fixes than LACUNA. At their published operating points, they violate the budget on 57–89% of runs. A
+batched GPU implementation runs the complete two-pass system at about 6 ms per frame.
 
 ## Highlights
 
@@ -75,8 +75,8 @@ LACUNA runs in two causal passes over a deployment (a set of sessions driven on 
 4. **Decision.** A position fix is reported only when the posterior mass near a mapped place passes extreme-confidence tiers, or when a
    self-supervised conformal branch confirms it. Otherwise the system abstains.
 
-Full derivations are given in the paper: no net pull of a diffuse belief, a Ville-type bound on false reports within an off-map stretch (under an e-value assumption),
-and the crossover analysis behind odometry-unobservable aliasing.
+Full derivations are given in the paper: no net pull of a diffuse belief, a Ville-type bound on false reports within an off-map stretch
+(under an e-value assumption), and the crossover analysis behind odometry-unobservable aliasing.
 
 ## Results
 
@@ -89,36 +89,50 @@ before the test. We report the following metrics.
 
 One run is one dataset × descriptor × hole layout.
 
-### Main comparison: two fresh test groups (144 runs each, same runs for every method)
+### Comparison with state-of-the-art methods (288 runs, same runs for every method)
 
-Each cell shows *group 1 / group 2*.
+| Method | Operating point | Recall ↑ | Runs violating α ↓ (of 288) | Nav. error (m) ↓ |
+|:---|:---|:---:|:---:|:---:|
+| Xu *et al.*, RA-L 2021 | published | 0.694 | 164 | 53.8 |
+| | calibrated to segFAR ‡ | 0.642 | 106 | 44.6 |
+| | per-run oracle threshold † | 0.651 | 0 | 44.5 |
+| Claxton *et al.*, RA-L 2024 | published | 0.738 | 205 | 46.6 |
+| | calibrated to segFAR ‡ | 0.684 | 142 | 30.3 |
+| | per-run oracle threshold † | 0.670 | 0 | 28.1 |
+| TAO, arXiv 2026 | published | 0.836 | 256 | 112.2 |
+| | calibrated to segFAR ‡ | 0.629 | 53 | 37.3 |
+| | per-run oracle threshold † | 0.651 | 0 | 37.1 |
+| Closed-world hindsight baseline | label-free | 0.802 | 0 | 15.0 |
+| **LACUNA** (safe operating point) | label-free | 0.920 | **0** | 13.8 |
+| **LACUNA** | label-free | **0.927** | **0** | **13.3** |
 
-| Method | Labels for tuning | Recall ↑ | Runs violating α ↓ (of 144) | Nav. error (m) ↓ |
-|:---|:---:|:---:|:---:|:---:|
-| Xu *et al.*, RA-L 2021 | ✓ | 0.692 / 0.696 | 81 / 83 | 51.0 / 56.6 |
-| Claxton *et al.*, RA-L 2024 | ✓ | 0.738 / 0.739 | 104 / 101 | 44.3 / 48.9 |
-| TAO, arXiv 2026 | ✓ | 0.834 / 0.839 | 130 / 126 | 109.5 / 114.9 |
-| Closed-world hindsight baseline | ✗ | 0.795 / 0.810 | 0 / 0 | 14.5 / 15.4 |
-| **LACUNA** (safe operating point) | ✗ | 0.920 / 0.919 | **0 / 0** | 12.9 / 14.6 |
-| **LACUNA** | ✗ | **0.928 / 0.926** | **0 / 0** | **12.6 / 14.0** |
-| *Single-frame oracle* † | *GT* | *0.847 / 0.848* | *0 / 0* | *10.6 / 11.7* |
+LACUNA reports **26–28 points more correct fixes** than every baseline, even when the baseline's threshold is set with the labels of the
+test run itself. Its navigation error is **2.1–3.3× lower**. Over all three fresh test groups (432 runs), LACUNA exceeds α on **3 runs
+(0.7%)**, and on **none** at its safe operating point.
 
-Over all three fresh groups (432 runs), LACUNA exceeds α on **3 runs (0.7%)**, and on **none** at its safe operating point.
+<sub>† The threshold that maximizes recall subject to segFAR ≤ α, chosen with the ground truth of each test run. This is an upper bound
+for any threshold on the method's score, not a deployable rule. ‡ Thresholds tuned with labels on the two easiest conditions to meet the
+segment-level target, which does not carry over to harder conditions. External baselines are re-implemented from their papers.</sub>
 
 ### Generalization to settings never used for tuning
 
 Each cell shows *recall / runs violating α*.
 
-| Setting (runs) | **LACUNA** | Closed-world baseline | TAO'26 | Xu'21 | Claxton'24 | Oracle † |
-|:---|:---:|:---:|:---:|:---:|:---:|:---:|
-| Holes 10% (108) | **0.932 / 0** | 0.777 / 0 | 0.843 / 92 | 0.646 / 35 | 0.737 / 86 | 0.827 |
-| Holes 50% (108) | **0.872 / 4** | 0.751 / 4 | 0.842 / 93 | 0.609 / 30 | 0.678 / 60 | 0.829 |
-| Natural off-map, 4Seasons cross-scene (36) | **0.945 / 0** | 0.756 / 0 | 0.578 / 4 | 0.581 / 10 | 0.678 / 5 | 0.822 |
-| NCLT (6) | **0.769 / 0** | — | 0.756 / 6 | 0.526 / 1 | 0.663 / 5 | 0.724 |
+| Setting (runs) | **LACUNA** | Closed-world baseline | Top-1 retrieval with perfect rejection § |
+|:---|:---:|:---:|:---:|
+| Holes 10% (108) | **0.932 / 0** | 0.777 / 0 | 0.827 / 0 |
+| Holes 50% (108) | **0.872 / 4** | 0.751 / 4 | 0.829 / 0 |
+| Natural off-map, 4Seasons cross-scene (36) | **0.945 / 0** | 0.756 / 0 | 0.822 / 0 |
+| NCLT (6) | **0.769 / 0** | — | 0.724 / 0 |
 
-<sub>† The oracle reports exactly the correct top-1 retrievals using ground truth. It is an upper reference for single-frame methods, not
-a deployable system. LACUNA exceeds it because sequence evidence recovers frames whose top-1 retrieval is wrong. External baselines are
-re-implemented from their papers, and their thresholds are tuned with labels on the two easiest conditions, as in the original works.</sub>
+<sub>§ Reports exactly the correct top-1 retrievals using ground truth, i.e. per-frame top-1 accuracy with perfect rejection. It is a
+reference, not a deployable method.</sub>
+
+> [!IMPORTANT]
+> **Known limitation.** On CMU, Oxford and St Lucia the odometry is simulated and keeps the true heading. With a heading random walk of
+> 0.13°/√m, recall on those datasets drops by 4.8 points (St Lucia: 14.5) and validity is unchanged. LACUNA still outperforms
+> oracle-thresholded Claxton'24 and Xu'21 by 8.6 and 14.1 points. Adding heading offset to the self-calibrating odometry bank is
+> work in progress.
 
 ## Datasets and Descriptors
 
@@ -134,7 +148,7 @@ re-implemented from their papers, and their thresholds are tuned with labels on 
 - [ ] Paper (arXiv)
 - [ ] Core open-world filter: NumPy reference and batched PyTorch engine
 - [ ] Evaluation protocol: hole generation, metrics (recall, segFAR, navigation error) and position audit
-- [ ] Re-implemented baselines (TAO'26, Xu'21, Claxton'24)
+- [ ] Re-implemented baselines (TAO'26, Xu'21, Claxton'24) at all three operating points
 - [ ] Pre-computed descriptor caches and scripts to reproduce every table
 
 ## Citation
