@@ -48,10 +48,10 @@ def panel(px, name, t, title, sub, ours):
             o.append(f'<line x1="{xr}" y1="{yr}" x2="{fx}" y2="{fy}" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="4 3"/>')
             o.append(f'<circle cx="{fx}" cy="{fy}" r="12" fill="#fee2e2" fill-opacity="0.6" stroke="#dc2626" stroke-width="2.5"/>'
                      f'<path d="M{fx - 5},{fy - 5} L{fx + 5},{fy + 5} M{fx + 5},{fy - 5} L{fx - 5},{fy + 5}" stroke="#dc2626" stroke-width="2.5" stroke-linecap="round"/>')
-            o.append(f'<text x="{fx + 17}" y="{fy - 10}" font-size="12.5" font-weight="700" fill="#dc2626">false fix</text>')
+            o.append(f'<text x="{fx + 17}" y="{fy - 10}" font-size="12.5" font-weight="700" fill="#dc2626">wrong position</text>')
     # status pill
-    if r["fix"] is not None and r["ok"]: txt, bg, fg = "✓  Correct position fix", "#dcfce7", "#15803d"
-    elif r["fix"] is not None: txt, bg, fg = f"✗  False fix, {r['err']:.0f} m from the robot", "#fee2e2", "#b91c1c"
+    if r["fix"] is not None and r["ok"]: txt, bg, fg = "✓  Correct position", "#dcfce7", "#15803d"
+    elif r["fix"] is not None: txt, bg, fg = f"✗  Wrong position, {r['err']:.0f} m off", "#fee2e2", "#b91c1c"
     elif f["off"]: txt, bg, fg = "Abstains: robot is off the map", "#fef3c7", "#b45309"
     else: txt, bg, fg = "Abstains", "#f1f5f9", "#475569"
     pause = r["fix"] is None
@@ -63,13 +63,13 @@ def panel(px, name, t, title, sub, ours):
         o.append(f'<text x="{px + 16}" y="333" font-size="14" font-weight="600" fill="{fg}">{txt}</text>')
     nbad = sum(1 for g in F[:t + 1] if g[name]["ok"] is False)
     o.append(f'<text x="{px + 568}" y="333" font-size="13" text-anchor="end" fill="{"#b91c1c" if nbad else "#475569"}">'
-             f'false fixes so far: <tspan font-weight="700">{nbad}</tspan></text>')
+             f'wrong positions so far: <tspan font-weight="700">{nbad}</tspan></text>')
     return o
 
 
 def timeline(t):
     x0, x1 = 160, 1180; w = (x1 - x0) / N; o = []
-    rows = [(384, "Robot on the map?", None), (410, "Closed-world filter", "cw"), (436, "LACUNA (ours)", "ow")]
+    rows = [(384, "Robot on the map?", None), (410, "Standard HMM", "cw"), (436, "LACUNA (ours)", "ow")]
     for y, lab, name in rows:
         o.append(f'<text x="{x0 - 10}" y="{y + 11}" font-size="12.5" fill="#334155" text-anchor="end" font-weight="{700 if name == "ow" else 400}">{lab}</text>')
         o.append(f'<rect x="{x0}" y="{y}" width="{x1 - x0}" height="15" rx="3" fill="#f8fafc" stroke="#e2e8f0"/>')
@@ -81,21 +81,21 @@ def timeline(t):
             o.append(f'<rect x="{x0 + i * w:.2f}" y="{y + 1.5}" width="{w + 0.3:.2f}" height="12" fill="{c}"/>')
     cx = x0 + (t + 0.5) * w
     o.append(f'<line x1="{cx:.1f}" y1="377" x2="{cx:.1f}" y2="458" stroke="#0f172a" stroke-width="1.5"/>')
-    lg = [("#cbd5e1", "on map"), ("#fbbf24", "off map (hole)"), ("#22c55e", "correct fix"), ("#ef4444", "false fix"), ("#e2e8f0", "abstain")]
+    lg = [("#cbd5e1", "on map"), ("#fbbf24", "off map (hole)"), ("#22c55e", "correct position"), ("#ef4444", "wrong position"), ("#e2e8f0", "abstain")]
     xx = x0
     for c, lab in lg:
         o.append(f'<rect x="{xx}" y="473" width="12" height="12" rx="2" fill="{c}"/><text x="{xx + 18}" y="484" font-size="12" fill="#475569">{lab}</text>')
         xx += 30 + 7.2 * len(lab)
     o.append(f'<rect x="{xx + 6}" y="472" width="26" height="14" rx="3" fill="#4f46e5" fill-opacity="0.55"/>'
-             f'<text x="{xx + 38}" y="484" font-size="12" fill="#475569">belief of the filter</text>')
+             f'<text x="{xx + 38}" y="484" font-size="12" fill="#475569">estimated robot location</text>')
     return o
 
 
 for t in range(N):
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="528" viewBox="0 0 1200 528" font-family="{FONT}">',
              '<rect width="1200" height="528" fill="#ffffff"/>']
-    parts += panel(20, "cw", t, "Closed-world filter", "belief restricted to mapped places", False)
-    parts += panel(610, "ow", t, "LACUNA (ours)", "open-world: aware of where the map ends", True)
+    parts += panel(20, "cw", t, "Standard HMM (closed world)", "can only place the robot on the map", False)
+    parts += panel(610, "ow", t, "LACUNA (ours)", "knows when the robot is off the map", True)
     parts += timeline(t)
     parts.append(f'<text x="20" y="516" font-size="11.5" fill="#94a3b8">Illustrative simulation on a synthetic map.</text>')
     parts.append("</svg>")

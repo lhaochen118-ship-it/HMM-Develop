@@ -10,24 +10,37 @@ _id = [0]
 def uid(p): _id[0] += 1; return f"{p}{_id[0]}"
 
 
-def street(x, y, w=86, h=60, v=0):
-    """stylised camera frame: sky, buildings, road to a vanishing point"""
-    c = uid("c"); o = [f'<clipPath id="{c}"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6"/></clipPath><g clip-path="url(#{c})">',
-                       f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="#dbeafe"/>',
-                       f'<rect x="{x}" y="{y + h * 0.55}" width="{w}" height="{h * 0.45}" fill="#e2e8f0"/>']
-    bl = [(0.00, 0.22, 0.30, "#94a3b8"), (0.12, 0.30, 0.22, "#cbd5e1"), (0.24, 0.42, 0.14, "#a5b4fc")]
-    br = [(0.80, 0.25, 0.20, "#cbd5e1"), (0.66, 0.36, 0.16, "#94a3b8"), (0.58, 0.45, 0.10, "#c7d2fe")]
-    for fx, top, fw, col in bl + br:
-        top = top + 0.05 * math.sin(v * 1.7 + fx * 9)
-        o.append(f'<rect x="{x + fx * w:.1f}" y="{y + top * h:.1f}" width="{fw * w:.1f}" height="{(0.58 - top) * h:.1f}" fill="{col}"/>')
-    vx = x + w * (0.5 + 0.04 * math.sin(v))
-    o.append(f'<polygon points="{x + 0.08 * w:.1f},{y + h} {x + 0.92 * w:.1f},{y + h} {vx + 3:.1f},{y + 0.56 * h:.1f} {vx - 3:.1f},{y + 0.56 * h:.1f}" fill="#64748b"/>')
-    for k in range(3):
-        f0, f1 = 0.62 + k * 0.13, 0.62 + k * 0.13 + 0.06
-        o.append(f'<line x1="{vx + (x + w / 2 - vx) * (f0 - 0.56) / 0.44:.1f}" y1="{y + f0 * h:.1f}" x2="{vx + (x + w / 2 - vx) * (f1 - 0.56) / 0.44:.1f}" '
-                 f'y2="{y + f1 * h:.1f}" stroke="#fff" stroke-width="{1 + k * 0.6:.1f}"/>')
-    o.append(f'<circle cx="{x + 0.36 * w:.1f}" cy="{y + 0.52 * h:.1f}" r="{0.06 * w:.1f}" fill="#86efac"/></g>')
-    o.append(f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6" fill="none" stroke="#cbd5e1"/>')
+def street(x, y, w=86, h=60, v=0, step=2.6):
+    """perspective camera frame of a straight street; v = frame index: the camera moves `step` m forward per frame,
+    so consecutive frames show the same buildings and tree coming closer"""
+    c = uid("c"); f = w * 0.55; cx = x + w / 2; hy = y + h * 0.5; camH = 1.5; dmin = 0.9; sh = v * step
+
+    def P(X, d, Y=0.0): return (cx + f * X / d, hy + f * (camH - Y) / d)
+
+    def poly(pts, col, op=1.0): return f'<polygon points="{" ".join(f"{a:.1f},{b:.1f}" for a, b in pts)}" fill="{col}" fill-opacity="{op}"/>'
+    o = [f'<clipPath id="{c}"><rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6"/></clipPath><g clip-path="url(#{c})">',
+         f'<rect x="{x}" y="{y}" width="{w}" height="{h}" fill="#dbeafe"/>', f'<rect x="{x}" y="{hy:.1f}" width="{w}" height="{y + h - hy:.1f}" fill="#e2e8f0"/>']
+    o.append(poly([P(-3.2, dmin), P(3.2, dmin), P(3.2, 400), P(-3.2, 400)], "#64748b"))
+    for k in range(12):                                            # lane dashes, 2 m long every 5 m
+        d0 = 1.0 + k * 5 - (sh % 5)
+        if d0 + 2 <= dmin: continue
+        d0 = max(d0, dmin); o.append(poly([P(-0.13, d0), P(0.13, d0), P(0.13, d0 + 2), P(-0.13, d0 + 2)], "#ffffff"))
+    B = [(-5, 2, 8, 4.5, "#94a3b8", "#cbd5e1"), (-5, 9, 15, 6.5, "#a5b4fc", "#c7d2fe"), (-5, 16, 26, 4.0, "#cbd5e1", "#e2e8f0"),
+         (-5, 27, 40, 7.0, "#94a3b8", "#cbd5e1"), (5, 4, 10, 6.0, "#cbd5e1", "#e2e8f0"), (5, 11, 19, 4.5, "#94a3b8", "#cbd5e1"),
+         (5, 20, 34, 6.5, "#a5b4fc", "#c7d2fe")]
+    for X, d1, d2, Hb, side, cap in sorted(B, key=lambda b: -b[1]):  # far to near
+        d1, d2 = d1 - sh, d2 - sh
+        if d2 <= dmin: continue
+        d1 = max(d1, dmin); sg = 1 if X > 0 else -1
+        o.append(poly([P(X, d1), P(X, d2), P(X, d2, Hb), P(X, d1, Hb)], side))
+        if d1 > dmin: o.append(poly([P(X, d1), P(X + sg * 6, d1), P(X + sg * 6, d1, Hb), P(X, d1, Hb)], cap))
+    for X, d in ((-3.9, 7.0), (3.9, 14.0)):                          # trees
+        d -= sh
+        if d <= dmin: continue
+        bx, by = P(X, d); tx, ty = P(X, d, 2.6)
+        o.append(f'<line x1="{bx:.1f}" y1="{by:.1f}" x2="{tx:.1f}" y2="{ty:.1f}" stroke="#a16207" stroke-width="{max(0.8, f * 0.25 / d):.1f}"/>')
+        o.append(f'<circle cx="{tx:.1f}" cy="{ty:.1f}" r="{f * 1.1 / d:.1f}" fill="#86efac"/>')
+    o.append('</g>' + f'<rect x="{x}" y="{y}" width="{w}" height="{h}" rx="6" fill="none" stroke="#cbd5e1"/>')
     return "".join(o)
 
 
@@ -101,19 +114,19 @@ def io_svg():
     o.append(card(20, 50, 400, 112))
     for k in range(3): o.append(street(36 + k * 34, 76 - k * 6 + 6, 86, 60, v=k))
     for k, lab in enumerate(("t−2", "t−1", "t")): o.append(text(79 + k * 34, 156, lab, 11, MUTED, 400, "middle"))
-    o.append(text(196, 82, "Camera image sequence", 15, INK, 700) + text(196, 104, "monocular, one frame at a time", 13, MUTED)
-             + text(196, 124, "described by a global VPR descriptor", 13, MUTED))
+    o.append(text(196, 82, "Camera image sequence", 15, INK, 700) + text(196, 104, "one image per frame, compared", 13, MUTED)
+             + text(196, 124, "with the map images", 13, MUTED))
     # input 2: odometry
     o.append(card(20, 174, 400, 100))
     pts = [(40, 250), (70, 240), (100, 236), (128, 222), (150, 204), (176, 196)]
     for (a, b), (c, d) in zip(pts, pts[1:]): o.append(f'<line x1="{a}" y1="{b}" x2="{c}" y2="{d}" stroke="{BLUE}" stroke-width="2.4" marker-end="url(#ahb)"/>')
     o.append(f'<circle cx="40" cy="250" r="4" fill="{BLUE}"/>')
-    o.append(text(196, 206, "Odometry", 15, INK, 700) + text(196, 228, "relative motion between frames", 13, MUTED)
-             + text(196, 248, "e.g. visual-inertial or wheel; may drift", 13, MUTED))
+    o.append(text(196, 206, "Odometry", 15, INK, 700) + text(196, 228, "how far the robot moved since", 13, MUTED)
+             + text(196, 248, "the previous frame", 13, MUTED))
     # input 3: map
     o.append(card(20, 286, 400, 118))
     mm, (h0, h1, ym, ya) = minimap(30, 296, 156, 98); o.append(mm)
-    o.append(text(196, 320, "Geo-referenced image map", 15, INK, 700) + text(196, 342, "map images with known positions", 13, MUTED)
+    o.append(text(196, 320, "Geo-referenced image map", 15, INK, 700) + text(196, 342, "images taken at known positions", 13, MUTED)
              + text(196, 362, "has holes:", 13, MUTED) + f'<rect x="262" y="352" width="34" height="13" rx="3" fill="#fef3c7" stroke="#f59e0b" stroke-dasharray="3 2"/>'
              + text(302, 362, "unmapped areas", 13, MUTED))
     # arrows into LACUNA
@@ -127,19 +140,19 @@ def io_svg():
     o.append(blob((h0 + h1) / 2 + 6, ym, 22, 13))
     o.append(f'<circle cx="{(h0 + h1) / 2 + 6}" cy="{ym}" r="4.5" fill="{BLUE}" stroke="#fff" stroke-width="1.5"/>')
     o.append(text(651, 284, "built on Hidden Markov Model principles", 12.5, "#334155", 400, "middle")
-             + text(651, 304, "no labels · one configuration for all maps", 12.5, "#334155", 400, "middle"))
+             + text(651, 304, "no labels needed · one setting for all maps", 12.5, "#334155", 400, "middle"))
     o.append(arrow(800, 212, 826, 212))
     # output 1: fix
     o.append(card(832, 50, 348, 112, "#bbf7d0", "#ffffff"))
     mm, (h0, h1, ym, ya) = minimap(842, 64, 120, 84, hole=False); o.append(mm)
     o.append(pin(842 + 120 * 0.78, ym - 1, GREEN, 0.9))
-    o.append(text(978, 92, "Position fix", 15, GREEN, 700) + text(978, 114, "(x, y) on the map, reported", 13, MUTED)
+    o.append(text(978, 92, "Position", 15, GREEN, 700) + text(978, 114, "(x, y) on the map, reported", 13, MUTED)
              + text(978, 134, "only when the filter is confident", 13, MUTED))
     # output 2: abstain
     o.append(card(832, 174, 348, 100, "#fde68a", "#ffffff"))
     o.append(pause(870, 224, AMBER, 1.25))
     o.append(text(908, 206, "Abstain", 15, AMBER, 700) + text(908, 228, "robot is off the map or uncertain:", 13, MUTED)
-             + text(908, 248, "no fix is sent to navigation", 13, MUTED))
+             + text(908, 248, "no position is reported", 13, MUTED))
     # output 3: over a drive
     o.append(card(832, 286, 348, 118))
     o.append(text(848, 312, "Over a drive", 15, INK, 700))
@@ -147,7 +160,7 @@ def io_svg():
     for i, c in enumerate(seq):
         o.append(f'<rect x="{x0 + i * w:.1f}" y="324" width="{w - 1.5:.1f}" height="10" rx="2" fill="{"#fbbf24" if c == "o" else "#cbd5e1"}"/>')
         o.append(f'<rect x="{x0 + i * w:.1f}" y="340" width="{w - 1.5:.1f}" height="14" rx="2" fill="{"#e2e8f0" if c == "o" else "#22c55e"}"/>')
-    lg = [("#cbd5e1", "on map"), ("#fbbf24", "in a hole"), ("#22c55e", "fix"), ("#e2e8f0", "abstain")]; xx = 848
+    lg = [("#cbd5e1", "on map"), ("#fbbf24", "in a hole"), ("#22c55e", "position"), ("#e2e8f0", "abstain")]; xx = 848
     for c, lab in lg:
         o.append(f'<rect x="{xx}" y="370" width="11" height="11" rx="2" fill="{c}"/>' + text(xx + 16, 380, lab, 12, MUTED)); xx += 34 + 6.8 * len(lab)
     o.append(text(848, 398, "top: where the robot is · bottom: LACUNA's output", 11, "#94a3b8"))

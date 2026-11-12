@@ -14,82 +14,79 @@
 </div>
 
 > [!NOTE]
-> 📄 **The paper and 💻 code will be released soon.**
+> The paper and code will be released soon.
 
-<p align="center"><img src="assets/demo.gif" alt="Closed-world filter vs LACUNA on a map with a hole" width="100%"></p>
-<p align="center"><sub>Illustrative simulation on a synthetic map. When the robot enters an unmapped area, a closed-world filter locks onto a
-look-alike street and reports false fixes. LACUNA abstains while the robot is off the map and resumes shortly after it returns to the map.</sub></p>
+<p align="center"><img src="assets/demo.gif" alt="Standard HMM vs LACUNA on a map with a hole" width="100%"></p>
+<p align="center"><sub>Illustrative simulation on a synthetic map. When the robot drives through an unmapped area, a standard HMM matches
+it to a similar-looking street and reports wrong positions. LACUNA recognizes that the robot is off the map, reports no position, and
+resumes shortly after the robot returns to the map.</sub></p>
 
-## 🧭 Problem
+## Problem
 
-A common approach to visual localization for mobile robots matches camera images against a geo-referenced image map and uses a Hidden
-Markov Model (HMM) to accumulate visual place recognition (VPR) evidence over time, often together with odometry. Real maps are incomplete:
-some streets were never mapped, and construction or seasonal occlusion leaves further gaps. Closed-world HMMs, whose states cover only
-mapped places, cannot represent a robot that has left the map. When the robot enters an unmapped area, they assign the belief to the
-remaining mapped places, often a visually similar one, and can report confident false position fixes.
+A robot can localize itself by comparing its camera images with a map made of images taken at known positions. A Hidden Markov Model
+(HMM) combines these comparisons over time, often together with odometry. Real maps, however, are incomplete: some streets were never mapped,
+and construction or seasonal occlusion creates further gaps. A standard HMM only has states for mapped places. When the robot enters an
+unmapped area, the HMM must still place it somewhere on the map, often at a similar-looking place, and can report a confident but wrong
+position.
 
-**Goal:** report correct position fixes whenever the robot is on the map and abstain while it is off the map, without labels at
-deployment.
+**Goal:** report the correct position whenever the robot is on the map, and report no position while it is off the map, without any
+labeled data at deployment.
 
-## 🔁 Input and Output
+## Input and Output
 
 <p align="center"><img src="assets/io.svg" alt="Input and output of LACUNA" width="100%"></p>
 
-For every frame, LACUNA takes the camera image, the odometry increment and the image map. It returns either a position fix or an
-abstention.
+At each frame, LACUNA receives the camera image, the odometry since the previous frame and the image map. It outputs either a position on
+the map or no position (abstain).
 
-## 💡 Method: an Open-World HMM
+## Method: an Open-World HMM
 
 <p align="center"><img src="assets/hmm.svg" alt="The HMM behind LACUNA" width="100%"></p>
 
-LACUNA is built on HMM principles:
+LACUNA keeps the structure of an HMM:
 
-- **Hidden state:** the robot's position. Unlike in closed-world HMMs, the state space also covers areas that are not in the map.
-- **Transition model:** the odometry predicts how the position changes between consecutive frames.
-- **Emission model:** the VPR similarities between the current frame and the map images score how well each state explains the
-  observation.
-- **Forward filtering:** the posterior over states is updated recursively at every frame, so evidence accumulates over the image sequence
-  instead of resting on a single retrieval. A position fix is reported only when the filter is confident; otherwise LACUNA abstains.
+- **Hidden state:** where the robot is. Unlike in a standard HMM, the states also include places outside the map, so the model can
+  represent a robot that is off the map.
+- **Motion model:** odometry predicts how the robot moves from one frame to the next.
+- **Observation model:** the camera image is compared with every map image, which indicates how well each state matches what the robot
+  sees.
+- **Filtering:** prediction and correction repeat at every frame, so evidence builds up over the image sequence instead of relying on a
+  single image. LACUNA reports a position only when it is confident and abstains otherwise.
 
-The components that make this filter reliable without labels will be described in the paper.
+How LACUNA stays reliable without labeled data will be described in the paper.
 
-## ✨ Advantages
+## Key Properties
 
-- **Aware of where the map ends:** reliably abstains in unmapped areas, without a separate off-map detector tuned on labels.
-- **Label-free:** needs no labels at deployment and uses one configuration for all datasets and descriptors.
-- **Robust to look-alike places:** suppresses false fixes caused by visually similar places.
-- **Fast:** about 6 ms per frame on a single NVIDIA L4 GPU.
+- **Knows where the map ends.** Reliably abstains in unmapped areas, without a separate off-map detector trained on labeled data.
+- **No labels needed.** Uses no labeled data at deployment and one setting for all datasets and image descriptors.
+- **Fast.** About 6 ms per frame on a single NVIDIA L4 GPU.
 
-## 📊 Results
+## Results
 
-We evaluate on 8 environments from 6 public datasets with 6 global descriptors. In each run, 30% of the map is removed in contiguous blocks
-with a randomly sampled hole layout, and all decisions were pre-registered before each test. Across **432 runs** on 9 hole layouts never
-used during development, LACUNA reaches **93% recall** and exceeds the false-positive target α on only **0.7%** of runs.
+We test LACUNA on 8 environments from 6 public datasets, with 6 different image descriptors. In every test, 30% of the map is removed at
+random to create unmapped areas. All test decisions were fixed in advance, and none of the test hole layouts were used during development.
 
-On 288 of these runs, with the same runs for every method:
+Over **432 test runs**, LACUNA reports the correct position for **93%** of on-map frames on average. In **99.3%** of runs, it reports a
+position in no more than 5% of the stretches where the robot is off the map (our false-positive target).
 
-| Method | Labels | Recall ↑ | Nav. error (m) ↓ | Runs violating α ↓ |
-|:---|:---:|:---:|:---:|:---:|
-| Xu *et al.* [[RA-L'21](https://arxiv.org/abs/2107.07707)] † | test run | 0.651 | 44.5 | 0 |
-| Claxton *et al.* [[RA-L'24](https://arxiv.org/abs/2407.08162)] † | test run | 0.670 | 28.1 | 0 |
-| TAO [[arXiv'26](https://arxiv.org/abs/2607.04745v1)] † | test run | 0.651 | 37.1 | 0 |
-| Closed-world baseline | none | 0.802 | 15.0 | 0 |
-| **LACUNA** | **none** | **0.927** | **13.3** | **0** |
+Comparison with recent methods on 288 of these runs (the same runs for every method):
 
-<sub>**Recall:** fraction of on-map frames with a correct fix. **α:** at most 5% of a run's 10-frame off-map segments may contain a
-reported fix. **Nav. error:** mean error of a Kalman filter fed with the reported fixes. † Re-implemented from the paper, with the threshold
-set on the labels of each test run (an upper bound for any threshold on that method's score). At their published operating points, these methods violate α on
-57–89% of runs.</sub>
+| Method | Labels used | Recall ↑ | Navigation error (m) ↓ |
+|:---|:---:|:---:|:---:|
+| Xu *et al.*, RA-L 2021 † | test labels | 0.651 | 44.5 |
+| Claxton *et al.*, RA-L 2024 † | test labels | 0.670 | 28.1 |
+| TAO, arXiv 2026 † | test labels | 0.651 | 37.1 |
+| Closed-world baseline | none | 0.802 | 15.0 |
+| **LACUNA** | **none** | **0.927** | **13.3** |
+
+<sub>**Recall:** share of on-map frames with a correct reported position.</sub><br>
+<sub>**Navigation error:** mean position error of a Kalman filter that uses the reported positions.</sub><br>
+<sub>**†** Re-implemented from the original paper. The decision threshold is tuned on the ground truth of each test run, which gives the
+method the highest recall its scores allow under the same 5% false-positive target.</sub>
 
 <p align="center"><img src="assets/results.svg" alt="Recall per environment" width="100%"></p>
 
-On settings never used for tuning (10% and 50% holes, natural off-map areas from 4Seasons cross-scene pairs, NCLT), recall ranges from
-0.77 to 0.94, with 4 of 258 runs above α.
-
-**Limitations.** Holes are simulated on most benchmarks. Where odometry is simulated (CMU, Oxford, St Lucia), it keeps the true heading;
-with a heading drift of 0.13°/√m, recall on these datasets drops by 4.8 points on the development set.
-
-## 📚 Datasets and Related Work
+## Datasets and Related Work
 
 | Dataset | Reference | Links |
 |:---|:---|:---|
@@ -101,7 +98,7 @@ with a heading drift of 0.13°/√m, recall on these datasets drops by 4.8 point
 | 4Seasons | Wenzel *et al.*, GCPR 2020 | [project](https://www.4seasons-dataset.com/) · [paper](https://arxiv.org/abs/2009.06364) |
 | NCLT | Carlevaris-Bianco *et al.*, IJRR 2016 | [project](http://robots.engin.umich.edu/nclt/) · [paper](https://doi.org/10.1177/0278364915614638) |
 
-- **Global descriptors:** [NetVLAD](https://arxiv.org/abs/1511.07247) · [CosPlace](https://arxiv.org/abs/2204.02287) ·
+- **Image descriptors:** [NetVLAD](https://arxiv.org/abs/1511.07247) · [CosPlace](https://arxiv.org/abs/2204.02287) ·
   [MixVPR](https://arxiv.org/abs/2303.02190) · [SALAD](https://arxiv.org/abs/2311.15937) · [MegaLoc](https://arxiv.org/abs/2502.17237) ·
   [DINOv2](https://arxiv.org/abs/2304.07193)
 - **Sequence-based place recognition:** [SeqSLAM](https://doi.org/10.1109/ICRA.2012.6224623) (ICRA 2012) ·
@@ -115,7 +112,7 @@ with a heading drift of 0.13°/√m, recall on these datasets drops by 4.8 point
 ```bibtex
 @misc{nguyen2026lacuna,
   title  = {{LACUNA}: Open-World Sequential Visual Localization on Maps with Holes},
-  author = {Nguyen, Nhat Long},
+  author = {Nhat Long Nguyen},
   year   = {2026},
   note   = {Paper and code coming soon}
 }

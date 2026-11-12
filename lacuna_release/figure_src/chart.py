@@ -19,8 +19,8 @@ def t(x, y, s, size=13, fill=INK, w=400, a="start"): return f'<text x="{x:.1f}" 
 o = [f'<svg xmlns="http://www.w3.org/2000/svg" width="{W}" height="{H}" viewBox="0 0 {W} {H}" font-family="{FONT}">',
      f'<rect width="{W}" height="{H}" rx="16" fill="#ffffff"/>',
      t(24, 40, "Recall per environment", 20, INK, 700),
-     t(24, 64, "Baseline = the best of TAO'26, Claxton'24 and Xu'21 in each environment, with its threshold", 14, INK2),
-     t(24, 84, "set on the test labels. LACUNA uses no labels. 288 runs, the same runs for every method.", 14, INK2)]
+     t(24, 64, "In each environment, LACUNA (no labels) against the strongest of TAO'26, Claxton'24 and Xu'21,", 14, INK2),
+     t(24, 84, "whose threshold is tuned on the test labels. 288 runs, the same runs for every method.", 14, INK2)]
 # legend
 o.append(f'<circle cx="{W - 300}" cy="35" r="6.5" fill="none" stroke="{BASE}" stroke-width="2.5"/>' + t(W - 288, 40, "best baseline", 14, INK2))
 o.append(f'<circle cx="{W - 170}" cy="35" r="7" fill="{OURS}" stroke="#fff" stroke-width="2"/>' + t(W - 157, 40, "LACUNA", 14, INK2))
