@@ -95,9 +95,9 @@ for t in range(N):
     parts = [f'<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="528" viewBox="0 0 1200 528" font-family="{FONT}">',
              '<rect width="1200" height="528" fill="#ffffff"/>']
     parts += panel(20, "cw", t, "Closed-world filter", "belief restricted to mapped places", False)
-    parts += panel(610, "ow", t, "LACUNA (ours)", "belief over mapped and unmapped space", True)
+    parts += panel(610, "ow", t, "LACUNA (ours)", "open-world: aware of where the map ends", True)
     parts += timeline(t)
-    parts.append(f'<text x="20" y="516" font-size="11.5" fill="#94a3b8">Illustrative simulation on a synthetic map: the same filter with and without unmapped cells.</text>')
+    parts.append(f'<text x="20" y="516" font-size="11.5" fill="#94a3b8">Illustrative simulation on a synthetic map.</text>')
     parts.append("</svg>")
     open(f"svg/f_{t:03d}.svg", "w").write("".join(parts))
 print(N, "frames")

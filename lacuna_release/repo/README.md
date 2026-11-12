@@ -6,6 +6,8 @@
 
 ### Open-World Sequential Visual Localization on Maps with Holes
 
+[**Nhat Long Nguyen**](https://github.com/nhatlong113)
+
 [![Paper](https://img.shields.io/badge/Paper-Coming%20Soon-b31b1b?style=flat-square&logo=arxiv&logoColor=white)](#citation)
 [![Code](https://img.shields.io/badge/Code-Coming%20Soon-2563eb?style=flat-square&logo=github&logoColor=white)](#citation)
 
@@ -15,59 +17,56 @@
 > 📄 **The paper and 💻 code will be released soon.**
 
 <p align="center"><img src="assets/demo.gif" alt="Closed-world filter vs LACUNA on a map with a hole" width="100%"></p>
-<p align="center"><sub>Illustrative simulation: the same filter with and without unmapped cells. In the hole, the closed-world filter locks
-onto a look-alike street and reports false fixes. LACUNA follows the robot into the hole by dead reckoning, abstains, and resumes when the
-robot is back on the map.</sub></p>
+<p align="center"><sub>Illustrative simulation on a synthetic map. When the robot enters an unmapped area, a closed-world filter locks onto a
+look-alike street and reports false fixes. LACUNA abstains while the robot is off the map and resumes shortly after it returns to the map.</sub></p>
 
 ## 🧭 Problem
 
-Robots often localize by matching camera frames against a geo-referenced image map, with a sequence filter (HMM) that fuses visual place
-recognition and odometry. Real maps have **holes**: streets that were never surveyed, construction sites, seasonal changes. Closed-world
-filters keep all of their belief on mapped places, so when the robot enters a hole they lock onto a look-alike place and send **confident
-false fixes** to navigation.
+A common approach to visual localization for mobile robots matches camera images against a geo-referenced image map and uses a Hidden
+Markov Model (HMM) to accumulate visual place recognition (VPR) evidence over time, often together with odometry. Real maps are incomplete:
+some streets were never mapped, and construction or seasonal occlusion leaves further gaps. Closed-world HMMs, whose states cover only
+mapped places, cannot represent a robot that has left the map. When the robot enters an unmapped area, they assign the belief to the
+remaining mapped places, often a visually similar one, and can report confident false position fixes.
 
-**Goal:** report a correct fix whenever the robot is on the map, and abstain while it is off the map, without any labels at deployment.
+**Goal:** report correct position fixes whenever the robot is on the map and abstain while it is off the map, without labels at
+deployment.
 
 ## 🔁 Input and Output
 
 <p align="center"><img src="assets/io.svg" alt="Input and output of LACUNA" width="100%"></p>
 
-For every frame, LACUNA takes the camera image, the odometry increment and the image map. It returns either a position fix or an explicit
+For every frame, LACUNA takes the camera image, the odometry increment and the image map. It returns either a position fix or an
 abstention.
 
-## 💡 Method
+## 💡 Method: an Open-World HMM
 
-<p align="center"><img src="assets/method.svg" alt="LACUNA pipeline" width="100%"></p>
+<p align="center"><img src="assets/hmm.svg" alt="The HMM behind LACUNA" width="100%"></p>
 
-- **Holes are part of the state.** The belief lives on a metric grid over mapped cells, unmapped cells and a far state Ω. Odometry carries
-  it into and out of holes, so leaving the map is *predicted* by dead reckoning instead of *detected* by a separate test.
-- **Calibrated evidence for unmapped cells.** A weak look-alike that moves consistently with the odometry can accumulate per-frame evidence
-  without bound. LACUNA scores unmapped cells with $`\log f_{\text{off}}(x) - \log f_{\text{on}}(x)`$, where both densities are learned
-  without labels from the filter's own confident fixes.
+LACUNA is built on HMM principles:
 
-<details>
-<summary><b>A real case of this aliasing</b> (Extended CMU Seasons)</summary>
-<br>
-<p align="center"><img src="assets/aliasing_cmu.png" alt="Shifted alias on Extended CMU Seasons" width="100%"></p>
+- **Hidden state:** the robot's position. Unlike in closed-world HMMs, the state space also covers areas that are not in the map.
+- **Transition model:** the odometry predicts how the position changes between consecutive frames.
+- **Emission model:** the VPR similarities between the current frame and the map images score how well each state explains the
+  observation.
+- **Forward filtering:** the posterior over states is updated recursively at every frame, so evidence accumulates over the image sequence
+  instead of resting on a single retrieval. A position fix is reported only when the filter is confident; otherwise LACUNA abstains.
 
-Inside a hole, a filter with per-frame normalized evidence matched the query frames (blue) to a copy of the route about 200 m away (red).
-The look-alike's robust z-scores overlap those of true matches (middle), but its raw similarity does not (right). The calibrated evidence
-is built on this signal.
-</details>
+The components that make this filter reliable without labels will be described in the paper.
 
 ## ✨ Advantages
 
-- **Off-map by prediction:** leaving the map follows from the map's known coverage and the odometry, not from a hand-tuned detector.
-- **Label-free:** one configuration for every dataset and descriptor, with no threshold tuning on ground truth.
-- **Robust to look-alikes:** suppresses aliases shifted along the route, which filters with per-frame normalized evidence fail to reject.
-- **Fast:** about 6 ms per frame for the full system on one NVIDIA L4 GPU.
+- **Aware of where the map ends:** reliably abstains in unmapped areas, without a separate off-map detector tuned on labels.
+- **Label-free:** needs no labels at deployment and uses one configuration for all datasets and descriptors.
+- **Robust to look-alike places:** suppresses false fixes caused by visually similar places.
+- **Fast:** about 6 ms per frame on a single NVIDIA L4 GPU.
 
 ## 📊 Results
 
-Across **432 pre-registered runs** (8 environments × 6 descriptors × 9 fresh hole layouts with 30% of the map removed), LACUNA reaches
-**93% recall** and exceeds the 5% false-positive target (per run, over off-map segments) on only **0.7%** of runs.
+We evaluate on 8 environments from 6 public datasets with 6 global descriptors. In each run, 30% of the map is removed in contiguous blocks
+with a randomly sampled hole layout, and all decisions were pre-registered before each test. Across **432 runs** on 9 hole layouts never
+used during development, LACUNA reaches **93% recall** and exceeds the false-positive target α on only **0.7%** of runs.
 
-On 288 of these runs, the same runs for every method:
+On 288 of these runs, with the same runs for every method:
 
 | Method | Labels | Recall ↑ | Nav. error (m) ↓ | Runs violating α ↓ |
 |:---|:---:|:---:|:---:|:---:|
@@ -77,16 +76,18 @@ On 288 of these runs, the same runs for every method:
 | Closed-world baseline | none | 0.802 | 15.0 | 0 |
 | **LACUNA** | **none** | **0.927** | **13.3** | **0** |
 
-<sub>† Re-implemented from the paper, with the threshold set on the labels of each test run (an upper bound for that method). At their
-published operating points, these methods violate α on 57–89% of runs.</sub>
+<sub>**Recall:** fraction of on-map frames with a correct fix. **α:** at most 5% of a run's 10-frame off-map segments may contain a
+reported fix. **Nav. error:** mean error of a Kalman filter fed with the reported fixes. † Re-implemented from the paper, with the threshold
+set on the labels of each test run (an upper bound for any threshold on that method's score). At their published operating points, these methods violate α on
+57–89% of runs.</sub>
 
 <p align="center"><img src="assets/results.svg" alt="Recall per environment" width="100%"></p>
 
-On settings never used for tuning (10% and 50% holes, natural off-map from 4Seasons cross-scene, NCLT), recall is 0.77–0.95, with
-4 of 258 runs above α.
+On settings never used for tuning (10% and 50% holes, natural off-map areas from 4Seasons cross-scene pairs, NCLT), recall ranges from
+0.77 to 0.94, with 4 of 258 runs above α.
 
 **Limitations.** Holes are simulated on most benchmarks. Where odometry is simulated (CMU, Oxford, St Lucia), it keeps the true heading;
-with a heading drift of 0.13°/√m, recall drops by 4.8 points.
+with a heading drift of 0.13°/√m, recall on these datasets drops by 4.8 points on the development set.
 
 ## 📚 Datasets and Related Work
 
@@ -112,9 +113,9 @@ with a heading drift of 0.13°/√m, recall drops by 4.8 points.
 ## Citation
 
 ```bibtex
-@misc{lacuna2026,
+@misc{nguyen2026lacuna,
   title  = {{LACUNA}: Open-World Sequential Visual Localization on Maps with Holes},
-  author = {TBA},
+  author = {Nguyen, Nhat Long},
   year   = {2026},
   note   = {Paper and code coming soon}
 }

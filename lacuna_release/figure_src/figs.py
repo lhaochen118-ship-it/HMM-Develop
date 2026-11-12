@@ -109,7 +109,7 @@ def io_svg():
     for (a, b), (c, d) in zip(pts, pts[1:]): o.append(f'<line x1="{a}" y1="{b}" x2="{c}" y2="{d}" stroke="{BLUE}" stroke-width="2.4" marker-end="url(#ahb)"/>')
     o.append(f'<circle cx="40" cy="250" r="4" fill="{BLUE}"/>')
     o.append(text(196, 206, "Odometry", 15, INK, 700) + text(196, 228, "relative motion between frames", 13, MUTED)
-             + text(196, 248, "visual, visual-inertial or wheel; may drift", 13, MUTED))
+             + text(196, 248, "e.g. visual-inertial or wheel; may drift", 13, MUTED))
     # input 3: map
     o.append(card(20, 286, 400, 118))
     mm, (h0, h1, ym, ya) = minimap(30, 296, 156, 98); o.append(mm)
@@ -120,15 +120,13 @@ def io_svg():
     for yy in (106, 224, 345): o.append(f'<path d="M424,{yy} C470,{yy} 470,212 500,212" fill="none" stroke="#94a3b8" stroke-width="2.2" marker-end="url(#ah)"/>')
     # centre: LACUNA
     o.append(card(506, 92, 290, 240, GREEN, GREEN_BG, 2.2))
-    o.append(text(651, 128, "LACUNA", 24, GREEN, 800, "middle") + text(651, 150, "open-world Bayes filter", 13, "#15803d", 600, "middle"))
+    o.append(text(651, 128, "LACUNA", 24, GREEN, 800, "middle") + text(651, 150, "open-world HMM filter", 13, "#15803d", 600, "middle"))
     gx, gy = 556, 166
     o.append(f'<rect x="{gx}" y="{gy}" width="190" height="96" rx="6" fill="#ffffff" stroke="#bbf7d0"/>')
-    o.append("".join(f'<line x1="{gx + i * 10}" y1="{gy}" x2="{gx + i * 10}" y2="{gy + 96}" stroke="#ecfdf5"/>' for i in range(1, 19)))
-    o.append("".join(f'<line x1="{gx}" y1="{gy + j * 10}" x2="{gx + 190}" y2="{gy + j * 10}" stroke="#ecfdf5"/>' for j in range(1, 10)))
     mm, (h0, h1, ym, ya) = minimap(gx, gy, 190, 96); o.append(mm)
     o.append(blob((h0 + h1) / 2 + 6, ym, 22, 13))
     o.append(f'<circle cx="{(h0 + h1) / 2 + 6}" cy="{ym}" r="4.5" fill="{BLUE}" stroke="#fff" stroke-width="1.5"/>')
-    o.append(text(651, 284, "belief over mapped and unmapped space", 12.5, "#334155", 400, "middle")
+    o.append(text(651, 284, "built on Hidden Markov Model principles", 12.5, "#334155", 400, "middle")
              + text(651, 304, "no labels · one configuration for all maps", 12.5, "#334155", 400, "middle"))
     o.append(arrow(800, 212, 826, 212))
     # output 1: fix
@@ -136,7 +134,7 @@ def io_svg():
     mm, (h0, h1, ym, ya) = minimap(842, 64, 120, 84, hole=False); o.append(mm)
     o.append(pin(842 + 120 * 0.78, ym - 1, GREEN, 0.9))
     o.append(text(978, 92, "Position fix", 15, GREEN, 700) + text(978, 114, "(x, y) on the map, reported", 13, MUTED)
-             + text(978, 134, "only when the belief is confident", 13, MUTED))
+             + text(978, 134, "only when the filter is confident", 13, MUTED))
     # output 2: abstain
     o.append(card(832, 174, 348, 100, "#fde68a", "#ffffff"))
     o.append(pause(870, 224, AMBER, 1.25))
