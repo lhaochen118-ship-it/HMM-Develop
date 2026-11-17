@@ -1,0 +1,748 @@
+<title>Kiến trúc OWF-HQ</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: một cột đọc ~70ch, sơ đồ lớn được phép rộng hơn và cuộn ngang trong khung riêng. Màu theo vai trò bản đồ: teal = ô có bản đồ, hổ phách = lỗ, tím = trạng thái xa Ω, đỏ = bí danh. */
+:root{
+  --bg:#f4f6f8; --surface:#ffffff; --ink:#16202b; --muted:#566273; --line:#cbd2db; --soft:#e8ecf1;
+  --accent:#1d5fc2; --mapped:#0d8577; --hole:#bd6f12; --omega:#6a4fb3; --alias:#be3446;
+  --band:rgba(29,95,194,.045); --band2:rgba(13,133,119,.05);
+  --f-disp:"Be Vietnam Pro","Inter",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0e1319; --surface:#161e28; --ink:#e5eaf0; --muted:#9aa6b5; --line:#334152; --soft:#1d2733;
+  --accent:#6ea6ff; --mapped:#3cc0b0; --hole:#e9a24b; --omega:#a58df2; --alias:#f06b7c;
+  --band:rgba(110,166,255,.06); --band2:rgba(60,192,176,.06); color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0e1319; --surface:#161e28; --ink:#e5eaf0; --muted:#9aa6b5; --line:#334152; --soft:#1d2733;
+  --accent:#6ea6ff; --mapped:#3cc0b0; --hole:#e9a24b; --omega:#a58df2; --alias:#f06b7c;
+  --band:rgba(110,166,255,.06); --band2:rgba(60,192,176,.06); color-scheme:dark }
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.62}
+.wrap{max-width:1080px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.prose{max-width:72ch}
+h1,h2,h3{font-family:var(--f-disp);text-wrap:balance;line-height:1.25;margin:0}
+h1{font-size:clamp(28px,4.4vw,40px);font-weight:700;letter-spacing:-.01em}
+h2{font-size:24px;font-weight:700;margin-top:56px;margin-bottom:12px}
+h3{font-size:17px;font-weight:600;margin-top:28px;margin-bottom:8px}
+p{margin:0 0 12px}
+.eyebrow{font-family:var(--f-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.lede{font-size:17.5px;color:var(--muted);margin-top:14px}
+code,.mono{font-family:var(--f-mono);font-size:.88em}
+code{background:var(--soft);padding:1px 5px;border-radius:4px}
+.sec-tag{font-family:var(--f-mono);font-size:12px;color:var(--accent);margin-right:8px;font-weight:500}
+.fig{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:18px 0 8px;overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto}
+.fig .inner{min-width:760px}
+.fig .inner.sm{min-width:560px}
+.cap{font-size:13px;color:var(--muted);margin:6px 2px 0}
+.legend{display:flex;flex-wrap:wrap;gap:8px 18px;font-size:13px;color:var(--muted);margin:10px 2px}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.sw{width:14px;height:14px;border-radius:3px;display:inline-block;border:1.5px solid transparent}
+.toc{display:flex;flex-wrap:wrap;gap:6px 8px;margin-top:22px}
+.toc a{font-size:13px;color:var(--ink);text-decoration:none;border:1px solid var(--line);border-radius:999px;padding:3px 11px;background:var(--surface)}
+.toc a:hover,.toc a:focus-visible{border-color:var(--accent);color:var(--accent);outline:none}
+.io{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px;margin:16px 0}
+.io > div{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 14px;min-width:0}
+.io b{display:block;font-family:var(--f-disp);font-weight:600;margin-bottom:4px}
+.io .k{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin:14px 0;counter-reset:st}
+.steps > div{border-top:3px solid var(--accent);background:var(--surface);border-radius:0 0 8px 8px;padding:10px 12px 12px;font-size:14px;min-width:0}
+.steps > div b{display:block;font-family:var(--f-disp);font-weight:600;margin-bottom:4px}
+.steps > div b::before{counter-increment:st;content:counter(st) ". ";color:var(--accent)}
+.steps.hsi > div{border-top-color:var(--omega)}
+.steps.hsi > div b::before{color:var(--omega)}
+.tbl{overflow-x:auto;margin:14px 0}
+table{border-collapse:collapse;width:100%;font-size:14px;min-width:560px}
+th,td{text-align:left;vertical-align:top;padding:8px 10px;border-bottom:1px solid var(--line)}
+th{font-family:var(--f-mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);font-weight:500}
+td.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+pre.algo{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--accent);border-radius:6px;padding:14px 16px;overflow-x:auto;font-family:var(--f-mono);font-size:13px;line-height:1.6;margin:14px 0}
+pre.algo .c{color:var(--muted)}
+pre.algo .kw{color:var(--accent);font-weight:500}
+.note{border-left:3px solid var(--hole);background:var(--surface);padding:10px 14px;border-radius:0 6px 6px 0;font-size:14.5px;margin:14px 0}
+.note.alias{border-left-color:var(--alias)}
+dl.gl{display:grid;grid-template-columns:minmax(120px,190px) 1fr;gap:6px 18px;margin:12px 0;font-size:14.5px}
+dl.gl dt{font-family:var(--f-mono);font-size:13px;color:var(--accent)}
+dl.gl dd{margin:0;min-width:0}
+@media (max-width:560px){dl.gl{grid-template-columns:1fr}dl.gl dd{margin-bottom:8px}}
+.foot{margin-top:56px;font-size:13px;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+/* SVG */
+svg text{font-family:var(--f-body);fill:var(--ink)}
+svg .t-s{font-size:11.5px;fill:var(--muted)}
+svg .t-m{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
+svg .t-h{font-family:var(--f-disp);font-weight:600;font-size:14px}
+svg .t-b{font-family:var(--f-disp);font-weight:600;font-size:12px;letter-spacing:.06em;fill:var(--muted)}
+svg .bandA{fill:var(--band)} svg .bandB{fill:var(--band2)}
+svg .bx{fill:var(--surface);stroke:var(--line);stroke-width:1.3}
+svg .bx-acc{fill:var(--surface);stroke:var(--accent);stroke-width:1.6}
+svg .bx-map{fill:var(--surface);stroke:var(--mapped);stroke-width:1.6}
+svg .bx-hole{fill:var(--surface);stroke:var(--hole);stroke-width:1.6}
+svg .bx-om{fill:var(--surface);stroke:var(--omega);stroke-width:1.6}
+svg .bx-soft{fill:var(--soft);stroke:none}
+svg .ar{stroke:var(--accent);stroke-width:1.6;fill:none}
+svg .ar-o{stroke:var(--muted);stroke-width:1.3;fill:none;stroke-dasharray:5 4}
+svg .ar-m{stroke:var(--omega);stroke-width:1.6;fill:none}
+svg .ah{fill:var(--accent)} svg .ah-o{fill:var(--muted)} svg .ah-m{fill:var(--omega)}
+svg .g-map{fill:var(--mapped);fill-opacity:.75}
+svg .g-hole{fill:none;stroke:var(--hole);stroke-width:1.6;stroke-dasharray:3 2}
+svg .g-un{fill:var(--soft);stroke:var(--line);stroke-width:.6}
+svg .g-bel{fill:var(--alias);fill-opacity:.55}
+svg .om{fill:var(--omega);fill-opacity:.12;stroke:var(--omega);stroke-width:1.6}
+svg .c-on{stroke:var(--mapped);stroke-width:2.4;fill:none}
+svg .c-off{stroke:var(--alias);stroke-width:2.4;fill:none}
+svg .axis{stroke:var(--muted);stroke-width:1}
+svg .dot-r{fill:var(--alias)} svg .dot-m{fill:var(--mapped)}
+svg .gate{fill:var(--accent)} svg .gate-t{fill:var(--surface);font-family:var(--f-disp);font-weight:700;font-size:15px}
+@media (prefers-reduced-motion:no-preference){.toc a{transition:border-color .15s,color .15s}}
+</style>
+<div class="wrap">
+<header class="prose">
+  <div class="eyebrow">Branch hmm-2nd-idea · luật khuyến nghị OWF-HWA-S5-NT-HQ · cập nhật theo kiểm toán 2026-11-07</div>
+  <h1>Kiến trúc OWF-HQ: định vị theo chuỗi trên bản đồ ảnh có lỗ</h1>
+  <p class="lede">Trang này giải thích framework đề xuất cho người mới: bài toán, các lớp xử lý từ ảnh camera tới quyết định báo vị trí, mô hình bên trong mỗi lớp, thuật toán đầy đủ, và lý do từng thành phần tồn tại.</p>
+  <nav class="toc" aria-label="Mục lục">
+    <a href="#bai-toan">Bài toán</a><a href="#tong-the">Kiến trúc tổng thể</a><a href="#owf">Bộ lọc thế giới mở</a><a href="#bank">Ngân hàng lọc</a>
+    <a href="#hq">Bằng chứng tuyệt đối HQ</a><a href="#hsi">Nhánh HSI-VNc</a><a href="#quyet-dinh">Lớp quyết định</a><a href="#thuat-toan">Thuật toán</a>
+    <a href="#ly-thuyet">Mệnh đề</a><a href="#ket-qua">Kết quả</a><a href="#thuat-ngu">Thuật ngữ</a>
+  </nav>
+</header>
+
+<section id="bai-toan" class="prose">
+  <h2><span class="sec-tag">§1</span>Bài toán trong một đoạn</h2>
+  <p>Một robot có <b>một camera</b> và <b>odometry</b> (đo quãng đường và hướng đi, có trôi). Nó có sẵn một <b>bản đồ ảnh</b>: các ảnh chụp trước đó, mỗi ảnh gắn tọa độ. Bản đồ có <b>lỗ</b>: những đoạn đường chưa từng được chụp. Ở mỗi frame, hệ thống phải chọn giữa <b>báo một fix</b> (“tôi đang ở gần ảnh bản đồ số i”) và <b>im lặng</b>. Fix được đưa vào bộ lọc Kalman điều hướng.</p>
+  <p>Báo sai khi robot đang ở trong lỗ làm hỏng điều hướng. Im lặng khi đáng ra có thể báo thì phí thông tin. Khi triển khai không có nhãn nào.</p>
+  <div class="io">
+    <div><span class="k">Đầu vào</span><b>Chuỗi ảnh z₁…z_T</b>Ảnh camera đơn theo thời gian, chia thành nhiều phiên (ngày/đêm, mùa).</div>
+    <div><span class="k">Đầu vào</span><b>Odometry u_t</b>Bước dịch chuyển giữa hai frame. VIO thật có sai tỉ lệ 3–7 %.</div>
+    <div><span class="k">Đầu vào</span><b>Bản đồ ảnh có lỗ</b>Ảnh m₁…m_n kèm vị trí. Ví dụ thử nghiệm: xoá 30 % ô 300 m.</div>
+    <div><span class="k">Đầu ra / frame</span><b>Fix p̂_t hoặc im lặng</b>Vị trí ảnh bản đồ được báo, chuyển cho Kalman.</div>
+  </div>
+  <h3>Ba thước đo cùng lúc</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>Thước đo</th><th>Định nghĩa</th><th>Mục tiêu</th></tr></thead>
+    <tbody>
+      <tr><td><b>segFAR</b></td><td>Tỉ lệ đoạn off-map dài H = 10 frame có ít nhất một lần báo</td><td class="num">≤ α = 0.05 trên từng run</td></tr>
+      <tr><td><b>Recall</b></td><td>Tỉ lệ frame trên bản đồ có fix đúng (cách vị trí thật ≤ excl)</td><td>càng cao càng tốt</td></tr>
+      <tr><td><b>Sai số điều hướng</b></td><td>Sai số trung bình của Kalman được nuôi bằng các fix đã báo</td><td>càng thấp càng tốt</td></tr>
+    </tbody>
+  </table></div>
+  <p>Ràng buộc thêm: một cấu hình duy nhất cho 8 dataset × 6 descriptor, không chỉnh theo dataset, không dùng nhãn.</p>
+</section>
+
+<section id="tong-the">
+  <div class="prose">
+  <h2><span class="sec-tag">§2</span>Kiến trúc tổng thể</h2>
+  <p>Framework gồm bảy lớp xếp từ trên xuống. Lớp 0–1 biến ảnh thành điểm tương đồng. Lớp 2–4 là phần ước lượng vị trí: bộ lọc Bayes trên lưới mét chạy hai lượt, giữa hai lượt có bước tự hiệu chỉnh hồi cứu. Lớp 5 quyết định có báo hay không. Lớp 6 là đầu ra cho điều hướng. Đường gạch xám bên phải là “bus odometry”: mọi khối có nhận odometry đều được nối vào nó.</p>
+  </div>
+  <div class="fig"><div class="inner">
+  <svg viewBox="0 0 1000 1170" role="img" aria-labelledby="t-arch">
+    <title id="t-arch">Sơ đồ kiến trúc tổng thể bảy lớp của OWF-HWA-S5-NT-HQ</title>
+    <defs>
+      <marker id="ma" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah" d="M0,0 L10,5 L0,10 z"/></marker>
+      <marker id="mo" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-o" d="M0,0 L10,5 L0,10 z"/></marker>
+      <marker id="mm" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path class="ah-m" d="M0,0 L10,5 L0,10 z"/></marker>
+    </defs>
+    <!-- bands -->
+    <rect class="bandA" x="0" y="10" width="1000" height="125" rx="8"/>
+    <rect class="bandB" x="0" y="145" width="1000" height="120" rx="8"/>
+    <rect class="bandA" x="0" y="275" width="1000" height="205" rx="8"/>
+    <rect class="bandB" x="0" y="490" width="1000" height="160" rx="8"/>
+    <rect class="bandA" x="0" y="660" width="1000" height="125" rx="8"/>
+    <rect class="bandB" x="0" y="795" width="1000" height="245" rx="8"/>
+    <rect class="bandA" x="0" y="1050" width="1000" height="110" rx="8"/>
+    <text class="t-b" x="18" y="40">LỚP 0</text><text class="t-s" x="18" y="58">Đầu vào</text>
+    <text class="t-b" x="18" y="175">LỚP 1</text><text class="t-s" x="18" y="193">Biểu diễn</text><text class="t-s" x="18" y="209">ảnh</text>
+    <text class="t-b" x="18" y="305">LỚP 2</text><text class="t-s" x="18" y="323">Lọc lượt 1</text><text class="t-s" x="18" y="339">(lịch sử)</text>
+    <text class="t-b" x="18" y="520">LỚP 3</text><text class="t-s" x="18" y="538">Tự hiệu chỉnh</text><text class="t-s" x="18" y="554">hồi cứu (HQ)</text>
+    <text class="t-b" x="18" y="690">LỚP 4</text><text class="t-s" x="18" y="708">Lọc lượt 2</text>
+    <text class="t-b" x="18" y="825">LỚP 5</text><text class="t-s" x="18" y="843">Quyết định</text><text class="t-s" x="18" y="859">báo / im lặng</text>
+    <text class="t-b" x="18" y="1080">LỚP 6</text><text class="t-s" x="18" y="1098">Đầu ra</text>
+
+    <!-- L0 inputs -->
+    <rect class="bx" x="140" y="35" width="250" height="78" rx="8"/>
+    <text class="t-h" x="156" y="60">Chuỗi ảnh camera z_t</text>
+    <text class="t-s" x="156" y="80">camera đơn, nhiều phiên</text>
+    <text class="t-s" x="156" y="96">(ngày, đêm, mùa, thời tiết)</text>
+    <rect class="bx" x="410" y="35" width="230" height="78" rx="8"/>
+    <text class="t-h" x="426" y="60">Odometry u_t</text>
+    <text class="t-s" x="426" y="80">bước dịch chuyển mỗi frame</text>
+    <text class="t-s" x="426" y="96">trôi, sai tỉ lệ 3–7 %</text>
+    <rect class="bx-hole" x="660" y="35" width="310" height="78" rx="8"/>
+    <text class="t-h" x="676" y="60">Bản đồ ảnh có lỗ</text>
+    <text class="t-s" x="676" y="80">ảnh m_i + vị trí; vùng phủ đã biết</text>
+    <text class="t-s" x="676" y="96">lỗ = đoạn đường không có ảnh</text>
+
+    <!-- L1 -->
+    <rect class="bx" x="140" y="168" width="380" height="76" rx="8"/>
+    <text class="t-h" x="156" y="192">Descriptor toàn cục (đóng băng)</text>
+    <text class="t-s" x="156" y="212">CosPlace · NetVLAD · MegaLoc · SALAD · MixVPR · DINOv2</text>
+    <text class="t-s" x="156" y="228">mỗi ảnh → một vector; không huấn luyện lại</text>
+    <rect class="bx" x="545" y="168" width="200" height="76" rx="8"/>
+    <text class="t-h" x="561" y="192">Similarity s_t,i</text>
+    <text class="t-s" x="561" y="212">cos(frame t, ảnh i)</text>
+    <text class="t-s" x="561" y="228">cho mọi ảnh bản đồ</text>
+    <rect class="bx" x="770" y="168" width="200" height="76" rx="8"/>
+    <text class="t-h" x="786" y="192">Robust z-score</text>
+    <text class="t-s" x="786" y="212">z_t,i theo hồ sơ của</text>
+    <text class="t-s" x="786" y="228">chính frame t</text>
+    <path class="ar" d="M265 113 V166" marker-end="url(#ma)"/>
+    <path class="ar" d="M760 113 V140 H470 V166" marker-end="url(#ma)"/>
+    <path class="ar" d="M520 206 H543" marker-end="url(#ma)"/>
+    <path class="ar" d="M745 206 H768" marker-end="url(#ma)"/>
+
+    <!-- odometry bus -->
+    <path class="ar-o" d="M600 113 V128 H988 V900"/>
+    <text class="t-m" x="930" y="124">bus u_t</text>
+
+    <!-- L2 OWF pass 1 -->
+    <rect class="bx-map" x="140" y="298" width="570" height="164" rx="10"/>
+    <text class="t-h" x="158" y="322">Bộ lọc thế giới mở (OWF), lượt 1</text>
+    <text class="t-s" x="158" y="341">Bayes trên lưới mét: ô có bản đồ + ô trống + trạng thái xa Ω. Bảo toàn khối lượng.</text>
+    <g>
+      <rect class="bx-soft" x="158" y="354" width="250" height="92" rx="6"/>
+      <text class="t-m" x="168" y="372">bank 10 bộ lọc song song</text>
+      <text class="t-m" x="168" y="390">q ∈ {0.005, 0.02}·excl</text>
+      <text class="t-m" x="168" y="406">scale ∈ {0.94…1.06}</text>
+      <text class="t-m" x="168" y="424">chọn theo Σ log p(z|quá khứ)</text>
+      <text class="t-m" x="168" y="440">Ω hấp thụ (NT)</text>
+    </g>
+    <g>
+      <rect class="bx-soft" x="422" y="354" width="270" height="92" rx="6"/>
+      <text class="t-m" x="432" y="372">mỗi frame:</text>
+      <text class="t-m" x="432" y="390">1. dự đoán: dịch + làm mờ</text>
+      <text class="t-m" x="432" y="406">2. cập nhật: × L_t (ô trống = 1)</text>
+      <text class="t-m" x="432" y="424">3. thống kê D_t, fix ĉ_t</text>
+      <text class="t-m" x="432" y="440">emission lịch sử (chuẩn hoá)</text>
+    </g>
+    <rect class="bx" x="730" y="298" width="240" height="164" rx="10"/>
+    <text class="t-h" x="746" y="322">Chuỗi vị trí topo</text>
+    <text class="t-s" x="746" y="341">HMM trên các ảnh bản đồ</text>
+    <text class="t-s" x="746" y="358">(Sattler 2018), chuyển trạng</text>
+    <text class="t-s" x="746" y="374">thái theo odometry → est_t</text>
+    <text class="t-s" x="746" y="398">Dùng cho: nhánh HSI và</text>
+    <text class="t-s" x="746" y="414">kiểm tra đồng thuận ba</text>
+    <text class="t-s" x="746" y="430">chiều ở bậc T3</text>
+    <path class="ar" d="M820 244 V270 H425 V296" marker-end="url(#ma)"/>
+    <path class="ar" d="M900 244 V296" marker-end="url(#ma)"/>
+    <path class="ar-o" d="M988 380 H972" marker-end="url(#mo)"/>
+
+    <!-- L3 HQ -->
+    <rect class="bx-acc" x="140" y="510" width="570" height="124" rx="10"/>
+    <text class="t-h" x="158" y="532">HQ: bằng chứng tuyệt đối hiệu chỉnh hồi cứu</text>
+    <rect class="bx-soft" x="156" y="546" width="118" height="74" rx="6"/>
+    <text class="t-m" x="164" y="564">fix tự tin</text><text class="t-m" x="164" y="580">của lượt 1</text><text class="t-m" x="164" y="596">mass ≥</text><text class="t-m" x="164" y="612">1 − 10⁻³</text>
+    <rect class="bx-soft" x="290" y="546" width="140" height="34" rx="6"/>
+    <text class="t-m" x="298" y="567" style="fill:var(--mapped)">f_on: max − median</text>
+    <rect class="bx-soft" x="290" y="586" width="140" height="34" rx="6"/>
+    <text class="t-m" x="298" y="601" style="fill:var(--alias)">f_off: ảnh tốt nhất</text><text class="t-m" x="298" y="614" style="fill:var(--alias)">xa &gt; 1.6 excl</text>
+    <rect class="bx-soft" x="446" y="546" width="118" height="74" rx="6"/>
+    <text class="t-m" x="454" y="564">KDE nhân quả</text><text class="t-m" x="454" y="580">≥100 mẫu cùng</text><text class="t-m" x="454" y="596">phiên, khối 50</text><text class="t-m" x="454" y="612">+1 % đều</text>
+    <rect class="bx-soft" x="580" y="546" width="116" height="74" rx="6"/>
+    <text class="t-m" x="588" y="564">ô trống, Ω</text><text class="t-m" x="588" y="580">nhận log-LR</text><text class="t-m" x="588" y="596">log f_off(x_t)</text><text class="t-m" x="588" y="612">− log f_on(x_t)</text>
+    <path class="ar" d="M215 462 V544" marker-end="url(#ma)"/>
+    <path class="ar" d="M274 583 H288" marker-end="url(#ma)"/>
+    <path class="ar" d="M430 583 H444" marker-end="url(#ma)"/>
+    <path class="ar" d="M564 583 H578" marker-end="url(#ma)"/>
+
+    <!-- place chain line down -->
+    <path class="ar-m" d="M760 462 V838" marker-end="url(#mm)"/>
+    <text class="t-m" x="768" y="560" style="fill:var(--omega)">est_t</text>
+
+    <!-- L4 OWF pass 2 -->
+    <rect class="bx-map" x="140" y="682" width="570" height="84" rx="10"/>
+    <text class="t-h" x="158" y="706">OWF lượt 2: cùng bank, emission đã hiệu chỉnh</text>
+    <text class="t-s" x="158" y="726">ô có bản đồ: L_t như cũ · ô trống và Ω: exp(log f_off − log f_on) thay cho 1</text>
+    <text class="t-s" x="158" y="744">bí danh yếu trượt dọc đường thẳng không còn tích luỹ bằng chứng vô hạn</text>
+    <path class="ar" d="M638 620 V680" marker-end="url(#ma)"/>
+    <rect class="bx" x="790" y="682" width="180" height="84" rx="10"/>
+    <text class="t-h" x="804" y="706">Hậu nghiệm b_t</text>
+    <text class="t-m" x="804" y="726">D_t: khối lượng đĩa</text>
+    <text class="t-m" x="804" y="742">mN: khối lượng gần</text>
+    <text class="t-m" x="804" y="758">bản đồ · fix ĉ_t</text>
+    <path class="ar" d="M710 724 H788" marker-end="url(#ma)"/>
+    <path class="ar-o" d="M988 724 H972" marker-end="url(#mo)"/>
+
+    <!-- L5 decisions -->
+    <rect class="bx-map" x="140" y="818" width="390" height="152" rx="10"/>
+    <text class="t-h" x="158" y="842">Ba bậc tin cậy của OWF</text>
+    <text class="t-m" x="158" y="866">T1  D_t ≥ 1 − 10⁻⁵   và quãng ≥ 16 excl</text>
+    <text class="t-m" x="158" y="886">T2  D_t ≥ 1 − 10⁻⁸   và quãng ≥ 2 excl</text>
+    <text class="t-m" x="158" y="906">T3  D_t ≥ 1 − 3·10⁻⁴ và quãng ≥ 0.5 excl</text>
+    <text class="t-m" x="158" y="922">    + đồng thuận 3 chiều (OWF, est_t, top-1)</text>
+    <text class="t-s" x="158" y="950">quãng = đường đi từ đầu chuỗi theo odometry</text>
+    <rect class="bx-om" x="560" y="840" width="410" height="130" rx="10"/>
+    <text class="t-h" x="578" y="864">Nhánh học HSI-VNc (nhân quả)</text>
+    <text class="t-m" x="578" y="886">chuỗi lai = ảnh OWF khi chắc, ngược lại est_t</text>
+    <text class="t-m" x="578" y="906">xác minh hình học → cầu dead-reckoning → nhãn hồi cứu</text>
+    <text class="t-m" x="578" y="924">→ GBM học online → ngưỡng conformal trên lỗ thật</text>
+    <text class="t-s" x="578" y="952">chi tiết ở §6</text>
+    <path class="ar" d="M335 766 V816" marker-end="url(#ma)"/>
+    <path class="ar" d="M880 766 V838" marker-end="url(#ma)"/>
+    <path class="ar-o" d="M988 900 H972" marker-end="url(#mo)"/>
+
+    <!-- OR gate -->
+    <path class="ar" d="M335 970 V1000 H515" marker-end="url(#ma)"/>
+    <path class="ar" d="M765 970 V1000 H605" marker-end="url(#ma)"/>
+    <rect class="gate" x="517" y="984" width="86" height="34" rx="17"/>
+    <text class="gate-t" x="560" y="1006" text-anchor="middle">∪ (OR)</text>
+    <text class="t-m" x="640" y="1022" style="fill:var(--omega)">veto tuỳ chọn: HSI chỉ báo khi mN ≥ ½</text>
+
+    <!-- L6 output -->
+    <path class="ar" d="M560 1018 V1066" marker-end="url(#ma)"/>
+    <rect class="bx-acc" x="300" y="1068" width="520" height="74" rx="10"/>
+    <text class="t-h" x="318" y="1094">Báo fix p̂_t hoặc im lặng</text>
+    <text class="t-s" x="318" y="1114">fix → bộ lọc Kalman điều hướng (sai số điều hướng)</text>
+    <text class="t-s" x="318" y="1130">đánh giá: recall, segFAR ≤ 0.05/run, kiểm toán theo vị trí</text>
+  </svg>
+  </div></div>
+  <div class="legend">
+    <span><i class="sw" style="border-color:var(--mapped)"></i>Bộ lọc OWF và các bậc của nó</span>
+    <span><i class="sw" style="border-color:var(--accent)"></i>Hiệu chỉnh hồi cứu HQ, đầu ra</span>
+    <span><i class="sw" style="border-color:var(--omega)"></i>Nhánh học HSI-VNc, chuỗi topo</span>
+    <span><i class="sw" style="border-color:var(--hole)"></i>Bản đồ có lỗ</span>
+    <span><i class="sw" style="border-color:var(--muted);border-style:dashed"></i>Bus odometry</span>
+  </div>
+  <p class="cap">Hai lượt lọc dùng cùng một bank 10 bộ lọc. Lượt 1 chỉ để lấy mẫu hồi cứu; lượt 2 là lượt dùng cho quyết định. Mọi hằng số dùng chung cho mọi dataset và descriptor.</p>
+
+  <div class="prose">
+  <h3>Đọc sơ đồ theo một câu</h3>
+  <p>Ảnh → vector → điểm tương đồng với mọi ảnh bản đồ → một bộ lọc Bayes giữ niềm tin trên <b>toàn bộ mặt phẳng</b> (kể cả chỗ không có ảnh) → nhìn lại các fix chắc chắn để học “một khớp thật trông mạnh cỡ nào so với một khớp nhầm” → chạy lại bộ lọc với kiến thức đó → báo fix khi bộ lọc cực kỳ chắc chắn hoặc khi nhánh học đã hiệu chỉnh cho phép.</p>
+  </div>
+</section>
+<section id="owf">
+  <div class="prose">
+  <h2><span class="sec-tag">§3</span>Mô hình lõi: bộ lọc thế giới mở (OWF)</h2>
+  <p>HMM topo kinh điển đặt toàn bộ xác suất lên các nút bản đồ. Khi robot đi vào lỗ, xác suất không có chỗ nào để đi ngoài các nút còn lại, nên “đã rời bản đồ” phải được phát hiện bằng một phép thử riêng. OWF làm ngược lại: <b>lỗ là một phần của không gian trạng thái</b>. Niềm tin sống trên một lưới mét phủ cả vùng có ảnh lẫn vùng không có ảnh. Odometry đẩy khối lượng xác suất vào lỗ, qua lỗ và ra khỏi lỗ. Việc rời bản đồ được <b>dự đoán</b> bằng dead reckoning so với vùng phủ đã biết, không cần phát hiện.</p>
+  </div>
+  <div class="fig"><div class="inner sm">
+  <svg viewBox="0 0 690 330" role="img" aria-labelledby="t-grid">
+    <title id="t-grid">Lưới trạng thái của OWF: ô có bản đồ, ô lỗ, ô trống, trạng thái xa và niềm tin của robot</title>
+<rect class="g-un" x="21" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="21" y="187" width="24" height="24" rx="3"/>
+<rect class="g-un" x="21" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="21" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="21" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="47" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="47" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="47" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="47" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="47" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="73" y="31" width="24" height="24" rx="3"/>
+<rect class="g-un" x="73" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="73" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="73" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="73" y="135" width="24" height="24" rx="3"/>
+<rect class="g-un" x="73" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="73" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="73" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="73" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="73" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="99" y="31" width="24" height="24" rx="3"/>
+<rect class="g-un" x="99" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="99" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="99" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="99" y="135" width="24" height="24" rx="3"/>
+<rect class="g-un" x="99" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="99" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="99" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="99" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="99" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="125" y="31" width="24" height="24" rx="3"/>
+<rect class="g-map" x="125" y="57" width="24" height="24" rx="3"/>
+<rect class="g-map" x="125" y="83" width="24" height="24" rx="3"/>
+<rect class="g-map" x="125" y="109" width="24" height="24" rx="3"/>
+<rect class="g-map" x="125" y="135" width="24" height="24" rx="3"/>
+<rect class="g-map" x="125" y="161" width="24" height="24" rx="3"/>
+<rect class="g-map" x="125" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="125" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="125" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="125" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="151" y="31" width="24" height="24" rx="3"/>
+<rect class="g-map" x="151" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="151" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="151" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="151" y="135" width="24" height="24" rx="3"/>
+<rect class="g-un" x="151" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="151" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="151" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="151" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="151" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="177" y="31" width="24" height="24" rx="3"/>
+<rect class="g-map" x="177" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="177" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="177" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="177" y="135" width="24" height="24" rx="3"/>
+<rect class="g-un" x="177" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="177" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="177" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="177" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="177" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="203" y="31" width="24" height="24" rx="3"/>
+<rect class="g-map" x="203" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="203" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="203" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="203" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="203" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="203" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="203" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="203" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="229" y="31" width="24" height="24" rx="3"/>
+<rect class="g-map" x="229" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="229" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="229" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="229" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="229" y="187" width="24" height="24" rx="3"/>
+<rect class="g-hole" x="229" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="229" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="229" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="255" y="31" width="24" height="24" rx="3"/>
+<rect class="g-map" x="255" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="255" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="255" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="255" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="255" y="187" width="24" height="24" rx="3"/>
+<rect class="g-hole" x="255" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="255" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="255" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="281" y="31" width="24" height="24" rx="3"/>
+<rect class="g-un" x="281" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="281" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="281" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="281" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="281" y="187" width="24" height="24" rx="3"/>
+<rect class="g-hole" x="281" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="281" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="281" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="307" y="31" width="24" height="24" rx="3"/>
+<rect class="g-un" x="307" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="307" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="307" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="307" y="135" width="24" height="24" rx="3"/>
+<rect class="g-un" x="307" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="307" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="307" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="307" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="307" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="333" y="31" width="24" height="24" rx="3"/>
+<rect class="g-un" x="333" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="333" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="333" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="333" y="135" width="24" height="24" rx="3"/>
+<rect class="g-un" x="333" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="333" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="333" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="333" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="333" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="359" y="31" width="24" height="24" rx="3"/>
+<rect class="g-un" x="359" y="57" width="24" height="24" rx="3"/>
+<rect class="g-map" x="359" y="83" width="24" height="24" rx="3"/>
+<rect class="g-map" x="359" y="109" width="24" height="24" rx="3"/>
+<rect class="g-hole" x="359" y="135" width="24" height="24" rx="3"/>
+<rect class="g-hole" x="359" y="161" width="24" height="24" rx="3"/>
+<rect class="g-map" x="359" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="359" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="359" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="359" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="385" y="31" width="24" height="24" rx="3"/>
+<rect class="g-un" x="385" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="385" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="385" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="385" y="135" width="24" height="24" rx="3"/>
+<rect class="g-un" x="385" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="385" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="385" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="385" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="385" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="411" y="31" width="24" height="24" rx="3"/>
+<rect class="g-un" x="411" y="57" width="24" height="24" rx="3"/>
+<rect class="g-un" x="411" y="83" width="24" height="24" rx="3"/>
+<rect class="g-un" x="411" y="109" width="24" height="24" rx="3"/>
+<rect class="g-un" x="411" y="135" width="24" height="24" rx="3"/>
+<rect class="g-un" x="411" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="411" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="411" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="411" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="411" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="437" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="437" y="187" width="24" height="24" rx="3"/>
+<rect class="g-map" x="437" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="437" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="437" y="265" width="24" height="24" rx="3"/>
+<rect class="g-un" x="463" y="161" width="24" height="24" rx="3"/>
+<rect class="g-un" x="463" y="187" width="24" height="24" rx="3"/>
+<rect class="g-un" x="463" y="213" width="24" height="24" rx="3"/>
+<rect class="g-un" x="463" y="239" width="24" height="24" rx="3"/>
+<rect class="g-un" x="463" y="265" width="24" height="24" rx="3"/>
+<circle class="g-bel" cx="241.0" cy="199.0" r="3.9"/>
+<circle class="g-bel" cx="241.0" cy="225.0" r="5.2"/>
+<circle class="g-bel" cx="241.0" cy="251.0" r="3.5"/>
+<circle class="g-bel" cx="267.0" cy="173.0" r="2.9"/>
+<circle class="g-bel" cx="267.0" cy="199.0" r="7.2"/>
+<circle class="g-bel" cx="267.0" cy="225.0" r="10.5"/>
+<circle class="g-bel" cx="267.0" cy="251.0" r="6.0"/>
+<circle class="g-bel" cx="267.0" cy="277.0" r="2.6"/>
+<circle class="g-bel" cx="293.0" cy="173.0" r="2.7"/>
+<circle class="g-bel" cx="293.0" cy="199.0" r="6.0"/>
+<circle class="g-bel" cx="293.0" cy="225.0" r="8.6"/>
+<circle class="g-bel" cx="293.0" cy="251.0" r="5.2"/>
+<circle class="g-bel" cx="319.0" cy="199.0" r="2.9"/>
+<circle class="g-bel" cx="319.0" cy="225.0" r="3.5"/>
+<circle class="g-bel" cx="319.0" cy="251.0" r="2.7"/>
+    <text class="t-m" x="20" y="18">lưới G, ô cỡ g = excl/5, giới hạn trong dải B quanh bản đồ</text>
+    <path class="ar" d="M46 300 H250" marker-end="url(#ma)"/>
+    <text class="t-s" x="72" y="320">robot đi từ trái sang, đã vào lỗ: niềm tin (chấm đỏ) nằm trong lỗ, không bị kéo về ảnh gần nhất</text>
+    <rect class="om" x="530" y="80" width="140" height="110" rx="12"/>
+    <text class="t-h" x="548" y="110" style="fill:var(--omega)">Ω</text>
+    <text class="t-s" x="548" y="130">trạng thái xa,</text>
+    <text class="t-s" x="548" y="146">không vị trí</text>
+    <text class="t-s" x="548" y="168">NT: chỉ quay lại</text>
+    <text class="t-s" x="548" y="182">qua mép dải</text>
+    <path class="ar-m" d="M495 135 H526" marker-end="url(#mm)"/>
+    <text class="t-m" x="490" y="226">khối lượng ra</text><text class="t-m" x="490" y="240">khỏi dải → Ω</text>
+  </svg>
+  </div></div>
+  <div class="legend">
+    <span><i class="sw" style="background:var(--mapped);opacity:.75"></i>Ô có bản đồ (chứa ít nhất một ảnh)</span>
+    <span><i class="sw" style="border-color:var(--hole);border-style:dashed"></i>Ô lỗ (đường thật, không có ảnh)</span>
+    <span><i class="sw" style="background:var(--soft);border-color:var(--line)"></i>Ô trống khác trong dải</span>
+    <span><i class="sw" style="background:var(--alias);opacity:.55;border-radius:50%"></i>Niềm tin b_t</span>
+  </div>
+
+  <h3>Một bước lọc (mỗi frame)</h3>
+  <div class="steps">
+    <div><b>Dự đoán (motion)</b>Dịch niềm tin theo u_t bằng nguyên ô; phần dư dưới một ô giữ làm pha nên không khuếch tán giả. Nhiễu q·|u_t| tích luỹ rồi áp như một Gaussian blur. Khối lượng ra khỏi dải chuyển sang Ω. Không bước nào chuẩn hoá lại trên riêng các ô có bản đồ.</div>
+    <div><b>Cập nhật (emission)</b>Với z-score z_t,i: L_t,i = exp(β z_t,i) / trung bình_j exp(β z_t,j), trung bình đúng bằng 1 trên bản đồ. Ô có bản đồ nhận trung bình L của các ảnh trong ô; ô trống và Ω nhận 1 (lượt 1). Trọng số quãng đường w_t = min(1, |u_t| / 0.4 excl): robot đứng yên không đếm một cảnh nhiều lần.</div>
+    <div><b>Thống kê quyết định</b>D_t = khối lượng hậu nghiệm lớn nhất trong một đĩa bán kính excl quanh một trong 12 ô có bản đồ nặng nhất. Fix ĉ_t = ảnh bản đồ gần trung bình hậu nghiệm của đĩa đó. mN = khối lượng gần bản đồ (dùng cho veto).</div>
+  </div>
+  <div class="prose">
+  <p>Ablation trên 26 run cho thấy vì sao hai thiết kế này cần thiết: bỏ ô trống (thế giới đóng, cùng emission) thì mọi run vượt α (segFAR 0.297); bỏ trọng số quãng đường thì mọi run vượt α (0.606).</p>
+  <p><b>NT (no teleport, Mệnh đề 5).</b> Thiết kế cũ trả khối lượng Ω về khắp bản đồ mỗi frame. Bí danh có cấu trúc khuếch đại các “hạt giống” đó thành fix sai rất tự tin. Trong luật hiện tại Ω hấp thụ: khối lượng chỉ quay lại qua mép dải.</p>
+  </div>
+</section>
+
+<section id="bank">
+  <div class="prose">
+  <h2><span class="sec-tag">§4</span>Ngân hàng 10 bộ lọc: tự hiệu chỉnh odometry</h2>
+  <p>Odometry thật sai tỉ lệ (4Seasons đo được 0.94–1.04 so với GNSS). Thay vì ước lượng tỉ lệ bằng nhãn, OWF chạy song song 2 × 5 = 10 bộ lọc, mỗi bộ một giả thuyết (nhiễu quá trình q, tỉ lệ s). Ở mỗi frame, hệ thống đi theo bộ lọc có log-likelihood dự đoán tích luỹ Σ log p(z_s | z_&lt;s) lớn nhất. Đây là chọn mô hình Bayes, nhân quả.</p>
+  </div>
+  <div class="fig"><div class="inner sm">
+  <svg viewBox="0 0 690 210" role="img" aria-labelledby="t-bank">
+    <title id="t-bank">Ngân hàng 2 nhân 5 bộ lọc và bộ chọn theo bằng chứng</title>
+    <text class="t-m" x="20" y="28">q \ s</text>
+    <text class="t-m" x="100" y="28">0.94</text><text class="t-m" x="170" y="28">0.97</text><text class="t-m" x="240" y="28">1.00</text><text class="t-m" x="310" y="28">1.03</text><text class="t-m" x="380" y="28">1.06</text>
+    <text class="t-m" x="14" y="72">0.005</text><text class="t-m" x="14" y="136">0.02</text>
+    <g>
+      <rect class="bx" x="90" y="44" width="58" height="46" rx="6"/><rect class="bx" x="160" y="44" width="58" height="46" rx="6"/><rect class="bx" x="230" y="44" width="58" height="46" rx="6"/><rect class="bx-map" x="300" y="44" width="58" height="46" rx="6"/><rect class="bx" x="370" y="44" width="58" height="46" rx="6"/>
+      <rect class="bx" x="90" y="108" width="58" height="46" rx="6"/><rect class="bx" x="160" y="108" width="58" height="46" rx="6"/><rect class="bx" x="230" y="108" width="58" height="46" rx="6"/><rect class="bx" x="300" y="108" width="58" height="46" rx="6"/><rect class="bx" x="370" y="108" width="58" height="46" rx="6"/>
+    </g>
+    <text class="t-m" x="304" y="72" style="fill:var(--mapped)">thắng</text>
+    <path class="ar" d="M440 99 H500" marker-end="url(#ma)"/>
+    <rect class="bx-acc" x="505" y="60" width="165" height="80" rx="8"/>
+    <text class="t-h" x="520" y="86">Bộ chọn</text>
+    <text class="t-m" x="520" y="106">argmax Σ log p(z_s|z_&lt;s)</text>
+    <text class="t-m" x="520" y="124">→ b_t, D_t, ĉ_t</text>
+    <text class="t-s" x="90" y="186">Trên GPU L4, cả bank chạy như một tensor float64: 2.7–3.4 ms/frame (numpy: 29 ms).</text>
+  </svg>
+  </div></div>
+</section>
+
+<section id="hq">
+  <div class="prose">
+  <h2><span class="sec-tag">§5</span>HQ: vá lỗ hổng còn lại của mọi bộ lọc chuẩn hoá theo frame</h2>
+  <h3>Lỗi cần sửa: bí danh mà odometry không thấy (Mệnh đề 6)</h3>
+  <p>Emission ở lượt 1 chỉ dùng <i>hình dạng</i> hồ sơ similarity của frame (ảnh nào cao hơn), không dùng <i>mức</i> tuyệt đối. So với ô trống, một ảnh được cộng khối lượng khi z-score của nó vượt khoảng 0.5 độ lệch chuẩn robust. Giờ hãy xét một bản sao của quãng đường thật nhưng bị dịch dọc một con đường thẳng.</p>
+  </div>
+  <div class="fig"><div class="inner sm">
+  <svg viewBox="0 0 690 190" role="img" aria-labelledby="t-alias">
+    <title id="t-alias">Bí danh dịch dọc đường thẳng: quãng thật trong lỗ và bản sao dịch trên bản đồ</title>
+    <rect class="bx-soft" x="30" y="40" width="630" height="34" rx="6"/>
+    <rect x="60" y="48" width="300" height="18" rx="4" style="fill:var(--mapped);fill-opacity:.75"/>
+    <rect x="380" y="48" width="250" height="18" rx="4" style="fill:none;stroke:var(--hole);stroke-width:1.6;stroke-dasharray:4 3"/>
+    <text class="t-m" x="64" y="32">đoạn có bản đồ</text><text class="t-m" x="384" y="32" style="fill:var(--hole)">lỗ: robot thật đang ở đây</text>
+    <g>
+      <circle class="dot-m" cx="420" cy="57" r="5"/><circle class="dot-m" cx="460" cy="57" r="5"/><circle class="dot-m" cx="500" cy="57" r="5"/><circle class="dot-m" cx="540" cy="57" r="5"/>
+      <circle class="dot-r" cx="120" cy="57" r="5"/><circle class="dot-r" cx="160" cy="57" r="5"/><circle class="dot-r" cx="200" cy="57" r="5"/><circle class="dot-r" cx="240" cy="57" r="5"/>
+    </g>
+    <path class="ar-o" d="M420 90 C380 130, 280 130, 240 90" marker-end="url(#mo)"/>
+    <text class="t-m" x="262" y="140">độ lệch c không đổi (CMU: 204 m, 673 m)</text>
+    <text class="t-s" x="30" y="168">Bước odometry của bản sao (đỏ) giống hệt quãng thật (teal): mô hình chuyển động không phân biệt được.</text>
+    <text class="t-s" x="30" y="184">Bản sao khớp yếu (cos 0.34–0.45 so với 0.69–0.77 ở chỗ thật) nhưng vẫn vượt ngưỡng tương đối mỗi frame → tích luỹ vô hạn.</text>
+  </svg>
+  </div></div>
+  <div class="prose">
+  <h3>Cách sửa: cho ô trống bằng chứng tuyệt đối đã hiệu chỉnh</h3>
+  <p>Quan sát tách được khớp thật khỏi bí danh là mức nổi bật của ảnh tốt nhất trên hồ sơ của chính frame: <code>x_t = max_i s_t,i − median_i s_t,i</code>.</p>
+  <ul>
+    <li><b>f_on</b>: phân phối của x_t khi robot ở trên bản đồ (max lấy cả chỗ thật lẫn bí danh tốt nhất).</li>
+    <li><b>f_off</b>: phân phối của x_t khi chỗ thật vắng mặt (chỉ còn bí danh tốt nhất).</li>
+  </ul>
+  <p>Ở lượt 2, ô trống và Ω nhận log-LR <code>log f_off(x_t) − log f_on(x_t)</code> thay cho 0. Ngoài bản đồ, giả thuyết “đang ở trên bản đồ” mất bằng chứng với tốc độ KL(f_off ‖ f_on) mỗi frame (Mệnh đề 7). Ở điều kiện khó (đêm, đoạn lặp), f_on ≈ f_off nên bộ lọc tự quay về hành vi lượt 1.</p>
+  </div>
+  <div class="fig"><div class="inner sm">
+  <svg viewBox="0 0 690 240" role="img" aria-labelledby="t-dens">
+    <title id="t-dens">Minh hoạ hai mật độ f_on và f_off của độ nổi bật x_t</title>
+    <path class="axis" d="M40 190 H450 M40 190 V30"/>
+    <text class="t-m" x="420" y="210">x_t</text>
+    <text class="t-m" x="44" y="26">mật độ (minh hoạ)</text>
+    <path class="c-on" d="M40.0 189.9 L46.7 189.8 L53.3 189.6 L60.0 189.3 L66.7 188.8 L73.3 188.0 L80.0 186.9 L86.7 185.4 L93.3 183.5 L100.0 181.2 L106.7 178.4 L113.3 175.5 L120.0 172.6 L126.7 170.0 L133.3 167.8 L140.0 166.4 L146.7 165.7 L153.3 165.7 L160.0 166.3 L166.7 167.2 L173.3 167.9 L180.0 168.3 L186.7 167.8 L193.3 166.4 L200.0 163.8 L206.7 160.1 L213.3 155.3 L220.0 149.6 L226.7 143.2 L233.3 136.4 L240.0 129.5 L246.7 122.8 L253.3 116.8 L260.0 111.8 L266.7 107.9 L273.3 105.5 L280.0 104.7 L286.7 105.5 L293.3 107.9 L300.0 111.8 L306.7 116.9 L313.3 123.0 L320.0 129.7 L326.7 136.8 L333.3 144.0 L340.0 150.9 L346.7 157.5 L353.3 163.4 L360.0 168.7 L366.7 173.3 L373.3 177.1 L380.0 180.3 L386.7 182.8 L393.3 184.7 L400.0 186.3 L406.7 187.4 L413.3 188.2 L420.0 188.8 L426.7 189.2 L433.3 189.5 L440.0 189.7"/>
+    <path class="c-off" d="M40.0 188.3 L46.7 186.9 L53.3 184.6 L60.0 181.0 L66.7 175.6 L73.3 167.9 L80.0 157.4 L86.7 144.1 L93.3 128.1 L100.0 110.1 L106.7 91.1 L113.3 72.9 L120.0 57.2 L126.7 45.7 L133.3 40.0 L140.0 40.6 L146.7 47.6 L153.3 60.0 L160.0 76.4 L166.7 94.9 L173.3 113.8 L180.0 131.5 L186.7 147.0 L193.3 159.8 L200.0 169.6 L206.7 176.9 L213.3 181.9 L220.0 185.2 L226.7 187.3 L233.3 188.5 L240.0 189.2 L246.7 189.6 L253.3 189.8 L260.0 189.9 L266.7 190.0 L273.3 190.0 L280.0 190.0 L440.0 190.0"/>
+    <text class="t-m" x="150" y="36" style="fill:var(--alias)">f_off: chỉ còn bí danh</text>
+    <text class="t-m" x="290" y="96" style="fill:var(--mapped)">f_on: có chỗ thật</text>
+    <text class="t-s" x="480" y="60">Mẫu lấy không nhãn,</text>
+    <text class="t-s" x="480" y="76">tại fix tự tin của lượt 1:</text>
+    <text class="t-m" x="480" y="100" style="fill:var(--mapped)">f_on ← max − median</text>
+    <text class="t-m" x="480" y="118" style="fill:var(--alias)">f_off ← ảnh tốt nhất</text>
+    <text class="t-m" x="480" y="134" style="fill:var(--alias)">  xa fix &gt; 1.6 excl</text>
+    <text class="t-s" x="480" y="160">x nhỏ: ô trống được cộng</text>
+    <text class="t-s" x="480" y="176">x lớn: bản đồ được cộng</text>
+  </svg>
+  </div></div>
+  <div class="note">
+    <b>Tính nhân quả.</b> Frame t chỉ dùng mẫu của chính phiên ở các frame &lt; t, khi đã có ≥ 100 mẫu mỗi loại; trước đó dùng các phiên khác cùng lần triển khai (cùng bản đồ). KDE có 1 % nhiễm đều, đánh giá theo khối 50 frame. Kiểm thử <code>tests/test_hq_causality.py</code> xác nhận đổi tương lai của phiên không đổi log-LR quá khứ. Biến thể nghiêm ngặt <code>hsq2s</code> chỉ dùng phiên trước, và mất lợi ích CMU trên seed 64–66.
+  </div>
+</section>
+<section id="hsi">
+  <div class="prose">
+  <h2><span class="sec-tag">§6</span>Nhánh học HSI-VNc: robot tự gán nhãn quá khứ</h2>
+  <p>HSI (Hindsight Self-supervised Integrity) là phần “học” của lớp quyết định. Ý chính: hai giác quan độc lập kiểm chứng lẫn nhau. Thị giác đề xuất một quãng đường; odometry xác minh hình dạng của nó. Phép kiểm này không dùng giá trị similarity nên có nghĩa như nhau ở mọi điều kiện ảnh. Những đoạn đã xác minh, cộng với dead reckoning nối giữa chúng, cho ra <b>nhãn hồi cứu</b> cho từng frame, kể cả lớp off-map vốn không bao giờ có nhãn khi triển khai.</p>
+  </div>
+  <div class="steps hsi">
+    <div><b>Xác minh</b>Dịch chuyển của chuỗi lai khớp odometry ở nhiều độ trễ (5–80 frame) trong một cửa sổ. P(fix đúng | xác minh) ≥ 0.993 (Mệnh đề 1).</div>
+    <div><b>Cầu dead-reckoning</b>Giữa hai đoạn đã xác minh, căn odometry cứng (Kabsch) hai phía để suy vị trí x̃_t, độ bất định σ_t ∝ d_l·d_r/(d_l+d_r) như cầu Brown (Mệnh đề 3).</div>
+    <div><b>Nhãn hồi cứu</b>y_t = 1 nếu fix nằm trong excl của x̃_t; y_t = 0 nếu không, hoặc x̃_t xa mọi ảnh bản đồ (off-map). Frame có thể off-map tạo thành tập null.</div>
+    <div><b>Học online</b>Một GBM học y_t trên đặc trưng nhân quả (thống kê similarity, phần dư chuỗi–odometry, dead reckoning từ neo gần nhất), huấn luyện dương vs null (căn chỉnh Neyman–Pearson, Mệnh đề 7).</div>
+    <div><b>Hiệu chuẩn conformal</b>Báo khi điểm &gt; phân vị (1−α) của điểm lớn nhất trên các đoạn null H frame giữ ra, tức là trên các excursion thật của chính lần triển khai (Mệnh đề 4).</div>
+  </div>
+  <div class="note">
+    <b>Chữ “c” trong HSI-VNc.</b> Kiểm toán lần hai phát hiện nhãn của HSI-VN dùng s0, κ và bước frame ước lượng trên toàn lần triển khai, tức là nhìn trước. HSI-VNc chỉ dùng đại lượng đã có tại thời điểm nhãn được chốt. Kiểm thử đầu-cuối <code>tests/test_hsi_causality.py</code> thay mọi dữ liệu sau mốc R bằng rác: HSI-VNc đổi 0 quyết định trước R.
+  </div>
+</section>
+
+<section id="quyet-dinh">
+  <div class="prose">
+  <h2><span class="sec-tag">§7</span>Lớp quyết định: hợp của hai cơ chế</h2>
+  <p>Quyết định cuối là phép OR. Một frame được báo nếu nhánh HSI-VNc báo, hoặc nếu một trong ba bậc tin cậy của OWF thoả. Bậc là ngưỡng cố định rất khắt khe; chúng bắt những frame mà bộ lọc đã gần như chắc chắn. Nhánh học bắt phần còn lại nhờ hiệu chuẩn trên dữ liệu thật của phiên.</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Thành phần</th><th>Điều kiện báo</th><th>Vai trò</th></tr></thead>
+    <tbody>
+      <tr><td><b>HSI-VNc</b></td><td>Điểm GBM vượt ngưỡng conformal, trên chuỗi lai (ảnh OWF khi mass ≥ 0.9 sau 16 excl, ngược lại chuỗi topo)</td><td>Nhánh học, thích nghi theo phiên</td></tr>
+      <tr><td><b>T1</b></td><td class="num">D_t ≥ 1 − 10⁻⁵, quãng ≥ 16 excl</td><td>Bộ lọc đã ổn định lâu</td></tr>
+      <tr><td><b>T2</b></td><td class="num">D_t ≥ 1 − 10⁻⁸, quãng ≥ 2 excl</td><td>Rất chắc chắn, sớm</td></tr>
+      <tr><td><b>T3</b></td><td class="num">D_t ≥ 1 − 3·10⁻⁴, quãng ≥ 0.5 excl</td><td>Sớm nhất, cần ảnh OWF nằm trong excl của cả chuỗi topo và top-1 retrieval</td></tr>
+      <tr><td><b>Veto ½</b> (tuỳ chọn)</td><td>HSI chỉ được báo khi mN ≥ ½</td><td>Điểm vận hành an toàn: 0/432 run vượt α</td></tr>
+    </tbody>
+  </table></div>
+  <div class="prose">
+  <p>Vì sao ngưỡng cực đoan như 1 − 10⁻⁸? Mệnh đề 2′: giả định e-value bị phóng đại bởi hệ số K do bí danh có cấu trúc. Đo được K ≤ 1 trên 4Seasons và St Lucia, nhưng tới 10⁴ trên CMU và Nordland ở ε = 10⁻⁸. Ngưỡng phải đủ xa để chịu được đuôi nặng đó.</p>
+  </div>
+</section>
+
+<section id="thuat-toan">
+  <div class="prose">
+  <h2><span class="sec-tag">§8</span>Thuật toán đầy đủ</h2>
+  <p>Mỗi lần triển khai là một tập phiên trên cùng một bản đồ. Toàn bộ chạy nhân quả: quyết định ở frame t chỉ dùng dữ liệu tới t.</p>
+  </div>
+<pre class="algo"><span class="kw">Đầu vào:</span> phiên Q₁…Q_K (ảnh z_t, odometry u_t), bản đồ {m_i, vị trí}, descriptor d(·)
+<span class="kw">Hằng số chung:</span> g = excl/5, β, ℓ = 0.4·excl, bank Θ = {0.005, 0.02}·excl × {0.94, 0.97, 1, 1.03, 1.06}
+
+<span class="c"># Lớp 1: biểu diễn</span>
+s[t,i]  ← cos(d(z_t), d(m_i));   z[t,i] ← robust_zscore(s[t,:])
+L[t,i]  ← exp(β·z[t,i]) / mean_j exp(β·z[t,j])
+x[t]    ← max_i s[t,i] − median_i s[t,i]
+
+<span class="c"># Lớp 2: OWF lượt 1 (emission lịch sử, ô trống = 1)</span>
+<span class="kw">for</span> θ ∈ Θ <span class="kw">in parallel</span>:  b⁰_θ ← OWF(L, u, log_lr_unmapped = 0, Ω hấp thụ)
+chọn θ*_t = argmax_θ Σ_{s≤t} log p_θ(z_s | z_&lt;s)  →  mass¹_t, fix¹_t
+
+<span class="c"># Lớp 3: HQ, mẫu hồi cứu tại fix tự tin</span>
+<span class="kw">for</span> t <span class="kw">with</span> mass¹_t ≥ 1 − 10⁻³:
+    S_on  += x[t]
+    S_off += max{ s[t,i] : |m_i − fix¹_t| &gt; 1.6·excl } − median_i s[t,i]
+λ[t] ← log KDE(S_off^{&lt;t, cùng phiên})(x[t]) − log KDE(S_on^{&lt;t, cùng phiên})(x[t])
+       <span class="c"># nếu &lt; 100 mẫu cùng phiên: dùng các phiên khác; KDE + 1 % đều; khối 50 frame</span>
+
+<span class="c"># Lớp 4: OWF lượt 2</span>
+<span class="kw">for</span> θ ∈ Θ <span class="kw">in parallel</span>:  b_θ ← OWF(L, u, log_lr_unmapped = λ, Ω hấp thụ)
+→ D_t, fix ĉ_t, mN_t  (bộ lọc được chọn theo bằng chứng)
+
+<span class="c"># Lớp 5: quyết định</span>
+chain_t ← ĉ_t <span class="kw">if</span> D_t ≥ 0.9 <span class="kw">and</span> path_t ≥ 16·excl <span class="kw">else</span> est_t     <span class="c"># chuỗi lai</span>
+H_t  ← HSI-VNc(chain, u, đặc trưng)                                <span class="c"># xác minh → cầu → nhãn → GBM → conformal</span>
+<span class="kw">if</span> veto: H_t ← H_t ∧ (mN_t ≥ ½)
+R_t  ← H_t ∨ [D_t ≥ 1−10⁻⁵ ∧ path_t ≥ 16·excl]
+           ∨ [D_t ≥ 1−10⁻⁸ ∧ path_t ≥ 2·excl]
+           ∨ [D_t ≥ 1−3·10⁻⁴ ∧ path_t ≥ 0.5·excl ∧ ĉ_t ≈ est_t ≈ top1_t]
+
+<span class="c"># Lớp 6</span>
+<span class="kw">if</span> R_t: báo fix (vị trí chain_t nếu H_t, ngược lại ĉ_t) → Kalman   <span class="kw">else</span>: im lặng</pre>
+  <p class="cap">Lệnh chạy một run: <code>owf_hsi_job.py ... --qx 0.005,0.02 --scales 0.94,0.97,1.0,1.03,1.06 --engine torch --pin 0 --lu hsq2</code>, rồi <code>owf_union.py ... --hvar HSI-VNc --variants "H|m(1e-5,16)|m(1e-8,2)|t(3e-4,0.5)"</code>. Chi phí: hai lượt bank, khoảng 6 ms/frame trên một GPU L4.</p>
+</section>
+
+<section id="ly-thuyet">
+  <div class="prose">
+  <h2><span class="sec-tag">§9</span>Mỗi thành phần dựa trên mệnh đề nào</h2>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Mệnh đề</th><th>Phát biểu ngắn</th><th>Thành phần được biện minh</th></tr></thead>
+    <tbody>
+      <tr><td>OWF 1</td><td>Niềm tin khuếch tán không bị kéo về bản đồ: chỉ hình dạng hồ sơ similarity đổi khối lượng, mức thì không</td><td>Emission tỉ số hợp lý, trung bình 1</td></tr>
+      <tr><td>OWF 2, 2′</td><td>Cận Ville cho báo sai trong một đoạn off-map; K đo được là hệ số phóng đại do bí danh</td><td>Ngưỡng bậc cực đoan</td></tr>
+      <tr><td>OWF 3</td><td>Rời bản đồ được quyết định bằng dead reckoning, lỗ không phải một phép thử</td><td>Ô trống trong trạng thái</td></tr>
+      <tr><td>OWF 5</td><td>Hạt giống tái nhập bị bí danh khuếch đại</td><td>Ω hấp thụ (NT)</td></tr>
+      <tr><td>OWF 6</td><td>Emission chuẩn hoá có điểm giao ≈ 0.5 SD; bí danh dịch mà odometry không thấy tăng không giới hạn</td><td>Động cơ của HQ</td></tr>
+      <tr><td>OWF 7</td><td>Bằng chứng tuyệt đối cho ô trống: trôi −KL(f_off‖f_on) ngoài bản đồ, trung tính khi điều kiện che chỗ thật</td><td>HQ</td></tr>
+      <tr><td>HSI 1–3</td><td>Tự nhất quán hình học chứng nhận fix; cầu Brown cho độ chính xác vị trí hồi cứu</td><td>Xác minh, nhãn hồi cứu</td></tr>
+      <tr><td>HSI 4, 6, 7</td><td>Hiệu chuẩn conformal theo đoạn; chứng nhận rồi hiệu chuẩn; căn chỉnh Neyman–Pearson tránh vách khoá</td><td>Ngưỡng của nhánh học</td></tr>
+    </tbody>
+  </table></div>
+  <p class="cap">Chứng minh: <code>paper/owf_theory.md</code> và <code>paper/hsi_theory.md</code>.</p>
+</section>
+
+<section id="ket-qua">
+  <div class="prose">
+  <h2><span class="sec-tag">§10</span>Kết quả chính (số đã chạy lại sau hai lần kiểm toán)</h2>
+  <p>Ba nhóm seed tươi 64–72, 432 run (8 dataset × 6 descriptor × 9 bố cục lỗ), quyết định đăng ký trước.</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>Luật (nhóm 67–69)</th><th>Recall</th><th>segFAR TB, dataset tệ nhất</th><th>Run &gt; α (/144)</th><th>Điều hướng (m)</th></tr></thead>
+    <tbody>
+      <tr><td><b>OWF-HWA-S5-NT-HQ (đề xuất)</b></td><td class="num"><b>0.928</b></td><td class="num">0.010</td><td class="num"><b>0</b></td><td class="num">12.6</td></tr>
+      <tr><td>+ veto ½ (điểm an toàn)</td><td class="num">0.920</td><td class="num">0.003</td><td class="num">0</td><td class="num">12.9</td></tr>
+      <tr><td>HSI-VNc đứng riêng</td><td class="num">0.795</td><td class="num">–</td><td class="num">0</td><td class="num">14.5</td></tr>
+      <tr><td>TAO'26 (chỉnh ngưỡng bằng nhãn)</td><td class="num">0.834</td><td class="num">0.992</td><td class="num">130</td><td class="num">109.5</td></tr>
+      <tr><td>Xu'21 (chỉnh bằng nhãn)</td><td class="num">0.692</td><td class="num">0.584</td><td class="num">81</td><td class="num">51.0</td></tr>
+      <tr><td>Claxton'24 (chỉnh bằng nhãn)</td><td class="num">0.738</td><td class="num">0.283</td><td class="num">104</td><td class="num">44.3</td></tr>
+      <tr><td>Oracle một frame</td><td class="num">0.847</td><td class="num">0</td><td class="num">0</td><td class="num">10.6</td></tr>
+    </tbody>
+  </table></div>
+  <div class="prose">
+  <p>Gộp cả ba nhóm: recall ≈ 0.93, 3/432 run vượt α (0 với veto). Recall cao hơn oracle một frame vì bằng chứng chuỗi cứu được các frame mà top-1 sai.</p>
+  <div class="note alias"><b>Giới hạn còn mở.</b> Lớp quyết định vẫn là tổ hợp kỹ thuật (hợp của nhánh học và các bậc), chưa có định lý theo từng run. Đầu chuỗi CMU và đầu phiên ban đêm mất recall. Lỗ chủ yếu là mô phỏng. Trên VPR-Space (chuỗi rất ngắn) lớp quyết định quá bảo thủ: 0.29 so với oracle 0.56.</div>
+  </div>
+</section>
+
+<section id="thuat-ngu">
+  <div class="prose">
+  <h2><span class="sec-tag">§11</span>Thuật ngữ</h2>
+  </div>
+  <dl class="gl">
+    <dt>excl</dt><dd>Bán kính coi một fix là đúng (theo dataset). Cũng là đơn vị đo quãng đường của các bậc.</dd>
+    <dt>fix</dt><dd>Vị trí ảnh bản đồ mà hệ thống báo cho bộ lọc điều hướng.</dd>
+    <dt>lỗ / off-map</dt><dd>Robot đang ở xa mọi ảnh bản đồ (40 m với đường phố, 20 m NCLT, 10 frame Nordland).</dd>
+    <dt>OWF</dt><dd>Open-World Filter: bộ lọc Bayes bảo toàn khối lượng trên lưới mét gồm cả vùng có và không có bản đồ.</dd>
+    <dt>Ω</dt><dd>Trạng thái xa, không có vị trí, nhận khối lượng ra khỏi dải quanh bản đồ.</dd>
+    <dt>HWA-S5</dt><dd>Lớp quyết định: H (nhánh HSI) ∪ W (hai bậc m) ∪ A (bậc đồng thuận t), bank tỉ lệ 5 mức.</dd>
+    <dt>NT</dt><dd>No teleport: Ω không trả khối lượng về khắp bản đồ.</dd>
+    <dt>HQ</dt><dd>Bằng chứng tuyệt đối hiệu chỉnh hồi cứu cho ô trống (cờ <code>--lu hsq2</code>).</dd>
+    <dt>HSI-VNc</dt><dd>Nhánh học tự giám sát hồi cứu, có chứng chỉ hình học neo cầu (V), căn chỉnh Neyman–Pearson (N), bản nhân quả (c).</dd>
+    <dt>D_t, mN</dt><dd>Khối lượng hậu nghiệm trong đĩa excl quanh ô nặng nhất; khối lượng gần bản đồ.</dd>
+    <dt>segFAR</dt><dd>Tỉ lệ đoạn off-map 10 frame có ít nhất một lần báo. Mục tiêu ≤ 0.05 mỗi run.</dd>
+    <dt>conformal</dt><dd>Chọn ngưỡng bằng phân vị trên dữ liệu hiệu chuẩn hoán đổi được, cho bảo đảm xác suất báo sai ≤ α.</dd>
+  </dl>
+</section>
+
+<footer class="foot">
+  Nguồn: <code>paper/OWF_paper_draft.md</code>, <code>paper/owf_theory.md</code>, <code>paper/hsi_theory.md</code>, <code>analysis/owf.py</code>, <code>analysis/hsi.py</code>, <code>analysis/owf_union.py</code>, <code>handoff/03_HANDOFF.md</code> (branch <code>hmm-2nd-idea</code>, 2026-11-07). Hình mật độ ở §5 là minh hoạ định tính, không phải số đo.
+</footer>
+</div>
