@@ -107,7 +107,7 @@ svg .c-dr{stroke:var(--hole);stroke-width:2.4;fill:none;stroke-dasharray:6 4}
   <h1>LACUNA: định vị thị giác theo chuỗi trên bản đồ ảnh có lỗ</h1>
   <p class="lede"><b>LACUNA</b> (<i>Localization Aware of Coverage and UNmapped Areas</i>) là tên đề xuất cho luật OWF-HWA-S5-NT-HQ. Trang này giải thích framework cho người mới: bài toán, các lớp xử lý từ ảnh camera tới quyết định báo vị trí, mô hình bên trong mỗi lớp, thuật toán đầy đủ, và lý do từng thành phần tồn tại.</p>
   <nav class="toc" aria-label="Mục lục">
-    <a href="#bai-toan">Bài toán</a><a href="#y-tuong">Ý tưởng trong một hình</a><a href="#tong-the">Kiến trúc tổng thể</a><a href="#owf">Bộ lọc thế giới mở</a><a href="#bank">Ngân hàng lọc</a>
+    <a href="#bai-toan">Bài toán</a><a href="#y-tuong">Ý tưởng trong một hình</a><a href="#tong-the">Kiến trúc tổng thể</a><a href="#du-lieu">Dữ liệu và mã</a><a href="#owf">Bộ lọc thế giới mở</a><a href="#bank">Ngân hàng lọc</a>
     <a href="#hq">Bằng chứng tuyệt đối HQ</a><a href="#hsi">Nhánh HSI-VNc</a><a href="#quyet-dinh">Lớp quyết định</a><a href="#thuat-toan">Thuật toán</a>
     <a href="#ly-thuyet">Mệnh đề</a><a href="#ket-qua">Kết quả</a><a href="#heading">Trôi heading</a><a href="#thuat-ngu">Thuật ngữ</a>
   </nav>
@@ -437,6 +437,121 @@ svg .c-dr{stroke:var(--hole);stroke-width:2.4;fill:none;stroke-dasharray:6 4}
   <p>Ảnh → vector → điểm tương đồng với mọi ảnh bản đồ → một bộ lọc Bayes giữ niềm tin trên <b>toàn bộ mặt phẳng</b> (kể cả chỗ không có ảnh) → nhìn lại các fix chắc chắn để học “một khớp thật trông mạnh cỡ nào so với một khớp nhầm” → chạy lại bộ lọc với kiến thức đó → báo fix khi bộ lọc cực kỳ chắc chắn hoặc khi nhánh học đã hiệu chỉnh cho phép.</p>
   </div>
 </section>
+<section id="du-lieu">
+  <div class="prose">
+  <h2><span class="sec-tag">§2b</span>Luồng dữ liệu và mã nguồn</h2>
+  <p>Cùng kiến trúc đó, nhìn theo dữ liệu: mỗi lớp nhận gì, trả gì, và tensor lớn cỡ nào. Hàng trên chạy một lần cho mỗi frame và mỗi ảnh bản đồ; hàng dưới là phần lọc và quyết định.</p>
+  </div>
+<div class="fig"><div class="inner">
+<svg viewBox="0 0 800 330" role="img" aria-label="Luồng dữ liệu và kích thước tensor qua các lớp">
+<title>Luồng dữ liệu và kích thước tensor qua các lớp</title>
+<rect class="bx" x="20" y="40" width="170" height="92" rx="8"/>
+<text class="t-h" x="32.0" y="62.0">Ảnh</text>
+<text class="t-s" x="32.0" y="82.0">T frame truy vấn</text>
+<text class="t-s" x="32.0" y="97.0">n ảnh bản đồ</text>
+<text class="t-m" x="32.0" y="122.0" style="fill:var(--accent)">T, n ảnh RGB</text>
+<rect class="bx" x="215" y="40" width="170" height="92" rx="8"/>
+<text class="t-h" x="227.0" y="62.0">Descriptor</text>
+<text class="t-s" x="227.0" y="82.0">mạng đóng băng</text>
+<text class="t-s" x="227.0" y="97.0">(1 trong 6 loại)</text>
+<text class="t-m" x="227.0" y="122.0" style="fill:var(--accent)">T×D, n×D</text>
+<rect class="bx" x="410" y="40" width="170" height="92" rx="8"/>
+<text class="t-h" x="422.0" y="62.0">Similarity S</text>
+<text class="t-s" x="422.0" y="82.0">cos từng cặp</text>
+<text class="t-s" x="422.0" y="97.0">frame–ảnh</text>
+<text class="t-m" x="422.0" y="122.0" style="fill:var(--accent)">T×n</text>
+<rect class="bx" x="605" y="40" width="170" height="92" rx="8"/>
+<text class="t-h" x="617.0" y="62.0">Emission</text>
+<text class="t-s" x="617.0" y="82.0">L = softmax-tỉ lệ của z</text>
+<text class="t-s" x="617.0" y="97.0">x_t = max − median</text>
+<text class="t-m" x="617.0" y="122.0" style="fill:var(--accent)">L: T×n, x: T</text>
+<path class="ar" d="M190 86 H213" marker-end="url(#ma)"/>
+<path class="ar" d="M385 86 H408" marker-end="url(#ma)"/>
+<path class="ar" d="M580 86 H603" marker-end="url(#ma)"/>
+<rect class="bx-map" x="605" y="190" width="170" height="92" rx="8"/>
+<text class="t-h" x="617.0" y="212.0">Bank OWF (GPU)</text>
+<text class="t-s" x="617.0" y="232.0">10 bộ lọc × (|G| ô + Ω)</text>
+<text class="t-s" x="617.0" y="247.0">một tensor float64</text>
+<text class="t-m" x="617.0" y="272.0" style="fill:var(--accent)">10 × (|G|+1) / frame</text>
+<rect class="bx-map" x="410" y="190" width="170" height="92" rx="8"/>
+<text class="t-h" x="422.0" y="212.0">Đầu ra lọc</text>
+<text class="t-s" x="422.0" y="232.0">mass D_t, fix x̂_t,</text>
+<text class="t-s" x="422.0" y="247.0">mN_t, lml_t, thành viên</text>
+<text class="t-m" x="422.0" y="272.0" style="fill:var(--accent)">T mỗi đại lượng</text>
+<rect class="bx-om" x="215" y="190" width="170" height="92" rx="8"/>
+<text class="t-h" x="227.0" y="212.0">Mặt nạ quyết định</text>
+<text class="t-s" x="227.0" y="232.0">HSI-VNc, T1, T2, T3</text>
+<text class="t-s" x="227.0" y="247.0">→ OR (+ veto)</text>
+<text class="t-m" x="227.0" y="272.0" style="fill:var(--accent)">T × bool</text>
+<rect class="bx-acc" x="20" y="190" width="170" height="92" rx="8"/>
+<text class="t-h" x="32.0" y="212.0">Báo / im lặng</text>
+<text class="t-s" x="32.0" y="232.0">fix p̂_t cho Kalman</text>
+<text class="t-s" x="32.0" y="247.0">+ chỉ số đánh giá</text>
+<text class="t-m" x="32.0" y="272.0" style="fill:var(--accent)">T</text>
+<path class="ar" d="M690 132 V188" marker-end="url(#ma)"/>
+<path class="ar" d="M605 236 H582" marker-end="url(#ma)"/>
+<path class="ar" d="M410 236 H387" marker-end="url(#ma)"/>
+<path class="ar" d="M215 236 H192" marker-end="url(#ma)"/>
+<text class="t-m" x="680.0" y="162.0" text-anchor="end">+ odometry u_t (T×2)</text>
+<text class="t-s" x="20.0" y="315.0">T: số frame của lần triển khai · n: số ảnh bản đồ · D: chiều descriptor · |G|: số ô lưới (g = excl/5) · màu xanh: kích thước tensor</text>
+</svg>
+</div></div>
+  <div class="prose">
+  <p>Và nhìn theo mã: file nào làm lớp nào, tệp trung gian nào nối chúng. Đây là bản đồ để đọc code trong <code>analysis/</code>.</p>
+  </div>
+<div class="fig"><div class="inner">
+<svg viewBox="0 0 820 492" role="img" aria-label="Bản đồ mã nguồn: các file, tham số chính và tệp trung gian">
+<title>Bản đồ mã nguồn: các file, tham số chính và tệp trung gian</title>
+<rect class="bx-soft" x="20" y="30" width="200" height="46" rx="6"/>
+<text class="t-m" x="30.0" y="49.0" style="fill:var(--ink)">navcache_*.npz</text>
+<text class="t-m" x="30.0" y="66.0">vị trí, odometry U, est_t, top-1</text>
+<rect class="bx-soft" x="20" y="90" width="200" height="46" rx="6"/>
+<text class="t-m" x="30.0" y="109.0" style="fill:var(--ink)">dump descriptor</text>
+<text class="t-m" x="30.0" y="126.0">similarity frame–ảnh</text>
+<rect class="bx-map" x="270" y="20" width="250" height="130" rx="8"/>
+<text class="t-h" x="282.0" y="42.0" style="font-family:var(--f-mono);font-size:13px">owf.py</text>
+<text class="t-s" x="282.0" y="62.0">lớp 1–4: emission, bank, hai lượt</text>
+<text class="t-s" x="282.0" y="77.0">--engine torch → owf_torch.py</text>
+<text class="t-s" x="282.0" y="92.0">--lu hsq2 → hindsight_lu_causal2</text>
+<text class="t-s" x="282.0" y="107.0">--headings, --selmem (Entry 30)</text>
+<text class="t-s" x="282.0" y="122.0">yaw_drift (ODO_YAWRW, Entry 29)</text>
+<path class="ar" d="M220 53 H268" marker-end="url(#ma)"/>
+<path class="ar" d="M220 113 H268" marker-end="url(#ma)"/>
+<rect class="bx-soft" x="570" y="62" width="210" height="46" rx="6"/>
+<text class="t-m" x="580.0" y="81.0" style="fill:var(--ink)">fr_*_b1.npz</text>
+<text class="t-m" x="580.0" y="98.0">mass, xhat, mN, lml / frame</text>
+<path class="ar" d="M520 85 H568" marker-end="url(#ma)"/>
+<rect class="bx-om" x="270" y="190" width="250" height="100" rx="8"/>
+<text class="t-h" x="282.0" y="212.0" style="font-family:var(--f-mono);font-size:13px">owf_hybrid.py + hsi.py</text>
+<text class="t-s" x="282.0" y="232.0">lớp 5a: chuỗi lai (mass ≥ 0.9, 16 excl)</text>
+<text class="t-s" x="282.0" y="247.0">HSI-VNc: xác minh → cầu → nhãn</text>
+<text class="t-s" x="282.0" y="262.0">→ GBM → conformal</text>
+<path class="ar" d="M675 108 V160 H470 V188" marker-end="url(#ma)"/>
+<path class="ar-o" d="M120 136 V240 H268" marker-end="url(#mo)"/>
+<rect class="bx-soft" x="570" y="217" width="210" height="46" rx="6"/>
+<text class="t-m" x="580.0" y="236.0" style="fill:var(--ink)">hsifr_*.npz</text>
+<text class="t-m" x="580.0" y="253.0">mặt nạ báo của HSI-VNc</text>
+<path class="ar" d="M520 240 H568" marker-end="url(#ma)"/>
+<rect class="bx-acc" x="270" y="330" width="250" height="100" rx="8"/>
+<text class="t-h" x="282.0" y="352.0" style="font-family:var(--f-mono);font-size:13px">owf_union.py</text>
+<text class="t-s" x="282.0" y="372.0">lớp 5b: T1 ∪ T2 ∪ T3 ∪ HSI</text>
+<text class="t-s" x="282.0" y="387.0">OWF_VETO=0.5 (điểm an toàn)</text>
+<text class="t-s" x="282.0" y="402.0">→ nav_demo.rule_metrics, track</text>
+<path class="ar" d="M675 263 V300 H470 V328" marker-end="url(#ma)"/>
+<path class="ar-o" d="M780 92 H800 V350 H522" marker-end="url(#mo)"/>
+<rect class="bx-soft" x="570" y="357" width="210" height="46" rx="6"/>
+<text class="t-m" x="580.0" y="376.0" style="fill:var(--ink)">*.json</text>
+<text class="t-m" x="580.0" y="393.0">recall, segFAR, điều hướng</text>
+<path class="ar" d="M520 380 H568" marker-end="url(#ma)"/>
+<rect x="258" y="8" width="274" height="294" rx="12" style="fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:4 4"/>
+<text class="t-m" x="20.0" y="300.0">owf_hsi_job.py: chạy hai khối</text>
+<text class="t-m" x="20.0" y="315.0">trong khung nét đứt, một kernel</text>
+<text class="t-s" x="20.0" y="460.0">Kiểm thử nhân quả: tests/test_hq_causality.py (HQ), tests/test_hsi_causality.py (đầu-cuối nhánh HSI).</text>
+<text class="t-s" x="20.0" y="478.0">Vận hành Kaggle: automation/owf_wave.py, fanout.py, central_monitor.py.</text>
+</svg>
+</div></div>
+</section>
+
 <section id="owf">
   <div class="prose">
   <h2><span class="sec-tag">§3</span>Mô hình lõi: bộ lọc thế giới mở (OWF)</h2>
@@ -842,6 +957,122 @@ svg .c-dr{stroke:var(--hole);stroke-width:2.4;fill:none;stroke-dasharray:6 4}
     <text class="t-s" x="480" y="176">x lớn: bản đồ được cộng</text>
   </svg>
   </div></div>
+  <h3>Hai lượt theo thời gian và theo phiên</h3>
+<div class="fig"><div class="inner">
+<svg viewBox="0 0 800 295" role="img" aria-label="Lượt 1, mẫu hồi cứu và lượt 2 theo thời gian và theo phiên">
+<title>Lượt 1, mẫu hồi cứu và lượt 2 theo thời gian và theo phiên</title>
+<text class="t-m" x="130.0" y="26.0">thứ tự triển khai →</text>
+<text class="t-m" x="16.0" y="64.0">phiên 1 (ngày)</text>
+<path class="axis" d="M130 60 H740"/>
+<text class="t-m" x="16.0" y="134.0">phiên 2 (ngày)</text>
+<path class="axis" d="M130 130 H740"/>
+<text class="t-m" x="16.0" y="204.0">phiên 3 (đêm)</text>
+<path class="axis" d="M130 200 H740"/>
+<circle class="dot-m" cx="140" cy="60" r="3.2"/>
+<circle class="dot-m" cx="155" cy="60" r="3.2"/>
+<circle class="dot-m" cx="170" cy="60" r="3.2"/>
+<circle class="dot-m" cx="185" cy="60" r="3.2"/>
+<circle class="dot-m" cx="200" cy="60" r="3.2"/>
+<circle class="dot-m" cx="215" cy="60" r="3.2"/>
+<circle class="dot-m" cx="230" cy="60" r="3.2"/>
+<circle class="dot-m" cx="245" cy="60" r="3.2"/>
+<circle class="dot-m" cx="260" cy="60" r="3.2"/>
+<circle class="dot-m" cx="275" cy="60" r="3.2"/>
+<circle class="dot-m" cx="290" cy="60" r="3.2"/>
+<circle class="dot-m" cx="305" cy="60" r="3.2"/>
+<circle class="dot-m" cx="320" cy="60" r="3.2"/>
+<circle class="dot-m" cx="335" cy="60" r="3.2"/>
+<circle class="dot-m" cx="350" cy="60" r="3.2"/>
+<circle class="dot-m" cx="365" cy="60" r="3.2"/>
+<circle class="dot-m" cx="380" cy="60" r="3.2"/>
+<circle class="dot-m" cx="395" cy="60" r="3.2"/>
+<circle class="dot-m" cx="410" cy="60" r="3.2"/>
+<circle class="dot-m" cx="425" cy="60" r="3.2"/>
+<circle class="dot-m" cx="440" cy="60" r="3.2"/>
+<circle class="dot-m" cx="455" cy="60" r="3.2"/>
+<circle class="dot-m" cx="470" cy="60" r="3.2"/>
+<circle class="dot-m" cx="485" cy="60" r="3.2"/>
+<circle class="dot-m" cx="500" cy="60" r="3.2"/>
+<circle class="dot-m" cx="515" cy="60" r="3.2"/>
+<circle class="dot-m" cx="530" cy="60" r="3.2"/>
+<circle class="dot-m" cx="545" cy="60" r="3.2"/>
+<circle class="dot-m" cx="560" cy="60" r="3.2"/>
+<circle class="dot-m" cx="575" cy="60" r="3.2"/>
+<circle class="dot-m" cx="590" cy="60" r="3.2"/>
+<circle class="dot-m" cx="605" cy="60" r="3.2"/>
+<circle class="dot-m" cx="620" cy="60" r="3.2"/>
+<circle class="dot-m" cx="635" cy="60" r="3.2"/>
+<circle class="dot-m" cx="650" cy="60" r="3.2"/>
+<circle class="dot-m" cx="665" cy="60" r="3.2"/>
+<circle class="dot-m" cx="680" cy="60" r="3.2"/>
+<circle class="dot-m" cx="695" cy="60" r="3.2"/>
+<circle class="dot-m" cx="710" cy="60" r="3.2"/>
+<circle class="dot-m" cx="725" cy="60" r="3.2"/>
+<circle class="dot-m" cx="140" cy="130" r="3.2"/>
+<circle class="dot-m" cx="155" cy="130" r="3.2"/>
+<circle class="dot-m" cx="170" cy="130" r="3.2"/>
+<circle class="dot-m" cx="185" cy="130" r="3.2"/>
+<circle class="dot-m" cx="200" cy="130" r="3.2"/>
+<circle class="dot-m" cx="215" cy="130" r="3.2"/>
+<circle class="dot-m" cx="230" cy="130" r="3.2"/>
+<circle class="dot-m" cx="245" cy="130" r="3.2"/>
+<circle class="dot-m" cx="260" cy="130" r="3.2"/>
+<circle class="dot-m" cx="275" cy="130" r="3.2"/>
+<circle class="dot-m" cx="290" cy="130" r="3.2"/>
+<circle class="dot-m" cx="305" cy="130" r="3.2"/>
+<circle class="dot-m" cx="320" cy="130" r="3.2"/>
+<circle class="dot-m" cx="335" cy="130" r="3.2"/>
+<circle class="dot-m" cx="350" cy="130" r="3.2"/>
+<circle class="dot-m" cx="365" cy="130" r="3.2"/>
+<circle class="dot-m" cx="380" cy="130" r="3.2"/>
+<circle class="dot-m" cx="395" cy="130" r="3.2"/>
+<circle class="dot-m" cx="410" cy="130" r="3.2"/>
+<circle class="dot-m" cx="425" cy="130" r="3.2"/>
+<circle class="dot-m" cx="440" cy="130" r="3.2"/>
+<circle class="dot-m" cx="455" cy="130" r="3.2"/>
+<circle class="dot-m" cx="470" cy="130" r="3.2"/>
+<circle class="dot-m" cx="485" cy="130" r="3.2"/>
+<circle class="dot-m" cx="500" cy="130" r="3.2"/>
+<circle class="dot-m" cx="515" cy="130" r="3.2"/>
+<circle class="dot-m" cx="530" cy="130" r="3.2"/>
+<circle class="dot-m" cx="545" cy="130" r="3.2"/>
+<circle class="dot-m" cx="560" cy="130" r="3.2"/>
+<circle class="dot-m" cx="575" cy="130" r="3.2"/>
+<circle class="dot-m" cx="590" cy="130" r="3.2"/>
+<circle class="dot-m" cx="605" cy="130" r="3.2"/>
+<circle class="dot-m" cx="620" cy="130" r="3.2"/>
+<circle class="dot-m" cx="635" cy="130" r="3.2"/>
+<circle class="dot-m" cx="650" cy="130" r="3.2"/>
+<circle class="dot-m" cx="665" cy="130" r="3.2"/>
+<circle class="dot-m" cx="680" cy="130" r="3.2"/>
+<circle class="dot-m" cx="695" cy="130" r="3.2"/>
+<circle class="dot-m" cx="710" cy="130" r="3.2"/>
+<circle class="dot-m" cx="725" cy="130" r="3.2"/>
+<circle class="dot-m" cx="140" cy="200" r="3.2"/>
+<circle class="dot-m" cx="200" cy="200" r="3.2"/>
+<circle class="dot-m" cx="260" cy="200" r="3.2"/>
+<circle class="dot-m" cx="320" cy="200" r="3.2"/>
+<circle class="dot-m" cx="380" cy="200" r="3.2"/>
+<circle class="dot-m" cx="440" cy="200" r="3.2"/>
+<circle class="dot-m" cx="500" cy="200" r="3.2"/>
+<circle class="dot-m" cx="560" cy="200" r="3.2"/>
+<circle class="dot-m" cx="620" cy="200" r="3.2"/>
+<circle class="dot-m" cx="680" cy="200" r="3.2"/>
+<path class="thr-a" d="M545 110 V150"/>
+<text class="t-m" x="551.0" y="150.0" style="fill:var(--alias)">frame t</text>
+<path d="M136 146 H539" style="stroke:var(--mapped);stroke-width:2;fill:none"/>
+<text class="t-m" x="380.0" y="164.0" style="fill:var(--mapped)">dùng mẫu cùng phiên ở frame &lt; t (đã có ≥ 100 mỗi loại)</text>
+<text class="t-m" x="585.0" y="102.0">tương lai: không được dùng</text>
+<path class="ar-o" d="M555 110 H740"/>
+<path class="thr-a" d="M170 180 V218"/>
+<text class="t-m" x="176.0" y="232.0" style="fill:var(--alias)">đầu phiên đêm: chưa đủ 100 mẫu riêng</text>
+<path class="ar-m" d="M430 75 C 330 120, 230 150, 176 186" marker-end="url(#mm)"/>
+<text class="t-m" x="442.0" y="82.0" style="fill:var(--omega)">dự phòng: mẫu từ các phiên khác (hsq2)</text>
+<text class="t-m" x="442.0" y="96.0" style="fill:var(--omega)">bản nghiêm ngặt hsq2s: chỉ phiên TRƯỚC</text>
+<text class="t-s" x="16.0" y="262.0">Chấm xanh: fix tự tin của lượt 1 (mass ≥ 1 − 10⁻³), mỗi chấm cho một mẫu f_on và một mẫu f_off. Phiên đêm ít fix tự tin hơn.</text>
+<text class="t-s" x="16.0" y="280.0">Lượt 2 ở frame t chỉ đọc mẫu bên trái t, nên kết quả không đổi khi tương lai đổi (kiểm thử test_hq_causality.py).</text>
+</svg>
+</div></div>
   <div class="note">
     <b>Tính nhân quả.</b> Frame t chỉ dùng mẫu của chính phiên ở các frame &lt; t, khi đã có ≥ 100 mẫu mỗi loại; trước đó dùng các phiên khác cùng lần triển khai (cùng bản đồ). KDE có 1 % nhiễm đều, đánh giá theo khối 50 frame. Kiểm thử <code>tests/test_hq_causality.py</code> xác nhận đổi tương lai của phiên không đổi log-LR quá khứ. Biến thể nghiêm ngặt <code>hsq2s</code> chỉ dùng phiên trước, và mất lợi ích CMU trên seed 64–66.
   </div>
@@ -1120,6 +1351,60 @@ svg .c-dr{stroke:var(--hole);stroke-width:2.4;fill:none;stroke-dasharray:6 4}
   <h2><span class="sec-tag">§8</span>Thuật toán đầy đủ</h2>
   <p>Mỗi lần triển khai là một tập phiên trên cùng một bản đồ. Toàn bộ chạy nhân quả: quyết định ở frame t chỉ dùng dữ liệu tới t.</p>
   </div>
+  <h3>Lưu đồ quyết định ở mỗi frame (lớp 5–6)</h3>
+<div class="fig"><div class="inner">
+<svg viewBox="0 0 800 470" role="img" aria-label="Lưu đồ quyết định báo hay im lặng ở mỗi frame">
+<title>Lưu đồ quyết định báo hay im lặng ở mỗi frame</title>
+<rect class="bx" x="20" y="20" width="140" height="40" rx="8"/>
+<text class="t-h" x="90.0" y="45.0" text-anchor="middle" style="font-size:13px">frame t (lượt 2)</text>
+<path class="ar" d="M160 40 H196" marker-end="url(#ma)"/>
+<path class="bx-acc" d="M270 8.0 L344.0 40 L270 72.0 L196.0 40 Z"/>
+<text class="t-s" x="270.0" y="38.0" text-anchor="middle" style="fill:var(--ink)">HSI-VNc</text>
+<text class="t-s" x="270.0" y="51.0" text-anchor="middle" style="fill:var(--ink)">báo?</text>
+<path class="ar" d="M344 40 H396" marker-end="url(#ma)"/>
+<text class="t-m" x="352.0" y="32.0">có</text>
+<path class="bx-acc" d="M470 8.0 L544.0 40 L470 72.0 L396.0 40 Z"/>
+<text class="t-s" x="470.0" y="38.0" text-anchor="middle" style="fill:var(--ink)">bật veto</text>
+<text class="t-s" x="470.0" y="51.0" text-anchor="middle" style="fill:var(--ink)">và mN &lt; ½?</text>
+<path class="ar" d="M544 40 H600" marker-end="url(#ma)"/>
+<text class="t-m" x="552.0" y="32.0">không</text>
+<rect class="bx-om" x="602" y="22" width="180" height="36" rx="18"/>
+<text class="t-h" x="692.0" y="45.0" text-anchor="middle" style="font-size:13px">BÁO, vị trí chuỗi lai</text>
+<path class="ar-o" d="M470 72 V92 H270 V118" marker-end="url(#mo)"/>
+<text class="t-m" x="480.0" y="88.0">có (bị chặn)</text>
+<path class="ar" d="M270 72 V118" marker-end="url(#ma)"/>
+<text class="t-m" x="278.0" y="112.0">không</text>
+<path class="bx-acc" d="M270 118.0 L375.0 150 L270 182.0 L165.0 150 Z"/>
+<text class="t-s" x="270.0" y="148.0" text-anchor="middle" style="fill:var(--ink)">T1: D_t ≥ 1−10⁻⁵</text>
+<text class="t-s" x="270.0" y="161.0" text-anchor="middle" style="fill:var(--ink)">quãng ≥ 16 excl?</text>
+<path class="ar" d="M375 150 H600" marker-end="url(#ma)"/>
+<text class="t-m" x="386.0" y="142.0">có</text>
+<path class="ar" d="M270 182 V206" marker-end="url(#ma)"/>
+<text class="t-m" x="278.0" y="200.0">không</text>
+<path class="bx-acc" d="M270 208.0 L375.0 240 L270 272.0 L165.0 240 Z"/>
+<text class="t-s" x="270.0" y="238.0" text-anchor="middle" style="fill:var(--ink)">T2: D_t ≥ 1−10⁻⁸</text>
+<text class="t-s" x="270.0" y="251.0" text-anchor="middle" style="fill:var(--ink)">quãng ≥ 2 excl?</text>
+<path class="ar" d="M375 240 H600" marker-end="url(#ma)"/>
+<text class="t-m" x="386.0" y="232.0">có</text>
+<path class="ar" d="M270 272 V296" marker-end="url(#ma)"/>
+<text class="t-m" x="278.0" y="290.0">không</text>
+<path class="bx-acc" d="M270 298.0 L375.0 330 L270 362.0 L165.0 330 Z"/>
+<text class="t-s" x="270.0" y="328.0" text-anchor="middle" style="fill:var(--ink)">T3: D_t ≥ 1−3·10⁻⁴, quãng</text>
+<text class="t-s" x="270.0" y="341.0" text-anchor="middle" style="fill:var(--ink)">≥ 0.5 excl, đồng thuận?</text>
+<path class="ar" d="M375 330 H600" marker-end="url(#ma)"/>
+<text class="t-m" x="386.0" y="322.0">có</text>
+<path class="ar" d="M600 150 H600" />
+<rect class="bx-map" x="602" y="132" width="180" height="216" rx="12"/>
+<text class="t-h" x="692.0" y="228.0" text-anchor="middle" style="font-size:13px">BÁO,</text>
+<text class="t-h" x="692.0" y="246.0" text-anchor="middle" style="font-size:13px">vị trí ảnh OWF ĉ_t</text>
+<path class="ar" d="M270 362 V392" marker-end="url(#ma)"/>
+<text class="t-m" x="278.0" y="382.0">không</text>
+<rect class="bx-hole" x="180" y="394" width="180" height="36" rx="18"/>
+<text class="t-h" x="270.0" y="417.0" text-anchor="middle" style="font-size:13px">IM LẶNG</text>
+<text class="t-s" x="20.0" y="456.0">D_t, ĉ_t, mN_t lấy từ OWF lượt 2. quãng = đường đi từ đầu chuỗi theo odometry. Đồng thuận = ĉ_t nằm trong excl của cả est_t và top-1.</text>
+</svg>
+</div></div>
+  <h3>Mã giả đầy đủ</h3>
 <pre class="algo"><span class="kw">Đầu vào:</span> phiên Q₁…Q_K (ảnh z_t, odometry u_t), bản đồ {m_i, vị trí}, descriptor d(·)
 <span class="kw">Hằng số chung:</span> g = excl/5, β, ℓ = 0.4·excl, bank Θ = {0.005, 0.02}·excl × {0.94, 0.97, 1, 1.03, 1.06}
 
