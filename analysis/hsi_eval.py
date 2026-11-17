@@ -101,6 +101,8 @@ def main():
         fn = f"navcache_{ds.replace(':', '_')}_{desc}_s{seed}.npz"; f = find(cdir, fn)
         if f is None: print("missing", fn, flush=True); continue
         z = np.load(f, allow_pickle=True); name = fn[9:-4]; out = {"ds": ds, "desc": desc, "seed": seed, "cache_path": f, "variants": {}}; masks = {}
+        if float(os.environ.get("ODO_YAWRW", "0")) > 0:           # audit 2026-11-11 heading-drift ablation (no-op on caches that carry it)
+            import owf as _OWF; z = _OWF.yaw_drift(dict(z))
         print("cache", f, flush=True)
         cfg = hsi.Cfg(z, name); seqs = hsi.deployment_seqs(z); n = len(z["est_c"])
         for v in vs:

@@ -1,6 +1,6 @@
 # 04 — Research Workflow (cập nhật 2026-11-07)
 
-*Cập nhật 2026-11-07 (branch `hmm-2nd-idea`; bản trước: `history/04_RESEARCH_WORKFLOW_through_2026-11-06.md`). Quy trình chuẩn của dự án (giữ tinh thần bản gốc `RESEARCH_WORKFLOW_original.pdf`) và trạng thái hiện tại của từng
+*Cập nhật 2026-11-07 (branch `hmm-2nd-idea`; bản trước: `git show cf5abef:history/04_RESEARCH_WORKFLOW_through_2026-11-06.md`). Quy trình chuẩn của dự án (giữ tinh thần bản gốc `RESEARCH_WORKFLOW_original.pdf`) và trạng thái hiện tại của từng
 phase. Không lặp chi tiết vận hành (`02`) hay việc tiếp theo cụ thể (`00`).*
 
 ## Mục tiêu

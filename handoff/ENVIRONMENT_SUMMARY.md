@@ -3,7 +3,7 @@
 *Cập nhật 2026-11-07 (branch `hmm-2nd-idea`).*
 - **§0 là trạng thái hiện hành** và thay mọi ghi chú cũ khi mâu thuẫn.
 - §1–§5 bên dưới giữ cấu trúc dump / dataset / container lịch sử để tra cứu (một số tài khoản trong đó đã cũ).
-- Bản đầy đủ trước khi hợp nhất: `history/ENVIRONMENT_SUMMARY_through_2026-11-06.md`.
+- Bản đầy đủ trước khi hợp nhất: `git show cf5abef:history/ENVIRONMENT_SUMMARY_through_2026-11-06.md`.
 - Cách đọc repo và việc tiếp theo: `handoff/06_NEXT_CHAT_GUIDE.md`.
 
 ## 0. Trạng thái hiện hành (2026-11-07)

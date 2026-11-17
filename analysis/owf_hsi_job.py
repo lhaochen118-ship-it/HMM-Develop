@@ -13,6 +13,8 @@ def main():
         if k in rest: i = rest.index(k); v = rest[i + 1]; del rest[i:i + 2]; return v
         return d
     tag = pop("--tag", "r40"); modes = pop("--modes", "xm0.5:HSI-VN,HSI-VMN")
+    yw = pop("--yawrw", None)                                          # audit 2026-11-11: heading-drift ablation (owf.yaw_drift), inherited
+    if yw: os.environ["ODO_YAWRW"] = yw                                # by owf.py and owf_hybrid.py (+ hsi_eval.py) through the environment
     hfr = ["--hsiframes"] if "--hsiframes" in rest else []; rest = [a for a in rest if a != "--hsiframes"]   # HSI report masks (owf_union.py)
     t = f"{ds.replace(':', '_')}_{desc}_s{seed}_{tag}"; os.makedirs("results", exist_ok=True)
     r = subprocess.run([sys.executable, os.path.join(HERE, "owf.py"), cdir, dump, ds, desc, seed, "--out", f"results/owf_{t}.json",

@@ -2,7 +2,7 @@
 
 *2026-11-07, branch `hmm-2nd-idea` (repo `lhaochen118-ship-it/hmm-develop`, public).*
 - Không tạo PR. Chỉ commit / push lên `hmm-2nd-idea`.
-- Bản trước: `history/06_NEXT_CHAT_GUIDE_through_2026-11-06.md`.
+- Bản trước: `git show cf5abef:history/06_NEXT_CHAT_GUIDE_through_2026-11-06.md`.
 
 ## 1. Bắt đầu nhanh (10 phút)
 
@@ -23,7 +23,7 @@
 | 5 | `paper/owf_theory.md` | Mệnh đề 1–7 và mục kiểm toán §11 |
 | 6 | `handoff/02_ENGINEERING_OPS_NOTES.md` (PDF 2) | cách chạy một đợt Kaggle, lỗi đã gặp |
 | 7 | `handoff/ENVIRONMENT_SUMMARY.md` §0 | tài khoản, dataset công khai, container |
-| 8 | `RESEARCH_LOG.md` Entry 19–27 (mới nhất ở trên cùng) | đăng ký trước + kết quả từng vòng |
+| 8 | `RESEARCH_LOG.md` Entry 23–29 (mới nhất ở trên cùng; Entry 1–22: `history/RESEARCH_LOG_idea2_entries01-22.md`) | đăng ký trước + kết quả từng vòng |
 | — | `handoff/04_RESEARCH_WORKFLOW.md`, `HMM_Navigation_Yeu_Cau_Nghien_Cuu_Cap_Nhat.docx` | quy trình và nguyên tắc người dùng yêu cầu |
 | — | `handoff/07_IDEA1_SUMMARY.md` | ý tưởng 1 (branch `hmm-navigation-5`), baseline và phần trùng lặp |
 
@@ -44,7 +44,7 @@
 | `analysis/results/owf/s1106/` | kết quả Entry 19–27 (bảng `.md`, JSON `.tgz`, script đánh giá) |
 | `automation/owf_wave.py`, `fanout.py`, `central_monitor.py`, `fetch_done.py`, `publish_dataset.py`, `md2pdf.py` | vận hành Kaggle (xem PDF 2) |
 | `paper/` | bản thảo paper, lý thuyết, báo cáo phiên (`BAO_CAO_S1106.pdf` mới nhất), hình |
-| `RESEARCH_LOG.md`, `LITERATURE_GATE.md` | nhật ký đăng ký trước; các gate novelty |
+| `RESEARCH_LOG.md`, `LITERATURE_GATE.md` | nhật ký đăng ký trước (Entry 23+); các gate novelty |
 | `history/` | tài liệu cũ (ý tưởng 1, các phiên trước) |
 
 ## 4. Việc tiếp theo (chi tiết và lý do ở `03_HANDOFF.md` §6)

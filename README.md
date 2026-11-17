@@ -1,6 +1,6 @@
 # HMM sequence-based visual localization — idea 2 (branch `hmm-2nd-idea`)
 
-**Start here:** `handoff/05_NEW_CHAT_GUIDE.md`. This branch searches for a NEW A\*-level solution to sequence-based visual localization
+**Start here:** `handoff/06_NEXT_CHAT_GUIDE.md` (latest audit: `handoff/09_KIEM_TOAN_2026-11-11.md`). This branch searches for a NEW A\*-level solution to sequence-based visual localization
 with an HMM on monocular image sequences (foundation: Sattler et al., CVPR 2018). Idea 1 (counterfactual map surgery, branch
 `hmm-navigation-5`) is the baseline to beat: `handoff/07_IDEA1_SUMMARY.md`, numbers in `analysis/results/baselines_idea1/`.
 
