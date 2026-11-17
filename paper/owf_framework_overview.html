@@ -4,19 +4,13 @@
 <style>
 /* Layout: một cột đọc ~70ch, sơ đồ lớn được phép rộng hơn và cuộn ngang trong khung riêng. Màu theo vai trò bản đồ: teal = ô có bản đồ, hổ phách = lỗ, tím = trạng thái xa Ω, đỏ = bí danh. */
 :root{
-  --bg:#f4f6f8; --surface:#ffffff; --ink:#16202b; --muted:#566273; --line:#cbd2db; --soft:#e8ecf1;
+  --bg:#ffffff; --surface:#ffffff; --ink:#16202b; --muted:#566273; --line:#cbd2db; --soft:#e8ecf1;
   --accent:#1d5fc2; --mapped:#0d8577; --hole:#bd6f12; --omega:#6a4fb3; --alias:#be3446;
   --band:rgba(29,95,194,.045); --band2:rgba(13,133,119,.05);
   --f-disp:"Be Vietnam Pro","Inter",system-ui,sans-serif; --f-body:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif; --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0e1319; --surface:#161e28; --ink:#e5eaf0; --muted:#9aa6b5; --line:#334152; --soft:#1d2733;
-  --accent:#6ea6ff; --mapped:#3cc0b0; --hole:#e9a24b; --omega:#a58df2; --alias:#f06b7c;
-  --band:rgba(110,166,255,.06); --band2:rgba(60,192,176,.06); color-scheme:dark }}
-:root[data-theme="dark"]{
-  --bg:#0e1319; --surface:#161e28; --ink:#e5eaf0; --muted:#9aa6b5; --line:#334152; --soft:#1d2733;
-  --accent:#6ea6ff; --mapped:#3cc0b0; --hole:#e9a24b; --omega:#a58df2; --alias:#f06b7c;
-  --band:rgba(110,166,255,.06); --band2:rgba(60,192,176,.06); color-scheme:dark }
+/* Nền trắng cố định cho mọi theme (theo yêu cầu: hình nền trắng để dùng trong báo cáo / paper) */
+:root{color-scheme:light}
 body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15.5px;line-height:1.62}
 .wrap{max-width:1080px;margin:0 auto;padding-block:40px 80px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
 .prose{max-width:72ch}
@@ -72,7 +66,7 @@ svg .t-s{font-size:11.5px;fill:var(--muted)}
 svg .t-m{font-family:var(--f-mono);font-size:11px;fill:var(--muted)}
 svg .t-h{font-family:var(--f-disp);font-weight:600;font-size:14px}
 svg .t-b{font-family:var(--f-disp);font-weight:600;font-size:12px;letter-spacing:.06em;fill:var(--muted)}
-svg .bandA{fill:var(--band)} svg .bandB{fill:var(--band2)}
+svg .bandA,svg .bandB{fill:#ffffff;stroke:var(--line);stroke-width:1;stroke-dasharray:6 4}
 svg .bx{fill:var(--surface);stroke:var(--line);stroke-width:1.3}
 svg .bx-acc{fill:var(--surface);stroke:var(--accent);stroke-width:1.6}
 svg .bx-map{fill:var(--surface);stroke:var(--mapped);stroke-width:1.6}
@@ -228,7 +222,7 @@ svg .gate{fill:var(--accent)} svg .gate-t{fill:var(--surface);font-family:var(--
 
     <!-- L3 HQ -->
     <rect class="bx-acc" x="140" y="510" width="570" height="124" rx="10"/>
-    <text class="t-h" x="158" y="532">HQ: bằng chứng tuyệt đối hiệu chỉnh hồi cứu</text>
+    <text class="t-h" x="236" y="532">HQ: bằng chứng tuyệt đối hiệu chỉnh hồi cứu</text>
     <rect class="bx-soft" x="156" y="546" width="118" height="74" rx="6"/>
     <text class="t-m" x="164" y="564">fix tự tin</text><text class="t-m" x="164" y="580">của lượt 1</text><text class="t-m" x="164" y="596">mass ≥</text><text class="t-m" x="164" y="612">1 − 10⁻³</text>
     <rect class="bx-soft" x="290" y="546" width="140" height="34" rx="6"/>
