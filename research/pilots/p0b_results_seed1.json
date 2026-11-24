@@ -1,0 +1,102 @@
+{
+ "config": {
+  "M": 400,
+  "T": 60,
+  "mu": 1.6,
+  "sigma": 1.0,
+  "seed": 1,
+  "Ls": [
+   1,
+   2,
+   3,
+   4,
+   6,
+   8,
+   12,
+   20,
+   40
+  ]
+ },
+ "rows": [
+  {
+   "rho": 0.5,
+   "rho_hat": 0.486,
+   "motion_std": 0.5,
+   "leak": 0.001,
+   "L_eff": 8,
+   "beta": 0.411,
+   "nll_best": 0.843,
+   "nll_beta1": 1.935
+  },
+  {
+   "rho": 0.5,
+   "rho_hat": 0.486,
+   "motion_std": 1.0,
+   "leak": 0.001,
+   "L_eff": 3,
+   "beta": 0.554,
+   "nll_best": 1.783,
+   "nll_beta1": 2.537
+  },
+  {
+   "rho": 0.5,
+   "rho_hat": 0.486,
+   "motion_std": 2.0,
+   "leak": 0.001,
+   "L_eff": 2,
+   "beta": 0.673,
+   "nll_best": 2.555,
+   "nll_beta1": 2.939
+  },
+  {
+   "rho": 0.5,
+   "rho_hat": 0.486,
+   "motion_std": 1.0,
+   "leak": 0.03,
+   "L_eff": 4,
+   "beta": 0.494,
+   "nll_best": 2.07,
+   "nll_beta1": 2.991
+  },
+  {
+   "rho": 0.7,
+   "rho_hat": 0.688,
+   "motion_std": 0.5,
+   "leak": 0.001,
+   "L_eff": 6,
+   "beta": 0.303,
+   "nll_best": 1.022,
+   "nll_beta1": 3.626
+  },
+  {
+   "rho": 0.7,
+   "rho_hat": 0.688,
+   "motion_std": 1.0,
+   "leak": 0.001,
+   "L_eff": 4,
+   "beta": 0.375,
+   "nll_best": 2.175,
+   "nll_beta1": 3.919
+  },
+  {
+   "rho": 0.7,
+   "rho_hat": 0.688,
+   "motion_std": 2.0,
+   "leak": 0.001,
+   "L_eff": 3,
+   "beta": 0.448,
+   "nll_best": 2.971,
+   "nll_beta1": 3.956
+  },
+  {
+   "rho": 0.7,
+   "rho_hat": 0.688,
+   "motion_std": 1.0,
+   "leak": 0.03,
+   "L_eff": 4,
+   "beta": 0.375,
+   "nll_best": 2.478,
+   "nll_beta1": 4.166
+  }
+ ]
+}
