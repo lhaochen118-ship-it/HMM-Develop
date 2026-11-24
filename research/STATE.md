@@ -18,6 +18,8 @@
 - Weights descriptor bổ sung (BoQ, MegaLoc, CosPlace/EigenPlaces, NetVLAD) chưa có trong bundle → cần kernel có internet
   hoặc người tải (§11 của plan).
 - Tài khoản visuallocalization.net (nộp test RobotCar/CMU) — chưa có.
+- Oxford RobotCar: trang dataset báo rút dataset ngày 2026-10-22 (sub-agent đọc, **chưa xác minh**) → không đặt kết luận chính lên đó.
+- RobotCar Seasons v2: query chỉ là ~460 đoạn ~9 frame → dùng cho G3/6DoF chuỗi ngắn, không cho H5/H6b.
 
 ## Câu hỏi mở cho người nghiên cứu
 - Ưu tiên venue (CVPR/NeurIPS vs RA-L/ICRA) — ảnh hưởng mức đầu tư vào M5 (6DoF) so với C2 (lý thuyết).

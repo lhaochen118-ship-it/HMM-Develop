@@ -16,7 +16,7 @@
 | H8 | Tiền đề CCBF: dị biệt điều kiện (RobotCar) | mở — **Gate G3** | R | L002 (âm trên Nordland) | A3/A4 làm L002 không công bằng |
 | H9 | Hiệu chỉnh hubness giảm lock-in | mở | H | – | |
 | H10 | Nguyên nhân emission > transition | mở | H | – | |
-| H11 | HMM điều phối verification cải thiện 6DoF đêm | mở | H | – | |
+| H11 | HMM điều phối verification cải thiện 6DoF đêm (so với cùng pipeline, VO thật) | mở | H | – | (5 m,10°) đêm đã gần bão hoà ở SOTA; tập trung ngưỡng cao |
 | H12 | Emission hình học loại bỏ lock-in | mở | H | – | |
 | H13 | Tổng quát hoá chéo dataset | mở | H | – | |
 | H14 | Thời gian thực | mở | H | – | |
