@@ -1,0 +1,6 @@
+# Accounts that may receive NEW kernels, in packing order (user rules): fill one account (2 GPU + 5 CPU sessions) before the next.
+# Tokens in ~/.kaggle/tok_<username>, never in git. 2026-11-06 14:20 UTC: L4 accounts first (namhunhh, duckzuykobip, dinhthinh, hieuho669,
+# nguyenmanh0404, nhatlong1103), then T4-only accounts (mxuanquy, yeshenhi: use for CPU kernels).
+# 2026-11-11: the user gave two new accounts for the audit-3 re-run (Entry 29); the previous accounts' tokens are not in this container
+duylnng
+caotienminh1

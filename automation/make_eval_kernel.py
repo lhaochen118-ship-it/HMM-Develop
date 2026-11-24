@@ -1,0 +1,116 @@
+#!/usr/bin/env python3
+"""Run analysis/ evaluation jobs on a Kaggle CPU kernel instead of the local container (user policy).
+
+1. Uploads (or versions) the code dataset `<owner>/dive-vpr-analysis` with analysis/*.py.
+2. Writes a CPU/GPU script kernel that mounts the public dump dataset, symlinks every dump into one
+   directory, runs the jobs in parallel (one process per core) and saves results/*.json + logs to /kaggle/working.
+Then run it with:  python automation/run_kernel.py <kernel_dir> <out_dir>   and copy <out_dir>/results/*.json.
+
+Usage: make_eval_kernel.py <kernel_dir> <slug> "<script> <ds> <desc>;<script> <ds> <desc>;..." [dump_kernels,...] [--gpu]
+  --acc2/--acc3/--owner <user>: run under another Kaggle account (export KAGGLE_API_TOKEN for both scripts)
+  --gpu : T4 kernel, SELFCAL_DEVICE=cuda (PyTorch backend in selfcal.qm_stats); default CPU/numpy.
+  script = eval_all.py | exp9_natural.py | ... ; for exp9_natural.py write "exp9_natural.py <desc>" (dumps auto).
+  Any other argument order: put the literal token DUMP where the merged dump directory goes, e.g. "exp10_shiftfix.py salad DUMP";
+  CACHE = the mounted directory holding navcache_*.npz (e.g. "oc_curves.py CACHE boreas megaloc --variants").
+"""
+import sys, os, json, glob, shutil, subprocess
+
+# Descriptor dumps: the PUBLIC dataset nhatlong1103/vpr-descriptor-dumps (any account can mount it, no upload).
+# Account = whose token is in KAGGLE_API_TOKEN (default ~/.kaggle/access_token = nhatlong1103):
+#   --acc2 (yuan1103), --acc3 (synchan5704), or --owner <username> for any new account.
+ACC = 3 if "--acc3" in sys.argv else 2 if "--acc2" in sys.argv else 1
+OWNER = sys.argv[sys.argv.index("--owner") + 1] if "--owner" in sys.argv else {1: "nhatlong1103", 2: "yuan1103", 3: "synchan5704"}[ACC]
+CODE_NAME = os.environ.get("VPR_CODE_DS", "dive-vpr-analysis")    # env VPR_CODE_DS: a separate code dataset per chat / line of work
+CODE_DS = f"{OWNER}/{CODE_NAME}"
+_tok = os.path.expanduser(f"~/.kaggle/tok_{OWNER}")                     # per-account token file, if present
+if os.path.isfile(_tok): os.environ["KAGGLE_API_TOKEN"] = open(_tok).read().strip()
+DUMPS = []
+DUMP_DS = ["nhatlong1103/vpr-descriptor-dumps", "nhatlong1103/vpr-dumps-4seasons", "nhatlong1103/boreas-vpr-dump"]
+if "--nodumps" in sys.argv: DUMP_DS = []          # jobs that only read rule caches (e.g. hsi_eval.py AUTO): mount only --ds datasets
+ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+L4 = "--l4" in sys.argv; GPU = "--gpu" in sys.argv or L4 or "--t4" in sys.argv
+EXTRA_DS = sys.argv[sys.argv.index("--ds") + 1].split(",") if "--ds" in sys.argv else []   # extra dataset sources (images, weights)
+PAR = int(sys.argv[sys.argv.index("--par") + 1]) if "--par" in sys.argv else 0   # parallel jobs per session (0: auto from CPUs / GPUs)
+MODELS = sys.argv[sys.argv.index("--models") + 1].split(",") if "--models" in sys.argv else []   # Kaggle model sources (e.g. qwen-lm/qwen2.5-vl/transformers/7b-instruct/2)
+T4X2 = "--t4" in sys.argv   # explicit 2x T4 (internet allowed) instead of the default GPU
+argv = [a for i, a in enumerate(sys.argv) if a not in ("--gpu", "--l4", "--t4", "--acc2", "--acc3", "--owner", "--ds", "--par", "--models", "--nodumps") and sys.argv[i - 1] not in ("--owner", "--ds", "--par", "--models")]
+kdir, slug, jobs = argv[1], argv[2], [j.split() for j in argv[3].split(";") if j.strip()]
+dumps = argv[4].split(",") if len(argv) > 4 and argv[4] else DUMPS
+
+# --- 1. code dataset
+stage = os.path.join(kdir, "_code"); shutil.rmtree(stage, ignore_errors=True); os.makedirs(stage)
+for f in glob.glob(os.path.join(ROOT, "analysis", "*.py")) + glob.glob(os.path.join(ROOT, "analysis", "*.sh")):
+    shutil.copy(f, stage)
+json.dump({"title": CODE_NAME, "id": CODE_DS, "licenses": [{"name": "CC0-1.0"}]}, open(os.path.join(stage, "dataset-metadata.json"), "w"))
+import hashlib
+h = hashlib.sha256(b"".join(open(f, "rb").read() for f in sorted(glob.glob(os.path.join(stage, "*.py")) + glob.glob(os.path.join(stage, "*.sh"))))).hexdigest()
+hf = os.path.expanduser(f"~/.kaggle/codehash_{OWNER}" + ("" if CODE_NAME == "dive-vpr-analysis" else "_" + CODE_NAME))          # skip the upload when this account already has this exact code
+exists = subprocess.run(["kaggle", "datasets", "status", CODE_DS], capture_output=True, text=True).stdout.strip().lower() == "ready"
+if exists and os.path.isfile(hf) and open(hf).read().strip() == h:
+    print("code dataset: unchanged (hash), not re-uploaded")
+else:
+    cmd = ["kaggle", "datasets", "version", "-p", stage, "-m", "update", "-q"] if exists else ["kaggle", "datasets", "create", "-p", stage, "-q"]
+    r = subprocess.run(cmd, capture_output=True, text=True); print("code dataset:", (r.stdout + r.stderr).strip().splitlines()[-1:])
+    if r.returncode == 0: open(hf, "w").write(h)
+
+# --- 2. kernel
+runner = r'''
+import os, sys, glob, json, shutil, subprocess, time
+from concurrent.futures import ThreadPoolExecutor
+JOBS = %s
+os.environ["SELFCAL_DEVICE"] = "%s"
+t0 = time.time()
+code = [d for d, _, fs in os.walk("/kaggle/input") if "selfcal.py" in fs][0]
+W = "/kaggle/working"; C = os.path.join(W, "code"); shutil.copytree(code, C, dirs_exist_ok=True)
+os.makedirs(os.path.join(C, "results"), exist_ok=True); os.makedirs(os.path.join(C, "logs"), exist_ok=True)
+D = os.path.join(W, "dump_all"); os.makedirs(D, exist_ok=True)      # exists even with --nodumps (cache-only jobs)
+for meta in [d for d, _, _ in os.walk("/kaggle/input") if os.path.basename(d) == "meta"]:
+    src = os.path.dirname(meta)
+    for sub in os.listdir(src):
+        p = os.path.join(src, sub)
+        if not os.path.isdir(p): continue
+        os.makedirs(os.path.join(D, sub), exist_ok=True)
+        for f in os.listdir(p):
+            dst = os.path.join(D, sub, f)
+            if not os.path.exists(dst): os.symlink(os.path.join(p, f), dst)
+import torch
+print("dump dirs:", {s: len(os.listdir(os.path.join(D, s))) for s in sorted(os.listdir(D))}, "| cpus", os.cpu_count(), "| device", os.environ["SELFCAL_DEVICE"], "| cuda", torch.cuda.is_available(), flush=True)
+NGPU = torch.cuda.device_count()
+CD = next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith("navcache_") and f.endswith(".npz") for f in fs)), "")   # token CACHE: mounted rule caches
+TK = next((d for d, _, fs in os.walk("/kaggle/input") if any(f.startswith("topk_") and f.endswith(".npz") for f in fs)), "")       # token TOPK: mounted top-K candidates
+NW = max(1, min(len(JOBS), (os.cpu_count() or 4) - 1 if NGPU <= 2 else max(NGPU, (os.cpu_count() or 4) // 4)))
+if %d: NW = min(len(JOBS), %d)                                     # --par: explicit parallel width (memory-bound jobs)
+TH = str(max(1, (os.cpu_count() or 4) // NW))                       # BLAS threads per job (no oversubscription)
+def run(ij):
+    i, j = ij; script, args = j[0], j[1:]
+    env = dict(os.environ, OMP_NUM_THREADS=TH, MKL_NUM_THREADS=TH, OPENBLAS_NUM_THREADS=TH)
+    if NGPU and len(JOBS) > 1: env["CUDA_VISIBLE_DEVICES"] = str(i %% NGPU)   # a single job keeps every GPU (multi-GPU scripts)              # spread jobs round-robin over all GPUs of the session
+    def rdir(a):                                                     # DIR:<prefix>[@<dir name>]: mounted dir of <prefix>*.npz (named <dir name>)
+        pre, _, nm = a[4:].partition("@")
+        return next((d for d, _, fs in os.walk("/kaggle/input") if (not nm or os.path.basename(d) == nm) and any(f.startswith(pre) and f.endswith(".npz") for f in fs)), "")
+    rs = lambda a: D if a == "DUMP" else CD if a == "CACHE" else TK if a == "TOPK" else (rdir(a) if a.startswith("DIR:") else a)
+    if "DUMP" in args or "CACHE" in args or "TOPK" in args or any(a.startswith("DIR:") for a in args): cmd = [sys.executable, script] + [rs(a) for a in args]   # DIR:<prefix> = mounted dir of <prefix>*.npz
+    else: cmd = [sys.executable, script] + ([args[0], D, D] if script == "exp9_natural.py" else [D] + args) + (["%%s" %% D] if script == "exp9_natural.py" else [])
+    t = time.time(); log = os.path.join(C, "logs", ("%%03d_" %% i) + "_".join(j).replace(".py", "").replace("/", "-")[:120] + ".log")   # short: long job args overflow NAME_MAX
+    r = subprocess.run(cmd, cwd=C, stdout=open(log, "w"), stderr=subprocess.STDOUT, env=env)
+    print(f"done {' '.join(j)} rc={r.returncode} {time.time()-t:.0f}s", flush=True); return r.returncode
+print("gpus", NGPU, "| parallel jobs", NW, "| threads/job", TH, flush=True)
+with ThreadPoolExecutor(NW) as ex: rcs = list(ex.map(run, enumerate(JOBS)))
+shutil.copytree(os.path.join(C, "results"), os.path.join(W, "results"), dirs_exist_ok=True)
+shutil.copytree(os.path.join(C, "logs"), os.path.join(W, "logs"), dirs_exist_ok=True)
+if os.path.isdir(os.path.join(C, "figs")): shutil.copytree(os.path.join(C, "figs"), os.path.join(W, "figs"), dirs_exist_ok=True)
+shutil.rmtree(D, ignore_errors=True); shutil.rmtree(C, ignore_errors=True)
+# one tar instead of many small files: Kaggle's output download is per file and slow
+subprocess.run(["tar", "-cf", os.path.join(W, "results.tar"), "-C", W, "results", "logs"])
+shutil.rmtree(os.path.join(W, "results"), ignore_errors=True); shutil.rmtree(os.path.join(W, "logs"), ignore_errors=True)
+print("EVAL_DONE", rcs, f"{time.time()-t0:.0f}s", flush=True)
+''' % (json.dumps(jobs), "cuda" if GPU else "numpy", PAR, PAR)
+os.makedirs(kdir, exist_ok=True); open(os.path.join(kdir, "run.py"), "w").write(runner)
+meta = {"id": f"{OWNER}/{slug}", "title": slug, "code_file": "run.py", "language": "python", "kernel_type": "script",
+        "is_private": True, "enable_gpu": GPU, "enable_tpu": False, "enable_internet": False,
+        "dataset_sources": [CODE_DS] + DUMP_DS + EXTRA_DS, "competition_sources": [], "kernel_sources": dumps, "model_sources": MODELS}
+if L4:                                   # 4x NVIDIA L4 via the gemma-4-developer-agent grant (rules accepted on the web; internet off)
+    meta.update(machine_shape="NvidiaL4", competition_sources=["gemma-4-developer-agent"], enable_internet=False)
+json.dump(meta, open(os.path.join(kdir, "kernel-metadata.json"), "w"), indent=2)
+shutil.rmtree(stage, ignore_errors=True)
+print("kernel dir:", kdir, "| jobs:", len(jobs), "| sources:", dumps)

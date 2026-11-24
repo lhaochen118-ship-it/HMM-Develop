@@ -1,0 +1,533 @@
+# Literature Gate — novelty checks (paper text only, no code)
+
+*Gates 1–5 concern the earlier directions (CRSG, SelfCal). Gate 17 = idea 2a (HSI), Gate 18 = idea 2b (OWF). Gate 3 lists HMM / sequence VPR papers that are directly
+relevant to the new `hmm-navigation` direction. Next gate: Gate 6 (HMM sequence-based visual localization).*
+
+## Gate 19 (2026-11-05, branch `hmm-2nd-idea`, Entry 16): hindsight-calibrated open-world decision (OWF-HC)
+
+**Claim checked.** The decision of the open-world filter is its own posterior disc mass, thresholded per evidence stratum (path since the
+sequence start) by split conformal on null segments that the SAME deployment labels in hindsight (bridges from the independent
+topological chain; possibly off-map / OWF report possibly wrong / never verified), jointly with the OWF-H branch; replaces the fixed
+tiers of Entry 15; finite-sample guarantee without the e-value assumption (E1) of Proposition 2 (`paper/owf_theory.md` §6).
+**Queries (web, 2026-11-05; abstracts only):** conformal calibration of a Bayes-filter posterior for localisation integrity with
+self-supervised / hindsight labels; conformal prediction for visual place recognition with a false-positive guarantee (2025–2026);
+e-values / Ville's inequality under perceptual aliasing in robot localisation.
+**Closest work found.**
+- SafeVPR'26 (arXiv 2605.28048): accept / reject the top-1 match of sequence VPR by Mondrian Learn-Then-Test with Bonferroni-corrected
+  per-bin thresholds (FDR control) calibrated on LABELLED data; under condition shift the authors check validity empirically. Already a
+  baseline here (St Lucia). Differences: no labelled calibration set, the calibrated score is the posterior of an open-world filter, units
+  are the deployment's own real excursions, strata by evidence state.
+- Conformal recalibration of foundation-model evidence inside a spatial-semantic map update, calibrated on the robot's own geometric
+  perception (arXiv 2606.00318, 2026): the same "the robot's geometry is the calibration source" principle, for semantic mapping, not
+  localisation decisions. Must be cited.
+- Bayesian calibration for Monte Carlo localisation (Bowling et al. AAAI 2006): learns sensor-model parameters from data; no decision
+  guarantee. Carson et al. 2023 (arXiv 2307.01464): unsupervised quality prediction from an independent second estimate (no guarantee).
+  Lajoie et al. RA-L (arXiv 1810.11692): perceptual aliasing produces mutually consistent wrong matches (the dependence that breaks (E1)).
+- HSI (Gate 17, ours): hindsight self-supervision + conformal on real excursions, for a LEARNED score on the topological chain.
+**Verdict:** no prior work found that calibrates an open-world localisation posterior on the deployment's own hindsight-labelled
+excursions. The mechanism combines our two earlier principles (OWF: the hole is in the state; HSI: the deployment labels its own past);
+novelty rests on the combination and on Proposition 4 replacing hand-set tiers, and is only worth claiming if Entry 16's pre-registered
+test supports it.
+
+## Gate 18 (2026-11-04, branch `hmm-2nd-idea`, Entry 10): the open-world filter (OWF)
+
+**Gap measured before the search (navcache-v2, seeds 0–2, every descriptor; `RESEARCH_LOG.md` Entry 10 §1).** The place chain
+of the idea-1 systems (DiagFilter MAP) is within `excl` of the truth on 0.78–0.95 of the on-map frames, the best idea-1 rule
+reports 0.48–0.82 of them; label-oracle thresholds on per-frame scores (posterior mass, log-odds, max-sim, Xu'21 off-map
+posterior) reach only 0.10–0.77 at segFAR = 0.05. Re-entry and start windows hold 2–5 % of the on-map frames (CMU 24 %), so the
+loss is in long on-map stretches with weak appearance evidence: the decision layer cannot tell "on the map, weak evidence"
+from "in a hole", because in a topological HMM the belief of a robot that drives into a hole has nowhere to go but the
+remaining map nodes (transitions are renormalised over the nodes) — presence must then be detected statistically, which is
+what idea 1 spent its calibration machinery on.
+
+**Candidates (self-scored: novelty / soundness / expected effect / A\* potential, 1–5).**
+- (A) **Open-world filter**: Bayes filter on a METRIC grid covering the mapped AND the unmapped space (band around the map +
+  a position-less far state); presence is a function of the position, not a latent of its own; mass-conserving odometry
+  transitions (mass that drives into a hole stays in the hole and is dead-reckoned through it); likelihood-ratio emissions
+  against a common reference (unmapped cell LR = 1, mapped cell = self-normalised exponential tilt of the frame's own
+  similarity profile); decisions read off the posterior (excl-disc mass ≥ 1 − ε); odometry noise self-calibrated online by
+  cumulative evidence. Scores 4 / 4 / 5 (design run: recall +0.1…+0.25 over SH) / 4.
+- (B) Continue inside HSI (Gate 17, Entries 1–9: hindsight geometric self-supervision + conformal on real excursions; `03_HANDOFF` §6
+  "Việc 1": CMU, NCLT, old-town navigation). 2 / 4 / 2 — HSI keeps the topological chain, so its learned score still has to separate "on
+  the map, weak evidence" from "in a hole"; its own diagnosis (CMU lock-out of short correct sequences) is a limit of that frame.
+  Self-supervised emission learning by EM inside the topological HMM: same objection (Lajoie & Beltrame RA-L 2023, Chen & Barfoot).
+- (C) Sequential 6DOF localisation with local features on the Sattler'18 datasets. 2 / 3 / ? / 3; leaves the hole protocol,
+  heavy engineering (SfM models, local features offline on Kaggle), prior art Stenborg et al. 3DV 2020 (image sequences on CMU /
+  RobotCar Seasons), Toft et al. TPAMI 2020. Kept as a later extension (6DOF fixes from the OWF posterior).
+**Chosen: (A)** — differs in kind from idea 1 (topological filter + report test calibrated on counterfactual nulls) and from HSI
+(topological filter + report score learned from hindsight labels, conformal threshold): (A) changes the ESTIMATOR (state space and
+transitions) so that the hole is represented, and reads the decision off the posterior — no calibration data, no map surgery, no
+forward simulation, no learned score. Relation to HSI: HSI's hindsight off-map labels (C2: two-sided dead-reckoning bridges + the map's
+known coverage) are the retrospective, label-generating form of the same geometric fact that OWF uses forward, inside the filter.
+
+**Queries (web, 2026-11-04; paper text / abstracts only):** Markov localisation in partially mapped environments with explicit
+unmapped regions; HMM VPR "off-map" state with metric position / dead reckoning in map holes; self-supervised emission learning
+/ EM on the deployment stream; grid Bayes filter with map coverage / unknown area likelihood; topometric localisation with map
+gaps, coasting and re-entry; track-loss / integrity of map-based localisation through coverage gaps; Monte Carlo localisation
+with incomplete maps / unmapped areas; open-world visual localisation leaving the map; likelihood-ratio emissions normalised
+by the query's similarity distribution.
+**Closest work found.**
+- Xu, Fischer, Sünderhauf, Milford, RA-L/IROS 2021 (arXiv 2107.07707): topometric discrete Bayes filter with ONE off-map node O
+  (transitions to / from O; re-entry uniform); no metric position while off the map, so no dead reckoning through holes and no
+  predicted re-entry. Our labelled baseline "Xu'21".
+- Maddern, Milford, Wyeth, CAT-SLAM (IJRR 2012): Rao-Blackwellised particle filter along a continuous appearance trajectory with
+  a "new place" hypothesis (revisit vs explore). The new-place hypothesis has no metric position relative to the map; SLAM
+  setting (the map grows), no presence decision with a false-report target.
+- Classic Markov / Monte Carlo localisation (Fox, Burgard, Thrun; random-particle injection for kidnapping): metric beliefs with
+  range sensors on a complete map; unmapped regions appear only as an AMCL weakness ("poor performance in unmapped
+  environments"); Episodic non-Markov Localization (Nashed & Biswas) separates unmapped OBJECTS, not unmapped areas.
+- Jaenal et al. IJRR 2023 (sequential Monte Carlo localisation in topometric appearance maps, loss-of-tracking detection then VPR
+  relocalisation), Badino et al. topometric localisation (IV 2011/2012), HM4 (Doan et al.), Multi-Process Fusion (Hausler et
+  al. 2019), Hansen & Browning 2014, Guo et al. 2022 (HMM filter / smoother): all states on the map (or one off-map node).
+- Emission side: Bayesian Selective Fusion (Molloy et al. RA-L 2021, training-free likelihood from descriptor distances),
+  probabilistic VPR (Xu et al. 2021, arXiv 2105.03091), Multi-Process Fusion normalised scores. Our self-normalised
+  exponential tilt is in this family; it is not claimed as new.
+- Integrity: survey (Sensors 2025), map-aided dead reckoning with integrity monitoring (Li, Bonnifait et al.), "Beyond dead
+  reckoning" tunnel continuity (arXiv 2609.14748, viewpoint): analytic fault models, no appearance map with holes.
+- Idea-1 lineage (Gate 8): a single dead-reckoned "ghost" used as a GATE of the CPC presence chain (locks out on drift); here the
+  whole belief lives in the metric open world and the presence decision is the posterior itself.
+- Idea-2a (Gate 17, HSI): coverage + dead reckoning used in HINDSIGHT to label the past; OWF uses them FORWARD as the state.
+- arXiv 2608.06021 (topometric PF + feed-forward 3D): belief over places + odometry; abstract silent on unmapped space.
+**Differences.** (i) The unmapped space is part of the metric state; mass is conserved by the motion model, so leaving the map,
+traversing a hole and re-entering are predicted by dead reckoning rather than detected by a test; (ii) presence on the map is
+a deterministic function of the position (no separate presence chain, no off-map node); (iii) emissions are likelihood ratios
+with an exact unit mean over the frame's own map profile, so unmapped cells (LR = 1) are the natural null; (iv) the false-report
+risk reduces to seeds of mass that can grow into aliases (start prior, kidnap, far-state re-entry, motion tails), which the
+design makes explicit (kidnap rate ~ 0) and the position audit measures. **Verdict:** no prior work found with (i)+(ii) for
+appearance-based localisation on a map with holes; (iii) is a standard emission family; online evidence-based selection of the
+odometry noise is standard model selection. Claim: "open-world Bayes filtering for sequence-based visual localisation: hole-aware
+metric state, presence by position". A systematic Scholar + proceedings sweep (RA-L / ICRA / IROS / RSS 2024–2026, CAT-SLAM
+follow-ups, MCL with unknown space) remains before submission.
+
+## Gate 17 (2026-11-03, branch `hmm-2nd-idea`, idea 2 Entry 1) — hindsight geometric self-supervision of the report decision (HSI)
+
+**Claim checked.** A sequential map-relative localiser labels ITS OWN past frames in hindsight — fix correct / fix wrong / robot off the
+map — from geometry only: (1) the place chain's track is self-verified by its agreement with the odometry at several lags (no similarity
+threshold, so the certificate means the same in every appearance condition); (2) between verified runs, dead reckoning aligned on both sides
+gives the hindsight position of every frame, and the map's known coverage turns it into an off-map label. These labels, used causally
+(each one only after it is final), train the report score of the same deployment online and calibrate its threshold by conformal on REAL
+hindsight-labelled excursions (edges and starts included), jointly with calibration-free geometric reports (trusted anchors, dead-reckoning
+agreement). No ground truth, no labelled calibration traversal, no intervention on the map (unlike idea 1's counterfactual surgery).
+**Queries (web, 2026-11-03; paper text / abstracts only):** self-supervised place recognition confidence from odometry-consistency
+pseudo-labels / off-map detection without labels; Lajoie-Beltrame self-supervised domain calibration and uncertainty; adaptive conformal
+inference with delayed / self-generated feedback for robot localisation integrity; online learning of when to trust VPR fixes from wheel
+odometry hindsight labels; test-time training of visual localisation with an odometry / smoother teacher.
+**Closest work found.**
+- Lajoie & Beltrame, RA-L 2023 (arXiv 2203.04446): robust pose-graph optimisation (SLAM) sorts putative VPR matches into correct / incorrect;
+  the samples fine-tune the VPR network and train an uncertainty estimator for the target domain. Closest in spirit (SLAM as the teacher).
+  Differences: needs loop closures and an offline/periodic pose graph; labels pairs of images (training data), not the OFF-MAP state of the
+  robot; no online report decision, no false-report guarantee, no map with holes.
+- TF-VPR (Chen et al., arXiv 2208.09315, RA-L 2024): temporal neighbours of a stream as noisy labels for self-supervised VPR training; no
+  integrity decision.
+- Carson et al. ICRA 2023 (unsupervised match-quality prediction from gradient/argmin agreement), Claxton et al. RA-L 2024 (odometry projection
+  from the last verified match; supervised MLP monitor): label-free or odometry-based ideas, no hindsight labels, no guarantee.
+- ACI under delayed feedback (arXiv 2609.07251), online conformal with intermittent feedback (arXiv 2503.10345): the statistical tool for a
+  long-run guarantee once feedback exists; nothing on self-generated (geometric) feedback.
+- Self-supervised traversability / terrain learning from proprioceptive hindsight (Stavens & Thrun 2006, Brooks & Iagnemma 2007, ...) and
+  co-training (Blum & Mitchell 1998): the generic "one sense teaches another" principle, outside localisation integrity.
+**Differences claimed.** (i) The OFF-MAP class — the one no deployment has labels for — is labelled from dead reckoning plus the map's
+coverage; (ii) labels are produced and consumed online and causally (availability times) inside one deployment, to learn the report score
+and its threshold; (iii) conformal units are real hindsight-labelled excursions, calibrated jointly with calibration-free geometric reports
+(marginal guarantee for the union rule); (iv) the geometric self-verification itself is condition-invariant and is a report source with
+near-zero false reports. **Verdict:** not found as a whole; every component taken alone has precedent (pseudo-labelling, conformal,
+dead-reckoning gating, track confirmation). Novelty moderate-high; A*-readiness depends on the held-out evidence of Entry 1.
+
+## Gate 15 (Entry 32, 2026-11-01) — systematic search before writing the paper
+
+**Queries (20, web):** VPR integrity monitoring false-positive guarantee sequential navigation; e-detectors / Shiryaev-Roberts /
+conformal test martingale change detection; open-set place recognition unknown-place calibrated threshold; visual localization
+protection level integrity risk conformal; synthetic null by removing the true match / leave-out calibration / loop-closure
+verification without labels; conformal prediction VPR 2025-2026 sequence guarantee; place recognition out-of-map / unmapped HMM;
+conformal under temporal dependence (blocks, Markov, mixing, time-series anomaly); Carson-Ford-Milford integrity; sequence-matching
+receptiveness (IROS 2025); counterfactual null calibration retrieval removing database neighbourhood; label-free self-calibrating localization failure
+detection; anytime-valid / e-process robot localization; Markovian conformal prediction; plus Gates 12-14. New closest items:
+an e-value monitor for particle-filter localization (arXiv 2604.26479: tests filter over-confidence, not presence on the map, no
+generated null) and Zheng-Proutiere ICML 2024 (split CP under Markov data, coverage gap ~ sqrt(t_mix ln n / n)).
+**Closest work and the gap (details, table: `literature/RELATED_WORK_E32.md`).** SafeVPR'26 (conformal, labelled calibration,
+breaks under condition shift); Lee & Pollefeys ICRA'14 (label-free mixture threshold, degenerates without loop closures, no
+guarantee); Xu'21 (HMM off-map state, tuned); E-detectors (Shin-Ramdas-Rinaldo; need prespecified pre/post classes); Vovk conformal
+change detection (exchangeability null of the data itself); conformal under beta-mixing / block conformal (mixing assumption);
+integrity predictors Carson'22/'23, Claxton'24, SMR'25 (supervised, no guarantee); protection levels for camera localization
+(error models).
+**Verdict.** The three contributions (counterfactual map-surgery null on the deployment stream; label-free per-segment false-onset
+bound with quantified self-contamination; an HMM off-map state calibrated by it) were NOT found in the queries performed. Prior art
+for every component taken alone is listed and will be cited. Full-text reading of SafeVPR, E-detectors, Vovk 2020, Lee-Pollefeys
+2014 and a proceedings sweep (RA-L / RSS / ICRA / IROS 2024-2026) remain before submission.
+
+## Gate 14 (Entry 31, 2026-11-01) — HMM with a counterfactually calibrated off-map state
+
+**Claim checked.** A joint place-presence HMM whose OFF-map state emission is set from a counterfactual null (map surgery around
+the system's own belief) so that the HMM's OFF marginal equals a calibrated presence chain with a finite-sample false-onset bound.
+**Queries (web, standard):** "hidden Markov model off-map state calibrated emission conformal visual place recognition localization
+guarantee"; "conformal calibration of HMM state posterior out-of-map / off-map detection sequential localization false alarm
+guarantee 2025".
+**Closest work found.** Xu et al. 2021 (arXiv 2105.03091, HMM with an off-map state, emission exp(s_(k)/T) tuned with labels —
+our baseline Xu'21); SafeVPR 2026 (arXiv 2605.28048, Mondrian conformal LTT on accept/reject of sequence VPR, needs calibration
+labels/exchangeability — our baseline); Su–Zhou–Luo 2024 (arXiv 2411.01558, adaptive conformal inference with particle filters under
+HMMs: COVERAGE sets, not detection / false-onset control); conformalized Kalman filters (arXiv 2609.27506: coverage regions);
+conformal indoor localization (arXiv 2505.08639). HMM-based VPR sequence matching (Hansen–Browning 2014; HM4, Doan et al. 2020)
+has no calibrated off-map decision.
+**Verdict.** Not found in the queries performed: no prior HMM localizer whose off-map state is calibrated label-free from a
+counterfactual stream with a false-onset guarantee. Weaker claims that ARE prior art: an HMM with an off-map state (Xu'21);
+conformal accept/reject for VPR (SafeVPR); conformal coverage for HMM / Kalman state estimates. A wider search (journals, RSS/ICRA
+2025-26 proceedings) is still needed before submission.
+
+## Gate 13 (2026-11-01, branch `hmm-navigation-5`): Entry 29 — wider search for CMS, counterfactual innovation gate
+
+Searches: retrieval OOD with removed nearest classes / self-supervised nulls; place-recognition hold-out of own locations;
+innovation gating with clutter estimated outside the gate.
+
+| Piece | Closest prior work found | Relation | Level |
+|---|---|---|---|
+| CMS (null by removing the system's own belief from the map, at test time, label-free) | Vyas et al. ECCV'18 (ensemble of leave-out classifiers: random class subsets as pseudo-OOD at TRAINING time); kNN OOD (Sun et al. ICML'22, threshold from in-distribution data); Gronat et al. 2013 (per-location calibration; "held-out negatives are not available in place recognition"); Quantile Transfer (arXiv 2602.04401) and SAFEVPR (2605.28048, labelled calibration traversal, leave-one-dataset-out); online PR calibration via pose-graph optimisation (IROS'15) | Leave-out-as-null exists at training time with random subsets; none removes the model's OWN current belief from the reference at test time to obtain a condition-matched null of a sequential decision | Moderate-high (unchanged; wording "in our searches") |
+| +NGR (gate radius from the innovation of the counterfactual false fix) | PDA/JPDA clutter-density estimation from measurements outside the gate; chi^2 gating; LiDAR association-risk bounds (IEEE 9110229); gate-induced bias of innovation statistics (arXiv 2512.18508) | Same spirit as estimating the clutter (false-measurement) distribution, here generated by surgery instead of observed; release-on-coherent-offset is a known re-initialisation idea | Low-moderate (supporting component) |
+
+**Verdict.** CMS stays the main novelty; the navigation gate is an engineering component with a label-free calibration.
+
+## Gate 16 (2026-11-03, branch `hmm-navigation-5`; the "Gate 14 to do" of Entry 36): Entries 36-37 — forward counterfactual surgery (CST-F), end-to-end forward calibration with the system's own presence evidence and an exact start null (CST-JS)
+
+**Claim checked.** The calibration episodes of a sequential localisation decision are GENERATED from the deployment stream itself by an
+intervention on the environment representation (remove the map region the robot visits after a virtual exit, or around a virtual
+start) and by running the system's OWN filter and statistics forward on the real images; thresholds (shape tolerance per excursion
+position, start-position tolerance and short-window onset threshold) are rank quantiles of the simulated decisions, giving a
+per-segment false-report bound at every position (edge and sequence start included) with no labels and no simulator.
+**Queries (web, 2026-11-03; paper text / abstracts only):** conformal calibration of false alarms in sequential localisation with
+simulated failure rollouts / counterfactual map removal; calibrating a filter's threshold by simulating it forward on an altered
+map; conformal prediction on synthetic rollouts for sequential decision rules; fault injection / integrity monitoring thresholds
+from simulated map deletion; conformal CUSUM calibrated with simulated post-change paths.
+**Closest work found.**
+- SafeVPR'26 (arXiv 2605.28048): Mondrian conformal LTT for sequence-VPR accept/reject; LABELLED calibration conditions, exchangeability
+  across conditions; no intervention, no forward simulation (our direct baseline, Entries 36-37).
+- Conformal warnings for sequential decision making (Katz et al., RLC 2026) and deployment-time reliability of learned robot policies
+  (arXiv 2603.11400): split conformal on REAL calibration episodes / rollouts (exchangeable or i.i.d. with the test episode); bound on
+  false alarms during a successful episode. Needs separate calibration episodes; nothing is generated from the test stream.
+- Simulator-based warning systems (Dixit et al., arXiv 2109.14082): conformal tuning of warnings with a dynamics SIMULATOR (false
+  negatives); guarantee relative to the simulator.
+- Counterfactual edits + reruns (arXiv 2601.20090, LLM control): admissible edits of the input, rerun, binomial-tail selection of
+  configurations — closest in spirit (intervene, rerun, calibrate), different domain, no sequential per-position guarantee.
+- Monte Carlo / conformal CUSUM (gridcp arXiv 2608.18695; Vovk et al. arXiv 2412.03464; CONCH): thresholds from simulated NULL streams
+  or conformal martingales; no post-change simulation from the system's own state.
+- Localisation integrity monitoring (Joerger/Pervan line; map certification for registration-based localisation, arXiv 2309.04251):
+  analytic fault hypotheses, not counterfactual self-simulation.
+**Differences.** (i) No calibration episodes, labels or simulator: the null is produced by intervening on the MAP at virtual exits /
+starts of the test stream and propagating the system's own filter on the real frames; (ii) the simulated object is the WHOLE decision
+(presence chain from its real state, gate, shape test) with every statistic recomputed on the altered map (Entry 37), not a surrogate
+score; (iii) thresholds per excursion position (min over bins) and per position since the sequence start, with a split budget for
+short windows (Proposition 19). **Verdict:** no prior work found that does (i)+(ii); the components (rank-quantile calibration,
+Mondrian bins, simulation-based thresholds) are standard. Claim for the paper: "self-calibration of a sequential localisation decision by
+counterfactual intervention on the map and forward simulation of the system on its own deployment stream"; its validity rests on
+(S3-JF)/(S3-S) (real holes exchangeable with virtual ones), audited empirically (H37a/H37b). A systematic search (Gate 15 protocol:
+Scholar + arXiv, robotics + statistics venues) is still to be repeated before submission.
+
+## Gate 12 (2026-11-01, branch `hmm-navigation-5`): Entry 28 — Counterfactual Map Surgery (CMS)
+
+Searches (paper text / abstracts only, 2026-11-01): open-set recognition thresholds from gallery removal; conformal outlier
+detection with contaminated / synthetic references; VPR self-calibrated / adaptive thresholds; loop-closure verification
+nulls; training-conditional and rolling conformal on streams.
+
+| Piece | Closest prior work found | What is new here | Level |
+|---|---|---|---|
+| Null from the DEPLOYMENT stream by removing, from the map, the corridor around the system's own belief (counterfactual map surgery) | Our SelfCal / certified / CPC-SC (map leave-block-out null, map condition, exact odometry); SAFEVPR'26 (arXiv 2605.28048) and Quantile Transfer (LTT / quantile normalisation on a LABELLED calibration traversal); open-set face ID calibrated on identities kept out of the gallery (labelled dev set); Lee & Pollefeys ICRA'14 (log-normal mixture on inlier counts, label-free but model-based) | A do-operation on the environment representation at the model's own estimate turns every deployment frame into a condition-, noise- and dependence-matched null draw; no labels, no calibration traversal, no parametric model | **High** (no prior instance found in the five searches listed above; a wider search is needed before submission) |
+| Validity under self-contamination (Thm 6: alpha (n+1)/(pi n+1)); direction of each contamination (Prop 8) | Bashari, Sesia, Romano ICML'25 (conformal outlier detection with contaminated inlier reference: conservative); Barber et al. (conformal beyond exchangeability) | Contamination of a GENERATED null analysed by its mechanism: wrong beliefs are conservative, off-map frames cost a factor 1/pi | Moderate-high |
+| alpha = 0.01 and training-conditional (PAC) guarantees per deployment (Cor 9) | Vovk 2012 (training-conditional conformal), RCPS (Bates et al. 2021) | Made feasible by the stream null (hundreds of segments per condition vs ~10 map chunks) | Moderate (known tool, new feasibility) |
+| Calibrating TAO'26's route cost (which has no label-free threshold) and the presence chain on the counterfactual stream | TAO'26 (3-sigma on labelled easy conditions), SeqSLAM uniqueness ratio (score, no calibration), knockoffs (synthetic null copies of variables) | Same score, three nulls (labels / map / counterfactual) isolates the effect of the null | Supporting (ablation) |
+
+**Verdict (before the full results; wording corrected by the Entry 29 audit).** The mechanism is new as far as our limited search goes and general (any retrieval-against-a-database
+decision with a spatial / identity structure: VPR, LiDAR loop closure, open-set re-identification). Whether it is A*-level
+depends on the evidence: tight (realized ~ alpha, not << alpha) and valid control on 7 datasets x 6 descriptors, recall gains
+at matched guarantees, alpha = 0.01 everywhere. Assumptions S1-S3 are empirical (checked with labels in the evaluation only).
+
+## Gate 11 (2026-10-31, branch `hmm-navigation-4`): Entry 26 — guarantees under dependence, shape stop, 2026 baselines
+
+| Piece | Closest prior work found (paper text / abstracts only) | What is new here | Level |
+|---|---|---|---|
+| Diagnosis: violations of map-null validity sit at map edges (view overlap) and in long excursions; the null has ~10 exchangeable units | — (no VPR paper measures where map-calibrated validity fails) | Empirical analysis that redirects the theory | Supporting |
+| Prop. 5 (no accumulation without a dependence assumption) | Vovk & Wang 2021 (arithmetic mean is the admissible e-merging under arbitrary dependence); standard comonotone argument | Stated for sequential localisation; explains why every accumulating guarantee needs exchangeability / mixing | Low (known fact, new framing) |
+| Thm 4 GPC (placements of the odometry window on the map + Markov on hit counts: per-frame false-fix bound under ANY dependence) | Odometry-only map matching (Brubaker et al. CVPR'13 "Lost!"), TAO'26 (K hypotheses, Procrustes, no guarantee), ROVER (arXiv 2508.13488, trajectory prior for loop-closure verification), sequence-consistency admission for LiDAR loops (arXiv 2512.09447), Bonferroni / scan statistics | Using the geometry ONLY to fix the multiplicity of an appearance test, with a dependence-free bound; geometric coverage Q_t as the multiplicity | Moderate (clean construction; weak power: recall 0.04-0.20) |
+| Thm 5 (finite-memory onset + geometric persistence: false-onset rate <= alpha with any dependence between segments) | Block / trajectory conformal (Chernozhukov'18, Stankeviciute'21), online conformal with long-run coverage under arbitrary dependence (ACI, error-quantified CI ICLR'25: need outcome feedback), e-detectors (Shin-Ramdas-Rinaldo) | Removes the conditional-validity requirement of Thm 1/3 and the long-excursion exchangeability of SC; exchangeability only per H-frame window; label-free | Moderate |
+| SH stop (2-D Procrustes residual of the reported track vs odometry) | TAO'26, RRR / PCM / Olson consistency, SeqSLAM velocity | Drop-in stronger version of CS inside the guarantee (Lemma 7 still applies) | Low |
+| TAO'26 / TRAIL'26 / VPR auditing'26 reproduced on the same 7 datasets and protocol | the papers themselves (thermal / MSLS-Nordland-4Seasons / 6 VPR benchmarks) | First head-to-head on map-hole sequential localisation with segment-level metrics | Evaluation |
+
+**Verdict.** Entry 26 adds the missing theoretical piece asked for (a guarantee whose dependence assumption is local: per
+H-frame window, any dependence between windows) and an honest impossibility (no accumulation without a dependence
+assumption; the dependence-free certificate is valid but weak). Empirically the new rules are on par with CPC-SC+CS (small
+pAUC gain of SH), not a jump. The A* gap that remains: (1) the default point is conservative because the map null is
+same-condition (a condition-matched null is open); (2) CMU ranking (Claxton'24 / max-sim / TAO'26 rank better); (3) no
+closed-loop robot run. Readiness: A (RA-L / ICRA / IROS) strengthened (dependence theory + 2026 baselines); A* not yet.
+
+## Gate 10 (2026-10-31): CPC-SC+CS (Entry 25) — novelty against the review (`literature/VISUAL_LOCALIZATION_REVIEW.md` §5, §6, §6b)
+
+| Piece of CPC-SC+CS | Closest prior work | What is new here | Level |
+|---|---|---|---|
+| Odometry-consistency stop CS | RRR (Latif'13), Olson'06/'08, PCM'18, group-k, χ² gating, SeqSLAM velocity constraint, Claxton RA-L'24 (odometry projection from the last verified match) | Used only to STOP reports of a place chain without off-map state (Lemma 7: segFAR / FL cannot rise; Prop. 4: no off-map report while the MAP sticks at the map edge) | Low: known mechanism, new role and diagnosis |
+| Segment-calibrated onset threshold (SC) | Trajectory-level conformal (Stankeviciute'21, Lindemann, Zhou'24), block conformal (Chernozhukov'18), scan statistics, our `certified` | Calibrating the ONSET of an HMM presence chain on the map's own held-out traversal (label-free) | Low-moderate: same exchangeability argument as `certified` |
+| Ranking / validity separation + operating-curve evaluation | Risk-coverage (Geifman'17), PR / R@100%P in VPR (Lowry'16), precision-coverage-FAR (VPR auditing'26) | Evaluation protocol, not a method | Not a novelty claim |
+| Diagnosis (TCE min kills presence evidence; carried streaks; PCR self-confirmation) | Mệnh đề 2 / Hệ quả 4 (cpc_theory), TCE | Empirical analysis | Supporting |
+
+**Verdict.** Entry 25 makes the method less conservative and empirically stronger (recall at FL <= 1 %: above Xu'21 on 7/7,
+above Claxton'24 on 6/7; every one of 366 runs at segFAR <= 0.021), but adds no new theory of A* level: the onset bound is
+exchangeability-based like `certified`, CS is a known consistency check, and the Gate 9 gap "a guarantee for the HMM
+decision under temporal dependence" is still open (W-CPC, joint CS calibration and segment calibration all fail or are
+conservative on Boreas / CMU). Readiness unchanged: **A (RA-L / ICRA / IROS) realistic** as one paper "label-free
+certified sequential localization" with CPC-SC+CS as the HMM rule; **A* not yet**. Remaining A* items from Gate 9:
+(1) conditional validity under dependence; (3) TRAIL'26 / TAO'26 / VLM-auditing'26 head-to-head (SafeVPR only on
+Boreas); (4) a closed-loop robot run. Item (2) is partly addressed (NCLT natural off-map), item (5) by the
+pre-registered held-out protocol and leave-one-dataset-out choice. Weaknesses a reviewer will find: CMU (label-trained
+Claxton'24 and raw max-sim rank better), lower default recall than Xu'21 on 4/7 datasets, alpha = 0.01 infeasible on maps
+with < 99 null segments.
+
+## Gate 9 (2026-10-30): A/A* readiness of the whole contribution (paper search only; sources in `literature/VISUAL_LOCALIZATION_REVIEW.md` §6b, §8)
+
+**Closest prior work found this round:** Claxton et al. RA-L'24 (VPR integrity monitor + odometry projection from the
+last verified match), SAFEVPR'26 (conformal LTT FDR for sequence VPR, labelled), e-process tracking-failure detection
+(arXiv 2602.12983, 2026), Murphy'18 (HMM map matching with a positioned off-road state), PCM/Olson consistency,
+multi-trajectory conformal (Stankeviciute'21, Lindemann, Zhou'24), block conformal (Chernozhukov'18), e-detectors.
+
+**Verdict per contribution:**
+
+- A (certified, map-calibrated, excursion-level FAR): new problem setting + protocol; tools known. Strongest piece.
+- C (CPC-HMM): moderate; the theorem is a short domination argument on top of Shin–Ramdas–Rinaldo.
+- +GG: incremental; the gating idea is in Claxton'24 / PCM; only the "keeps the e-value" argument is ours.
+
+**Readiness:**
+
+- **RA-L / ICRA / IROS (robotics A-level):** realistic now as ONE paper "label-free certified sequential localization",
+  with CPC-HMM(+GG) as the HMM-integrated variant and the HMM diagnosis (D1–D5) as analysis.
+- **A* (RSS, T-RO, CVPR/ICCV, NeurIPS): not yet.** Missing, in order of importance:
+  1. A guarantee for the **HMM decision itself under temporal dependence** (today: ARL₀ needs conditionally valid
+     e-values, which Boreas/4S violate; certified relies on exchangeability of off-map segments with held-out map
+     segments, checked only empirically). A conditional-validity construction (e.g. Markov-conditional conformal
+     e-values from map-null sequences, or a TV-gap bound à la Barber'23) would be the A*-level theory.
+  2. **Natural off-map benchmarks** instead of synthetic block removal (reviewers will question the map-hole protocol):
+     NCLT / Oxford RobotCar full routes, detours, construction, new roads.
+  3. **Head-to-head with the newest baselines**: SAFEVPR'26, Claxton'24 integrity monitor, TRAIL'26, TAO'26, VLM
+     auditing'26, PCM-style back-end on the same fixes.
+  4. **A real closed-loop robot run**, and 6-DoF refinement gated by certified fixes (Sattler'18 thresholds).
+  5. Remove post-hoc choices (ρ = 0.1 picked after seeing Boreas/Nordland) or justify them a priori.
+- Honest weakness to address: ungated certified is still slightly better than CPC-HMM+GG on 5/6 datasets, so the HMM
+  variant must be justified by something else (Boreas, anytime decisions, posterior over places).
+
+## Gate 8 (2026-10-30): dead-reckoning ghost gate for the CPC-HMM presence chain (web search)
+
+- **Searched:** HMM-VPR with an off-map state that keeps a dead-reckoned position; predictive gating of e-values in
+  sequential change detection; IPDA track gating/coasting.
+- **Closest work:** Hansen & Browning ICRA'14 (HMM sequence VPR, no off-map position); Multi-Process Fusion (re-localisation
+  delay after unfamiliar stretches, no position memory); Xu et al. RA-L'21 (position-less off-map state, uniform
+  re-entry); IPDA/tracking "gate" and "coasting" (model-based likelihoods, no validity guarantee); e-detectors
+  (Shin–Ramdas–Rinaldo) and predictable e-values (prediction-powered e-values) without spatial gating.
+- **Overlap:** gating a measurement by the predicted track position and coasting a track through missed detections are
+  standard tracking ideas. Post hoc innovation gating of VPR fixes in an EKF is also standard (and is our `+DRgate`
+  baseline, which fails off Boreas).
+- **New:** (i) the gate multiplies a map-calibrated e-value and provably keeps it an e-value (a ≤ ẽ ≤ e), so the ARL₀ bound
+  of the presence chain is preserved; (ii) the floor ρ (prior that the ghost is wrong) gives a lock-out escape that the
+  hard innovation gate lacks; (iii) the diagnosis that HMM-VPR far wrong fixes come from the place chain drifting to
+  aliased stretches inside map holes, not from exit lag.
+- **Verdict:** incremental-but-sound module on top of CPC-HMM; publishable only together with the certified direction
+  (RA-L/ICRA level), not alone.
+
+## Gate 6 (2026-10-29): HMM sequence localization — EVT-HMM and certified sequential localization (web search + abstracts)
+
+Searches: HMM/sequence VPR 2025–26; Bayes-filter overconfidence with correlated observations; anytime-valid /
+e-process localization; conformal sequential place recognition; EVT/Gumbel score normalisation in place recognition;
+tuning-free sequence matching; conformal scan statistics / segment-level false alarm; relocalization integrity.
+
+| Work | What it does | Relation |
+|---|---|---|
+| Xu, Fischer, Sünderhauf, Milford, RA-L'21 (arXiv 2107.07707) | Topometric filter with off-map state; off-map emission = k-th best likelihood; λ from the first query; parameters tuned per VPR method on training traverses; R@99%P | Baseline `hmm_kth`. No calibration, no FAR guarantee. |
+| Xu et al. RA-L'20 (2105.03091), Doan ICCV'19, MPF RA-L'19, Hansen & Browning'14 | HMM / Bayes filter / Viterbi over map images; heuristic emissions and thresholds | HMM baselines. |
+| SAFEVPR (2605.28048) | Conformal accept/reject for sequence VPR; Mondrian LTT; validity only empirical under condition shift | Closest "guarantee" work: labelled calibration, per-decision FDR, no excursion-level guarantee. |
+| TRAIL (Kloepfer & Wenzel 2026), Route-MHT/TAO (2607.04745) | Learned CRF with dustbin; multi-hypothesis Procrustes for map-out | No calibration or guarantee. |
+| Topometric AV localization with FF3D (2608.06021), SG2Loc (2606.11880) | Particle filters over places / scene graphs | Sequential belief, no off-map guarantee. |
+| VLM auditing of VPR (2607.12818) | Instance-level VLM verification, FAR 12 % | Empirical, per-instance. |
+| Claxton et al. RA-L'24 (2407.08162), integrity measures (IEEE 9830823) | Supervised integrity monitors | Need labels, no guarantee. |
+| Lajoie & Beltrame RA-L'23 (2203.04446) | Self-supervised domain calibration from pose-graph optimisation | Fine-tunes the network; no test/guarantee. |
+| Scheirer et al. (meta-recognition, W-score, EVT) | Weibull fit to non-match tail for score normalisation | Prior use of EVT for recognition scores; not in an HMM, not for VPR off-map. |
+| Conformal anomaly detection / scan martingales (2605.13642, 2606.11949) | Conformal p-values per window; per-window coverage ≠ time-uniform | Statistical background; the segment-as-unit calibration for dependent data is the standard remedy, not applied to localization. |
+
+**Verdict:**
+
+- **EVT-HMM** (Gumbel-tail emission + phantom off-map place, tuning-free) is novel as a combination. Empirically it is
+  not better than the tuned Xu'21 baseline (Entry 18). It is kept as an ablation, not as the contribution.
+- **Certified sequential localization:**
+  - odometry-gated Viterbi run evidence on per-frame map-calibrated p-values;
+  - calibrated with *held-out segments of the map's own traversal* as exchangeable units;
+  - this gives a label-free bound on P(any false acceptance during an off-map excursion), valid under arbitrary
+    within-segment dependence.
+
+  No paper found does this. Novel; proceed. Must cite SAFEVPR, Xu'21, exp11/SelfCal (own), conformal anomaly
+  detection.
+
+## Gate 1 (2026-10-28, condensed): CRSG — pre-empted, dropped
+
+CRSG (a label-calibrated logistic gate on margin / max-sim / entropy, plus conformal risk control) overlaps existing
+work. Its features are the PA ratio and the RS/SD/SU score-shape statistics, supervised verifiers already exist
+(Carson'22 SVM, Claxton'24 MLP), and SAFEVPR's Mondrian conformal covers the conformal part. It is kept only as a
+baseline. Note: the true SUE (spatial spread of the top-K poses) is the SUE baseline now used; the earlier "SUE" was
+Zaffar's L2-distance baseline. Papers read in full for this gate (still the closest baselines for SelfCal):
+
+- Zaffar, Nan, Kooij — *On the Estimation of Image-matching Uncertainty in VPR* (CVPR'24) — https://www.alphaxiv.org/abs/2404.00546
+- Miller, Milford, Hafez, Ramchurn, Ehsan — *Through the Lens of Doubt* (RA-L'26) — https://www.alphaxiv.org/abs/2510.13464
+- Claxton, Malone, Carson, Ford, …, Milford — *Improving VPR-Based Robot Navigation by Verifying Localization Estimates* (RA-L'24) — https://www.alphaxiv.org/abs/2407.08162
+- Hussaini, Fischer, Milford — *Sequence-Matching Receptiveness Prediction* (2025) — https://www.alphaxiv.org/abs/2503.06840
+- Sier et al. — *SAFEVPR: Patch-Based Conformal Verification* (2026) — https://www.alphaxiv.org/abs/2605.28048
+- Yanko, Shavit — *KappaPlace* (2026) — https://www.alphaxiv.org/abs/2605.19435
+- Rajani, Milford, Fischer — *Quantile Transfer for Operating Point Selection* (IROS'26) — https://www.alphaxiv.org/abs/2602.04401
+- Trinh, Lyons — *Adaptive Thresholding via Negative Gaussian Mixture* (2025) — https://www.alphaxiv.org/abs/2512.09071
+- Lu, Tanaka — *Route-MHT* (2026) — https://www.alphaxiv.org/abs/2607.04745
+
+
+## Gate 2 (2026-10-28) — novelty of the new direction: self-calibrating maps (SelfCal)
+
+Idea: the VPR map supplies labelled *off-map* queries for free (leave-one-spatial-block-out self-retrieval);
+split-conformal p-values against these pseudo-queries, with affine-invariant far-region statistics, give label-free,
+shift-robust false-accept control; an AND-rule with the gap to the best far region also suppresses aliasing.
+
+| Closest work | What it does with the map / scores | Difference |
+|---|---|---|
+| RSF (Zaffar et al. 2025, arXiv 2510.03751) | uses the reference set (images+poses) to **fine-tune** the descriptor | not acceptance, no guarantee |
+| Map-density selection (Hussaini et al. 2026, arXiv 2602.21473) | two reference traverses → predict local Recall@1 | needs 2 traversals + regression; no rejection test |
+| Adaptive negative-GMM thresholds (Trinh & Lyons 2025) | per-place thresholds from database negatives | raw scores (= our non-invariant SelfCal[maxsim] ablation, low power under shift), no guarantee |
+| Schubert et al. (robust-normal null) / meta-recognition (Scheirer 2011, EVT) | parametric null of the score distribution | = our "theory-only" baselines: invalid (FAR 0.13–0.35 at α=0.05) |
+| SAFEVPR (2026), Quantile Transfer (IROS'26) | labelled calibration (other conditions / calibration traversal) | violate on 1–4/11 conditions in our protocol; need labels |
+| Conformal outlier testing (Bates et al. 2023), conformal under shift (Barber et al. 2023) | theory | we instantiate: map pseudo-queries as the null sample; PRDS ⇒ BH |
+
+Searches (alphaXiv, 2 rounds): "database images as pseudo-queries threshold calibration", "label-free FDR place
+recognition", "EVT meta-recognition retrieval", "self-supervised calibration VPR" → no paper uses the map as a
+conformal null sample for VPR acceptance. **Verdict: novel; proceed.**
+
+## Gate 3 (2026-10-28): papers found while reviewing HMM/sequence VPR (see `literature/VISUAL_LOCALIZATION_REVIEW.md` §6)
+
+- **Trinh & Lyons, arXiv 2512.09071 (2025).** Per-place thresholds from "negative" similarity statistics of other
+  places in the database. It overlaps with SelfCal's "use the map's own negatives", but it has no held-out spatial
+  block, no off-map null, no p-values, no guarantee and no appearance-shift analysis, and it only uses tiny
+  multi-condition databases. **Must be cited and contrasted.**
+- **Vysotska et al., ICRA'25 (adaptive thresholding for sequence PR) and Schubert et al., ICRA'21 (Beyond ANN).**
+  Data-driven thresholds that assume most pairs are different places. Heuristic, no guarantee. Cite.
+- **Lu & Tanaka, arXiv 2607.04745 (TAO / Route-MHT, thermal, 2026).** Its map-out benchmark deletes contiguous map
+  segments, which matches our leave-block-out protocol *as an evaluation*. Our novelty is using held-out blocks
+  as the **calibration null**, not as the evaluation protocol. Cite it for the protocol.
+- **Xu et al., RA-L'21.** HMM off-map state, emission = k-th best match, thresholds tuned with labels. Already
+  cited, no calibration.
+
+Verdict: SelfCal's core (held-out map blocks as a conformal null, affine-invariant far-region statistics,
+label-free FAR guarantee under shift) is still not pre-empted. Related-work must add the papers above.
+
+## Gate 4 (2026-10-28): component-by-component overlap check for SelfCal (paper reading only)
+
+New papers checked: TFA (arXiv 2609.25937), LocalScore (2602.01012), VPR Auditing with VLMs (2607.12818),
+KappaPlace (2605.19435, abstract only), Mount et al. RA-L'20 [citation only], and Gates 1–3 again.
+
+| SelfCal component | Closest prior work | Overlap |
+|---|---|---|
+| Map images as pseudo-queries | **TFA'26**: database images as leave-*self*-out pseudo-queries to calibrate the *aggregation head* (retrieval accuracy, hub detection). Hussaini'26: 2 reference traversals to pick map density. Trinh & Lyons'25: negative stats inside the DB. | **Partial (mechanism).** None removes a *spatial block* to create *off-map* nulls, and none uses them to calibrate an *accept/reject* test. Cite TFA explicitly. |
+| Spatially-excluded gap (z_gap) | **MPF'19 quality score** (best vs next best *outside a window* around the best). SeqSLAM's quality ratio. PA ratio. | **Statistic family is known.** Our addition is the far-sd normalisation and conformal calibration on the map null. Do not claim the statistic itself. |
+| Per-query z-norm / EVT spacing | Score normalisation (biometrics Z/T-norm), meta-recognition EVT (Scheirer'11), RS/SD/SU (Miller'25), LocalScore (k-NN gallery density, biometrics). | Known building blocks. Not novel alone. |
+| Map-mean centring (hubness) | Radovanović'10, Jégou & Chum'12, TFA'26 (hub analysis). | Known. |
+| Conformal p-values for outliers, BH | Bates et al.'23 (conformal outlier testing). | Standard theory, cited. |
+| Label-free FAR control under appearance shift | SAFEVPR'26 (labelled), Quantile Transfer'26 (no guarantee), Mount'20 / Trinh'25 / Vysotska'25 (heuristic thresholds), VLM auditing'26 (no threshold, FAR ≈ 0.12–0.30, no guarantee). | **No paper found.** This is the contribution. |
+| HMM / sequence | Xu'21 off-map state, etc. (see literature review) | SelfCal does **not** use an HMM. |
+
+Verdict: no paper duplicates SelfCal as a whole. The novelty is the *combination*: a held-out-block map null + an
+invariant statistic + a label-free conformal guarantee under shift. Every individual building block has precedent,
+so the paper must be written as "a new calibration principle", not "new scores". The open domain-shift validity gap
+(Entry 14) is the main threat to that claim.
+
+## Gate 5 (2026-10-28): final novelty re-check of SelfCal-AA and SelfCal-Gap (paper reading only)
+
+Scope: the final method (Mondrian strata on σ_far, domain gate, Gap mode, T1–T6). Searches: 9 alphaXiv rounds over the
+six areas of `handoff/00_READ_ME_FIRST.md` §3 (Mondrian/conditional conformal on a nuisance variable; intersection–union
+or multi-null conformal under shift; spatially excluded gap / distinctiveness; gallery or map as calibration/null set in
+retrieval, face ID, re-ID, LiDAR PR; label-free FAR control under shift; new versions of the closest VPR papers).
+
+### New papers read (full text or targeted PDF queries)
+
+| Paper | What it does | Relation to SelfCal |
+|---|---|---|
+| **Bhatta, Dhakal, King, Bowyer — *Are you In or Out (of gallery)?* (2025)** https://www.alphaxiv.org/abs/2508.06357 | Face 1:N identification. Builds out-of-gallery training data by **removing the probe identity from the gallery** and re-searching; an MLP on the ranks of the rank-1 identity's other images predicts in/out-of-gallery; tested under blur/turbulence. | **Closest precedent for the *mechanism* "hold part of the gallery out to manufacture non-mated probes".** Differences: identity hold-out (not spatial), trains a classifier per condition, no p-value / FAR guarantee, no shift argument. Must cite; we can no longer say the "remove-and-requery" trick is new in general. |
+| **Heo, Lee, Kwon, Lee — *Using the enrollment gallery as evidence: affine-invariant score calibration for target speaker tagging* (Oct 2026)** https://www.alphaxiv.org/abs/2610.11272 | Uses the *other enrolled speakers* as evidence because they "share the deployment domain and need no external cohort"; shows gallery-as-cohort Z/T-norm fails; proposes two **affine-invariant** terms: competitor-profile dispersion (inter-quantile radius) and enrollment-profile deviance. Threshold still tuned on labelled trials. | **Closest precedent for the *motivation + statistic family*** ("gallery is its own, in-domain evidence"; affine invariance to per-trial offset/scale). z_far ≈ score minus competitor level over competitor spread. Differences: speaker tagging, no spatial exclusion, no held-out null, no conformal p-value, no guarantee. Must cite. |
+| **Khazem — *Identities, Not Pairs: Distribution-Free False-Accept Control for Embedding-Based Verification* (COVE, Oct 2026)** https://www.alphaxiv.org/abs/2610.35277 | Transductive conformal FAR control for 1:1 verification; proves hub identities limit calibration-only thresholds; cohort-normalised (CSLS/S-norm) scores keep the bound. Needs **labelled** calibration identities; validity under identity exchangeability only (shown to break across category splits). | Same goal (distribution-free FAR for frozen embeddings) and same enemy (hubness), but labelled, 1:1, no shift robustness. Cite as the general-retrieval analogue; our dominance/shift argument and label-free null are what it lacks. |
+| **Kim, Choi, Kang, Kim — *QCSA: Calibrated keyframe-segment selection for LiDAR loop closure* (v3, Oct 2026)** https://www.alphaxiv.org/abs/2512.09447 | LiDAR loop-candidate admission; threshold = conformal-style quantile of the *strongest false segment per calibration query*, from **labelled** calibration trajectories; per descriptor and setting. | Uses the same "max over false candidates per query" null construction, but labelled and with no transfer guarantee. Cite. |
+| **SAFEVPR (Sier et al. 2026)** — still v1 https://www.alphaxiv.org/abs/2605.28048 | Mondrian LTT with **bins = quintiles of the verifier score itself**, labelled calibration on other conditions; no gate, no map data, no IUT. | No new version. Our strata differ in kind (nuisance variable σ_far, label-free). |
+| **TFA (Li et al. 2026)** — still v1 https://www.alphaxiv.org/abs/2609.25937 | DB images as leave-self-out pseudo-queries to choose an aggregation head; reports that DB-only evidence can fail to transfer to queries (4Seasons Office Loop 7.9% R@1). | No accept/reject. Its failure case supports our need for a shift argument (T2/T3) rather than trusting DB statistics blindly. |
+| **Trinh & Lyons (2025)** — still v1 https://www.alphaxiv.org/abs/2512.09071 | Per-place thresholds = mean of negative scores against other places; evaluated by R@K only. | Unchanged; no hold-out, no p-values, no FAR. |
+| **Yang & Jin — *Multi-Distribution Robust Conformal Prediction* (ICML'26)** https://www.alphaxiv.org/abs/2601.02998 | **max-p aggregation** of source-wise conformal p-values gives validity uniformly over several (labelled) source distributions. | Standard reference for our max(p_comb, p_zgap) and gate logic (validity under a union of nulls). |
+| **Qian et al. — *Detecting Unseen Jailbreak Sources* (Oct 2026)** https://www.alphaxiv.org/abs/2610.09167 | Union null "stream comes from one of K known sources": reject only if *every* source-wise conformal p-value is small. | Same intersection–union structure as T6; confirms the device is known. |
+| **Manoharan — *C3R: label-free per-domain contamination control* (2026)** https://www.alphaxiv.org/abs/2607.14157 | Mondrian-style risk control on an **inferred** (router-predicted) group, with an explicit transfer slack; abstains when infeasible. | Analogue of Mondrian on a query-computable variable; ours needs no slack because σ_far is computed identically for null and query (T1 holds exactly). |
+| **Wu, Liu, Ren, Zou — *Conformal Novelty Detection via Data-enhanced Localization* (Oct 2026)** https://www.alphaxiv.org/abs/2610.34999 | Localised (kernel-weighted) conformal p-values for *conditional* novelty given a covariate; finite-sample FDR. | General theory for "p-value conditional on a nuisance covariate"; our hard bins are the Mondrian special case. |
+| **Zhou & Wang — *When EER hides deployment failure* (2026)** https://www.alphaxiv.org/abs/2606.21584 | Audit: source-calibrated thresholds fail under domain shift; monotone unlabeled corrections (z-norm, temperature) cannot fix ranking, only the operating point, and are fragile. | Independent evidence for our premise (label-calibrated thresholds break under shift) from speech anti-spoofing. Optional cite. |
+
+### Component-by-component overlap matrix (after Gate 5)
+
+| SelfCal component | Closest prior work (all gates) | Overlap | Claim status |
+|---|---|---|---|
+| Map pseudo-queries (leave-one-300 m-block-out ⇒ off-map *by construction*) | Bhatta'25 (identity hold-out ⇒ out-of-gallery training data), TFA'26 (leave-self-out pseudo-queries), Trinh'25 (DB negatives), Lu & Tanaka'26 (map-out as evaluation), QCSA'26 (max false per query, labelled) | **Partial (mechanism).** Remove-and-requery exists in face ID; nobody uses *spatial* hold-out as a **conformal null** for an accept/reject test, and nobody in VPR/localisation. | Novel *as a calibration principle with guarantee*; not novel as a trick. |
+| z_far / z_gap, affine-invariant, far-region (spatially excluded) | Heo'26 (affine-invariant gallery dispersion/deviance), biometrics Z/T/AS-norm, MPF'19 quality score, SeqSLAM ratio, PA ratio, Lowe, RS/SD/SU (Miller'26), LocalScore | **Statistic family known.** Our specific form (cell maxima, ρ-exclusion, σ_far scaling) is new in detail only. | Do not claim the statistics; claim *why they transfer* (affine distortion + dominance). |
+| Map centring (hubness) | Radovanović'10, Suzuki'13, Jégou & Chum'12, CSLS, TFA'26, COVE'26 | Known. | Engineering choice. |
+| Self-calibrated min-p (re-ranked) | Bates'23 / conformal p-value combination; MDCP'26 | Known construction. | T4 is a standard corollary. |
+| Aliasing guard max(p_comb, p_zgap) | Berger'82 IUT; MDCP'26 max-p; Qian'26 union null | **Device known.** | Claim only the *use* (aliasing in VPR) and its empirical effect. |
+| Mondrian strata on σ_far | Vovk'03/'05 Mondrian; SAFEVPR'26 (bins on the score, labelled); C3R'26 (inferred groups); localized conformal (Guan'23, Hore & Barber'24, Wu'26) | **Device known.** σ_far as the stratifier (label-free, from the query's own far regions) is new but a design choice. | Present as instantiation; do not list as a contribution on its own. |
+| Domain gate p_maxsim ≤ 0.8 (IUT, T6) | Berger'82; MDCP'26; Qian'26 | Device known; **no VPR paper guards label-free scores against foreign-domain inflation.** | Keep as a component; T6 is a one-line corollary — present as such. |
+| SelfCal-Gap (p_zgap alone, same strata/gate) | MPF'19 / PA ratio as statistics; no calibrated version | Statistic known; calibrated-on-map version not found. | Report as an operating point, flag post-hoc selection. |
+| T1, T4, T5 | Vovk'05, Bates'23 | Standard. | Cite, do not claim. |
+| T2 (dominance ⇒ conservative), T3 (one-sided Kolmogorov excess) | Barber'23 (TV coverage gap), robust conformal | Generic form known; **the VPR-specific dominance hypothesis and its verification (exp6, 192 conditions) are new.** | Claim as "auditable sufficient condition", not as new theory. |
+| T6 (FAR ≤ min(α+Δ⁺, ε_c)) | IUT | Trivial bound; novelty is the *two-assumption* framing for appearance vs domain shift. | Keep, short. |
+| Protocol: LOBO off-map, foreign-domain off-map, 4 datasets × 6 descriptors, 192 conditions | SAFEVPR (23 setups, 3 backbones), Route-MHT (map-out), Quantile Transfer | Broader than any VPR acceptance paper found. | Strength, not novelty. |
+
+### Verdict
+
+1. **Still not pre-empted as a whole.** No paper (VPR, LiDAR, face/speaker/re-ID, retrieval, conformal) combines
+   (a) a null sample manufactured from the map/gallery by structural hold-out, (b) conformal p-values with a
+   label-free FAR guarantee, and (c) an argument (dominance + gate) for validity under appearance *and* domain shift.
+   SelfCal-AA and SelfCal-Gap remain novel in that sense.
+2. **New partial overlaps that change the framing** (must be cited and contrasted in Related Work):
+   Bhatta'25 (gallery hold-out to simulate out-of-gallery probes), Heo'26 (gallery as in-domain evidence with
+   affine-invariant terms), COVE'26 (distribution-free FAR control for embeddings, hubness). Our slogan
+   "the map is its own calibration set" has a close cousin in Heo'26 ("enrollment gallery as evidence"); the
+   difference is the held-out null + guarantee, so the slogan must be tied to *calibration with a guarantee*.
+3. **Components that are not novel and must not be listed as contributions:** Mondrian strata, max-p / IUT
+   aliasing guard and domain gate, min-p recalibration, centring, the z-type statistics. They are instantiations of
+   standard devices; the contribution is choosing label-free, map-computable versions and showing they make the
+   map null valid across 192 conditions.
+4. **Reframed claim (use in abstract/intro):** "In VPR the map's geometry labels off-map queries for free:
+   spatial hold-out turns the map into a conformal null sample. With scale-free far-region statistics this null
+   *dominates* off-map queries under appearance change, giving the first label-free acceptance test with a
+   false-accept guarantee that we verify across 192 conditions; a raw-similarity gate extends validity to foreign
+   domains." Avoid "first to use the database for calibration" and "new uncertainty scores".
+5. **A/A\* potential.** RA-L / ICRA / IROS (A): yes, novelty is adequate and the evaluation is broad. T-RO / IJRR or
+   CVPR (A\*): novelty alone is not enough because each building block is known and close cousins now exist in
+   biometrics. Levers: (i) independent validation of the post-hoc choices (γ = 0.8, B = 10, Gap) on unseen datasets;
+   (ii) MSLS power; (iii) a short generality experiment showing the same principle on an open-set retrieval task with
+   metadata (e.g. landmark retrieval or re-ID with identity hold-out) against COVE/Bhatta-style baselines — this would
+   turn the overlap with biometrics into evidence of generality; (iv) a testable diagnostic for the dominance
+   assumption at deployment time without labels.
+
+## Gate 7 — CPC-HMM (2026-10-29): is the presence-chain fix for HMM localization novel?
+
+CPC-HMM = (i) place chain with affine-invariant emission (s − s_max)/(τ·σ_far), no off-map state; (ii) a separate 2-state
+presence chain p_in = p_out = p fed by a belief-independent e-value LR_t = ½(e_top + e_R^(1/H)) built from map-calibrated
+SelfCal p-values (Beta(a,1) mixture fitted by EM per traversal); (iii) gate: e_top only counts when top-1 agrees with the
+place MAP; (iv) the odds recursion is dominated by a Shiryaev–Roberts statistic ⇒ ARL₀ ≥ (1−p)/p − R₀ for e-values.
+
+| Component | Closest prior work | Overlap |
+|---|---|---|
+| HMM over map images + odometry for VPR | Hansen & Browning IROS'14; Doan et al. ICCV'19, HM4 RA-L'20; Hausler MPF'19 | Full: standard. Not a contribution. |
+| Off-map / new-place state in the HMM | Xu et al. RA-L'21 (arXiv 2107.07707): off-map state, emission from k-th best match | Same goal. Our diagnosis is that its evidence is shift-invariant (posterior unchanged by s → s + c·1) and its E₀ is condition-dependent. That diagnosis is new. |
+| Separate existence (presence) Markov chain beside the state estimate | IPDA / JIPDA (Mušicki'94), Bernoulli filters (Ristic): target-existence probability | Strong structural cousin. A factorized existence chain is not new in tracking. New is feeding it with map-calibrated e-values, and its use for map-relative VPR localization. Must be cited. |
+| e-values → CUSUM / Shiryaev–Roberts with ARL₀ bound | Shin, Ramdas & Rinaldo, "E-detectors" (NEJSDS'23/24) | The ARL₀ ≥ threshold argument is theirs. Our step is only that the HMM presence recursion with symmetric switching p is dominated by an SR e-detector with threshold (1−p)/p. Present it as an application, not a theorem of ours. |
+| p-value → e-value via a Beta(a,1) alternative fitted by EM | BUM model (Pounds & Morris'03); p-to-e calibrators (Vovk & Wang'21) | Standard. |
+| e-process monitoring of a vision system | "Detecting Object Tracking Failure via Sequential Hypothesis Testing" (arXiv 2602.12983, 2026): e-process on tracker quality, Ville bound | Same spirit, but for tracking failure with no HMM or localization. Cite as closest "e-process for vision monitoring". |
+| Conformal acceptance for (sequence) VPR | SAFEVPR (arXiv 2605.28048): LTT/FDR with labels | Different: it needs labelled calibration, has no HMM, and is not a sequential detector. |
+| Kidnap / failure detection in MCL | Gutmann & Fox augmented MCL (likelihood history, thresholds) | Heuristic thresholds, no guarantee. |
+
+### Verdict
+
+1. **Not novel as separate parts.** Existence chains (IPDA), e-detectors (SR/CUSUM on e-values), p-to-e calibration and HMM-VPR
+   all exist. None of them may be claimed alone.
+2. **Novel as a combination and as a diagnosis.** No paper found (searched 2026-10-29: HMM-VPR, off-map HMM, e-value/anytime-valid
+   VPR, conformal VPR, kidnap detection) that (a) shows the HMM's off-map decision is invariant to absolute similarity
+   level and hence condition-dependent, and (b) fixes it by an existence chain driven by label-free, map-calibrated e-values
+   with an ARL₀ guarantee, (c) keeps that evidence belief-independent to break lock-in.
+3. **Strength:** RA-L/ICRA level if the experiments hold, i.e. it beats Xu'21 without labels on most datasets. A*-level only with
+   (i) a clear win on the long real-odometry benchmark (Boreas currently FAILS, see RESEARCH_LOG), (ii) the ARL₀ check across
+   datasets, (iii) honest positioning against IPDA and e-detectors. As of now it is best presented as a module of the certified
+   sequential localization work, not as a standalone paper.
