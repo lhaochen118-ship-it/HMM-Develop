@@ -1,12 +1,12 @@
 # 06 — Hướng dẫn khung chat mới: đọc repository và việc tiếp theo
 
 *2026-11-07, branch `hmm-2nd-idea` (repo `lhaochen118-ship-it/hmm-develop`, public).*
-- Không tạo PR. Chỉ commit / push lên `hmm-2nd-idea`.
+- Không tạo PR. Chỉ commit / push lên `main` (từ 2026-11-24 `main` chứa toàn bộ `hmm-2nd-idea`; các nhánh cũ đã thay bằng tag `archive/*`, bảng ở `history/README.md`).
 - Bản trước: `git show cf5abef:history/06_NEXT_CHAT_GUIDE_through_2026-11-06.md`.
 
 ## 1. Bắt đầu nhanh (10 phút)
 
-1. `git fetch origin hmm-2nd-idea && git status`. Nếu local cũ và không có thay đổi riêng: `git reset --hard origin/hmm-2nd-idea`.
+1. `git fetch origin main --tags && git status`. Nếu local cũ và không có thay đổi riêng: `git reset --hard origin/main`.
 2. Cài gói: `pip install kaggle markdown xhtml2pdf scipy matplotlib pypdf torch`.
 3. Xin người dùng token Kaggle. Lưu từng token vào `~/.kaggle/tok_<username>` (chmod 600), cập nhật `automation/active_accounts.txt` (tài khoản L4
    trước). Kiểm: `KAGGLE_API_TOKEN=$(cat ~/.kaggle/tok_X) kaggle kernels list --mine --page-size 1`.

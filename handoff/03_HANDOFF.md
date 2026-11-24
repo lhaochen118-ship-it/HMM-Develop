@@ -47,7 +47,7 @@ với segFAR ≤ α = 0.05 trên từng run, recall cao, sai số điều hướ
   - dùng mọi tài khoản theo thứ tự lấp;
   - một monitor;
   - token chỉ ở `~/.kaggle/tok_*`;
-  - không tạo PR; chỉ push `hmm-2nd-idea`.
+  - không tạo PR; chỉ push `main` (từ 2026-11-24 thay cho `hmm-2nd-idea`).
 
 ## 4. Vị trí
 

@@ -1,7 +1,7 @@
 # 07 — Ý tưởng 1 (branch `hmm-navigation-5`): tóm tắt để đánh bại, không để làm tiếp
 
 *2026-11-03. Đây là bản tóm tắt của toàn bộ hướng nghiên cứu thứ nhất (Entry 18–39 trong `history/RESEARCH_LOG_idea1.md`). Code của nó đã
-được gỡ khỏi branch này; khôi phục khi cần chạy lại làm baseline: `git checkout hmm-navigation-5 -- analysis/<file>.py` (cả các module
+được gỡ khỏi branch này; khôi phục khi cần chạy lại làm baseline: `git checkout archive/idea1-final -- analysis/<file>.py` (tag thay cho branch `hmm-navigation-5` đã xoá) (cả các module
 phụ thuộc: `cms*.py`, `cpc*.py`, `navrisk.py`, `oc_curves.py`, `e37_*.py`). Số liệu thô của baseline: `analysis/results/baselines_idea1/`.*
 
 ## 1. Bài toán và giao thức đánh giá (giữ nguyên cho ý tưởng 2)

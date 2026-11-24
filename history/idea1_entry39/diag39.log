@@ -1,0 +1,56 @@
+4s_countryside: pi 0.605, pi_edge 0.605, a/pi_edge 0.083
+   off_d+ 0: n 720/504/9912 | CSTJS 0.007/0.046/0.002 | CSTJSU 0.007/0.034/0.001 | CSTJSU[both] 0.001/0.020/0.000
+   off_d+ 5: n 696/456/9540 | CSTJS 0.004/0.011/0.002 | CSTJSU 0.004/0.002/0.001 | CSTJSU[both] 0.001/0.000/0.001
+   off_d+10: n 684/432/9174 | CSTJS 0.004/0.005/0.002 | CSTJSU 0.004/0.000/0.001 | CSTJSU[both] 0.001/0.000/0.000
+   off_d+20: n 642/432/8412 | CSTJS 0.003/0.005/0.001 | CSTJSU 0.003/0.002/0.001 | CSTJSU[both] 0.002/0.000/0.000
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJS+G+NGRr: 20/23 = 0.87
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G+NGRr: 16/17 = 0.94
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G[both]+NGRr: 9/10 = 0.90
+4s_office_loop: pi 0.686, pi_edge 0.684, a/pi_edge 0.073
+   off_d+ 0: n 84/636/10278 | CSTJS 0.119/0.042/0.004 | CSTJSU 0.119/0.039/0.003 | CSTJSU[both] 0.119/0.008/0.000
+   off_d+ 5: n 72/576/9876 | CSTJS 0.000/0.016/0.003 | CSTJSU 0.000/0.012/0.002 | CSTJSU[both] 0.000/0.000/0.000
+   off_d+10: n 72/576/9402 | CSTJS 0.000/0.014/0.003 | CSTJSU 0.000/0.007/0.002 | CSTJSU[both] 0.000/0.000/0.000
+   off_d+20: n 48/576/8520 | CSTJS 0.000/0.010/0.003 | CSTJSU 0.000/0.003/0.003 | CSTJSU[both] 0.000/0.000/0.000
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJS+G+NGRr: 22/27 = 0.81
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G+NGRr: 20/25 = 0.80
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G[both]+NGRr: 5/5 = 1.00
+4s_old_town: pi 0.549, pi_edge 0.552, a/pi_edge 0.091
+   off_d+ 0: n 1644/432/8118 | CSTJS 0.014/0.109/0.006 | CSTJSU 0.012/0.106/0.006 | CSTJSU[both] 0.003/0.067/0.001
+   off_d+ 5: n 1584/432/7842 | CSTJS 0.008/0.035/0.005 | CSTJSU 0.006/0.028/0.005 | CSTJSU[both] 0.001/0.016/0.001
+   off_d+10: n 1572/432/7488 | CSTJS 0.007/0.021/0.005 | CSTJSU 0.006/0.021/0.005 | CSTJSU[both] 0.001/0.012/0.000
+   off_d+20: n 1440/414/6924 | CSTJS 0.006/0.014/0.005 | CSTJSU 0.005/0.012/0.005 | CSTJSU[both] 0.001/0.000/0.001
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJS+G+NGRr: 43/47 = 0.91
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G+NGRr: 42/46 = 0.91
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G[both]+NGRr: 28/29 = 0.97
+boreas: pi 0.645, pi_edge 0.649, a/pi_edge 0.077
+   off_d+ 0: n 3234/3114/70122 | CSTJS 0.034/0.084/0.008 | CSTJSU 0.031/0.076/0.007 | CSTJSU[both] 0.026/0.070/0.005
+   off_d+ 5: n 3072/3048/67590 | CSTJS 0.020/0.030/0.007 | CSTJSU 0.020/0.024/0.007 | CSTJSU[both] 0.017/0.020/0.005
+   off_d+10: n 2784/3048/65298 | CSTJS 0.016/0.016/0.007 | CSTJSU 0.015/0.013/0.007 | CSTJSU[both] 0.012/0.010/0.005
+   off_d+20: n 2292/2604/61278 | CSTJS 0.010/0.005/0.008 | CSTJSU 0.009/0.005/0.007 | CSTJSU[both] 0.007/0.003/0.005
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJS+G+NGRr: 249/263 = 0.95
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G+NGRr: 228/236 = 0.97
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G[both]+NGRr: 211/218 = 0.97
+cmu: pi 0.685, pi_edge 0.700, a/pi_edge 0.071
+   off_d+ 0: n 17742/0/0 | CSTJS 0.016/-/- | CSTJSU 0.012/-/- | CSTJSU[both] 0.009/-/-
+   off_d+ 5: n 16950/0/0 | CSTJS 0.011/-/- | CSTJSU 0.008/-/- | CSTJSU[both] 0.006/-/-
+   off_d+10: n 16386/0/0 | CSTJS 0.008/-/- | CSTJSU 0.006/-/- | CSTJSU[both] 0.004/-/-
+   off_d+20: n 15072/0/0 | CSTJS 0.005/-/- | CSTJSU 0.004/-/- | CSTJSU[both] 0.002/-/-
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJS+G+NGRr: 0/0 = 0.00
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G+NGRr: 0/0 = 0.00
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G[both]+NGRr: 0/0 = 0.00
+nclt: pi 0.595, pi_edge 0.595, a/pi_edge 0.084
+   off_d+ 0: n 558/156/1122 | CSTJS 0.005/0.006/0.001 | CSTJSU 0.005/0.006/0.001 | CSTJSU[both] 0.004/0.000/0.000
+   off_d+ 5: n 540/144/972 | CSTJS 0.006/0.000/0.002 | CSTJSU 0.006/0.000/0.002 | CSTJSU[both] 0.004/0.000/0.000
+   off_d+10: n 498/126/858 | CSTJS 0.006/0.000/0.001 | CSTJSU 0.006/0.000/0.001 | CSTJSU[both] 0.004/0.000/0.000
+   off_d+20: n 450/72/696 | CSTJS 0.007/0.000/0.001 | CSTJSU 0.007/0.000/0.001 | CSTJSU[both] 0.004/0.000/0.000
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJS+G+NGRr: 1/1 = 1.00
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G+NGRr: 1/1 = 1.00
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G[both]+NGRr: 0/0 = 0.00
+nord: pi 0.650, pi_edge 0.651, a/pi_edge 0.077
+   off_d+ 0: n 420/576/15294 | CSTJS 0.000/0.026/0.000 | CSTJSU 0.000/0.024/0.000 | CSTJSU[both] 0.000/0.017/0.000
+   off_d+ 1: n 420/576/14682 | CSTJS 0.000/0.009/0.000 | CSTJSU 0.000/0.009/0.000 | CSTJSU[both] 0.000/0.002/0.000
+   off_d+ 2: n 420/576/14682 | CSTJS 0.000/0.009/0.000 | CSTJSU 0.000/0.009/0.000 | CSTJSU[both] 0.000/0.002/0.000
+   off_d+ 5: n 420/576/14682 | CSTJS 0.000/0.007/0.000 | CSTJSU 0.000/0.007/0.000 | CSTJSU[both] 0.000/0.002/0.000
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJS+G+NGRr: 9/15 = 0.60
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G+NGRr: 8/14 = 0.57
+   edge reports with fix error < off_d + margin, CMS-CPC/H+CSTJSU+G[both]+NGRr: 8/10 = 0.80
