@@ -10,6 +10,7 @@ def load(ds, desc):
     if ds == "rc": return [data.load_robotcar(desc)]
     if ds == "cmu": return data.load_cmu(desc)
     if ds.startswith("nordseg"): return [data.load_nordseg(desc, stride=int(ds[7:] or 1))]
+    if ds == "4s": return [data.load_4s_stopgo(desc)]
     raise ValueError(ds)
 
 

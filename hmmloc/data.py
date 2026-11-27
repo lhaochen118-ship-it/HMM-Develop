@@ -216,3 +216,32 @@ def true_speed(ep: Episode):
         sp[1:] = 1.0
     sp[ep.reset_mask()] = np.nan
     return sp
+
+
+def load_4s_stopgo(desc, dist=5.0, ang=30.0, calib_every=3):
+    """4Seasons, one scene (kernel k02): map = first traversal sampled every >=1 m; queries = the other traversals
+    sampled every 0.5 s in TIME (real stops kept). Each query traversal is one sequence (cut at gaps > 2 s)."""
+    d = os.path.join(FB, "hmm-k02-4s-stopgo", "dump")
+    metas = sorted(glob.glob(os.path.join(d, "meta", "*.npz")))
+    mp = [m for m in metas if "_map_" in os.path.basename(m)][0]
+    zm = np.load(mp); tag = os.path.basename(mp)[:-4]
+    R = np.load(os.path.join(d, desc, tag + ".npy")); C = zm["C"]; Rr = zm["R"]
+    steps = np.linalg.norm(np.diff(C, axis=0), axis=1); s = np.concatenate([[0], np.cumsum(np.minimum(steps, 30.0))])
+    Qs, seq, cond, qC, qR, qt = [], [], [], [], [], []; calib = set(); sid = 0
+    for k, m in enumerate([m for m in metas if "_q_" in os.path.basename(m)]):
+        z = np.load(m); t = os.path.basename(m)[:-4]
+        Q = np.load(os.path.join(d, desc, t + ".npy")); ts = z["ns"] / 1e9
+        sq = np.zeros(len(Q), int); cur = sid
+        for i in range(1, len(Q)):
+            if ts[i] - ts[i - 1] > 2.0: cur += 1
+            sq[i] = cur
+        sq[0] = sid
+        for q in np.unique(sq):
+            if k % calib_every == 0: calib.add(q)
+        sid = sq.max() + 1
+        Qs.append(Q); seq.append(sq); cond += [str(z["rec"])] * len(Q); qC.append(z["C"]); qR.append(z["R"]); qt.append(ts)
+    Q = np.concatenate(Qs); qC = np.concatenate(qC); qR = np.concatenate(qR)
+    pos, _, _ = _pose_pos(qC, qR, C, Rr, dist, ang)
+    near = _near_from_C(C, Rr, dist, ang)
+    return Episode(f"4s/{desc}", R, s, Q, np.concatenate(seq), np.array(cond), pos, near, calib, unit="m", C=C, Rrot=Rr,
+                   qC=qC, qR=qR, qt=np.concatenate(qt))

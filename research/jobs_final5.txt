@@ -1,0 +1,4 @@
+hmmloc.exp.e07_motionev nord-tw salad 3
+hmmloc.exp.e07_motionev nord-tw netvlad 3
+hmmloc.exp.e07_motionev nord-tw cosplace 2
+hmmloc.exp.e07_motionev nord-tw megaloc 2

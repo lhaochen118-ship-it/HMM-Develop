@@ -79,3 +79,21 @@ AUROC of off-map detection: single-image SUE 0.880, single-frame LLR null 0.643,
 (FPR@95TPR 0.029), HMM + calibrated-LLR null 0.979 (FPR 0.055). Temporal filtering is what makes off-map
 detection work (+0.10 AUROC over SUE); the calibrated LLR null (M1) did NOT beat the tuned quantile null
 (H7 not supported on this test).
+
+## F13 [S] Dose-response on REAL video-rate Nordland (k01; strides 1/2/5 of the 1-fps stream) — H5 [S+], H20 [S+ at high rate]
+| stride | descriptor | β* (dev) | R@1 β=1 | R@1 fixed β* | R@1 IA | NLL fixed β* → IA (paired CI of ΔNLL) |
+|---|---|---|---|---|---|---|
+| 1 | NetVLAD | 0.1 | 0.683 | 0.972 | 0.976 | 0.130 → 0.108 ([−0.045, −0.001]) |
+| 2 | NetVLAD | 0.35 | 0.738 | 0.932 | **0.971** (ΔR@1 CI [+0.011,+0.073]) | 0.311 → 0.124 ([−0.451, −0.030]) |
+| 5 | NetVLAD | 0.35 | 0.830 | 0.947 | 0.948 | 0.212 → 0.258 (n.s.) |
+| 1 | SALAD | 0.1 | 0.879 | 0.982 | 0.986 | 0.064 → 0.042 ([−0.057, +0.001]) |
+| 2 | SALAD | 0.2 | 0.902 | 0.988 | 0.987 | 0.056 → 0.044 ([−0.025, +0.001]) |
+| 5 | SALAD | 0.35 | 0.938 | 0.984 | 0.987 | 0.064 → 0.062 (n.s.) |
+The cost of ignoring dependence (β=1) grows monotonically with frame rate; the information-aware weight helps only
+where consecutive frames are redundant (high rate, tunnels/stations) and reduces to fixed β at low rate — exactly
+predictions P2/P3 of THEORY.md T1. Stride-5/2 runs are the A23-fixed reruns (queue 4).
+
+## F14 [S] Place-level gains transfer to coarse 6DoF; fine pose needs geometry (E30-lite)
+(5 m,10°) with top-1 reference pose: CMU NetVLAD 0.690 → 0.808 (HMM), SALAD 0.934 → 0.946; RobotCar NetVLAD
+0.643 → 0.699 (all test frames). Posterior-weighted position interpolation adds ≤ +0.04 at (0.5 m,5°)
+(CMU SALAD 0.214 → 0.254) — fine-pose gains require M5 (local features + PnP).
