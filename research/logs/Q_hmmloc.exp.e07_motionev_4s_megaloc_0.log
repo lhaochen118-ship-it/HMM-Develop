@@ -1,0 +1,14 @@
+Traceback (most recent call last):
+  File "<frozen runpy>", line 203, in _run_module_as_main
+  File "<frozen runpy>", line 88, in _run_code
+  File "/home/user/HMM-Develop/hmmloc/exp/e07_motionev.py", line 15, in <module>
+    eps = load(DS, DESC)
+  File "/home/user/HMM-Develop/hmmloc/exp/bench.py", line 13, in load
+    if ds == "4s": return [data.load_4s_stopgo(desc)]
+                           ~~~~~~~~~~~~~~~~~~~^^^^^^
+  File "/home/user/HMM-Develop/hmmloc/data.py", line 228, in load_4s_stopgo
+    R = np.load(os.path.join(d, desc, tag + ".npy")); C = zm["C"]; Rr = zm["R"]
+  File "/usr/local/lib/python3.13/site-packages/numpy/lib/_npyio_impl.py", line 454, in load
+    fid = stack.enter_context(open(os.fspath(file), "rb"))
+                              ~~~~^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '/tmp/claude-0/-home-user-HMM-Develop/865660f3-ecf6-5c6c-b462-db1884ef1e8f/scratchpad/fb/hmm-k02-4s-stopgo/dump/megaloc/4s_office_loop_map_2020-03-24_17-36-22.npy'

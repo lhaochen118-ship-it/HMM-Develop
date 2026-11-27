@@ -87,5 +87,10 @@ class Bench:
         return s, {"corr": c, "nll": nl, "conf": cf, "blocks": blocks}
 
     def kernel_grid(self):
-        if self.unit == "frame": return [(1.0, s) for s in (0.5, 1.0, 2.0)]
-        return [(m, s) for m in (1.0, 1.5, 2.5) for s in (1.5, 3.0)]
+        """Fixed-kernel (mean, std) grid. v2 (A25): base grid UNION a data-driven grid from the calibration GT speed
+        (median ×{0.75,1,1.25}, std ×{0.25,0.5,1}) so the fixed baseline is as well-informed as the latent-velocity bins."""
+        base = [(1.0, s) for s in (0.5, 1.0, 2.0)] if self.unit == "frame" else [(m, s) for m in (1.0, 1.5, 2.5) for s in (1.5, 3.0)]
+        sp = np.concatenate([data.true_speed(ep)[r] for ep, r in self.split["calib"]]); sp = sp[np.isfinite(sp)]
+        med = float(np.median(sp)) if len(sp) else 1.0
+        dd = [(round(med * a, 3), round(max(med * b, 0.3), 3)) for a in (0.75, 1.0, 1.25) for b in (0.25, 0.5, 1.0)]
+        return sorted(set(base + dd))

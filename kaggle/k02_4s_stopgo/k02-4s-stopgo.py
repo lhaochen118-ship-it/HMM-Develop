@@ -295,5 +295,5 @@ def extract_multi(paths, tag):
 for tag, paths in PARTS:
     o = extract_multi(paths, tag)
     for d, a in o.items(): np.save(os.path.join(CONFIG.OUT_DIR, d, tag + ".npy"), a)
-json.dump(REPORT, open(os.path.join(CONFIG.OUT_DIR, f"report_part{PART}.json"), "w"), indent=1, default=str)
+json.dump(REPORT, open(os.path.join(CONFIG.OUT_DIR, "report_k02.json"), "w"), indent=1, default=str)
 print("DUMP_DONE", {k: v["status"] for k, v in REPORT.items() if v["status"] != "ok"}, flush=True)
