@@ -97,3 +97,10 @@ predictions P2/P3 of THEORY.md T1. Stride-5/2 runs are the A23-fixed reruns (que
 (5 m,10°) with top-1 reference pose: CMU NetVLAD 0.690 → 0.808 (HMM), SALAD 0.934 → 0.946; RobotCar NetVLAD
 0.643 → 0.699 (all test frames). Posterior-weighted position interpolation adds ≤ +0.04 at (0.5 m,5°)
 (CMU SALAD 0.214 → 0.254) — fine-pose gains require M5 (local features + PnP).
+
+## F15 [S] Final fair-protocol summary (A25 grid; 33 E18 cells incl. seeds, video-rate and real 4Seasons)
+IA-HMM (dev-selected) ≥ single image in 33/33 cells; vs tuned SeqSLAM 27 W / 5 T (±0.5 pt) / 1 L (CMU MegaLoc −0.6);
+vs fixed-kernel HMM under the same protocol 18 W / 13 T / 2 L. Real variable-speed data (4Seasons, kernels k02/k03):
+office_loop NetVLAD 0.512 → 0.836 (SeqSLAM 0.702, fixed HMM 0.792), CosPlace 0.814 → 0.924 (fixed 0.853, CI vs fixed
+[+0.023,+0.117]), SALAD 0.932 → 0.980; countryside SALAD 0.659 → 0.851, MegaLoc 0.724 → 0.888 (fixed 0.824, CI
+[+0.034,+0.082]). Earlier 4Seasons fixed-kernel numbers (0.582 NetVLAD) were handicapped by the grid (A25) and are superseded.

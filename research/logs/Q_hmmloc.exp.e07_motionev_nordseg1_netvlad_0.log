@@ -2,6 +2,8 @@ velocity bins from calibration quantiles: [0.0, 1.0]
 [nordseg1/netvlad] motion emission {'vels': [0.0, 1.0], 'mu': [-0.971, -1.256], 'sig': [1.736, 1.736], 'counts': [0, 4990]}
   single         R@1 0.3785 NLL 2.7543 ECE 0.044 CW 0.0159
   seqslam        R@1 0.7533 NLL 4.8942 ECE 0.743 CW 0.0000
+/home/user/HMM-Develop/hmmloc/hmm.py:45: RuntimeWarning: invalid value encountered in divide
+  w = w / w.sum()
   sel fixed (np.float64(0.20326311904087166), (1.0, 0.5), 0.2)
   hmm_fixed      R@1 0.9358 NLL 0.2460 ECE 0.019 CW 0.0094
   sel LV (np.float64(2.2495037195634517), 1.0, 0.2, 0.98)
@@ -12,4 +14,4 @@ velocity bins from calibration quantiles: [0.0, 1.0]
   LV+ME+IA       R@1 0.7897 NLL 1.6982 ECE 0.134 CW 0.1110
   OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.20326311904087166), 'LV': np.float64(2.2495037195634517), 'LV+ME': np.float64(2.1370289503996442), 'LV+ME+IA': np.float64(1.7083820609566567)})
 {'single': (0.3785, [-0.6629, -0.4611]), 'seqslam': (0.7533, [-0.267, -0.1029]), 'hmm_fixed': (0.9358, [0.0, 0.0]), 'LV': (0.7148, [-0.3363, -0.1202]), 'LV+ME': (0.7317, [-0.3213, -0.1]), 'LV+ME+IA': (0.7897, [-0.2711, -0.0367]), 'OURS_devselected': (0.9358, [0.0, 0.0])}
-RUN 20261127-058_E18_nordseg1_netvlad_s0 526s
+RUN 20261127-116_E18_nordseg1_netvlad_s0 559s

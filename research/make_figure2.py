@@ -23,8 +23,8 @@ for ax, (ds, d, seeds, title) in zip(axes, panels):
         if not vals: continue
         ax.scatter(vals, [y[i]] * len(vals), s=14, color=C2, zorder=3)
         ax.scatter([np.mean(vals)], [y[i]], s=46, color=C1, zorder=4)
-        ax.text(np.mean(vals) + 0.015, y[i], f"{np.mean(vals):.2f}", va="center", fontsize=8, color=INK)
-    ax.set_yticks(y); ax.set_yticklabels([n for _, n in M]); ax.set_xlim(0.3, 1.02)
+        ax.text(np.mean(vals), y[i] + 0.3, f"{np.mean(vals):.2f}", ha="center", va="bottom", fontsize=8, color=INK)
+    ax.set_yticks(y); ax.set_yticklabels([n for _, n in M]); ax.set_xlim(0.3, 1.02); ax.set_ylim(-0.5, len(M) - 0.2)
     ax.set_title(title, fontsize=9.5, loc="left", color=INK); ax.grid(axis="x", color=GRID, lw=0.8, zorder=0)
     for s in ("top", "right", "left"): ax.spines[s].set_visible(False)
     ax.tick_params(length=0, colors=INK2); ax.set_xlabel("Recall@1 (test)", color=INK2)

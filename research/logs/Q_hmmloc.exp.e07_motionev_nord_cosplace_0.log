@@ -6,3 +6,10 @@ velocity bins from calibration quantiles: [0.0, 1.0]
   hmm_fixed      R@1 0.9893 NLL 0.0412 ECE 0.004 CW 0.0000
   sel LV (np.float64(0.5110631837032135), 0.3, 0.2, 0.98)
   LV             R@1 0.9691 NLL 0.1598 ECE 0.022 CW 0.0098
+  sel LV+ME (np.float64(0.2625029363904835), 0.3, 0.2, 1.0, 0.98)
+  LV+ME          R@1 0.9705 NLL 0.1291 ECE 0.005 CW 0.0094
+  sel LV+ME+IA (np.float64(0.16401085029794513), 0.35, np.float64(0.39299142360687256))
+  LV+ME+IA       R@1 0.9821 NLL 0.0645 ECE 0.011 CW 0.0007
+  OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(0.2287814408150246), 'LV': np.float64(0.5110631837032135), 'LV+ME': np.float64(0.2625029363904835), 'LV+ME+IA': np.float64(0.16401085029794513)})
+{'single': (0.6519, [-0.4261, -0.2538]), 'seqslam': (0.9662, [-0.0365, -0.012]), 'hmm_fixed': (0.9893, [0.0, 0.0]), 'LV': (0.9691, [-0.0398, -0.0052]), 'LV+ME': (0.9705, [-0.0391, -0.0038]), 'LV+ME+IA': (0.9821, [-0.0152, -0.001]), 'OURS_devselected': (0.9821, [-0.0152, -0.001])}
+RUN 20261127-112_E18_nord_cosplace_s0 521s

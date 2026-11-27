@@ -1,0 +1,4 @@
+hmmloc.exp.e07_motionev 4s2 netvlad 0
+hmmloc.exp.e07_motionev 4s2 cosplace 0
+hmmloc.exp.e07_motionev 4s2 salad 0
+hmmloc.exp.e07_motionev 4s2 megaloc 0

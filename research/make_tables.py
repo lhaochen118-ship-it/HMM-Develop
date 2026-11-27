@@ -15,7 +15,7 @@ for metric in ("R@1", "NLL"):
     out.append(f"\n### {metric} (test sequences; ↑ better for R@1, ↓ for NLL)\n")
     hdr = "| Dataset | Descriptor | " + " | ".join(NAMES[m] for m in METHODS) + " | run |"
     out += [hdr, "|" + "---|" * (len(METHODS) + 3)]
-    for ds, seed in [("nord", 0), ("nord-tw", 1), ("nord-tw", 2), ("nord-tw", 3), ("nordseg1", 0), ("nordseg1-tw", 1), ("cmu", 0), ("rc", 0), ("4s", 0)]:
+    for ds, seed in [("nord", 0), ("nord-tw", 1), ("nord-tw", 2), ("nord-tw", 3), ("nordseg1", 0), ("nordseg1-tw", 1), ("cmu", 0), ("rc", 0), ("4s", 0), ("4s2", 0)]:
         for desc in ("netvlad", "cosplace", "salad", "megaloc"):
             r = latest("E18", ds, desc, seed)
             if r is None: continue
@@ -23,6 +23,7 @@ for metric in ("R@1", "NLL"):
             cells = []
             for k in METHODS:
                 if k not in m: cells.append("–"); continue
+                if k == "ORACLE_motion" and ds.startswith("nordseg"): cells.append("invalid (A24)"); continue
                 v = m[k][metric]; cells.append(f"{v:.3f}" + (f" ({m[k].get('picked')})" if k == "OURS_devselected" and metric == "R@1" else ""))
             out.append(f"| {ds}{'' if seed in (0, None) else ' s'+str(seed)} | {desc} | " + " | ".join(cells) + f" | {r['run_id']} |")
 print("\n".join(out))
