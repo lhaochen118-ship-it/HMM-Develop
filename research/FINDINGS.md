@@ -113,3 +113,11 @@ persistent regime, so a memoryless broad kernel is the better HMM transition; pe
 NLL monotonically (1.06→1.51). Refuted alternatives: metric-vs-arc-length speed units (A26: negligible change), node-density
 bias of the kernel (cell-length correction: 1.265→1.260 NLL), velocity prior (calibration histogram: 0.733→0.735).
 Runs: E18_cmu-q3_*, E18_cmu-q6_*, plus inline diagnostics recorded in this entry.
+
+## F17 [S] Real standstills: 4Seasons old_town (k04; 3 cross-season query traversals incl. one at night; 5–10% stopped frames)
+R@1 single → SeqSLAM → fixed-kernel HMM → LV+ME (change emission) [paired CI vs fixed]:
+NetVLAD 0.413 → 0.422 → 0.516 → **0.552** [+0.006,+0.071]; CosPlace 0.536 → 0.544 → 0.594 → 0.611 [−0.004,+0.040];
+SALAD 0.832 → 0.840 → 0.869 → **0.900** [+0.003,+0.066]; MegaLoc 0.795 → 0.815 → 0.839 → **0.872** [+0.009,+0.055]
+(LV+ME+IA 0.879 [+0.020,+0.060]). This is the strongest real-data evidence that making the velocity state observable
+through appearance change (ME) improves an HMM beyond a fair fixed kernel. Caveat: dev-selection picked the fixed kernel
+for NetVLAD (calibration traversal differs from test traversals; only 1 calibration traversal per route).

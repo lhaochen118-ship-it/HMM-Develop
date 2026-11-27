@@ -1,4 +1,4 @@
-# STATE (update at every session end) — last update 2026-11-27 ~20:20 UTC
+# STATE (update at every session end) — last update 2026-11-27 ~21:00 UTC
 
 **Branch:** `claude/nice-fermi-l7bzd6` · **Phase:** 6–7 (33-cell fair-protocol evaluation incl. 2 real 4Seasons routes done at [S]; report/handoff PDFs in research/reports/)
 **Gates:** G0 ✅ · G1 ✅ · G2 ✅ ([S], H1 on 3 datasets) · G3 parked (CCBF) · G4 ✅ ([S]: dependence/overconfidence and

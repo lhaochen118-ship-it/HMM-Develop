@@ -8,7 +8,7 @@
   dataset) · G5 một phần · G3 parked · G6 cần người dùng duyệt.
 - Phương pháp: IA-HMM = HMM (node, vận tốc) + emission thị giác tempered + emission vận tốc từ thay đổi descriptor +
   trọng số bằng chứng AR(1) + chọn mô hình bằng NLL calibration.
-- Kết quả: ≥ ảnh đơn 33/33 ô; vs SeqSLAM 27/5/1; vs HMM kernel cố định 18/13/2; thật 4Seasons 2 tuyến.
+- Kết quả (bảng chính 31 ô, sinh từ registry): ≥ ảnh đơn 31/31; vs SeqSLAM 25/5/1; vs HMM kernel cố định 14/14/3; 3 tuyến 4Seasons thật (old_town có dừng xe thật + đêm: emission vận tốc thắng kernel cố định, CI không chứa 0 cho 3/4 descriptor).
 
 ## Dữ liệu / kernel (owner nhatlong1103)
 `dive-vpr-nb15a..d-dump`, `hmm-k01-nordseg`, `hmm-k02-4s-stopgo`, `hmm-k03-4s-scene2` → tải bằng
@@ -19,7 +19,7 @@
    so HLoc retrieval-top-k; ngưỡng (0.25 m,2°)/(0.5 m,5°).
 2. **Baseline learned-sequence** (JIST/SeqVLAD): cần trọng số (không có trên Kaggle) — blocker, cần người dùng cho phép
    tải từ GitHub release trong kernel có internet.
-3. **Tổng quát hóa**: thêm 4Seasons old_town (4 traversal, có sẵn), MSLS sequences; Holm correction cho họ H1/H17/H20/H22;
+3. **Tổng quát hóa**: MSLS sequences, Oxford RobotCar full (chuỗi dài, dừng thật); Holm correction cho họ H1/H17/H20/H22;
    HSMM dwell cho dừng xe thật; sparse candidate cho LV ở bản đồ ≥30k (runtime 22 ms/frame hiện tại).
 
 ## Câu hỏi cần người dùng quyết định
