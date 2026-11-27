@@ -15,7 +15,8 @@ Evidence for each status change must cite run IDs from `registry/runs.jsonl`.
 | H9 | Distinctiveness (hubness) correction reduces lock-in ≥30% | | <10% | [H] | |
 | H10 | Oracle-emission swap reduces error more than oracle-transition swap | ≥3/4 datasets | reverse | [H] | |
 | H13 | Held-out dataset keeps ≥50% in-domain gain | | | [H] | |
-| H14 | Filter update ≤10 ms/frame at M≈30k | | >50 ms | [H] | |
+| H14 | Filter update ≤10 ms/frame at M≈30k | | >50 ms | [S+] K=1 (0.8 ms), [~] K=6 (22.5 ms) | E23 runtime |
+| H11 | HMM-guided geometry +≥5 pt at tight thresholds (night) or same accuracy with ≤50% matching | | <2 pt | partial | F19: NetVLAD all +2.1 (0.5 m) / +4.0 (5 m) CI>0; night +3.3/+6.1 n.s.; SALAD 0 |
 | H17 | (p,v) / latent-velocity recovers ≥70% of oracle gain under time-warp | | <40% | [S+]/partial | full IA-HMM: NetVLAD 84% (s1), CosPlace 81%, SALAD 61%, MegaLoc 70% (F04, F08); real 4Seasons: beats fair fixed kernel in 6/7 cells, CI excl. 0 in 2 (F15) |
 | H19 | Recovery + multi-mode reduces false-lock duration | | | [H] | |
 | **H20** (status [S−] standalone, [S+] jointly with LV+ME under variable speed — F04, F11) | **Information-aware HMM (IA-HMM):** per-frame evidence weight β_t = β₀·(1−ρ_t)/(1+ρ_t), with ρ_t predicted *label-free* from consecutive query-descriptor similarity, beats the best *fixed* β (selected on dev) in test NLL by ≥5% and is not worse in R@1 (−0.5 pt) on ≥2 datasets with video-rate queries | ≥2 datasets | NLL gain <2% or R@1 drop >1 pt | [H] | |

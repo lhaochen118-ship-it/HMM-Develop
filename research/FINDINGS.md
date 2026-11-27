@@ -128,3 +128,14 @@ HMM (fixed kernel) vs single image: 36/40 cells significant, all improvements, 0
 IA-HMM (dev-selected) vs fixed-kernel HMM: 10/29 significant improvements, 0 significant degradations.
 LV+ME vs fixed kernel (component, no selection): 9 significant improvements, 5 significant degradations (constant-speed
 CMU/Nordland-sync cells) — the regime dependence of F16, and why dev-selection is part of the method.
+
+## F19 [S] M5: HMM-guided 6DoF on RobotCar Seasons v2 (run 20261127-158; kernel k05 v2)
+Same budget for both: k=3 distinct candidates, SuperPoint(2048)+LightGlue, 2D–3D from the dataset SfM model (all.nvm),
+PnP-RANSAC with the official rear intrinsics; 1284 test queries (134 sequences); CIs = paired sequence bootstrap.
+| (0.25 m,2°) / (0.5 m,5°) / (5 m,10°) | single-image candidates | HMM-posterior candidates | Δ CI |
+|---|---|---|---|
+| NetVLAD, all | 0.248 / 0.476 / 0.728 | 0.250 / **0.497** / **0.768** | 0.5 m [+0.002,+0.044]; 5 m [+0.015,+0.068] |
+| NetVLAD, night (298) | 0.037 / 0.121 / 0.221 | 0.037 / 0.154 / 0.282 | n.s. ([−0.013,+0.090]; [−0.018,+0.144]) |
+| SALAD, all | 0.278 / 0.560 / 0.908 | 0.276 / 0.563 / 0.906 | n.s. |
+Local-feature PnP is what raises fine-pose accuracy (retrieval-pose 0.5 m: 0.19–0.25 → PnP 0.48–0.56); the HMM adds on top
+only when retrieval is the bottleneck (weak descriptor). H11 (≥5 pt at tight thresholds at night): NOT met → partial.

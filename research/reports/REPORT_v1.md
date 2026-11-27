@@ -9,7 +9,7 @@ cho mọi ô, và chưa so với learned sequence methods (JIST/SeqVLAD) hay 6Do
 
 | Câu hỏi | Trả lời theo bằng chứng hiện có |
 |---|---|
-| HMM có phù hợp với Visual Localization không? | **Có, ở tầng place/topological** [S]. HMM (state = node bản đồ ± vận tốc, emission = bằng chứng thị giác) ≥ ảnh đơn trong **mọi** ô đánh giá (31/31 ô của bảng chính: 9 bối cảnh × tối đa 4 descriptor), kể cả 3 tuyến 4Seasons thật (có dừng xe thật và một lượt ban đêm), cải thiện mạnh nhất khi ảnh đơn yếu (Nordland winter NetVLAD 0.120→0.954). Ở tầng 6DoF chính xác (0.25 m/0.5 m), HMM chỉ chọn đúng vùng; pose mịn cần hình học (M5, chưa làm). |
+| HMM có phù hợp với Visual Localization không? | **Có, ở tầng place/topological** [S]. HMM (state = node bản đồ ± vận tốc, emission = bằng chứng thị giác) ≥ ảnh đơn trong **mọi** ô đánh giá (31/31 ô của bảng chính: 9 bối cảnh × tối đa 4 descriptor), kể cả 3 tuyến 4Seasons thật (có dừng xe thật và một lượt ban đêm), cải thiện mạnh nhất khi ảnh đơn yếu (Nordland winter NetVLAD 0.120→0.954). Ở tầng 6DoF (M5, RobotCar, SuperPoint+LightGlue+PnP cùng ngân sách k=3): ứng viên từ posterior HMM tăng (0.5 m,5°) 0.476→0.497 và (5 m,10°) 0.728→0.768 với NetVLAD (CI>0), không đổi với SALAD; đêm +3.3/+6.1 điểm nhưng chưa có ý nghĩa thống kê. |
 | Thông tin thời gian có lợi đáng kể không? | Có, nhưng **độ lớn phụ thuộc vào (i) độ mạnh descriptor, (ii) độ dài chuỗi, (iii) mức đúng của mô hình chuyển động**. Từ +0.4 điểm (RobotCar SALAD, đã bão hòa) đến +60 điểm (Nordland NetVLAD). |
 | Khi nào HMM tốt / thất bại? | Tốt: chuỗi dài, descriptor yếu–trung bình, thay đổi mùa/ngoại cảnh, vận tốc ổn định hoặc được mô hình hóa. Yếu/thất bại: chuỗi rất ngắn (RobotCar ~8 frame: night NetVLAD chỉ 0.153→0.229), outage (đúng chỗ không có trong top-10 ảnh đơn), motion prior sai (time-warp làm HMM kernel cố định mất 65% lợi ích), bằng chứng phụ thuộc (β=1 ở video-rate: NetVLAD 0.972→0.683, confident-wrong 18%). |
 | Nguyên nhân gốc? | Không nằm ở cấu trúc Markov mà ở **đặc tả**: (1) emission hiệu chỉnh cho ảnh đơn quá tự tin trong HMM vì quan sát phụ thuộc (β*≈0.1–0.2 ở frame-rate cao, dose-response theo stride); (2) prior vận tốc ngầm oracle; (3) thiếu thông tin (outage, chuỗi ngắn) — giới hạn thông tin, không sửa được bằng mô hình. |
@@ -100,7 +100,7 @@ MegaLoc 0.839→0.872 (0.879 với IA); office_loop CosPlace 0.853→0.923; coun
    (≤1.8%); dừng-đi thực sự mới chỉ kiểm chứng qua time-warp — cần chuỗi video thô (Oxford RobotCar full, 4Seasons raw).
 3. Vận tốc ẩn không thắng trên dữ liệu tốc độ ổn định (CMU) — hiện giải bằng chọn mô hình trên calibration; hướng sửa gốc:
    HSMM dwell, bin/độ rộng học được.
-4. M5 (PnP với ứng viên từ posterior) để chuyển lợi ích place-level sang pose mịn; posterior-weighted pose chỉ +1–4 điểm ở 0.5 m.
+4. M5 đã thử trên RobotCar (F19): lợi ích 6DoF chỉ khi retrieval là nút thắt (NetVLAD); cần chuỗi dài hơn cho đêm, thêm CMU/4Seasons (cần mô hình 3D), và phản hồi hình học → HMM (I30) chưa làm.
 5. Countryside chỉ có 1 traversal calibration ⇒ chọn mô hình nhiễu; cần thêm traversal (old_town, 4 bản ghi).
 6. Đa seed cho mọi ô time-warp; Holm correction cho họ H1/H17/H20/H22; held-out test chính thức (visuallocalization.net)
    cần người dùng duyệt.
