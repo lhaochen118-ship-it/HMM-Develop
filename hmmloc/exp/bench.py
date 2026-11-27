@@ -12,6 +12,7 @@ def load(ds, desc):
     if ds.startswith("nordseg"): return [data.load_nordseg(desc, stride=int(ds[7:] or 1))]
     if ds == "4s": return [data.load_4s_stopgo(desc)]
     if ds == "4s2": return [data.load_4s_stopgo(desc, kdir="hmm-k03-4s-scene2")]
+    if ds == "4s3": return [data.load_4s_stopgo(desc, kdir="hmm-k04-4s-scene3")]
     raise ValueError(ds)
 
 

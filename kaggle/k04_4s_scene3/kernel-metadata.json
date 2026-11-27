@@ -1,0 +1,22 @@
+{
+  "id": "nhatlong1103/hmm-k04-4s-scene3",
+  "title": "hmm-k04-4s-scene3",
+  "code_file": "k04-4s-scene3.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "nhatlong1103/4seasons",
+    "nhatlong1103/4seasons-poses",
+    "nhatlong1103/bundle",
+    "nhatlong1103/vpr-descriptor-weights"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-private-byod/python@sha256:9a6bcfda6d03b2cd9aa347ee8c1bae62043328ed0f4afe9bda014e4f8bbf9435",
+  "machine_shape": "NvidiaTeslaT4"
+}

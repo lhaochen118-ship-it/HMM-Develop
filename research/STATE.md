@@ -1,6 +1,6 @@
-# STATE (update at every session end) — last update 2026-11-27 ~19:00 UTC
+# STATE (update at every session end) — last update 2026-11-27 ~20:20 UTC
 
-**Branch:** `claude/nice-fermi-l7bzd6` · **Phase:** 6 (cross-dataset evaluation done at [S]); Phase 7 report v1 written
+**Branch:** `claude/nice-fermi-l7bzd6` · **Phase:** 6–7 (33-cell fair-protocol evaluation incl. 2 real 4Seasons routes done at [S]; report/handoff PDFs in research/reports/)
 **Gates:** G0 ✅ · G1 ✅ · G2 ✅ ([S], H1 on 3 datasets) · G3 parked (CCBF) · G4 ✅ ([S]: dependence/overconfidence and
 oracle-motion inflation supported by interventions on ≥2 datasets — F02, F04, E15 nordseg) · G5 partial (no learned-sequence
 baseline, no held-out 4th dataset) · G6 not requested
