@@ -15,6 +15,18 @@ def walk_find(root, name, depth=6):
 nvm = walk_find("/kaggle/input", "all.nvm"); trtxt = walk_find("/kaggle/input", "robotcar_v2_train.txt")
 RC = nvm.split("/3D-models")[0]; print("nvm", nvm, "| train", trtxt, flush=True)
 intr = walk_find("/kaggle/input", "rear_intrinsics.txt") or None
+KI = None
+if intr:
+    txt = open(intr).read(); print("rear intrinsics file:", txt[:300].replace("\n", " | "), flush=True)
+    vals = {}
+    for k in ("fx", "fy", "cx", "cy"):
+        m_ = re.search(k + r"\s*[:=]?\s*([-0-9.eE]+)", txt)
+        if m_: vals[k] = float(m_.group(1))
+    if len(vals) == 4: KI = np.array([[vals["fx"], 0, vals["cx"]], [0, vals["fy"], vals["cy"]], [0, 0, 1]])
+    else:
+        nums = [float(x) for x in re.findall(r"[-0-9.]+(?:[eE][-+]?[0-9]+)?", txt)]
+        print("intrinsics numbers:", nums[:12], flush=True)
+print("K (from intrinsics file):", KI, flush=True)
 # --- LightGlue sources + offline weights
 lg = None
 for d, subs, fs in os.walk("/kaggle/input"):
@@ -78,7 +90,8 @@ def ref3d(ts):
     X = np.full((len(kp), 3), np.nan)
     if o is None or len(o) == 0: return X
     from scipy.spatial import cKDTree
-    uv = o[:, :2] + np.array([W / 2.0, H / 2.0]); d, j = cKDTree(uv).query(kp, distance_upper_bound=3.0)
+    uv = o[:, :2]                       # K06: NVM observations are RAW pixel coordinates (median 0.5 px to SIFT)
+    d, j = cKDTree(uv).query(kp, distance_upper_bound=3.0)
     ok = np.isfinite(d); X[ok] = o[j[ok], 2:5]; return X
 R3 = {}; PAIR = {}
 @torch.no_grad()
@@ -106,7 +119,7 @@ for qi, (qn, cd) in enumerate(CAND.items()):
             P2.append(kq[mm[ok, 0]]); P3.append(X[ok])
         P2 = np.concatenate(P2) if P2 else np.zeros((0, 2)); P3 = np.concatenate(P3) if P3 else np.zeros((0, 3))
         f0 = cams[str(cd[m][0])]["f"] if str(cd[m][0]) in cams else 400.0
-        K = np.array([[f0, 0, W / 2.0], [0, f0, H / 2.0], [0, 0, 1]])
+        K = KI if KI is not None else np.array([[f0, 0, W / 2.0], [0, f0, H / 2.0], [0, 0, 1]])
         rec = {"q": qn, "cond": cond, "n2d3d": int(len(P2)), "ok": False}
         retr = cams.get(str(cd[m][0]))
         if retr is not None:
