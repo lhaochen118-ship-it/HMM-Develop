@@ -6,3 +6,14 @@ hmmloc.exp.e07_motionev nordseg1-tw salad 1
 hmmloc.exp.e07_motionev nordseg1-tw netvlad 1
 hmmloc.exp.e07_motionev nordseg1 salad 0
 hmmloc.exp.e07_motionev nordseg1 netvlad 0
+hmmloc.exp.e10_transfer cmu rc netvlad
+hmmloc.exp.e10_transfer rc cmu netvlad
+hmmloc.exp.e10_transfer cmu rc cosplace
+hmmloc.exp.e10_transfer rc cmu cosplace
+hmmloc.exp.e05_failures cmu netvlad
+hmmloc.exp.e05_failures cmu salad
+hmmloc.exp.e05_failures nord netvlad
+hmmloc.exp.e05_failures rc netvlad
+hmmloc.exp.e07_motionev nord-tw salad 2
+hmmloc.exp.e07_motionev nord-tw netvlad 2
+hmmloc.exp.e11_runtime
