@@ -13,4 +13,4 @@ velocity bins from calibration quantiles: [0.0, 0.5, 1.0, 2.0, 3.0]
   OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(1.2076628817304609), 'LV': np.float64(0.9548607710506921), 'LV+ME': np.float64(0.8963932194693763), 'LV+ME+IA': np.float64(0.892277244973051)})
   ORACLE_motion  R@1 0.9681 NLL 0.2313 ECE 0.032 CW 0.0105
 {'single': (0.6948, [-0.2021, -0.0662]), 'seqslam': (0.6582, [-0.2632, -0.0624]), 'hmm_fixed': (0.8261, [0.0, 0.0]), 'LV': (0.8905, [0.0365, 0.0998]), 'LV+ME': (0.9044, [0.0522, 0.1064]), 'LV+ME+IA': (0.9147, [0.0495, 0.1348]), 'OURS_devselected': (0.9147, [0.0495, 0.1348]), 'ORACLE_motion': (0.9681, [0.1006, 0.1898])}
-RUN 20261127-037_E18_nord-tw_cosplace_s1 608s
+RUN 20261127-103_E18_nord-tw_cosplace_s1 595s

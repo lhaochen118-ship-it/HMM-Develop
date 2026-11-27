@@ -2,16 +2,16 @@ velocity bins from calibration quantiles: [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.6
 [rc/salad] motion emission {'vels': [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.69], 'mu': [-3.286, -2.095, -1.879, -1.807, -1.74, -1.689, -1.531], 'sig': [0.24, 0.232, 0.24, 0.272, 0.246, 0.192, 0.24], 'counts': [0, 107, 106, 132, 116, 67, 19]}
   single         R@1 0.9872 NLL 0.0324 ECE 0.008 CW 0.0068
   seqslam        R@1 0.9889 NLL 4.1591 ECE 0.970 CW 0.0000
-  sel fixed (np.float64(0.004154368810353512), (1.5, 1.5), 1.0)
-  hmm_fixed      R@1 0.9923 NLL 0.0228 ECE 0.008 CW 0.0051
 /home/user/HMM-Develop/hmmloc/hmm.py:45: RuntimeWarning: invalid value encountered in divide
   w = w / w.sum()
+  sel fixed (np.float64(0.003900676889853882), (0.999, 0.5), 1.0)
+  hmm_fixed      R@1 0.9915 NLL 0.0244 ECE 0.008 CW 0.0060
   sel LV (np.float64(0.004073891428003248), 1.0, 1.0, 0.9)
   LV             R@1 0.9906 NLL 0.0270 ECE 0.008 CW 0.0068
   sel LV+ME (np.float64(0.003995052080510815), 1.0, 1.0, 0.25, 0.9)
   LV+ME          R@1 0.9915 NLL 0.0254 ECE 0.007 CW 0.0060
   sel LV+ME+IA (np.float64(0.004030142645521831), 1.0, 0.11152381896972656)
   LV+ME+IA       R@1 0.9915 NLL 0.0254 ECE 0.007 CW 0.0060
-  OURS_devselected -> LV+ME (calib NLL {'hmm_fixed': np.float64(0.004154368810353512), 'LV': np.float64(0.004073891428003248), 'LV+ME': np.float64(0.003995052080510815), 'LV+ME+IA': np.float64(0.004030142645521831)})
-{'single': (0.9872, [-0.0104, 0.0]), 'seqslam': (0.9889, [-0.0135, 0.0034]), 'hmm_fixed': (0.9923, [0.0, 0.0]), 'LV': (0.9906, [-0.0043, 0.0]), 'LV+ME': (0.9915, [-0.0026, 0.0]), 'LV+ME+IA': (0.9915, [-0.0026, 0.0]), 'OURS_devselected': (0.9915, [-0.0026, 0.0])}
-RUN 20261127-030_E18_rc_salad_s0 299s
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.003900676889853882), 'LV': np.float64(0.004073891428003248), 'LV+ME': np.float64(0.003995052080510815), 'LV+ME+IA': np.float64(0.004030142645521831)})
+{'single': (0.9872, [-0.0105, 0.0009]), 'seqslam': (0.9889, [-0.0126, 0.0035]), 'hmm_fixed': (0.9915, [0.0, 0.0]), 'LV': (0.9906, [-0.0042, 0.0018]), 'LV+ME': (0.9915, [-0.0026, 0.0025]), 'LV+ME+IA': (0.9915, [-0.0026, 0.0025]), 'OURS_devselected': (0.9915, [0.0, 0.0])}
+RUN 20261127-100_E18_rc_salad_s0 245s

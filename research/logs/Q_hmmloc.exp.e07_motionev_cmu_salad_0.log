@@ -12,4 +12,4 @@ velocity bins from calibration quantiles: [0.0, 0.56, 0.75, 0.94, 1.18, 1.84, 3.
   LV+ME+IA       R@1 0.9456 NLL 0.1948 ECE 0.036 CW 0.0334
   OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.11354290315171459), 'LV': np.float64(0.1530903253748796), 'LV+ME': np.float64(0.15953053679415408), 'LV+ME+IA': np.float64(0.1598725055496658)})
 {'single': (0.9425, [-0.018, -0.0071]), 'seqslam': (0.9543, [-0.0067, 0.0058]), 'hmm_fixed': (0.9549, [0.0, 0.0]), 'LV': (0.9463, [-0.0203, 0.0032]), 'LV+ME': (0.9462, [-0.0225, 0.0045]), 'LV+ME+IA': (0.9456, [-0.0232, 0.0038]), 'OURS_devselected': (0.9549, [0.0, 0.0])}
-RUN 20261127-025_E18_cmu_salad_s0 229s
+RUN 20261127-096_E18_cmu_salad_s0 167s

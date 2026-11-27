@@ -2,17 +2,9 @@ velocity bins from calibration quantiles: [0.0, 0.5, 1.0, 2.0, 3.0]
 [nordseg1-tw/salad] motion emission {'vels': [0.0, 0.5, 1.0, 2.0, 3.0], 'mu': [-9.21, -5.195, -3.107, -1.435, -1.305], 'sig': [0.15, 4.038, 3.234, 1.346, 1.246], 'counts': [769, 731, 720, 574, 915]}
   single         R@1 0.8392 NLL 0.6501 ECE 0.038 CW 0.0060
   seqslam        R@1 0.8727 NLL 4.2436 ECE 0.856 CW 0.0000
-  sel fixed (np.float64(0.32117913281617005), (1.0, 2.0), 0.2)
-  hmm_fixed      R@1 0.9053 NLL 0.5106 ECE 0.046 CW 0.0207
 /home/user/HMM-Develop/hmmloc/hmm.py:45: RuntimeWarning: invalid value encountered in divide
   w = w / w.sum()
+  sel fixed (np.float64(0.32117913281617005), (1.0, 2.0), 0.2)
+  hmm_fixed      R@1 0.9053 NLL 0.5106 ECE 0.046 CW 0.0207
   sel LV (np.float64(0.2946876381132874), 1.0, 0.2, 0.98)
   LV             R@1 0.9149 NLL 0.5495 ECE 0.052 CW 0.0396
-  sel LV+ME (np.float64(0.33971326779576183), 1.0, 0.2, 0.25, 0.98)
-  LV+ME          R@1 0.9052 NLL 0.6087 ECE 0.066 CW 0.0297
-  sel LV+ME+IA (np.float64(0.429742684535515), 0.75, np.float64(0.658859782218933))
-  LV+ME+IA       R@1 0.8929 NLL 0.5574 ECE 0.068 CW 0.0131
-  OURS_devselected -> LV (calib NLL {'hmm_fixed': np.float64(0.32117913281617005), 'LV': np.float64(0.2946876381132874), 'LV+ME': np.float64(0.33971326779576183), 'LV+ME+IA': np.float64(0.429742684535515)})
-  ORACLE_motion  R@1 0.3984 NLL nan ECE 0.018 CW 0.0098
-{'single': (0.8392, [-0.1078, -0.0313]), 'seqslam': (0.8727, [-0.0721, -0.0017]), 'hmm_fixed': (0.9053, [0.0, 0.0]), 'LV': (0.9149, [-0.0164, 0.0414]), 'LV+ME': (0.9052, [-0.0162, 0.014]), 'LV+ME+IA': (0.8929, [-0.0415, 0.0156]), 'OURS_devselected': (0.9149, [-0.0164, 0.0414]), 'ORACLE_motion': (0.3984, [-0.6725, -0.3319])}
-RUN 20261127-059_E18_nordseg1-tw_salad_s1 658s

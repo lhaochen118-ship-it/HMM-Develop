@@ -218,10 +218,10 @@ def true_speed(ep: Episode):
     return sp
 
 
-def load_4s_stopgo(desc, dist=5.0, ang=30.0, calib_every=3):
+def load_4s_stopgo(desc, dist=5.0, ang=30.0, calib_every=3, kdir="hmm-k02-4s-stopgo"):
     """4Seasons, one scene (kernel k02): map = first traversal sampled every >=1 m; queries = the other traversals
     sampled every 0.5 s in TIME (real stops kept). Each query traversal is one sequence (cut at gaps > 2 s)."""
-    d = os.path.join(FB, "hmm-k02-4s-stopgo", "dump")
+    d = os.path.join(FB, kdir, "dump")
     metas = sorted(glob.glob(os.path.join(d, "meta", "*.npz")))
     mp = [m for m in metas if "_map_" in os.path.basename(m)][0]
     zm = np.load(mp); tag = os.path.basename(mp)[:-4]
@@ -243,5 +243,5 @@ def load_4s_stopgo(desc, dist=5.0, ang=30.0, calib_every=3):
     Q = np.concatenate(Qs); qC = np.concatenate(qC); qR = np.concatenate(qR)
     pos, _, _ = _pose_pos(qC, qR, C, Rr, dist, ang)
     near = _near_from_C(C, Rr, dist, ang)
-    return Episode(f"4s/{desc}", R, s, Q, np.concatenate(seq), np.array(cond), pos, near, calib, unit="m", C=C, Rrot=Rr,
+    return Episode(f"{kdir}/{desc}", R, s, Q, np.concatenate(seq), np.array(cond), pos, near, calib, unit="m", C=C, Rrot=Rr,
                    qC=qC, qR=qR, qt=np.concatenate(qt))

@@ -2,16 +2,16 @@ velocity bins from calibration quantiles: [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.6
 [rc/netvlad] motion emission {'vels': [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.69], 'mu': [-2.267, -1.281, -1.104, -1.067, -1.0, -0.933, -0.824], 'sig': [0.213, 0.242, 0.226, 0.217, 0.192, 0.187, 0.213], 'counts': [0, 107, 106, 132, 116, 67, 19]}
   single         R@1 0.7078 NLL 1.4578 ECE 0.048 CW 0.0051
   seqslam        R@1 0.7768 NLL 5.7307 ECE 0.773 CW 0.0000
-  sel fixed (np.float64(1.0413951201711436), (1.5, 1.5), 0.35)
-  hmm_fixed      R@1 0.7717 NLL 1.4145 ECE 0.057 CW 0.0051
 /home/user/HMM-Develop/hmmloc/hmm.py:45: RuntimeWarning: invalid value encountered in divide
   w = w / w.sum()
+  sel fixed (np.float64(0.9858510065917754), (0.999, 0.3), 0.35)
+  hmm_fixed      R@1 0.7794 NLL 1.3503 ECE 0.062 CW 0.0102
   sel LV (np.float64(1.0653402181715466), 1.0, 0.35, 0.9)
   LV             R@1 0.7598 NLL 1.4536 ECE 0.067 CW 0.0111
   sel LV+ME (np.float64(1.0243484508116925), 0.6, 0.35, 0.25, 0.9)
   LV+ME          R@1 0.7751 NLL 1.4097 ECE 0.057 CW 0.0111
   sel LV+ME+IA (np.float64(0.9504346140169997), 0.5, np.float64(0.503261215686798))
   LV+ME+IA       R@1 0.7785 NLL 1.3019 ECE 0.034 CW 0.0051
-  OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(1.0413951201711436), 'LV': np.float64(1.0653402181715466), 'LV+ME': np.float64(1.0243484508116925), 'LV+ME+IA': np.float64(0.9504346140169997)})
-{'single': (0.7078, [-0.0934, -0.0396]), 'seqslam': (0.7768, [-0.0035, 0.0161]), 'hmm_fixed': (0.7717, [0.0, 0.0]), 'LV': (0.7598, [-0.0226, -0.0018]), 'LV+ME': (0.7751, [-0.006, 0.0136]), 'LV+ME+IA': (0.7785, [-0.0034, 0.0182]), 'OURS_devselected': (0.7785, [-0.0034, 0.0182])}
-RUN 20261127-032_E18_rc_netvlad_s0 302s
+  OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(0.9858510065917754), 'LV': np.float64(1.0653402181715466), 'LV+ME': np.float64(1.0243484508116925), 'LV+ME+IA': np.float64(0.9504346140169997)})
+{'single': (0.7078, [-0.1018, -0.0427]), 'seqslam': (0.7768, [-0.0102, 0.0042]), 'hmm_fixed': (0.7794, [0.0, 0.0]), 'LV': (0.7598, [-0.0354, -0.006]), 'LV+ME': (0.7751, [-0.0117, 0.0026]), 'LV+ME+IA': (0.7785, [-0.0105, 0.0085]), 'OURS_devselected': (0.7785, [-0.0105, 0.0085])}
+RUN 20261127-098_E18_rc_netvlad_s0 258s

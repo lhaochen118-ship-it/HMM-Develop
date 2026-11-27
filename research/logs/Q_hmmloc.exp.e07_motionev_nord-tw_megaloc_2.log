@@ -6,3 +6,11 @@ velocity bins from calibration quantiles: [0.0, 0.5, 1.0, 2.0, 3.0]
   hmm_fixed      R@1 0.8922 NLL 0.4778 ECE 0.061 CW 0.0100
   sel LV (np.float64(0.8984155016008486), 1.0, 0.2, 0.9)
   LV             R@1 0.9201 NLL 0.4117 ECE 0.088 CW 0.0060
+  sel LV+ME (np.float64(0.7494716440015374), 0.3, 0.2, 0.25, 0.98)
+  LV+ME          R@1 0.9110 NLL 0.6128 ECE 0.053 CW 0.0395
+  sel LV+ME+IA (np.float64(0.893982130967351), 1.5, np.float64(0.9690605306625367))
+  LV+ME+IA       R@1 0.9152 NLL 0.5533 ECE 0.050 CW 0.0247
+  OURS_devselected -> LV+ME (calib NLL {'hmm_fixed': np.float64(0.9357831988814265), 'LV': np.float64(0.8984155016008486), 'LV+ME': np.float64(0.7494716440015374), 'LV+ME+IA': np.float64(0.893982130967351)})
+  ORACLE_motion  R@1 0.9574 NLL 0.4647 ECE 0.041 CW 0.0319
+{'single': (0.8368, [-0.0853, -0.0331]), 'seqslam': (0.746, [-0.2144, -0.0863]), 'hmm_fixed': (0.8922, [0.0, 0.0]), 'LV': (0.9201, [0.0147, 0.045]), 'LV+ME': (0.911, [-0.0021, 0.0401]), 'LV+ME+IA': (0.9152, [0.0044, 0.0409]), 'OURS_devselected': (0.911, [-0.0021, 0.0401]), 'ORACLE_motion': (0.9574, [0.0444, 0.0885])}
+RUN 20261127-090_E18_nord-tw_megaloc_s2 640s
