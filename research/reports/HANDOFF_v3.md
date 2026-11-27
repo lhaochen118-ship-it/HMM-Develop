@@ -14,9 +14,12 @@
 `dive-vpr-nb15a..d-dump`, `hmm-k01-nordseg`, `hmm-k02-4s-stopgo`, `hmm-k03-4s-scene2` → tải bằng
 `kaggle kernels output <id> -p $HMMLOC_FB/<slug>`.
 
+## Cập nhật 23:20 UTC
+- M5 đã chạy (k05 v2, F19): ứng viên HMM cải thiện 6DoF với NetVLAD (0.5 m: 0.476→0.497; 5 m: 0.728→0.768, CI>0), không đổi với SALAD.
+- Holm (F18): HMM vs ảnh đơn 36/40 ô có ý nghĩa, 0 suy giảm.
+
 ## 3 việc tiếp theo (ưu tiên)
-1. **M5 6DoF**: ứng viên top-k từ posterior → SuperPoint+LightGlue → PnP (bundle có sẵn), ngân sách matching cố định,
-   so HLoc retrieval-top-k; ngưỡng (0.25 m,2°)/(0.5 m,5°).
+1. **Phản hồi hình học vào HMM** (I30) và M5 trên CMU/4Seasons (cần tam giác hóa mô hình 3D từ pose reference).
 2. **Baseline learned-sequence** (JIST/SeqVLAD): cần trọng số (không có trên Kaggle) — blocker, cần người dùng cho phép
    tải từ GitHub release trong kernel có internet.
 3. **Tổng quát hóa**: MSLS sequences, Oxford RobotCar full (chuỗi dài, dừng thật); Holm correction cho họ H1/H17/H20/H22;
