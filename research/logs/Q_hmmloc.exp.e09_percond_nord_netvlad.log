@@ -1,0 +1,4 @@
+  fall             n= 2700 R@1 single 0.601 -> HMM 0.978 | pose(.25/.5/5) single 0.000/0.000/0.000 -> HMM 0.000/0.000/0.000
+  spring           n= 2700 R@1 single 0.372 -> HMM 0.977 | pose(.25/.5/5) single 0.000/0.000/0.000 -> HMM 0.000/0.000/0.000
+  winter           n= 2700 R@1 single 0.120 -> HMM 0.954 | pose(.25/.5/5) single 0.000/0.000/0.000 -> HMM 0.000/0.000/0.000
+RUN 20261127-046_PC_nord_netvlad

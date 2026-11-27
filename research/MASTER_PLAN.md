@@ -42,7 +42,15 @@ emission = LLR hiệu chỉnh có null chính xác (M1), trọng số bằng ch�
 (M2, *mới*), transition trên đồ thị bản đồ theo arc-length mét + vận tốc ẩn (M3), suy luận forward / fixed-lag /
 Viterbi chính xác trên state rời rạc.
 
-**Bằng chứng hiện có** (xem `FINDINGS.md`; chỉ trích số có run_id): cập nhật liên tục.
+**Bằng chứng hiện có (27/11/2026, mức [S], chi tiết `reports/REPORT_v1.md`, `FINDINGS.md` F01–F12):**
+- H1 [S+]: HMM ≥ ảnh đơn ở 16/16 ô (Nordland, Nordland time-warp, CMU, RobotCar × NetVLAD/CosPlace/SALAD/MegaLoc);
+  lớn nhất khi ảnh đơn yếu (Nordland winter NetVLAD 0.120→0.954).
+- H22 [S+]: IA-HMM ≥ SeqSLAM tuned ở 12/16 ô, ngang (≤0.6 điểm) ở 4 ô; dưới vận tốc thay đổi SeqSLAM < ảnh đơn.
+- H3 [S+]: prior v=1 đồng bộ thổi phồng lợi ích (−65% khi time-warp); H17 [S+/partial]: LV+ME+IA phục hồi 61–84% oracle.
+- H5/H6 [S+]: β* giảm theo frame-rate (0.1 ở stride 1); β=1 ở video-rate gây CW@0.9 = 18%.
+- H20: IA đơn lẻ [S−] trên CMU; có lợi ở video-rate Nordland (NLL −17…−35%) và khi kết hợp state vận tốc (time-warp).
+- H7 [S−]: null LLR hiệu chỉnh không vượt null quantile đã tune; lọc thời gian là thứ làm off-map tốt (AUROC 0.88→0.99).
+- H13 [S+]: chuyển siêu tham số CMU↔RobotCar giữ 60–110% lợi ích.
 
 ---
 

@@ -1,0 +1,15 @@
+velocity bins from calibration quantiles: [0.0, 1.0]
+[nordseg1/salad] motion emission {'vels': [0.0, 1.0], 'mu': [-1.365, -1.764], 'sig': [1.545, 1.545], 'counts': [0, 4990]}
+  single         R@1 0.8150 NLL 0.6909 ECE 0.012 CW 0.0073
+  seqslam        R@1 0.8952 NLL 4.2921 ECE 0.879 CW 0.0000
+  sel fixed (np.float64(0.08883846877982292), (1.0, 0.5), 0.2)
+  hmm_fixed      R@1 0.9525 NLL 0.2241 ECE 0.029 CW 0.0059
+  sel LV (np.float64(0.6172569012248538), 1.0, 0.2, 0.98)
+  LV             R@1 0.8976 NLL 0.6214 ECE 0.058 CW 0.0351
+  sel LV+ME (np.float64(0.27021403894747237), 0.3, 0.2, 1.0, 0.98)
+  LV+ME          R@1 0.9234 NLL 0.4909 ECE 0.055 CW 0.0271
+  sel LV+ME+IA (np.float64(0.18106101192626506), 0.35, np.float64(0.5497289377450942))
+  LV+ME+IA       R@1 0.9531 NLL 0.2447 ECE 0.025 CW 0.0185
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.08883846877982292), 'LV': np.float64(0.6172569012248538), 'LV+ME': np.float64(0.27021403894747237), 'LV+ME+IA': np.float64(0.18106101192626506)})
+{'single': (0.815, [-0.1927, -0.0922]), 'seqslam': (0.8952, [-0.1013, -0.022]), 'hmm_fixed': (0.9525, [0.0, 0.0]), 'LV': (0.8976, [-0.0958, -0.0222]), 'LV+ME': (0.9234, [-0.0453, -0.0139]), 'LV+ME+IA': (0.9531, [-0.0185, 0.029]), 'OURS_devselected': (0.9525, [0.0, 0.0])}
+RUN 20261127-057_E18_nordseg1_salad_s0 514s

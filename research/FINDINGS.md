@@ -51,3 +51,31 @@ Runs 20261127-017 (SeqSLAM, SALAD), -020, -021. All paired CIs of LV, LV+ME, LV+
 CMU NetVLAD: fixed 0.820 vs LV 0.713 (run -018). Root cause check: no reverse traversals (0% backward steps);
 but per-sequence speed in map arc-length spans 0.7–4.9 m/frame, beyond the hand-picked bins (≤2.4). Fix:
 bins from calibration-speed quantiles (E18v2, running).
+
+## F08 [S] Cross-dataset main table (E18, registry-generated: reports/RESULTS_TABLES.md, figures/fig1)
+IA-HMM (dev-selected by calibration NLL among {fixed kernel, LV, LV+ME, LV+ME+IA}) ≥ single image in all 16
+dataset×descriptor cells; vs tuned SeqSLAM: better in 12/16, within 0.6 pt in the other 4 (CMU MegaLoc 0.941 vs 0.947,
+RobotCar MegaLoc 0.980 vs 0.984, RobotCar CosPlace 0.857 vs 0.858, Nordland-sync ties at ~0.98).
+Under variable speed (time-warp seed 1) SeqSLAM drops below single image for 3/4 descriptors while IA-HMM gains
++0.08…+0.40 R@1 (NetVLAD 0.430→0.827, CosPlace 0.695→0.915, SALAD 0.808→0.901, MegaLoc 0.832→0.917).
+Dev selection behaves sensibly: fixed kernel on constant-speed CMU, LV(+ME/IA) under time-warp.
+
+## F09 [S] Gains concentrate where single-image evidence is weak (H2/H23)
+Per condition (runs PC_*): Nordland winter NetVLAD 0.120→0.954, spring 0.372→0.977; SALAD winter 0.755→0.986.
+RobotCar NetVLAD night 0.153→0.229, night-rain 0.071→0.121 (short ~8-frame sequences cap the gain); SALAD night-rain
+0.964→0.993. Fine 6DoF thresholds (0.25 m/0.5 m) do not change with retrieval-only poses (needs M5 geometry).
+
+## F10 [S] Fixed-lag smoothing (H21) — partially supported
+R@1 gain over causal filtering at lag 10: CMU NetVLAD +0.043 [CI +0.033,+0.054]; Nordland NetVLAD +0.016
+[+0.012,+0.020]; RobotCar +0.009 (n.s., short sequences). Threshold ≥2 pt on ≥2 datasets → met on 1 ⇒ partial.
+
+## F11 [S] Information-aware weighting ALONE does not beat a dev-tuned fixed β on constant-speed data (H20 standalone refuted)
+CMU (14 Hz, no stops) with a fixed kernel: NetVLAD IA 0.810 vs fixed-β 0.820 (dR1 CI [−0.020,−0.003]); SALAD
+0.952 vs 0.955. Keyframing also no better. Together with F04: IA is useful only when the HMM can also represent
+speed changes (LV+ME): time-warp NetVLAD LV+ME 0.805 → LV+ME+IA 0.827 (s1), 0.747 → 0.822 (s2).
+
+## F12 [S] Off-map (map holes, Nordland SALAD, 21% of query frames unmapped; run 20261127-031)
+AUROC of off-map detection: single-image SUE 0.880, single-frame LLR null 0.643, HMM + legacy quantile null 0.988
+(FPR@95TPR 0.029), HMM + calibrated-LLR null 0.979 (FPR 0.055). Temporal filtering is what makes off-map
+detection work (+0.10 AUROC over SUE); the calibrated LLR null (M1) did NOT beat the tuned quantile null
+(H7 not supported on this test).

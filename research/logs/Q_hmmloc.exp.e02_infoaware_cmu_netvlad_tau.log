@@ -1,0 +1,8 @@
+[cmu/netvlad/tau] kernel mean=1.5 std=1.5; fixed-beta*=0.2 (calib NLL 0.9689); kappa grid [0.327 0.41  0.486 0.57 ]
+  IA-HMM beta0=0.35 kappa=0.486 (calib NLL 1.0061)
+  keyframe thr=0.163 beta=0.2 (calib NLL 0.9868)
+  beta1       R@1 0.7598 NLL 1.6507 ECE 0.182 CW 0.1315 AURC 0.0771 | dNLL CI [0.4859 1.093 ] dR1 CI [-0.0836 -0.0402]
+  fixed_beta  R@1 0.8204 NLL 0.8669 ECE 0.036 CW 0.0116 AURC 0.0552 | dNLL CI [0. 0.] dR1 CI [0. 0.]
+  infoaware   R@1 0.8096 NLL 0.8891 ECE 0.032 CW 0.0125 AURC 0.0591 | dNLL CI [-0.0152  0.0542] dR1 CI [-0.0203 -0.0028]
+  keyframe    R@1 0.8146 NLL 0.8783 ECE 0.038 CW 0.0101 AURC 0.0542 | dNLL CI [-0.0131  0.036 ] dR1 CI [-0.013   0.0001]
+RUN 20261127-049_E15_cmu_netvlad_tau 36s

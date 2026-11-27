@@ -1,0 +1,8 @@
+[nordseg2/netvlad/tau] kernel mean=1.0 std=0.5; fixed-beta*=0.35 (calib NLL 0.1958); kappa grid [0.593 0.665 0.742 0.857]
+  IA-HMM beta0=0.5 kappa=0.742 (calib NLL 0.1175)
+  keyframe thr=0.296 beta=0.35 (calib NLL 0.1427)
+  beta1       R@1 0.7380 NLL 2.2494 ECE 0.194 CW 0.1392 AURC 0.1174 | dNLL CI [1.1586 2.8296] dR1 CI [-0.2834 -0.1098]
+  fixed_beta  R@1 0.9316 NLL 0.3111 ECE 0.021 CW 0.0164 AURC 0.0204 | dNLL CI [0. 0.] dR1 CI [0. 0.]
+  infoaware   R@1 0.9706 NLL 0.1244 ECE 0.016 CW 0.0026 AURC 0.0014 | dNLL CI [-0.4513 -0.0304] dR1 CI [0.0114 0.073 ]
+  keyframe    R@1 0.9668 NLL 0.1457 ECE 0.022 CW 0.0022 AURC 0.0016 | dNLL CI [-0.43   -0.0068] dR1 CI [0.0068 0.07  ]
+RUN 20261127-076_E15_nordseg2_netvlad_tau 70s

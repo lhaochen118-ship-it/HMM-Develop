@@ -1,0 +1,6 @@
+  single_tgt_tau  R@1 0.8339 NLL 0.8009 ECE 0.024
+  hmm_in_domain   R@1 0.8603 NLL 0.9209 ECE 0.046
+  single_src_tau  R@1 0.8339 NLL 0.8787 ECE 0.043
+  hmm_transfer    R@1 0.8629 NLL 0.9595 ECE 0.041
+  gain retained 0.0290/0.0264 = 1.10  (src sel (1.5, 1.5, 0.35), tgt sel (1.5, 1.5, 0.35), tau src 0.0167 tgt 0.0222)
+RUN 20261127-064_E21_cmutorc_cosplace

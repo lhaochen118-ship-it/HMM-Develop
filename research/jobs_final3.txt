@@ -17,3 +17,11 @@ hmmloc.exp.e05_failures rc netvlad
 hmmloc.exp.e07_motionev nord-tw salad 2
 hmmloc.exp.e07_motionev nord-tw netvlad 2
 hmmloc.exp.e11_runtime
+hmmloc.exp.e12_pose rc salad
+hmmloc.exp.e12_pose rc netvlad
+hmmloc.exp.e12_pose cmu salad
+hmmloc.exp.e12_pose cmu netvlad
+hmmloc.exp.e02_infoaware nordseg5 salad tau
+hmmloc.exp.e02_infoaware nordseg5 netvlad tau
+hmmloc.exp.e02_infoaware nordseg2 salad tau
+hmmloc.exp.e02_infoaware nordseg2 netvlad tau

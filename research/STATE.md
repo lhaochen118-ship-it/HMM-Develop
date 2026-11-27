@@ -1,22 +1,23 @@
 # STATE (update at every session end) — last update 2026-11-27 ~19:00 UTC
 
-**Branch:** `claude/nice-fermi-l7bzd6` · **Phase:** 3–5 (feasibility done on 2 datasets, method IA-HMM in test)
-**Gates:** G0 ✅ (tests/test_hmm_core.py) · G1 ✅ (single-image R@1 reproduces dump sanity logs) ·
-G2 ✅ provisional (H1 supported on Nordland + CMU, CI excl. 0) · G3 parked (CCBF) · G4 in progress · G5/G6 open
+**Branch:** `claude/nice-fermi-l7bzd6` · **Phase:** 6 (cross-dataset evaluation done at [S]); Phase 7 report v1 written
+**Gates:** G0 ✅ · G1 ✅ · G2 ✅ ([S], H1 on 3 datasets) · G3 parked (CCBF) · G4 ✅ ([S]: dependence/overconfidence and
+oracle-motion inflation supported by interventions on ≥2 datasets — F02, F04, E15 nordseg) · G5 partial (no learned-sequence
+baseline, no held-out 4th dataset) · G6 not requested
 
-## Running / pending compute
-- Kaggle `nhatlong1103/hmm-k01-nordseg` (T4, Nordland stride-1 blocks, 4 descriptors) — RUNNING since ~17:12 UTC.
-  When COMPLETE: `kaggle kernels output nhatlong1103/hmm-k01-nordseg -p $FB/hmm-k01-nordseg` (FB = feature-bank dir,
-  see `hmmloc/data.py::FB`), then run E15/E33 on `nordseg1/2/5`.
-- Local CPU: E01 RobotCar ×4 descriptors; E08 time-warp Nordland SALAD.
+## Feature bank (all reproducible from Kaggle kernels of owner nhatlong1103)
+nb15a/b/c/d dumps (Nordland stride≈8, RobotCar v2, CMU 11 slices; 6 descriptors) + `hmm-k01-nordseg` (Nordland stride-1,
+2×2500 frames × 4 seasons × SALAD/MegaLoc/NetVLAD/CosPlace; ~1 T4-hour). Local path `hmmloc/data.py::FB` (env HMMLOC_FB).
 
 ## Next 3 tasks
-1. E08 time-warp (H3/H17/H20) on SALAD + NetVLAD; E15 IA-HMM on CMU (14 Hz) and nordseg.
-2. Rerun E01 CMU H2–H4 rows with fixed LLR (A22); E12 off-map holes (H7/H19); fixed-lag (H21).
-3. Phase 4 failure taxonomy + oracle swap; consolidate FINDINGS → final report; update Master Plan §1 with evidence.
+1. Learned-sequence baseline (JIST/SeqVLAD weights needed — check Kaggle datasets/licences) or document as blocker.
+2. Held-out real stop-and-go dataset (4Seasons cross-traversal: extract a second traversal of `office_loop`/`old_town`
+   on Kaggle T4, ~10 min each) to test LV+ME+IA without synthetic time-warp (H17 on real data).
+3. M5: posterior-guided LightGlue+PnP on RobotCar/CMU (bundle has SuperPoint/LightGlue/pycolmap) under a fixed
+   matching budget; plus multi-seed time-warp for all descriptors and Holm correction.
 
-## Blockers / notes
-- Kaggle tokens live only in the session scratchpad (never in repo). Feature bank is re-downloadable from kernels
-  `dive-vpr-nb15a..d-dump` (owner nhatlong1103) in ~4 min.
-- Multi-account use: only `nhatlong1103` (owner of the private datasets) is used so far; other accounts must only
-  be used if Kaggle's terms and the account owners permit it (Ops Plan v1.3 §2).
+## Known open issues
+A20 (geometry double counting, only if M5), A24 (oracle-motion diagnostic NaN on nordseg time-warp).
+## Notes
+- Kaggle tokens live only in the session scratchpad (never in repo). Only account `nhatlong1103` was used (owner of the
+  private datasets); ~1 T4 GPU-hour consumed this session.

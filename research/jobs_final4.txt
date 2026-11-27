@@ -1,0 +1,8 @@
+hmmloc.exp.e02_infoaware nordseg5 salad tau
+hmmloc.exp.e02_infoaware nordseg5 netvlad tau
+hmmloc.exp.e02_infoaware nordseg2 salad tau
+hmmloc.exp.e02_infoaware nordseg2 netvlad tau
+hmmloc.exp.e12_pose rc salad
+hmmloc.exp.e12_pose rc netvlad
+hmmloc.exp.e12_pose cmu salad
+hmmloc.exp.e12_pose cmu netvlad

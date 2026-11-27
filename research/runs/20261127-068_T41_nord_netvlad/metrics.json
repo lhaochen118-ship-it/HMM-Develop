@@ -1,0 +1,20 @@
+{
+ "counts": {
+  "frames": 8100,
+  "hmm_wrong": 246,
+  "single_wrong": 5149,
+  "hmm_induced": 15,
+  "hmm_fixed": 4918,
+  "cold_start": 53,
+  "outage": 117,
+  "near_miss": 49,
+  "lock_in": 26,
+  "other": 1
+ },
+ "sel": [
+  0.4125250298151411,
+  1.0,
+  0.5,
+  0.2
+ ]
+}

@@ -1,0 +1,10 @@
+  dawn             n=  136 R@1 single 0.831 -> HMM 0.919 | pose(.25/.5/5) single 0.044/0.279/0.831 -> HMM 0.037/0.294/0.919
+  dusk             n=  107 R@1 single 0.972 -> HMM 1.000 | pose(.25/.5/5) single 0.112/0.280/0.963 -> HMM 0.112/0.290/0.991
+  night            n=  131 R@1 single 0.153 -> HMM 0.229 | pose(.25/.5/5) single 0.015/0.023/0.153 -> HMM 0.008/0.015/0.229
+  night-rain       n=  140 R@1 single 0.071 -> HMM 0.121 | pose(.25/.5/5) single 0.007/0.014/0.050 -> HMM 0.014/0.036/0.079
+  overcast-summer  n=  143 R@1 single 0.867 -> HMM 0.923 | pose(.25/.5/5) single 0.049/0.252/0.860 -> HMM 0.049/0.273/0.916
+  overcast-winter  n=  125 R@1 single 0.864 -> HMM 0.936 | pose(.25/.5/5) single 0.040/0.248/0.864 -> HMM 0.040/0.240/0.936
+  rain             n=  121 R@1 single 0.983 -> HMM 0.992 | pose(.25/.5/5) single 0.066/0.339/0.983 -> HMM 0.066/0.314/0.992
+  snow             n=  148 R@1 single 0.885 -> HMM 0.959 | pose(.25/.5/5) single 0.081/0.264/0.885 -> HMM 0.095/0.291/0.959
+  sun              n=  123 R@1 single 0.829 -> HMM 0.943 | pose(.25/.5/5) single 0.073/0.195/0.829 -> HMM 0.073/0.211/0.943
+RUN 20261127-043_PC_rc_netvlad

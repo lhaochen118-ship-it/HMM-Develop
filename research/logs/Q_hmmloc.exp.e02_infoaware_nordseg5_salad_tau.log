@@ -1,0 +1,8 @@
+[nordseg5/salad/tau] kernel mean=1.0 std=0.5; fixed-beta*=0.35 (calib NLL 0.0614); kappa grid [0.479 0.579 0.687 0.914]
+  IA-HMM beta0=0.75 kappa=0.914 (calib NLL 0.0505)
+  keyframe thr=0.344 beta=0.5 (calib NLL 0.0608)
+  beta1       R@1 0.9375 NLL 0.3017 ECE 0.028 CW 0.0140 AURC 0.0040 | dNLL CI [0.0761 0.4437] dR1 CI [-0.082 -0.018]
+  fixed_beta  R@1 0.9840 NLL 0.0642 ECE 0.022 CW 0.0010 AURC 0.0005 | dNLL CI [0. 0.] dR1 CI [0. 0.]
+  infoaware   R@1 0.9870 NLL 0.0616 ECE 0.024 CW 0.0005 AURC 0.0003 | dNLL CI [-0.0213  0.0164] dR1 CI [-0.004  0.01 ]
+  keyframe    R@1 0.9835 NLL 0.0645 ECE 0.029 CW 0.0000 AURC 0.0002 | dNLL CI [-0.0156  0.0154] dR1 CI [-0.012  0.011]
+RUN 20261127-075_E15_nordseg5_salad_tau 20s

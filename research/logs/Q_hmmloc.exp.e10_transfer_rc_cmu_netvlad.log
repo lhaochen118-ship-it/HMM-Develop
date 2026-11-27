@@ -1,0 +1,6 @@
+  single_tgt_tau  R@1 0.7012 NLL 1.1167 ECE 0.026
+  hmm_in_domain   R@1 0.8204 NLL 0.8669 ECE 0.036
+  single_src_tau  R@1 0.7012 NLL 1.4239 ECE 0.136
+  hmm_transfer    R@1 0.7731 NLL 1.4111 ECE 0.152
+  gain retained 0.0719/0.1192 = 0.60  (src sel (1.5, 1.5, 0.35), tgt sel (1.5, 1.5, 0.2), tau src 0.0095 tgt 0.0193)
+RUN 20261127-062_E21_rctocmu_netvlad

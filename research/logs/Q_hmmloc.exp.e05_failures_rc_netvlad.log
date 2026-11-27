@@ -1,0 +1,2 @@
+[rc/netvlad] sel (1.5, 1.5, 0.35) | frames=1174 hmm_wrong=268 single_wrong=343 hmm_induced=8 hmm_fixed=83 cold_start=155 outage=78 near_miss=9 lock_in=23 other=3
+RUN 20261127-067_T41_rc_netvlad

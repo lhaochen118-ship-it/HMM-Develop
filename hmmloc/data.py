@@ -109,7 +109,7 @@ def load_nordseg(desc, ref="summer", queries=("spring", "fall", "winter"), tol=1
     for b in np.unique(blk):
         w = np.where(blk == b)[0]; keep[w[::stride]] = True
     R = R[keep]; ci = ci[keep]; blk = blk[keep]
-    M = len(R); s = ci.astype(float)            # position = common frame index (gaps between blocks are large)
+    M = len(R); s = ci.astype(float) / stride   # position in SAMPLED-frame units (A23: was raw frames for stride>1)
     Qs, seq, cond, pos = [], [], [], []; calib = set(); sid = 0
     for qi, qs in enumerate(queries):
         Q = np.load(os.path.join(d, desc, f"nord_{qs}.npy"))[keep]; Qs.append(Q); cond += [qs] * M
@@ -122,8 +122,8 @@ def load_nordseg(desc, ref="summer", queries=("spring", "fall", "winter"), tol=1
                 if sid % calib_every == 0: calib.add(sid)
                 sid += 1
         seq.append(sq)
-        pos.append((np.abs(s[:, None] - s[None, :]) <= tol))
-    near = np.abs(s[:, None] - s[None, :]) <= tol
+        pos.append((np.abs(s[:, None] - s[None, :]) * stride <= tol))      # tolerance stays in raw frames
+    near = np.abs(s[:, None] - s[None, :]) * stride <= tol
     return Episode(f"nordseg/{desc}/x{stride}", R, s, np.concatenate(Qs), np.concatenate(seq), np.array(cond),
                    np.concatenate(pos), near, calib, unit="frame")
 

@@ -1,0 +1,9 @@
+M=  1000 K=1 filter    0.05 ms/frame | dense sim (D=8448)   7.74 ms
+M=  1000 K=6 filter    0.52 ms/frame | dense sim (D=8448)  16.23 ms
+M=  5000 K=1 filter    0.16 ms/frame | dense sim (D=8448)   9.67 ms
+M=  5000 K=6 filter    1.06 ms/frame | dense sim (D=8448)  25.49 ms
+M= 10000 K=1 filter    0.72 ms/frame | dense sim (D=8448)  17.17 ms
+M= 10000 K=6 filter    2.02 ms/frame | dense sim (D=8448)  15.93 ms
+M= 30000 K=1 filter    0.83 ms/frame | dense sim (D=8448)  67.81 ms
+M= 30000 K=6 filter   22.51 ms/frame | dense sim (D=8448)  71.45 ms
+RUN 20261127-069_E23_runtime
