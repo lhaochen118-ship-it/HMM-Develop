@@ -7,3 +7,7 @@
 | D03 | 2026-11-27 | CCBF (M4) parked; HMM-centred method = IA-HMM (M1+M2+M3) | legacy τ per condition nearly identical [R]; user constraint "HMM is the centre" |
 | D04 | 2026-11-27 | SeqSLAM tuned on calibration (L, enhancement) — enhancement off on dense maps | A21 |
 | D05 | 2026-11-27 | Positives for RobotCar/CMU = 5 m & 30°; fine 6DoF thresholds reported separately (M5 later) | standard coarse threshold; HMM operates at place level |
+| D06 | 2026-11-27 | Real stop-and-go/variable-speed evidence from 4Seasons (k02–k04) instead of only synthetic time-warp | user goal "high results on real data"; GNSS keyframes limit true stops except old_town |
+| D07 | 2026-11-27 | Model selection among {fixed kernel, LV, LV+ME, LV+ME+IA} by calibration NLL is part of the method (no test info) | F07/F16: latent velocity is regime-dependent |
+| D08 | 2026-11-27 | M5 test (k05): RobotCar, k=3 candidates single vs HMM, SuperPoint+LightGlue+PnP on the dataset SfM model, same budget | STATE next task 1; isolates candidate quality from matcher |
+| D09 | 2026-11-27 | Only Kaggle account nhatlong1103 used; other accounts not touched | Kaggle ToS (one account per person) and Ops Plan §2 |

@@ -121,3 +121,10 @@ SALAD 0.832 → 0.840 → 0.869 → **0.900** [+0.003,+0.066]; MegaLoc 0.795 →
 (LV+ME+IA 0.879 [+0.020,+0.060]). This is the strongest real-data evidence that making the velocity state observable
 through appearance change (ME) improves an HMM beyond a fair fixed kernel. Caveat: dev-selection picked the fixed kernel
 for NetVLAD (calibration traversal differs from test traversals; only 1 calibration traversal per route).
+
+## F18 [S] Multiple-testing control (T6.7; reports/HOLM.md)
+Holm–Bonferroni at α=0.05 over all E18 cells, p-values from a normal approximation of the paired sequence-bootstrap CIs:
+HMM (fixed kernel) vs single image: 36/40 cells significant, all improvements, 0 degradations.
+IA-HMM (dev-selected) vs fixed-kernel HMM: 10/29 significant improvements, 0 significant degradations.
+LV+ME vs fixed kernel (component, no selection): 9 significant improvements, 5 significant degradations (constant-speed
+CMU/Nordland-sync cells) — the regime dependence of F16, and why dev-selection is part of the method.
