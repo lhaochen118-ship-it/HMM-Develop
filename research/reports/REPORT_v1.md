@@ -81,11 +81,11 @@ MegaLoc 0.839→0.872 (0.879 với IA); office_loop CosPlace 0.853→0.923; coun
 6. **Fixed-lag** (H21 partial): lag 10 frame: +4.3 điểm CMU, +1.6 Nordland, n.s. RobotCar.
 7. **Chuyển giao giữa dataset** (H13 [S+]): siêu tham số chọn trên CMU áp lên RobotCar giữ 84–110% lợi ích; RobotCar→CMU
    giữ 60% (NetVLAD) / 110% (CosPlace); calibration (ECE) xấu đi khi chuyển τ.
+8. **Runtime** (H14): filter 0.05–2 ms/frame cho M≤10k; M=30k: 0.8 ms (K=1), 22.5 ms (K=6, CPU 4 lõi dùng chung) ⇒
+   cần sparse candidate cho LV ở bản đồ lớn.
 9. **Khi nào vận tốc ẩn có ích** (F16): trên CMU, khoảng cách lỗ hổng LV+ME so với kernel cố định thu hẹp đơn điệu khi tăng
    tỉ lệ dịch chuyển/frame ÷ khoảng cách node (−8.6 → −3.6 → +0.6 điểm khi lấy mỗi 1/3/6 frame); bác bỏ các giải thích
    thay thế (đơn vị tốc độ, mật độ node, prior vận tốc).
-8. **Runtime** (H14): filter 0.05–2 ms/frame cho M≤10k; M=30k: 0.8 ms (K=1), 22.5 ms (K=6, CPU 4 lõi dùng chung) ⇒
-   cần sparse candidate cho LV ở bản đồ lớn.
 
 ## 5. Kết luận khoa học (mức [S])
 - HMM **là** một ý tưởng tốt cho sequence-based VL khi được đặc tả đúng: nó luôn ≥ ảnh đơn và ≥ hoặc ngang SeqSLAM đã
