@@ -31,7 +31,16 @@ class Bench:
         if kind == "tau": return S / self.tau, None
         return self.llr[kind].loglik(S), np.zeros(len(rows))
 
-    def run(self, split, kind, mean, std, beta, vel=None, vstd=0.5, null=False, beta_fn=None, lag=0):
+    def fit_motion(self, vels):
+        from .. import motion
+        ms, sps = [], []
+        for (ep, rows), ch in zip(self.split["calib"], self.change["calib"]):
+            ms.append(motion.obs(ch)); sps.append(data.true_speed(ep)[rows])
+        self.me = motion.ChangeEmission(vels).fit(np.concatenate(ms), np.concatenate(sps))
+        return self.me
+
+    def run(self, split, kind, mean, std, beta, vel=None, vstd=0.5, null=False, beta_fn=None, lag=0, me_gamma=None,
+            vel_stay=0.9):
         posts = []
         for i, (ep, rows) in enumerate(self.split[split]):
             L, Ln = self.emit(ep, rows, kind)
@@ -42,8 +51,15 @@ class Bench:
                 S, pos, seq, rm = subset(ep, rows)
                 posts.append(hmm.forward_backward_lag(L, cfg, lag=lag, beta=b, reset_mask=rm).astype(np.float32))
             else:
-                posts.append(run_hmm(ep, rows, L, ks, beta=b, use_null=null, exit_prob=0.01 if null else 0.0,
-                                     loglik_null=Ln if null else None)["post"])
+                VL = None
+                if me_gamma is not None:
+                    from .. import motion
+                    VL = self.me.loglik(motion.obs(self.change[split][i]), gamma=me_gamma)
+                cfg = hmm.HMMConfig(ks, Pv=hmm.sticky_velocity(len(ks), vel_stay) if len(ks) > 1 else None,
+                                    exit_prob=0.01 if null else 0.0, null_stay=0.9, null_prior=0.0, leak=1e-3, use_null=null)
+                S_, pos_, seq_, rm = subset(ep, rows)
+                posts.append(hmm.forward(L, cfg, beta=b, reset_mask=rm, loglik_null=Ln if null else None,
+                                         vel_loglik=VL)["post"])
         return posts
 
     def nll(self, split, posts):
@@ -56,9 +72,10 @@ class Bench:
         allc, alln, allconf, blocks = [], [], [], []
         for (ep, rows), p in zip(self.split[split], posts):
             P = ep.pos[rows]; has = P.any(1)
-            pr = p[has].argmax(1); c = P[has][np.arange(has.sum()), pr].astype(float)
-            cf = np.array([p[has][t, ep.near[pr[t]]].sum() for t in range(len(pr))])
-            nl = metrics.event_nll(p[has], P[has]); off = sum(len(x) for x in allc)
+            ph, Ph = p[has], P[has]
+            pr = ph.argmax(1); c = Ph[np.arange(len(pr)), pr].astype(float)
+            cf = np.array([ph[t, ep.near[pr[t]]].sum() for t in range(len(pr))])
+            nl = metrics.event_nll(ph, Ph); off = sum(len(x) for x in allc)
             sq = ep.seq[rows][has]
             blocks += [np.where(sq == q)[0] + off for q in np.unique(sq)]
             allc.append(c); alln.append(nl); allconf.append(cf)

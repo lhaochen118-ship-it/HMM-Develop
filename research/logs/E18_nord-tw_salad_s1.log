@@ -1,0 +1,19 @@
+[nord-tw/salad] motion emission {'vels': [0.0, 0.5, 1.0, 1.5, 2.0, 3.0], 'mu': [-9.21, -5.537, -2.984, -2.397, -1.457, -0.871], 'sig': [0.15, 3.919, 3.706, 2.635, 1.842, 1.321], 'counts': [787, 640, 986, 0, 517, 1013]}
+  single         R@1 0.8085 NLL 0.8383 ECE 0.068 CW 0.0049
+  sel fixed (np.float64(0.9835087747319137), (1.0, 2.0), 0.5)
+  hmm_fixed      R@1 0.8695 NLL 0.5484 ECE 0.043 CW 0.0044
+  sel LV (np.float64(0.8406121389249798), 1.0, 0.35, 0.9)
+  LV             R@1 0.8967 NLL 0.4622 ECE 0.037 CW 0.0036
+  sel LV+ME (np.float64(0.7205592571590546), 0.3, 0.2, 0.25, 0.98)
+  LV+ME          R@1 0.8923 NLL 0.5029 ECE 0.052 CW 0.0335
+/home/user/HMM-Develop/hmmloc/infoaware.py:32: RuntimeWarning: divide by zero encountered in divide
+  u = np.minimum(1.0, change / kappa)
+/home/user/HMM-Develop/hmmloc/infoaware.py:32: RuntimeWarning: invalid value encountered in divide
+  u = np.minimum(1.0, change / kappa)
+/home/user/HMM-Develop/hmmloc/infoaware.py:33: RuntimeWarning: invalid value encountered in divide
+  b = beta0 * u / (2.0 - u)
+  sel LV+ME+IA (np.float64(0.7475668973509919), 1.0, np.float64(0.9179895341396325))
+  LV+ME+IA       R@1 0.9017 NLL 0.4018 ECE 0.025 CW 0.0091
+  ORACLE_motion  R@1 0.9610 NLL 0.2795 ECE 0.028 CW 0.0183
+{'single': (0.8085, [-0.0911, -0.0349]), 'hmm_fixed': (0.8695, [0.0, 0.0]), 'LV': (0.8967, [0.0147, 0.0422]), 'LV+ME': (0.8923, [0.0001, 0.0438]), 'LV+ME+IA': (0.9017, [0.0153, 0.0483]), 'ORACLE_motion': (0.961, [0.0606, 0.1301])}
+RUN 20261127-021_E18_nord-tw_salad_s1 618s

@@ -203,3 +203,16 @@ def timewarp(ep: Episode, speeds=(0.0, 0.5, 1.0, 2.0, 3.0), mean_dwell=40, seed=
                 ep.near, ep.calib_seq, unit=ep.unit)
     e.meta["speed"] = np.array(spd); e.meta["src_rows"] = rows
     return e
+
+
+def true_speed(ep: Episode):
+    """Per-frame GT displacement into frame t (map units/frame); NaN at sequence starts. Calibration use only."""
+    T = ep.T; sp = np.full(T, np.nan)
+    if "speed" in ep.meta:                        # synthetic time-warp: speed applied after frame t-1
+        sp[1:] = ep.meta["speed"][:-1]
+    elif ep.qC is not None:
+        sp[1:] = np.linalg.norm(np.diff(ep.qC, axis=0), axis=1)
+    else:
+        sp[1:] = 1.0
+    sp[ep.reset_mask()] = np.nan
+    return sp

@@ -41,7 +41,8 @@ def test_conservation_and_bruteforce():
         M, K, T = 3, 2, 4
         cfg = make_cfg(M, K, rng)
         L = rng.normal(size=(T, M)); Ln = rng.normal(size=T); beta = rng.uniform(0.3, 1.2, size=T)
-        out = hmm.forward(L, cfg, beta=beta, loglik_null=Ln)
+        V = rng.normal(size=(T, K))
+        out = hmm.forward(L, cfg, beta=beta, loglik_null=Ln, vel_loglik=V)
         tot = out["post"].sum(1) + out["null"]
         assert np.allclose(tot, 1, atol=1e-6), tot
         # brute force over all paths
@@ -49,7 +50,8 @@ def test_conservation_and_bruteforce():
         init = np.zeros(N); init[:-1] = np.repeat(np.full(M, (1 - cfg.null_prior) / M), K) * np.tile(cfg.P0v, M)
         init[-1] = cfg.null_prior
         def emis(t, s):
-            return np.exp(beta[t] * (Ln[t] if s == N - 1 else L[t, s // K]))
+            if s == N - 1: return np.exp(beta[t] * Ln[t]) * (cfg.P0v * np.exp(V[t])).sum()
+            return np.exp(beta[t] * L[t, s // K] + V[t, s % K])
         for tt in range(T):
             marg = np.zeros(N)
             for path in itertools.product(range(N), repeat=tt + 1):

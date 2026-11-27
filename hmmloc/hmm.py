@@ -97,9 +97,11 @@ def sticky_velocity(K: int, stay: float) -> np.ndarray:
 
 # ----------------------------------------------------------------------------------- forward filter
 def forward(loglik: np.ndarray, cfg: HMMConfig, beta=1.0, loglik_null=None, init=None,
-            return_full=False, reset_mask=None):
+            return_full=False, reset_mask=None, vel_loglik=None):
     """Causal filtering.  loglik: (T, M) log-likelihood ratios l_t(j). beta: scalar or (T,) tempering.
     loglik_null: (T,) or None (=0, the LLR null).  reset_mask: (T,) bool, start a new sequence there.
+    vel_loglik: (T,K) optional log p(m_t | v_t=k) — a second emission stream observed by the velocity state
+    (e.g. the appearance change between consecutive frames). The null state uses the P0v-marginal of it.
     Returns dict with 'post' (T,M) on-map marginal posterior, 'null' (T,), 'vel' (T,K)."""
     T, M = loglik.shape; K = cfg.K
     beta = np.broadcast_to(np.asarray(beta, float), (T,))
@@ -134,9 +136,16 @@ def forward(loglik: np.ndarray, cfg: HMMConfig, beta=1.0, loglik_null=None, init
         # update
         l = beta[t] * loglik[t].astype(np.float64)
         ln = beta[t] * lnull[t] if cfg.use_null else -np.inf
-        m = max(l.max(), ln if cfg.use_null else -np.inf)
-        w = np.exp(l - m)
-        b = pred * w[:, None]
+        if vel_loglik is not None:
+            mv = vel_loglik[t].astype(np.float64); mvm = mv.max()
+            wk = np.exp(mv - mvm)
+            ln = ln + (np.log((cfg.P0v * wk).sum()) + mvm) if cfg.use_null else ln
+            lk_off = mvm
+        else:
+            wk = np.ones(K); lk_off = 0.0
+        m = max(l.max() + lk_off, ln if cfg.use_null else -np.inf)
+        w = np.exp(l + lk_off - m)
+        b = pred * w[:, None] * wk[None, :]
         bn = pn * np.exp(ln - m) if cfg.use_null else 0.0
         Z = b.sum() + bn
         if not np.isfinite(Z) or Z <= 0:

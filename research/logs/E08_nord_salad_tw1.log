@@ -1,0 +1,12 @@
+  single           R@1 0.8085 NLL 0.8383 ECE 0.068 CW 0.0049
+  seqslam_L20      R@1 0.6714 NLL 6.0505 ECE 0.668 CW 0.0000
+  fixed kernel sel (np.float64(0.9013471385176649), 1.0, 3.0, 0.5)
+  hmm_fixed        R@1 0.8712 NLL 0.5108 ECE 0.060 CW 0.0028
+  latent-velocity sel (np.float64(0.8406121389249798), 1.0, 0.35)
+  hmm_latentvel    R@1 0.8967 NLL 0.4622 ECE 0.037 CW 0.0036
+  ia_fixed sel (np.float64(1.197983015119656), 1.5, np.float64(0.7788773775100709))
+  ia_fixed         R@1 0.7828 NLL 0.9805 ECE 0.143 CW 0.0039
+  ia_latentvel sel (np.float64(1.0580406743986799), 1.5, np.float64(0.9179895341396325))
+  ia_latentvel     R@1 0.8401 NLL 0.8143 ECE 0.105 CW 0.0038
+  ORACLE_motion    R@1 0.9355 NLL 0.4170 ECE 0.037 CW 0.0243
+RUN 20261127-017_E08_nord_salad_tw1 335s

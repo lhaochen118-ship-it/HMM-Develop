@@ -29,6 +29,7 @@ def frame_change(Q, seq=None):
 
 
 def beta_schedule(change, beta0, kappa, floor=0.02):
-    u = np.minimum(1.0, change / kappa)
+    kappa = max(float(kappa), 1e-6)
+    u = np.minimum(1.0, np.maximum(change, 0.0) / kappa)
     b = beta0 * u / (2.0 - u)
     return np.maximum(b, floor * beta0)
