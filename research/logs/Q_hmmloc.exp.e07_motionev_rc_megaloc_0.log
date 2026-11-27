@@ -1,0 +1,17 @@
+velocity bins from calibration quantiles: [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.69]
+[rc/megaloc] motion emission {'vels': [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.69], 'mu': [-2.602, -1.637, -1.455, -1.39, -1.361, -1.336, -1.179], 'sig': [0.229, 0.208, 0.239, 0.253, 0.227, 0.206, 0.229], 'counts': [0, 107, 106, 132, 116, 67, 19]}
+  single         R@1 0.9744 NLL 0.0585 ECE 0.016 CW 0.0085
+  seqslam        R@1 0.9838 NLL 4.6459 ECE 0.972 CW 0.0000
+  sel fixed (np.float64(0.0018864125004454083), (2.5, 1.5), 1.0)
+  hmm_fixed      R@1 0.9838 NLL 0.0347 ECE 0.011 CW 0.0102
+/home/user/HMM-Develop/hmmloc/hmm.py:45: RuntimeWarning: invalid value encountered in divide
+  w = w / w.sum()
+  sel LV (np.float64(0.008254706518237207), 1.0, 0.5, 0.9)
+  LV             R@1 0.9779 NLL 0.0573 ECE 0.017 CW 0.0111
+  sel LV+ME (np.float64(0.001060464252275844), 0.6, 1.0, 1.0, 0.98)
+  LV+ME          R@1 0.9804 NLL 0.0572 ECE 0.017 CW 0.0136
+  sel LV+ME+IA (np.float64(0.001060464028512851), 1.0, 0.17366983890533447)
+  LV+ME+IA       R@1 0.9804 NLL 0.0572 ECE 0.017 CW 0.0136
+  OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(0.0018864125004454083), 'LV': np.float64(0.008254706518237207), 'LV+ME': np.float64(0.001060464252275844), 'LV+ME+IA': np.float64(0.001060464028512851)})
+{'single': (0.9744, [-0.0179, -0.0025]), 'seqslam': (0.9838, [-0.0069, 0.0069]), 'hmm_fixed': (0.9838, [0.0, 0.0]), 'LV': (0.9779, [-0.0153, 0.0]), 'LV+ME': (0.9804, [-0.0108, 0.0034]), 'LV+ME+IA': (0.9804, [-0.0108, 0.0034]), 'OURS_devselected': (0.9804, [-0.0108, 0.0034])}
+RUN 20261127-034_E18_rc_megaloc_s0 253s

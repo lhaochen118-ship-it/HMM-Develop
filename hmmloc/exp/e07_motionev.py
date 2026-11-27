@@ -26,6 +26,24 @@ def ev(name, posts):
     RES[name], PER[name] = B.evaluate(posts); r = RES[name]
     print(f"  {name:14s} R@1 {r['R@1']:.4f} NLL {r['NLL']:.4f} ECE {r['ECE']:.3f} CW {r['CW@0.9']:.4f}", flush=True)
 ev("single", [baselines.single_image_post(ep.sim()[r], B.tau) for ep, r in B.split["test"]])
+SV = tuple(v for v in VELS if v > 0) if len(VELS) > 1 else (1.0,)
+def _seq(split, L):
+    out = []
+    for ep, r in B.split[split]:
+        S, pos, seq, rm = subset(ep, r)
+        # velocities in map NODES per frame: divide metric speeds by the median node spacing
+        sp = np.median(np.diff(ep.s)) if ep.unit != "frame" else 1.0
+        sc = baselines.seqslam_causal(S, L=L, vels=tuple(sorted(set(round(v / sp, 2) for v in SV))), enhance=0, reset_mask=rm)
+        z = sc * 5.0; z -= z.max(1, keepdims=True); p_ = np.exp(z); out.append(p_ / p_.sum(1, keepdims=True))
+    return out
+_bs = None
+for L in (5, 10, 20):
+    acc = []
+    for (ep, r), p_ in zip(B.split["calib"], _seq("calib", L)):
+        P = ep.pos[r]; k = P.any(1); acc.append(P[np.arange(len(p_)), p_.argmax(1)][k])
+    a = np.concatenate(acc).mean()
+    if _bs is None or a > _bs[0]: _bs = (a, L)
+ev(f"seqslam", _seq("test", _bs[1])); RES["seqslam"]["L"] = _bs[1]
 
 def sel(grid, fn):
     best = None
@@ -49,6 +67,10 @@ ia = sel(itertools.product([0.35, 0.5, 0.75, 1.0, 1.5], list(B.kappa_grid) + [fl
 print("  sel LV+ME+IA", ia, flush=True)
 ev("LV+ME+IA", B.run("test", KIND, None, None, None, vel=VELS, vstd=vs, me_gamma=g, vel_stay=st,
                      beta_fn=lambda ch, b0=ia[1], k=ia[2]: infoaware.beta_schedule(ch, b0, k)))
+_cands = {"hmm_fixed": fk[0], "LV": lv[0], "LV+ME": lvme[0], "LV+ME+IA": ia[0]}
+_pick = min(_cands, key=_cands.get)
+RES["OURS_devselected"] = dict(RES[_pick]); PER["OURS_devselected"] = PER[_pick]; RES["OURS_devselected"]["picked"] = _pick
+print(f"  OURS_devselected -> {_pick} (calib NLL {_cands})", flush=True)
 if "speed" in B.eps[0].meta:
     ep, rows = B.split["test"][0]; spd = B.eps[0].meta["speed"][rows]
     ks = [hmm.chain_kernel(ep.s, mean=v, std=0.5) for v in sorted(set(spd))]; vals = sorted(set(spd))

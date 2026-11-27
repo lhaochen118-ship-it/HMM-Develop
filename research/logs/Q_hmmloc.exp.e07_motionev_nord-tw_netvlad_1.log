@@ -1,0 +1,6 @@
+velocity bins from calibration quantiles: [0.0, 0.5, 1.0, 2.0, 3.0]
+[nord-tw/netvlad] motion emission {'vels': [0.0, 0.5, 1.0, 2.0, 3.0], 'mu': [-9.21, -5.298, -2.778, -1.13, -0.646], 'sig': [0.15, 4.069, 3.804, 1.648, 1.224], 'counts': [787, 640, 986, 517, 1013]}
+  single         R@1 0.4297 NLL 3.1281 ECE 0.082 CW 0.0133
+  seqslam        R@1 0.5804 NLL 6.7899 ECE 0.579 CW 0.0000
+  sel fixed (np.float64(4.15365680161559), (1.0, 2.0), 0.2)
+  hmm_fixed      R@1 0.5631 NLL 2.8160 ECE 0.133 CW 0.0005

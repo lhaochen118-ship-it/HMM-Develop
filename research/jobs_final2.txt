@@ -1,0 +1,10 @@
+hmmloc.exp.e09_percond rc netvlad
+hmmloc.exp.e09_percond rc salad
+hmmloc.exp.e09_percond nord netvlad
+hmmloc.exp.e09_percond nord salad
+hmmloc.exp.e06_lag cmu netvlad
+hmmloc.exp.e06_lag nord netvlad
+hmmloc.exp.e06_lag rc netvlad
+hmmloc.exp.e02_infoaware cmu netvlad tau
+hmmloc.exp.e02_infoaware cmu salad tau
+hmmloc.exp.e04_offmap netvlad 0
