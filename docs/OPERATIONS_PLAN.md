@@ -1,6 +1,7 @@
 # KẾ HOẠCH VẬN HÀNH, NGHIÊN CỨU VÀ CHUYỂN GIAO
 
-*Phiên bản 1.0 — viết lại từ bản nháp "Prompt_Agent_Research.docx". Tài liệu này quy định **cách agent làm việc**
+*Phiên bản 1.1 — viết lại từ bản nháp "Prompt_Agent_Research_improve.docx" (v1.0 dựa trên "Prompt_Agent_Research.docx"; v1.1
+bỏ phần cuộc thi Zalo DataMate, thay bằng quy trình chung cho nhánh đề tài mới). Tài liệu này quy định **cách agent làm việc**
 (tài nguyên, quy trình, kiểm soát chất lượng, bàn giao). **Nội dung khoa học** (giả thuyết, giai đoạn, metric) nằm ở
 `docs/MASTER_RESEARCH_PLAN.md`; hai tài liệu không lặp lại nhau.*
 
@@ -15,11 +16,9 @@
 | 3 | Mục "4.1/4.2" không có mục 4 cha; GPU nằm ở §3, metadata ở §4 | Gộp thành một chương tài nguyên tính toán (§3) |
 | 4 | "Không cần tiết kiệm GPU" mâu thuẫn với "kiểm tra giờ GPU còn lại trước khi chạy" | Quy tắc rõ: **tối ưu thời gian ra kết quả** trong giới hạn quota; luôn ước lượng trước khi chạy (§3.5) |
 | 5 | Đề xuất FSDP cho mọi nhánh | FSDP chỉ có ích khi *mô hình* không vừa một GPU. Phần lớn việc của đề tài (trích descriptor, matching, HMM) là suy luận → **chia dữ liệu theo GPU** nhanh và đơn giản hơn (§3.2) |
-| 6 | Dùng Kaggle Dataset *public* cho mọi thứ | Dataset bên thứ ba (RobotCar, CMU, Nordland, dữ liệu cuộc thi) có license hạn chế phân phối lại → để **private** và chia sẻ cho các tài khoản; chỉ code/kết quả tự tạo mới để public (§4.1) |
-| 7 | "Đạt score bằng 1 trên public test bằng cách so sánh với submission.jsonl" | Không thể đặt làm mục tiêu kỹ thuật: score 1.0 chỉ đạt được nếu nhãn test bị lộ, và dùng nhãn test để huấn luyện/tune là gian lận theo luật cuộc thi. Thay bằng mục tiêu tối đa hoá score trên validation nội bộ không rò rỉ (§8.4) |
-| 8 | Tham chiếu tệp `data.txt` và hai tệp ZIP của Zalo AI "đã có trong repository" | Trên nhánh hiện tại **không có** các tệp này → người dùng cần đưa lên trước khi bắt đầu §8 |
-| 9 | Link Facebook về Build Docker | Agent không đọc được link mạng xã hội → người dùng dán nội dung hướng dẫn vào repo (§8.6) |
-| 10 | Thứ tự §9 (bàn giao) đứng trước §10 (đề tài mới) nhưng bàn giao lại phụ thuộc trạng thái cuối | Sắp lại theo vòng đời công việc: thiết lập → nghiên cứu → bàn giao → nhánh mới |
+| 6 | Dùng Kaggle Dataset *public* cho mọi thứ | Dataset bên thứ ba (RobotCar, CMU, Nordland, …) có license hạn chế phân phối lại → để **private** và chia sẻ cho các tài khoản; chỉ code/kết quả tự tạo mới để public (§4.1) |
+| 7 | Mục 9.3 và 10 đều "sao chép nhánh hiện tại" nhưng không nói làm trước hay sau dọn dẹp/bàn giao | Quy định rõ: dọn dẹp → bộ bàn giao → mới tạo nhánh (§7.3, §8) |
+| 8 | Mục tiêu nghiên cứu nói về robot nhưng không nêu yêu cầu tổng quát hoá ở phần mục tiêu, chỉ ở phần quy trình | Đưa yêu cầu "phương pháp tổng quát" lên §1 |
 
 ---
 
@@ -34,7 +33,7 @@
 Ưu tiên cơ chế/công thức mới có cơ sở toán học hơn là lắp ghép module có sẵn; mục tiêu là đủ novelty và bằng chứng
 thực nghiệm cho venue A/A*. Không được tuyên bố novelty hay SOTA khi chưa có bằng chứng.
 
-**Đề tài phụ (nhánh riêng, §8):** cuộc thi Zalo AI Challenge "DataMate".
+**Đề tài khác:** thực hiện trên nhánh riêng theo quy trình chung ở §8.
 
 ---
 
@@ -188,31 +187,19 @@ Tạo nhánh mới từ nhánh hiện tại (sau 7.1–7.2), commit `READ_ME_FIR
 
 ---
 
-## 8. Nhánh đề tài mới: Zalo AI Challenge — DataMate
+## 8. Nhánh cho đề tài khác
 
-### 8.1 Tạo nhánh
-Nhánh mới từ nhánh hiện tại; xoá tệp đặc thù đề tài HMM; giữ tài liệu quy trình (tài liệu này, automation Kaggle, `log_run.py`,
-templates). Viết README mô tả cấu trúc repo và nhiệm vụ mới.
+1. **Thời điểm:** sau khi đã dọn dẹp (§7.1) và lập bộ bàn giao (§7.2), để nhánh mới kế thừa trạng thái gọn và mới nhất.
+2. **Tạo nhánh** từ nhánh hiện tại, đặt tên theo đề tài mới.
+3. **Lược bỏ** mọi tệp đặc thù đề tài HMM (notebook, nguồn cell, kết quả, findings, pilot, tài liệu khoa học).
+4. **Giữ lại** tài nguyên dùng chung: tài liệu vận hành này, `automation/` (build notebook, chạy/theo dõi Kaggle, `log_run.py`),
+   `research/templates/`, khung thư mục `research/` (STATE, HYPOTHESES, FINDINGS, DECISIONS, ISSUES — để trống), quy ước
+   registry.
+5. **Viết README** giải thích cấu trúc repository, đề tài mới, đầu vào cần có (dữ liệu, luật/đánh giá, ràng buộc tài nguyên) và
+   việc đầu tiên cần làm.
+6. **Kiểm tra** nhánh mới không còn tham chiếu tới tệp đã xoá (link trong README, đường dẫn trong script) và không chứa token.
 
-### 8.2 Đầu vào cần người dùng cung cấp
-- `data.txt` (nội dung trang Data) và hai tệp ZIP dữ liệu của ban tổ chức — **chưa có trên nhánh hiện tại**.
-- Nội dung hướng dẫn build Docker (link Facebook không truy cập được).
-- Luật cuộc thi: định dạng nộp bài, công thức đánh giá, giới hạn thời gian/tài nguyên suy luận, ràng buộc model/dữ liệu ngoài.
-
-### 8.3 Các bước
-1. Đọc đề bài và luật; kiểm tra cấu trúc dữ liệu và vài mẫu đại diện (không đọc toàn bộ).
-2. Cài đặt **đúng** công thức đánh giá và kiểm chứng trên dữ liệu có nhãn.
-3. Tạo validation nội bộ phản ánh phân phối test (tách theo nhóm/thời gian nếu cần để tránh rò rỉ).
-4. Khảo sát phương pháp, repo và paper mới phù hợp; dựng baseline mạnh nhanh.
-5. Vòng lặp §5: đề xuất → thử nghiệm → chạy Kaggle → phân tích → giữ/loại.
-6. Khi có hệ thống tốt: chạy song song nhiều biến thể (fine-tune/distill với các teacher và tập dữ liệu khác nhau, mỗi biến thể
-   một GPU theo §3.2), chọn theo validation nội bộ; ensemble nếu luật cho phép và nằm trong giới hạn suy luận.
-7. Đóng gói Docker theo yêu cầu ban tổ chức; kiểm tra chạy offline, đúng thời gian giới hạn, đúng định dạng đầu ra.
-
-### 8.4 Mục tiêu điểm số
-Tối đa hoá điểm theo công thức của ban tổ chức trên validation nội bộ và public leaderboard. **Không** dùng nhãn hoặc
-`submission.jsonl` của public test để huấn luyện, chọn mô hình hay sao chép đáp án: điểm 1.0 đạt bằng cách đó không phản ánh
-năng lực hệ thống, sẽ sụp trên private test và vi phạm luật. File `submission.jsonl` chỉ dùng để kiểm tra **định dạng**.
+Nhánh đề tài mới áp dụng cùng §2–§6 và §9 của tài liệu này.
 
 ---
 
@@ -228,5 +215,5 @@ các baseline mới nhất phù hợp.
 1. §2 Thiết lập tài khoản → §3.4 xác minh cấu hình L4 bằng một kernel chẩn đoán ngắn.
 2. §6 Related Work + kiểm tra trùng lặp (song song với dựng feature bank §4.1).
 3. §5 Vòng lặp nghiên cứu theo các giai đoạn của Master Research Plan.
-4. §7 Dọn dẹp và bàn giao khi kết thúc khung chat.
-5. §8 Nhánh DataMate — bắt đầu khi người dùng cung cấp đủ đầu vào §8.2.
+4. §7 Dọn dẹp và bàn giao khi kết thúc khung chat → tạo nhánh tiếp nối cùng đề tài.
+5. §8 Nhánh đề tài khác — khi có yêu cầu.
