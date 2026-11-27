@@ -17,6 +17,7 @@ cho mọi ô, và chưa so với learned sequence methods (JIST/SeqVLAD) hay 6Do
 
 ## 2. Phương pháp: IA-HMM (HMM là trung tâm)
 State z_t = (node bản đồ j, bin vận tốc k) ∪ {off-map}. Mọi module là thành phần của HMM:
+
 - **Transition**: kernel Gauss theo arc-length bản đồ (mét hoặc frame), sticky velocity P(k'|k), exit/re-entry null, leak
   phục hồi; bảo toàn khối lượng chính xác (G0: khớp liệt kê vét cạn mọi quỹ đạo, `tests/test_hmm_core.py`).
 - **Emission thị giác**: s/τ (τ hiệu chỉnh ảnh đơn trên calibration) hoặc LLR logistic (HT-weighted); null l(∅)=0.
@@ -42,12 +43,21 @@ Bảng đầy đủ R@1 + NLL cho 33 ô (kèm seed, video-rate, 4Seasons): `RESU
 | **4Seasons countryside (thật)** NetVLAD / CosPlace / SALAD / MegaLoc | 0.278 / 0.575 / 0.659 / 0.724 | 0.343 / 0.611 / 0.726 / 0.791 | 0.467 / 0.662 / 0.855 / 0.824 | **0.497 / 0.677 / 0.851 / 0.888** |
 | Nordland video-rate (k01) NetVLAD / SALAD | 0.379 / 0.815 | 0.753 / 0.895 | 0.936 / 0.953 | **0.936 / 0.953** |
 | Nordland video-rate time-warp | 0.418 / 0.839 | 0.601 / 0.873 | 0.652 / 0.905 | **0.794 / 0.915** |
+
 (Dev-selection chọn biến thể theo NLL calibration nên đôi khi không phải biến thể có R@1 tốt nhất, ví dụ RobotCar CosPlace.)
+
+![Hình 1](../figures/fig1_r1_small_multiples.png)
+
+*Hình 1. R@1: ảnh đơn vs SeqSLAM tuned vs IA-HMM (dev-selected), 6 bối cảnh × 4 descriptor (MegaLoc chưa trích xuất cho office_loop).*
 
 **Phân rã đóng góp dưới vận tốc thay đổi** (Nordland time-warp NetVLAD, 3 seed, trung bình): single 0.40 → SeqSLAM 0.56 →
 HMM kernel cố định 0.55 → +vận tốc ẩn 0.67 → +emission vận tốc 0.79 → +IA 0.84 (oracle motion 0.87). Trên dữ liệu thật
 4Seasons: NetVLAD 0.51 → 0.70 (SeqSLAM) → 0.79 (fixed) → 0.84 (IA-HMM); CosPlace 0.81 → 0.88 → 0.85 → 0.92 (CI so với fixed
 không chứa 0); countryside MegaLoc 0.72 → 0.79 → 0.82 → 0.89 (CI không chứa 0).
+
+![Hình 2](../figures/fig2_ablation_variable_speed.png)
+
+*Hình 2. Phân rã đóng góp từng module HMM dưới vận tốc thay đổi (time-warp 3 seed; 4Seasons thật).*
 
 ## 4. Phát hiện chẩn đoán (Phase 4)
 1. **Phụ thuộc quan sát là nguyên nhân chính của overconfidence** (H5/H6 [S+]): β* do calibration chọn = 0.1 ở stride 1,
@@ -77,8 +87,12 @@ không chứa 0); countryside MegaLoc 0.72 → 0.79 → 0.82 → 0.89 (CI không
 - Không claim: SOTA, 6DoF mịn, bảo đảm lý thuyết ngoài giả định Gaussian AR(1).
 
 ## 6. Hạn chế & việc tiếp theo
-1. Chưa có baseline learned sequence (JIST/SeqVLAD/CaseVPR) — cần trọng số; chưa có held-out dataset (MSLS/SFU/4Seasons cross-traversal).
-2. Time-warp là biến thể tổng hợp trên dữ liệu thật; cần chuỗi stop-and-go thật (4Seasons/Oxford full).
-3. LV không thắng trên dữ liệu tốc độ ổn định (CMU) — cần học bin/độ rộng tốt hơn hoặc HSMM.
-4. M5 (PnP với ứng viên từ posterior) để chuyển lợi ích place-level sang pose mịn; posterior-weighted pose chỉ +1–2 điểm ở 0.5 m.
-5. Đa seed cho mọi ô time-warp; Holm correction cho họ H1/H17/H20/H22; held-out test chính thức (visuallocalization.net) cần người dùng duyệt.
+1. Chưa có baseline learned sequence (JIST/SeqVLAD/CaseVPR) — không có trọng số trên Kaggle (blocker, cần cho phép tải).
+2. Dữ liệu thật có vận tốc thay đổi: đã có 2 tuyến 4Seasons, nhưng poses GNSS theo keyframe nên rất ít khung dừng thật
+   (≤1.8%); dừng-đi thực sự mới chỉ kiểm chứng qua time-warp — cần chuỗi video thô (Oxford RobotCar full, 4Seasons raw).
+3. Vận tốc ẩn không thắng trên dữ liệu tốc độ ổn định (CMU) — hiện giải bằng chọn mô hình trên calibration; hướng sửa gốc:
+   HSMM dwell, bin/độ rộng học được.
+4. M5 (PnP với ứng viên từ posterior) để chuyển lợi ích place-level sang pose mịn; posterior-weighted pose chỉ +1–4 điểm ở 0.5 m.
+5. Countryside chỉ có 1 traversal calibration ⇒ chọn mô hình nhiễu; cần thêm traversal (old_town, 4 bản ghi).
+6. Đa seed cho mọi ô time-warp; Holm correction cho họ H1/H17/H20/H22; held-out test chính thức (visuallocalization.net)
+   cần người dùng duyệt.
