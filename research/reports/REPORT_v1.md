@@ -37,12 +37,12 @@ Bảng đầy đủ R@1 + NLL cho 33 ô (kèm seed, video-rate, 4Seasons): `RESU
 | Nordland đồng bộ — NetVLAD / CosPlace / SALAD / MegaLoc | 0.364 / 0.652 / 0.811 / 0.821 | 0.889 / 0.966 / 0.970 / 0.960 | 0.983 / 0.989 / 0.990 / 0.989 | **0.983 / 0.982 / 0.991 / 0.989** |
 | Nordland time-warp s1 | 0.430 / 0.695 / 0.808 / 0.832 | 0.580 / 0.658 / 0.671 / 0.669 | 0.563 / 0.826 / 0.869 / 0.882 | **0.827 / 0.915 / 0.901 / 0.917** |
 | Extended CMU (11 slice) | 0.701 / 0.908 / 0.943 / 0.932 | 0.770 / 0.921 / 0.954 / **0.947** | 0.820 / 0.931 / 0.955 / 0.941 | **0.820 / 0.931 / 0.955** / 0.941 |
-| RobotCar Seasons v2 | 0.708 / 0.834 / 0.987 / 0.974 | 0.777 / 0.858 / 0.989 / 0.984 | 0.779 / **0.868** / 0.991 / 0.989 | **0.779** / 0.857 / **0.991** / — |
+| RobotCar Seasons v2 | 0.708 / 0.834 / 0.987 / 0.974 | 0.777 / 0.858 / 0.989 / 0.984 | 0.779 / **0.868** / 0.991 / 0.987 | **0.779** / 0.857 / **0.991 / 0.987** |
 | **4Seasons office_loop (thật)** NetVLAD / CosPlace / SALAD | 0.512 / 0.814 / 0.932 | 0.702 / 0.879 / 0.956 | 0.792 / 0.853 / 0.969 | **0.836 / 0.924 / 0.980** |
 | **4Seasons countryside (thật)** NetVLAD / CosPlace / SALAD / MegaLoc | 0.278 / 0.575 / 0.659 / 0.724 | 0.343 / 0.611 / 0.726 / 0.791 | 0.467 / 0.662 / 0.855 / 0.824 | **0.497 / 0.677 / 0.851 / 0.888** |
 | Nordland video-rate (k01) NetVLAD / SALAD | 0.379 / 0.815 | 0.753 / 0.895 | 0.936 / 0.953 | **0.936 / 0.953** |
 | Nordland video-rate time-warp | 0.418 / 0.839 | 0.601 / 0.873 | 0.652 / 0.905 | **0.794 / 0.915** |
-(RobotCar MegaLoc IA-HMM: xem bảng đầy đủ; dev-selection chọn biến thể theo NLL calibration nên đôi khi không phải biến thể R@1 tốt nhất.)
+(Dev-selection chọn biến thể theo NLL calibration nên đôi khi không phải biến thể có R@1 tốt nhất, ví dụ RobotCar CosPlace.)
 
 **Phân rã đóng góp dưới vận tốc thay đổi** (Nordland time-warp NetVLAD, 3 seed, trung bình): single 0.40 → SeqSLAM 0.56 →
 HMM kernel cố định 0.55 → +vận tốc ẩn 0.67 → +emission vận tốc 0.79 → +IA 0.84 (oracle motion 0.87). Trên dữ liệu thật
