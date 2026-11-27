@@ -1,0 +1,17 @@
+[cmu/megaloc] tau=0.0145 (calib single NLL 0.174) | LLR raw w=[17.328348] b=-8.22 | LLR raw+z w=[4.2064114 2.7185752] b=-8.76
+  SeqSLAM selected L=10 enhance=0 (calib R@1 0.950)
+  H0_hmm_tau_b1      sel(mean=1.5,std=3.0,beta=1.0) R@1 0.940 [0.918,0.960] NLL 0.169 ECE 0.034 CW 0.033 AUROC 0.858 [3s]
+  H1_hmm_tau_beta    sel(mean=1.5,std=3.0,beta=0.75) R@1 0.941 [0.919,0.960] NLL 0.158 ECE 0.025 CW 0.028 AUROC 0.859 [15s]
+  H2_hmm_llr         sel(mean=1.5,std=1.5,beta=1.0) R@1 0.951 [0.934,0.966] NLL 0.411 ECE 0.054 CW 0.012 AUROC 0.856 [18s]
+  H3_hmm_llrz        sel(mean=1.5,std=3.0,beta=1.0) R@1 0.943 [0.921,0.961] NLL 0.179 ECE 0.009 CW 0.023 AUROC 0.812 [22s]
+  H4_hmm_llrz_vel    sel(mean=None,std=None,beta=0.5) R@1 0.905 [0.872,0.933] NLL 0.255 ECE 0.036 CW 0.035 AUROC 0.847 [7s]
+
+=== cmu/megaloc  (test frames 14199, seqs 86) ===
+B01_single         R@1 0.932 [0.908,0.953] NLL 0.177 ECE 0.012 CW 0.019 AUROC 0.886
+B04_seqslam        R@1 0.945 [0.923,0.965] NLL 1.849 ECE 0.765 CW 0.000 AUROC 0.882 | dR@1 +0.013 CI[+0.004,+0.022]
+H0_hmm_tau_b1      R@1 0.940 [0.918,0.960] NLL 0.169 ECE 0.034 CW 0.033 AUROC 0.858 | dR@1 +0.008 CI[+0.003,+0.013]
+H1_hmm_tau_beta    R@1 0.941 [0.919,0.960] NLL 0.158 ECE 0.025 CW 0.028 AUROC 0.859 | dR@1 +0.009 CI[+0.003,+0.014]
+H2_hmm_llr         R@1 0.951 [0.934,0.966] NLL 0.411 ECE 0.054 CW 0.012 AUROC 0.856 | dR@1 +0.019 CI[+0.008,+0.031]
+H3_hmm_llrz        R@1 0.943 [0.921,0.961] NLL 0.179 ECE 0.009 CW 0.023 AUROC 0.812 | dR@1 +0.010 CI[+0.005,+0.017]
+H4_hmm_llrz_vel    R@1 0.905 [0.872,0.933] NLL 0.255 ECE 0.036 CW 0.035 AUROC 0.847 | dR@1 -0.027 CI[-0.041,-0.015]
+RUN 20261127-003_E01_cmu_megaloc 114s

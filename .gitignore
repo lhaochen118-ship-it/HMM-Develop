@@ -16,3 +16,8 @@ kaggle.json
 # Hệ điều hành
 Thumbs.db
 desktop.ini
+
+# large / derived
+*.npy
+*.npz
+kaggle/**/output/
