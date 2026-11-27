@@ -1,0 +1,4 @@
+done hmmloc.exp.e13_vprior_cmu_salad_0
+done hmmloc.exp.e13_vprior_cmu_netvlad_0
+done hmmloc.exp.e13_vprior_4s_netvlad_0
+xargs: bash: terminated by signal 15

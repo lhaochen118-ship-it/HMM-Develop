@@ -1,0 +1,6 @@
+[4s/netvlad] bins [0.0, 3.17, 4.76, 5.5, 6.09, 6.76, 7.72] prior [0.036 0.141 0.208 0.219 0.205 0.157 0.035]
+  hmm_fixed    R@1 0.7922 NLL 1.0160 calibNLL 0.1383 
+  uniformP0    R@1 0.8009 NLL 0.9704 calibNLL 0.1360 
+  speedP0      R@1 0.8009 NLL 0.9684 calibNLL 0.1366 
+  devselected  R@1 0.8009 NLL 0.9704 calibNLL 0.1360 uniformP0
+RUN 20261127-124_E18b_4s_netvlad_s0 389s

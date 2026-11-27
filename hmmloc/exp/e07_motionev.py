@@ -11,6 +11,8 @@ DS, DESC = sys.argv[1], sys.argv[2]; SEED = int(sys.argv[3]) if len(sys.argv) > 
 t00 = time.time()
 if DS.endswith("-tw"):
     eps = [data.timewarp(e, seed=SEED) for e in load(DS[:-3], DESC)]
+elif "-q" in DS:                               # e.g. cmu-q3: every 3rd query frame
+    base_ds, k = DS.split("-q"); eps = [data.subsample_queries(e, int(k)) for e in load(base_ds, DESC)]
 else:
     eps = load(DS, DESC)
 B = Bench(DS, DESC, eps=eps); KIND = "tau"

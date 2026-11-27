@@ -25,7 +25,7 @@ def arc_length(C: np.ndarray) -> np.ndarray:
 
 
 def chain_kernel(s: np.ndarray, mean: float, std: float, back: float = None, width_sd: float = 4.0,
-                 floor: float = 0.0) -> sp.csr_matrix:
+                 floor: float = 0.0, cell: bool = False) -> sp.csr_matrix:
     """Row-stochastic transition over an ordered map with node positions s (arc-length or index).
     Displacement d = s_j - s_i ~ N(mean, std^2), truncated to [mean - width_sd*std, mean + width_sd*std]
     (and >= -back if back is given). `floor` adds a small uniform mass inside the window (robustness)."""
@@ -33,6 +33,10 @@ def chain_kernel(s: np.ndarray, mean: float, std: float, back: float = None, wid
     lo_d, hi_d = mean - width_sd * std, mean + width_sd * std
     if back is not None: lo_d = max(lo_d, -back)
     rows, cols, vals = [], [], []
+    # optional density correction: weight node j by its Voronoi cell length (discretised position density)
+    if cell:
+        mid = np.concatenate([[s[0]], (s[1:] + s[:-1]) / 2, [s[-1]]]); cw = np.maximum(np.diff(mid), 1e-3)
+        cw = np.minimum(cw, 5 * np.median(cw))
     lo_idx = np.searchsorted(s, s + lo_d, side="left")
     hi_idx = np.searchsorted(s, s + hi_d, side="right")
     for i in range(M):
@@ -42,6 +46,9 @@ def chain_kernel(s: np.ndarray, mean: float, std: float, back: float = None, wid
         if len(js) == 0: js = np.array([min(i, M - 1)])
         d = s[js] - s[i]
         w = np.exp(-0.5 * ((d - mean) / max(std, 1e-9)) ** 2) + floor
+        if cell: w = w * cw[js]
+        if not np.isfinite(w.sum()) or w.sum() <= 0:          # empty/degenerate window -> stay
+            js = np.array([i]); w = np.ones(1)
         w = w / w.sum()
         rows.append(np.full(len(js), i)); cols.append(js); vals.append(w)
     A = sp.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(M, M))
@@ -83,6 +90,13 @@ class HMMConfig:
         self.reentry = np.full(self.M, 1.0 / self.M) if reentry is None else reentry / reentry.sum()
         self.kernelsT = [k.T.tocsr() for k in self.kernels]
         assert np.allclose(self.Pv.sum(1), 1) and np.isclose(self.P0v.sum(), 1)
+
+
+def mixing_velocity(p0: np.ndarray, stay: float) -> np.ndarray:
+    """IMM-style velocity transition: keep the regime with prob `stay`, else redraw from the stationary speed
+    distribution p0. stay=0 makes the latent-velocity HMM identical to a fixed mixture-of-velocities kernel."""
+    p0 = np.asarray(p0, float); p0 = p0 / p0.sum()
+    return stay * np.eye(len(p0)) + (1 - stay) * p0[None, :]
 
 
 def sticky_velocity(K: int, stay: float) -> np.ndarray:

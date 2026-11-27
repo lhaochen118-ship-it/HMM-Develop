@@ -14,7 +14,7 @@ M = [("single", "Single image"), ("seqslam", "SeqSLAM (tuned)"), ("hmm_fixed", "
 INK, INK2, GRID, C1, C2 = "#191919", "#666666", "#e6e6e6", "#257de0", "#9c9c9c"
 plt.rcParams.update({"font.size": 9})
 panels = [("nord-tw", "netvlad", [1, 2, 3], "Nordland time-warp · NetVLAD"), ("nord-tw", "salad", [1, 2, 3], "Nordland time-warp · SALAD"),
-          ("4s", "netvlad", [0], "4Seasons (real) · NetVLAD"), ("4s", "cosplace", [0], "4Seasons (real) · CosPlace")]
+          ("4s", "netvlad", [0], "4Seasons office_loop (real) · NetVLAD"), ("4s3", "salad", [0], "4Seasons old_town (real stops) · SALAD")]
 fig, axes = plt.subplots(1, 4, figsize=(13, 3.2), sharey=True)
 for ax, (ds, d, seeds, title) in zip(axes, panels):
     y = np.arange(len(M))[::-1]

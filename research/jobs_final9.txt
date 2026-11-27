@@ -1,0 +1,4 @@
+hmmloc.exp.e13_vprior cmu netvlad 0
+hmmloc.exp.e13_vprior cmu salad 0
+hmmloc.exp.e13_vprior 4s netvlad 0
+hmmloc.exp.e13_vprior nord-tw netvlad 1

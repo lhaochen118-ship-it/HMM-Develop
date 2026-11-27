@@ -211,7 +211,14 @@ def true_speed(ep: Episode):
     if "speed" in ep.meta:                        # synthetic time-warp: speed applied after frame t-1
         sp[1:] = ep.meta["speed"][:-1]
     elif ep.qC is not None:
-        sp[1:] = np.linalg.norm(np.diff(ep.qC, axis=0), axis=1)
+        # A26: speed in MAP COORDINATES. Map arc-length grows faster than metric distance (noisy reference poses), so
+        # metric query steps are rescaled by the LOCAL map ratio  (s[j+w]-s[j-w]) / ||C[j+w]-C[j-w]||  at the nearest
+        # node. Robust to loops (a wrong nearest node only changes a ratio ~1-2, never the step itself).
+        w = 5; M = len(ep.s); jj = np.arange(M); lo = np.clip(jj - w, 0, M - 1); hi = np.clip(jj + w, 0, M - 1)
+        ratio = (ep.s[hi] - ep.s[lo]) / np.maximum(np.linalg.norm(ep.C[hi] - ep.C[lo], axis=1), 1e-6)
+        ratio = np.clip(np.where(np.isfinite(ratio), ratio, 1.0), 1.0, 3.0)
+        D = np.linalg.norm(ep.qC[:, None, :] - ep.C[None, :, :], axis=-1); nn = D.argmin(1)
+        sp[1:] = np.linalg.norm(np.diff(ep.qC, axis=0), axis=1) * ratio[nn[1:]]
     else:
         sp[1:] = 1.0
     sp[ep.reset_mask()] = np.nan
@@ -245,3 +252,15 @@ def load_4s_stopgo(desc, dist=5.0, ang=30.0, calib_every=3, kdir="hmm-k02-4s-sto
     near = _near_from_C(C, Rr, dist, ang)
     return Episode(f"{kdir}/{desc}", R, s, Q, np.concatenate(seq), np.array(cond), pos, near, calib, unit="m", C=C, Rrot=Rr,
                    qC=qC, qR=qR, qt=np.concatenate(qt))
+
+
+def subsample_queries(ep: Episode, k: int):
+    """Keep every k-th query frame within each sequence (raises per-frame displacement / map spacing ratio)."""
+    keep = np.zeros(ep.T, bool)
+    for q in np.unique(ep.seq):
+        i = np.where(ep.seq == q)[0]; keep[i[::k]] = True
+    r = np.where(keep)[0]
+    e = Episode(ep.name + f"/q{k}", ep.R, ep.s, ep.Q[r], ep.seq[r], ep.cond[r], ep.pos[r], ep.near, ep.calib_seq, unit=ep.unit,
+                C=ep.C, Rrot=ep.Rrot, qC=None if ep.qC is None else ep.qC[r], qR=None if ep.qR is None else ep.qR[r],
+                qt=None if ep.qt is None else ep.qt[r])
+    return e

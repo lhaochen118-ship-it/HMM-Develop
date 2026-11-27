@@ -9,12 +9,12 @@ rows = [json.loads(l) for l in open(os.path.join(ROOT, "registry", "runs.jsonl")
 def get(ds, desc, seed):
     c = [r for r in rows if r.get("experiment_id") == "E18" and r.get("dataset") == ds and r.get("descriptor") == desc and r.get("seed") == seed]
     return json.load(open(os.path.join(ROOT, "..", c[-1]["artifacts"], "metrics.json")))["results"] if c else None
-PANELS = [("nord", 0, "Nordland (synchronised)"), ("nord-tw", 1, "Nordland, time-warped speed"), ("cmu", 0, "Extended CMU Seasons"), ("rc", 0, "RobotCar Seasons v2"), ("4s", 0, "4Seasons office_loop (real speed)"), ("4s2", 0, "4Seasons countryside (real speed)")]
+PANELS = [("nord", 0, "Nordland (synchronised)"), ("nord-tw", 1, "Nordland, time-warped speed"), ("cmu", 0, "Extended CMU Seasons"), ("rc", 0, "RobotCar Seasons v2"), ("4s", 0, "4Seasons office_loop (real speed)"), ("4s2", 0, "4Seasons countryside (real speed)"), ("4s3", 0, "4Seasons old_town (real stops, night)"), ("nordseg1-tw", 1, "Nordland video-rate, time-warped")]
 DESCS = [("netvlad", "NetVLAD"), ("cosplace", "CosPlace"), ("salad", "SALAD"), ("megaloc", "MegaLoc")]
 SER = [("single", "Single image", "#257de0"), ("seqslam", "SeqSLAM (tuned)", "#f47230"), ("OURS_devselected", "IA-HMM (ours)", "#00b894")]
 INK, INK2, GRID = "#191919", "#666666", "#e6e6e6"
 plt.rcParams.update({"font.size": 9, "axes.edgecolor": GRID, "axes.labelcolor": INK2, "xtick.color": INK2, "ytick.color": INK2})
-fig, axes = plt.subplots(2, 3, figsize=(13, 6.6), sharey=True); axes = axes.ravel()
+fig, axes = plt.subplots(2, 4, figsize=(16, 6.6), sharey=True); axes = axes.ravel()
 w = 0.26
 for ax, (ds, seed, title) in zip(axes, PANELS):
     x = np.arange(len(DESCS))
@@ -30,7 +30,7 @@ for ax, (ds, seed, title) in zip(axes, PANELS):
     ax.set_title(title, fontsize=10, color=INK, loc="left")
     ax.set_ylim(0, 1.08); ax.grid(axis="y", color=GRID, lw=0.8, zorder=0); ax.tick_params(length=0)
     for s in ("top", "right", "left"): ax.spines[s].set_visible(False)
-axes[0].set_ylabel("Recall@1 (test sequences)"); axes[3].set_ylabel("Recall@1 (test sequences)")
+axes[0].set_ylabel("Recall@1 (test sequences)"); axes[4].set_ylabel("Recall@1 (test sequences)")
 h, l = axes[0].get_legend_handles_labels()
 fig.legend(h, l, loc="upper center", ncol=3, frameon=False, bbox_to_anchor=(0.5, 1.02))
 fig.tight_layout(rect=(0, 0, 1, 0.95))

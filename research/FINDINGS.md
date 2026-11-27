@@ -104,3 +104,12 @@ vs fixed-kernel HMM under the same protocol 18 W / 13 T / 2 L. Real variable-spe
 office_loop NetVLAD 0.512 → 0.836 (SeqSLAM 0.702, fixed HMM 0.792), CosPlace 0.814 → 0.924 (fixed 0.853, CI vs fixed
 [+0.023,+0.117]), SALAD 0.932 → 0.980; countryside SALAD 0.659 → 0.851, MegaLoc 0.724 → 0.888 (fixed 0.824, CI
 [+0.034,+0.082]). Earlier 4Seasons fixed-kernel numbers (0.582 NetVLAD) were handicapped by the grid (A25) and are superseded.
+
+## F16 [S] When does the latent-velocity state help? A displacement/spacing regime (root cause of F07)
+CMU NetVLAD, R@1 LV+ME vs fixed kernel as query frames are sub-sampled (per-frame displacement / map node spacing
+≈ 1, 3, 6): 0.734 vs 0.820 (−0.086) → 0.771 vs 0.807 (−0.036) → 0.819 vs 0.813 (+0.006; NLL LV+ME+IA 0.677 vs 0.723,
+dev-selection switches to LV+ME+IA). At ~1 node/frame the per-frame map displacement is quantised and jittery, not a
+persistent regime, so a memoryless broad kernel is the better HMM transition; persistence (vel_stay 0→0.95) worsens calib
+NLL monotonically (1.06→1.51). Refuted alternatives: metric-vs-arc-length speed units (A26: negligible change), node-density
+bias of the kernel (cell-length correction: 1.265→1.260 NLL), velocity prior (calibration histogram: 0.733→0.735).
+Runs: E18_cmu-q3_*, E18_cmu-q6_*, plus inline diagnostics recorded in this entry.

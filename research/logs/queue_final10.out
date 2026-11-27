@@ -1,0 +1,12 @@
+done hmmloc.exp.e07_motionev_cmu_netvlad_0
+done hmmloc.exp.e07_motionev_cmu_cosplace_0
+done hmmloc.exp.e07_motionev_cmu_salad_0
+done hmmloc.exp.e07_motionev_cmu_megaloc_0
+done hmmloc.exp.e07_motionev_4s_cosplace_0
+done hmmloc.exp.e07_motionev_4s_salad_0
+done hmmloc.exp.e07_motionev_4s_netvlad_0
+done hmmloc.exp.e07_motionev_4s2_netvlad_0
+done hmmloc.exp.e07_motionev_4s2_salad_0
+done hmmloc.exp.e07_motionev_4s2_megaloc_0
+done hmmloc.exp.e07_motionev_4s2_cosplace_0
+xargs: bash: terminated by signal 15

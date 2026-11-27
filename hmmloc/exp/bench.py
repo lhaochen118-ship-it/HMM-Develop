@@ -43,7 +43,7 @@ class Bench:
         return self.me
 
     def run(self, split, kind, mean, std, beta, vel=None, vstd=0.5, null=False, beta_fn=None, lag=0, me_gamma=None,
-            vel_stay=0.9):
+            vel_stay=0.9, p0v=None, vel_mix="adjacent"):
         posts = []
         for i, (ep, rows) in enumerate(self.split[split]):
             L, Ln = self.emit(ep, rows, kind)
@@ -58,8 +58,12 @@ class Bench:
                 if me_gamma is not None:
                     from .. import motion
                     VL = self.me.loglik(motion.obs(self.change[split][i]), gamma=me_gamma)
-                cfg = hmm.HMMConfig(ks, Pv=hmm.sticky_velocity(len(ks), vel_stay) if len(ks) > 1 else None,
-                                    exit_prob=0.01 if null else 0.0, null_stay=0.9, null_prior=0.0, leak=1e-3, use_null=null)
+                Pv = None
+                if len(ks) > 1:
+                    Pv = hmm.sticky_velocity(len(ks), vel_stay) if vel_mix == "adjacent" else \
+                        hmm.mixing_velocity(p0v if p0v is not None else np.ones(len(ks)), vel_stay)
+                cfg = hmm.HMMConfig(ks, Pv=Pv,
+                                    P0v=p0v if (p0v is not None and len(ks) > 1) else None, exit_prob=0.01 if null else 0.0, null_stay=0.9, null_prior=0.0, leak=1e-3, use_null=null)
                 S_, pos_, seq_, rm = subset(ep, rows)
                 posts.append(hmm.forward(L, cfg, beta=b, reset_mask=rm, loglik_null=Ln if null else None,
                                          vel_loglik=VL)["post"])
@@ -87,6 +91,13 @@ class Bench:
              "CW@0.9": float(np.mean((cf > 0.9) & (c == 0))), "AUROC_conf": metrics.auroc(cf, c), "AURC": metrics.aurc(cf, c),
              "n": int(len(c)), "n_seq": len(blocks)}
         return s, {"corr": c, "nll": nl, "conf": cf, "blocks": blocks}
+
+    def speed_prior(self, vels, alpha=1.0):
+        """Calibration speed histogram over velocity bins (+alpha smoothing) — data-driven P0(v)."""
+        sp = np.concatenate([data.true_speed(ep)[r] for ep, r in self.split["calib"]]); sp = sp[np.isfinite(sp)]
+        k = np.abs(sp[:, None] - np.asarray(vels)[None]).argmin(1)
+        h = np.bincount(k, minlength=len(vels)).astype(float) + alpha
+        return h / h.sum()
 
     def kernel_grid(self):
         """Fixed-kernel (mean, std) grid. v2 (A25): base grid UNION a data-driven grid from the calibration GT speed

@@ -1,0 +1,6 @@
+[cmu/netvlad] bins [0.0, 0.56, 0.75, 0.94, 1.18, 1.84, 3.38] prior [0.001 0.205 0.188 0.177 0.254 0.161 0.015]
+  hmm_fixed    R@1 0.8204 NLL 0.8669 calibNLL 0.9689 
+  uniformP0    R@1 0.7331 NLL 1.2774 calibNLL 1.3318 
+  speedP0      R@1 0.7350 NLL 1.2715 calibNLL 1.3227 
+  devselected  R@1 0.8204 NLL 0.8669 calibNLL 0.9689 hmm_fixed
+RUN 20261127-123_E18b_cmu_netvlad_s0 347s

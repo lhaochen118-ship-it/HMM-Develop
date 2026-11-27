@@ -1,17 +1,15 @@
-velocity bins from calibration quantiles: [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.69]
-[rc/netvlad] motion emission {'vels': [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.69], 'mu': [-2.267, -1.281, -1.104, -1.067, -1.0, -0.933, -0.824], 'sig': [0.213, 0.242, 0.226, 0.217, 0.192, 0.187, 0.213], 'counts': [0, 107, 106, 132, 116, 67, 19]}
+velocity bins from calibration quantiles: [0.0, 0.69, 0.88, 1.0, 1.12, 1.35, 1.69]
+[rc/netvlad] motion emission {'vels': [0.0, 0.69, 0.88, 1.0, 1.12, 1.35, 1.69], 'mu': [-2.281, -1.285, -1.105, -1.074, -0.995, -0.931, -0.822], 'sig': [0.212, 0.242, 0.227, 0.213, 0.193, 0.187, 0.212], 'counts': [0, 104, 108, 133, 115, 68, 19]}
   single         R@1 0.7078 NLL 1.4578 ECE 0.048 CW 0.0051
   seqslam        R@1 0.7768 NLL 5.7307 ECE 0.773 CW 0.0000
-/home/user/HMM-Develop/hmmloc/hmm.py:45: RuntimeWarning: invalid value encountered in divide
-  w = w / w.sum()
-  sel fixed (np.float64(0.9858510065917754), (0.999, 0.3), 0.35)
-  hmm_fixed      R@1 0.7794 NLL 1.3503 ECE 0.062 CW 0.0102
-  sel LV (np.float64(1.0653402181715466), 1.0, 0.35, 0.9)
-  LV             R@1 0.7598 NLL 1.4536 ECE 0.067 CW 0.0111
-  sel LV+ME (np.float64(1.0243484508116925), 0.6, 0.35, 0.25, 0.9)
-  LV+ME          R@1 0.7751 NLL 1.4097 ECE 0.057 CW 0.0111
-  sel LV+ME+IA (np.float64(0.9504346140169997), 0.5, np.float64(0.503261215686798))
-  LV+ME+IA       R@1 0.7785 NLL 1.3019 ECE 0.034 CW 0.0051
-  OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(0.9858510065917754), 'LV': np.float64(1.0653402181715466), 'LV+ME': np.float64(1.0243484508116925), 'LV+ME+IA': np.float64(0.9504346140169997)})
-{'single': (0.7078, [-0.1018, -0.0427]), 'seqslam': (0.7768, [-0.0102, 0.0042]), 'hmm_fixed': (0.7794, [0.0, 0.0]), 'LV': (0.7598, [-0.0354, -0.006]), 'LV+ME': (0.7751, [-0.0117, 0.0026]), 'LV+ME+IA': (0.7785, [-0.0105, 0.0085]), 'OURS_devselected': (0.7785, [-0.0105, 0.0085])}
-RUN 20261127-098_E18_rc_netvlad_s0 258s
+  sel fixed (np.float64(0.9853476404550732), (1.254, 0.3), 0.35)
+  hmm_fixed      R@1 0.7853 NLL 1.3261 ECE 0.062 CW 0.0034
+  sel LV (np.float64(1.06529423825011), 1.0, 0.35, 0.9)
+  LV             R@1 0.7598 NLL 1.4535 ECE 0.067 CW 0.0111
+  sel LV+ME (np.float64(1.0125342770733605), 0.3, 0.35, 0.25, 0.9)
+  LV+ME          R@1 0.7726 NLL 1.4055 ECE 0.053 CW 0.0111
+  sel LV+ME+IA (np.float64(0.9337022763389006), 0.5, np.float64(0.503261215686798))
+  LV+ME+IA       R@1 0.7760 NLL 1.2985 ECE 0.034 CW 0.0060
+  OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(0.9853476404550732), 'LV': np.float64(1.06529423825011), 'LV+ME': np.float64(1.0125342770733605), 'LV+ME+IA': np.float64(0.9337022763389006)})
+{'single': (0.7078, [-0.1101, -0.0488]), 'seqslam': (0.7768, [-0.0194, 0.0008]), 'hmm_fixed': (0.7853, [0.0, 0.0]), 'LV': (0.7598, [-0.0443, -0.0102]), 'LV+ME': (0.7726, [-0.025, -0.0025]), 'LV+ME+IA': (0.776, [-0.026, 0.005]), 'OURS_devselected': (0.776, [-0.026, 0.005])}
+RUN 20261127-147_E18_rc_netvlad_s0 257s

@@ -1,17 +1,15 @@
-velocity bins from calibration quantiles: [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.69]
-[rc/cosplace] motion emission {'vels': [0.0, 0.69, 0.88, 1.0, 1.11, 1.35, 1.69], 'mu': [-4.532, -3.042, -2.814, -2.721, -2.587, -2.5, -2.355], 'sig': [0.361, 0.359, 0.383, 0.368, 0.353, 0.32, 0.361], 'counts': [0, 107, 106, 132, 116, 67, 19]}
+velocity bins from calibration quantiles: [0.0, 0.69, 0.88, 1.0, 1.12, 1.35, 1.69]
+[rc/cosplace] motion emission {'vels': [0.0, 0.69, 0.88, 1.0, 1.12, 1.35, 1.69], 'mu': [-4.585, -3.055, -2.809, -2.749, -2.562, -2.491, -2.346], 'sig': [0.358, 0.354, 0.383, 0.345, 0.359, 0.327, 0.358], 'counts': [0, 104, 108, 133, 115, 68, 19]}
   single         R@1 0.8339 NLL 0.8009 ECE 0.024 CW 0.0034
   seqslam        R@1 0.8578 NLL 4.3576 ECE 0.841 CW 0.0000
-/home/user/HMM-Develop/hmmloc/hmm.py:45: RuntimeWarning: invalid value encountered in divide
-  w = w / w.sum()
-  sel fixed (np.float64(0.9538186566788313), (1.249, 0.5), 0.35)
-  hmm_fixed      R@1 0.8680 NLL 0.8845 ECE 0.049 CW 0.0170
-  sel LV (np.float64(1.0090970970770694), 1.0, 0.35, 0.9)
-  LV             R@1 0.8552 NLL 0.9471 ECE 0.050 CW 0.0230
-  sel LV+ME (np.float64(0.9776173714407036), 0.6, 0.35, 0.25, 0.9)
-  LV+ME          R@1 0.8595 NLL 0.9174 ECE 0.053 CW 0.0213
-  sel LV+ME+IA (np.float64(0.8270499223103306), 0.5, np.float64(0.1406335806846619))
-  LV+ME+IA       R@1 0.8569 NLL 0.7957 ECE 0.039 CW 0.0034
-  OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(0.9538186566788313), 'LV': np.float64(1.0090970970770694), 'LV+ME': np.float64(0.9776173714407036), 'LV+ME+IA': np.float64(0.8270499223103306)})
-{'single': (0.8339, [-0.0592, -0.0097]), 'seqslam': (0.8578, [-0.0195, -0.0017]), 'hmm_fixed': (0.868, [0.0, 0.0]), 'LV': (0.8552, [-0.0285, 0.0026]), 'LV+ME': (0.8595, [-0.0171, -0.0017]), 'LV+ME+IA': (0.8569, [-0.0218, -0.0018]), 'OURS_devselected': (0.8569, [-0.0218, -0.0018])}
-RUN 20261127-099_E18_rc_cosplace_s0 253s
+  sel fixed (np.float64(0.9535908941419673), (1.254, 0.501), 0.35)
+  hmm_fixed      R@1 0.8680 NLL 0.8843 ECE 0.049 CW 0.0170
+  sel LV (np.float64(1.0090232313647665), 1.0, 0.35, 0.9)
+  LV             R@1 0.8552 NLL 0.9470 ECE 0.050 CW 0.0230
+  sel LV+ME (np.float64(0.9725853988614694), 0.3, 0.35, 0.25, 0.9)
+  LV+ME          R@1 0.8671 NLL 0.8998 ECE 0.047 CW 0.0170
+  sel LV+ME+IA (np.float64(0.8203170982604707), 0.5, np.float64(0.1406335806846619))
+  LV+ME+IA       R@1 0.8595 NLL 0.7826 ECE 0.039 CW 0.0077
+  OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(0.9535908941419673), 'LV': np.float64(1.0090232313647665), 'LV+ME': np.float64(0.9725853988614694), 'LV+ME+IA': np.float64(0.8203170982604707)})
+{'single': (0.8339, [-0.0592, -0.0097]), 'seqslam': (0.8578, [-0.0195, -0.0017]), 'hmm_fixed': (0.868, [0.0, 0.0]), 'LV': (0.8552, [-0.0285, 0.0026]), 'LV+ME': (0.8671, [-0.0052, 0.0044]), 'LV+ME+IA': (0.8595, [-0.0175, 0.0]), 'OURS_devselected': (0.8595, [-0.0175, 0.0])}
+RUN 20261127-148_E18_rc_cosplace_s0 254s

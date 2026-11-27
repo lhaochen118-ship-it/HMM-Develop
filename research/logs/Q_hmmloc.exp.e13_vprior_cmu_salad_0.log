@@ -1,0 +1,6 @@
+[cmu/salad] bins [0.0, 0.56, 0.75, 0.94, 1.18, 1.84, 3.38] prior [0.001 0.205 0.188 0.177 0.254 0.161 0.015]
+  hmm_fixed    R@1 0.9549 NLL 0.1417 calibNLL 0.1135 
+  uniformP0    R@1 0.9466 NLL 0.1959 calibNLL 0.1582 
+  speedP0      R@1 0.9477 NLL 0.1932 calibNLL 0.1581 
+  devselected  R@1 0.9549 NLL 0.1417 calibNLL 0.1135 hmm_fixed
+RUN 20261127-122_E18b_cmu_salad_s0 345s
