@@ -184,3 +184,20 @@ frame) HMM+geo ≈ single+geo (CI includes 0), but HMM+geo keeps the better cali
 Caveats: w selected at the top of the grid (16) on both datasets — calibration NLL keeps decreasing because inlier counts are
 near-decisive; test R@1 is saturated (RobotCar identical at w=16 and w=64). Confident-wrong rate rises slightly on CMU
 (0.012 → 0.021). Runs 191/192 superseded (grid edge; tempered geometry term).
+
+## F23 [S] Sanity / leakage controls — where the HMM scores come from (E35, runs 20261128-346/349/354/357)
+Fixed-kernel HMM, kernel × β chosen on calibration NLL (same as E18), on deliberately broken inputs (R@1, test):
+| Dataset / desc | real: single → HMM | random descriptors (chance) | queries shuffled within sequence | map order reversed |
+|---|---|---|---|---|
+| QUT SouthBank / NetVLAD | 0.225 → 0.825 | 0.015 / 0.000 (0.013) | 0.225 / 0.055 | 0.225 / 0.285 |
+| 4Seasons old_town / SALAD | 0.832 → 0.868 | 0.000 / 0.001 (0.002) | 0.832 / 0.830 | 0.832 / 0.705 |
+| RobotCar v2 / NetVLAD | 0.708 → 0.785 | 0.001 / 0.000 (0.001) | 0.708 / 0.733 | 0.708 / 0.729 |
+| Nordland / NetVLAD | 0.364 → 0.983 | 0.001 / 0.000 (0.001) | 0.364 / 0.125 | 0.364 / 0.575 |
+1. No leakage: with random descriptors every method is at chance — the filter itself carries no ground truth.
+2. The gain is temporal integration: shuffling frames inside each sequence removes it (and hurts on frame-synchronised
+   data, where the HMM then trusts a wrong motion prior); reversing the map's direction degrades it.
+3. The very large gains (Nordland 0.36 → 0.98, QUT 0.23 → 0.83) are a FAVOURABLE REGIME: frame-synchronised traversals at
+   ~1 node/frame, where any sequence method is strong (tuned SeqSLAM 0.89–0.97). On variable-speed real data the gains are
+   smaller (RobotCar +0.08, old_town/SALAD +0.04) and on MSLS some cells are ≤ SeqSLAM. Report both regimes separately;
+   R@1 counts only queries with a positive (identical rows for all methods); hyper-parameters are tuned on calibration
+   sequences of the SAME route (optimistic vs a fully held-out environment; E21 transfer is the check).
