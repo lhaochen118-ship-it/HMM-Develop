@@ -1,0 +1,4 @@
+  single 0.893 | seqslam_causal 0.888 | seqslam_causal_L 5 | seqslam_centred 0.895 | seqslam_centred_L 5 | hmm_filter 0.918 | hmm_lag_h 0.929 | lag_h 2 | hmm_lag_20 0.912
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+RUN 20261128-380_E37_nclt_cosplace
