@@ -1,0 +1,15 @@
+velocity bins from calibration quantiles: [0.0, 1.0]
+[qut-sb/cosplace] motion emission {'vels': [0.0, 1.0], 'mu': [-0.736, -0.952], 'sig': [0.432, 0.432], 'counts': [0, 198]}
+  single         R@1 0.4050 NLL 2.4733 ECE 0.069 CW 0.0000
+  seqslam        R@1 0.9000 NLL 3.7329 ECE 0.875 CW 0.0000
+  sel fixed (np.float64(0.3020836490262684), (1.0, 0.3), 0.5)
+  hmm_fixed      R@1 0.9050 NLL 0.3125 ECE 0.050 CW 0.0000
+  sel LV (np.float64(2.3669142456143204), 1.0, 0.2, 0.9)
+  LV             R@1 0.7300 NLL 0.9862 ECE 0.188 CW 0.0000
+  sel LV+ME (np.float64(2.349937321241107), 1.0, 0.2, 0.25, 0.9)
+  LV+ME          R@1 0.7500 NLL 0.9156 ECE 0.220 CW 0.0000
+  sel LV+ME+IA (np.float64(2.502705832598454), 0.35, np.float64(0.7204915511608124))
+  LV+ME+IA       R@1 0.7500 NLL 0.9596 ECE 0.250 CW 0.0000
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.3020836490262684), 'LV': np.float64(2.3669142456143204), 'LV+ME': np.float64(2.349937321241107), 'LV+ME+IA': np.float64(2.502705832598454)})
+{'single': (0.405, [-0.59, -0.41]), 'seqslam': (0.9, [-0.01, 0.0]), 'hmm_fixed': (0.905, [0.0, 0.0]), 'LV': (0.73, [-0.27, -0.08]), 'LV+ME': (0.75, [-0.21, -0.1]), 'LV+ME+IA': (0.75, [-0.2, -0.11]), 'OURS_devselected': (0.905, [0.0, 0.0])}
+RUN 20261128-212_E18_qut-sb_cosplace_s0 6s
