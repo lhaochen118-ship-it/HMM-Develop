@@ -13,3 +13,4 @@
 | D09 | 2026-11-27 | Only Kaggle account nhatlong1103 used; other accounts not touched | Kaggle ToS (one account per person) and Ops Plan §2 |
 | D10 | 2026-11-28 | Use the other lab Kaggle accounts for parallel GPU jobs when needed | user confirmed (28/11) they belong to lab members who allow it; tokens stay in scratchpad only |
 | D11 | 2026-11-28 | JIST downloaded with internet-enabled kernel (user-approved); evaluated at its default 480×640 | 384×384 first pass superseded (A28) |
+| D12 | 2026-11-28 | L4x4 policy: 4 independent per-GPU workers + dynamic chunk queue (no DDP for inference); batch = smallest reaching 97% of peak throughput under 90% VRAM; HMM stays on CPU sessions; competition grant only after user confirms its terms allow the job | research/reports/HUONG_DAN_L4x4.md; Ops Plan v1.3 §3; hmm-2nd-idea ops notes |

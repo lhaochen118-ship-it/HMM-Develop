@@ -9,6 +9,8 @@ baseline, no held-out 4th dataset) · G6 not requested
 nb15a/b/c/d dumps (Nordland stride≈8, RobotCar v2, CMU 11 slices; 6 descriptors) + `hmm-k01-nordseg` (Nordland stride-1,
 2×2500 frames × 4 seasons × SALAD/MegaLoc/NetVLAD/CosPlace; ~1 T4-hour). Local path `hmmloc/data.py::FB` (env HMMLOC_FB).
 
+- 28/11: wrote `research/reports/Hướng dẫn tận dụng GPU L4 x4.pdf` (source HUONG_DAN_L4x4.md; decision D12). The uploaded notebook metadata has accelerator "none" (no L4 config). L4x4 needs machine_shape NvidiaL4x4 plus a competition grant, which stays blocked until the user confirms its terms allow our jobs.
+
 ## PAUSED by user request (28/11 ~04:30 UTC) — resume list
 User: pause everything whose completion is >1 h away. Kaggle CLI 2.2.5 has no cancel command, so QUEUED GPU kernels were
 superseded by no-op CPU versions (v2); RUNNING ones (<1 h left) were left to finish. To resume: re-push from scratchpad
