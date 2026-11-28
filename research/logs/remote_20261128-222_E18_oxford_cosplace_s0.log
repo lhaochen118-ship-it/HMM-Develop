@@ -1,0 +1,17 @@
+velocity bins from calibration quantiles: [0.0, 1.96, 5.61, 8.92, 10.62, 14.63, 31.95]
+[oxford/cosplace] motion emission {'vels': [0.0, 1.96, 5.61, 8.92, 10.62, 14.63, 31.95], 'mu': [-3.251, -2.373, -1.711, -1.354, -1.228, -0.973, -0.763], 'sig': [0.486, 0.537, 0.5, 0.429, 0.377, 0.464, 0.499], 'counts': [166, 513, 490, 627, 807, 359, 98]}
+  single         R@1 0.6427 NLL 1.5971 ECE 0.022 CW 0.0050
+  seqslam        R@1 0.7036 NLL 3.5943 ECE 0.660 CW 0.0000
+  sel fixed (np.float64(0.42565431511908064), (8.916, 4.458), 0.2)
+  hmm_fixed      R@1 0.7906 NLL 1.1555 ECE 0.063 CW 0.0112
+  sel LV (np.float64(1.0759739827782067), 1.0, 0.35, 0.9)
+  LV             R@1 0.6380 NLL 3.2257 ECE 0.301 CW 0.2588
+  sel LV+ME (np.float64(0.7182231151847276), 0.3, 0.5, 0.5, 0.9)
+  LV+ME          R@1 0.7347 NLL 1.9730 ECE 0.183 CW 0.0896
+  sel LV+ME+IA (np.float64(0.6301002579030548), 1.0, np.float64(0.34379541873931885))
+  LV+ME+IA       R@1 0.7379 NLL 1.9325 ECE 0.175 CW 0.0905
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.42565431511908064), 'LV': np.float64(1.0759739827782067), 'LV+ME': np.float64(0.7182231151847276), 'LV+ME+IA': np.float64(0.6301002579030548)})
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+{'single': (0.6427, [-0.2975, -0.0029]), 'seqslam': (0.7036, [-0.1791, 0.0023]), 'hmm_fixed': (0.7906, [0.0, 0.0]), 'LV': (0.638, [-0.3077, -0.0023]), 'LV+ME': (0.7347, [-0.1082, -0.0052]), 'LV+ME+IA': (0.7379, [-0.0931, -0.0134]), 'OURS_devselected': (0.7906, [0.0, 0.0])}
+RUN 20261128-221_E18_oxford_cosplace_s0 176s

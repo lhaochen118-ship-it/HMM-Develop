@@ -1,0 +1,13 @@
+[brisbane/megaloc] bins [0.0, 4.81, 11.85, 14.2, 15.59, 16.46, 17.75] P0 [0.073 0.087 0.211 0.202 0.228 0.165 0.033]
+  fixed      sel (np.float64(0.01660403383974051), (10.65, 7.1), 0.5)
+  fixed      R@1 0.8881 NLL 0.3792
+  LV+ME      sel (np.float64(0.033678967858442835), 1.5, 0.5, 0.25, 0.9)
+  LV+ME      R@1 0.8584 NLL 0.6712
+  IMM+ME     sel (np.float64(0.025479338066352584), 1.5, 0.35, 0.25, 0.0)
+  IMM+ME     R@1 0.8871 NLL 0.4190
+  STOP+ME    sel (np.float64(0.02914945131121246), 1.5, 0.35, 0.5, 0.5, 0.8)
+  STOP+ME    R@1 0.8810 NLL 0.3980
+{'fixed': (0.8881, [0.0, 0.0], ''), 'LV+ME': (0.8584, [-0.109, 0.022], ''), 'IMM+ME': (0.8871, [-0.03, 0.034], ''), 'STOP+ME': (0.881, [-0.063, 0.04], ''), 'devselected': (0.8881, [0.0, 0.0], 'fixed')}
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+RUN 20261128-221_E18c_brisbane_megaloc_s0
