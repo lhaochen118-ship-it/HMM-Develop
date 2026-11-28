@@ -1,0 +1,13 @@
+[rc/netvlad] bins [0.0, 0.69, 0.88, 1.0, 1.12, 1.35, 1.69] P0 [0.002 0.19  0.197 0.242 0.209 0.125 0.036]
+  fixed      sel (np.float64(0.9853476195187691), (1.254, 0.3), 0.35)
+  fixed      R@1 0.7853 NLL 1.3261
+  LV+ME      sel (np.float64(1.0242544007343324), 0.6, 0.35, 0.25, 0.9)
+  LV+ME      R@1 0.7751 NLL 1.4096
+  IMM+ME     sel (np.float64(1.006844437701878), 0.6, 0.35, 0.25, 0.0)
+  IMM+ME     R@1 0.7785 NLL 1.3867
+  STOP+ME    sel (np.float64(1.00682770672665), 0.6, 0.35, 0.25, 0.0, 0.95)
+  STOP+ME    R@1 0.7785 NLL 1.3867
+{'fixed': (0.7853, [0.0, 0.0], ''), 'LV+ME': (0.7751, [-0.022, 0.0], ''), 'IMM+ME': (0.7785, [-0.018, 0.002], ''), 'STOP+ME': (0.7785, [-0.018, 0.002], ''), 'devselected': (0.7853, [0.0, 0.0], 'fixed')}
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+RUN 20261128-221_E18c_rc_netvlad_s0
