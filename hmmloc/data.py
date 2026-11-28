@@ -305,6 +305,7 @@ TRAV = {  # name -> dump dir (Kaggle dataset slug, mounted/copied into FB), file
     "stlucia": ("stlucia-vpr-dump", "stlucia", "190809_0845", 25.0, None),
     "boreas": ("boreas-vpr-dump", "boreas", "boreas-2020-11-26-13-58", 10.0, 30.0),
     "nclt": ("nclt-vpr-dump", "nclt", "2012-01-08", 10.0, 30.0),
+    "brisbane": ("hmm-k13-newds", "bris", "daytime", 25.0, None),        # 6 times of day, GPS, 1 fps (kernel k13)
 }
 HEADING = {"stlucia": None, "boreas": "traj", "nclt": "rpy"}   # Boreas rpy = camera attitude -> use driving direction
 
@@ -362,3 +363,23 @@ def load_traversals(ds, desc, map_trav=None, queries=None, dist=None, ang=None, 
         near[i, js] = True
     return Episode(f"{ds}/{desc}/map{mp}", R, s, Q, seq, np.array(cond), pos, near, calib, unit="m", C=C, qC=qC,
                    qt=np.concatenate(qt), meta={"map": mp, "queries": qs})
+
+
+def load_qut(desc, which="gp", tol=2, nblocks=4, calib_every=3):
+    """QUT day/night + lateral shift (kernel k13): frame i of every traversal shows place i (frame-index chain, like
+    Nordland). Gardens Point: map = day_right, queries = day_left (lateral shift) + night_right (illumination);
+    SouthBank: map = frames1, query = frames2. Each query traversal is cut into `nblocks` blocks; calibration = every
+    `calib_every`-th block."""
+    root = os.path.join(FB, "hmm-k13-newds"); d = os.path.join(root, "dump") if os.path.isdir(os.path.join(root, "dump")) else root
+    ref, qs = (("qutgp_day_right", ["qutgp_day_left", "qutgp_night_right"]) if which == "gp" else ("qutsb_frames1", ["qutsb_frames2"]))
+    R = np.load(os.path.join(d, desc, ref + ".npy")); M = len(R); idx = np.arange(M)
+    Qs, seq, cond, pos = [], [], [], []; calib = set(); blen = int(np.ceil(M / nblocks))
+    for qi, q in enumerate(qs):
+        Q = np.load(os.path.join(d, desc, q + ".npy")); n = min(len(Q), M); Q = Q[:n]; Qs.append(Q)
+        b = np.arange(n) // blen; seq.append(qi * 100 + b); cond += [q] * n
+        pos.append(np.abs(np.arange(n)[:, None] - idx[None, :]) <= tol)
+        for bb in range(nblocks):
+            if bb % calib_every == 0: calib.add(qi * 100 + bb)
+    near = np.abs(idx[:, None] - idx[None, :]) <= tol
+    return Episode(f"qut-{which}/{desc}", R, idx.astype(float), np.concatenate(Qs), np.concatenate(seq), np.array(cond),
+                   np.concatenate(pos), near, calib, unit="frame")

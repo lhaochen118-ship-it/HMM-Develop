@@ -14,6 +14,7 @@ def load(ds, desc):
     if ds == "4s": return [data.load_4s_stopgo(desc)]
     if ds == "4s2": return [data.load_4s_stopgo(desc, kdir="hmm-k03-4s-scene2")]
     if ds == "4s3": return [data.load_4s_stopgo(desc, kdir="hmm-k04-4s-scene3")]
+    if ds in ("qut-gp", "qut-sb"): return [data.load_qut(desc, which=ds.split("-")[1])]
     if ds.split(":")[0] in data.TRAV:                      # e.g. "stlucia", "boreas:8" (first 8 query traversals)
         n = int(ds.split(":")[1]) if ":" in ds else None
         return [data.load_traversals(ds.split(":")[0], desc, max_q=n)]

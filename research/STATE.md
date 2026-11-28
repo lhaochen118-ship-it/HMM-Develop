@@ -1,5 +1,7 @@
 # STATE (update at every session end) — last update 2026-11-27 ~23:25 UTC
 
+**28/11 later:** L4x4 runner (kaggle/l4x4) ran k11 (F21) and k09 (F22) in ~10 min each on 4×L4 (72–84 % GPU util). GPU only on 5 accounts (D13); CPU jobs on the other 14 via kaggle/cpu/build_cpu.py + research/merge_remote_runs.py. Datasets registry: research/DATASETS.md (new: QUT Gardens Point/SouthBank, Brisbane-Event-VPR frames; existing Boreas/NCLT/St Lucia dumps now loadable). Running: CPU E18 on Boreas/NCLT ×4 desc, SeqVLAD IA-HMM ×8 datasets; T4 k13 descriptors for Brisbane+QUT.
+
 **Branch:** `claude/nice-fermi-l7bzd6` · **Phase:** 6–7 (33-cell fair-protocol evaluation incl. 2 real 4Seasons routes done at [S]; report/handoff PDFs in research/reports/)
 **Gates:** G0 ✅ · G1 ✅ · G2 ✅ ([S], H1 on 3 datasets) · G3 parked (CCBF) · G4 ✅ ([S]: dependence/overconfidence and
 oracle-motion inflation supported by interventions on ≥2 datasets — F02, F04, E15 nordseg) · G5 partial (no learned-sequence
