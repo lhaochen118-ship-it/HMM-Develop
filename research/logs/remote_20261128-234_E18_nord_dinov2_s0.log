@@ -1,0 +1,17 @@
+velocity bins from calibration quantiles: [0.0, 1.0]
+[nord/dinov2] motion emission {'vels': [0.0, 1.0], 'mu': [-2.216, -2.865], 'sig': [1.834, 1.834], 'counts': [0, 5388]}
+  single         R@1 0.4598 NLL 3.1744 ECE 0.192 CW 0.0075
+  seqslam        R@1 0.9342 NLL 6.5290 ECE 0.933 CW 0.0000
+  sel fixed (np.float64(0.6349982408915287), (1.0, 0.3), 0.2)
+  hmm_fixed      R@1 0.9751 NLL 0.1604 ECE 0.010 CW 0.0047
+  sel LV (np.float64(1.8830163055628004), 0.3, 0.2, 0.98)
+  LV             R@1 0.8616 NLL 0.8809 ECE 0.049 CW 0.0342
+  sel LV+ME (np.float64(1.4922812665798553), 0.3, 0.2, 1.0, 0.98)
+  LV+ME          R@1 0.8811 NLL 0.7651 ECE 0.049 CW 0.0285
+  sel LV+ME+IA (np.float64(0.6878350002348903), 0.35, np.float64(0.3203215897083283))
+  LV+ME+IA       R@1 0.9637 NLL 0.2908 ECE 0.052 CW 0.0028
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.6349982408915287), 'LV': np.float64(1.8830163055628004), 'LV+ME': np.float64(1.4922812665798553), 'LV+ME+IA': np.float64(0.6878350002348903)})
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+{'single': (0.4598, [-0.6224, -0.4109]), 'seqslam': (0.9342, [-0.0616, -0.0233]), 'hmm_fixed': (0.9751, [0.0, 0.0]), 'LV': (0.8616, [-0.1854, -0.0507]), 'LV+ME': (0.8811, [-0.1607, -0.0368]), 'LV+ME+IA': (0.9637, [-0.028, 0.0001]), 'OURS_devselected': (0.9751, [0.0, 0.0])}
+RUN 20261128-221_E18_nord_dinov2_s0 670s
