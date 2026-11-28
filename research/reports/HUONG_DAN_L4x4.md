@@ -539,3 +539,24 @@ CLI Kaggle 2.2.5 không có lệnh huỷ kernel. Muốn dừng, phải xoá kern
 | Resize trên GPU khác pipeline gốc | Descriptor lệch, kết quả sai (giống A28) | So cos với pipeline CPU tham chiếu |
 | Hàng nghìn file nhỏ trong `/kaggle/working` | Kéo output chậm, dễ gặp 429 | Một file `tar` + `--pull-pattern` |
 | Dùng phiên L4 x4 chỉ để chạy HMM CPU | Đốt 4 GPU-giờ/giờ | Dùng phiên CPU; chỉ ghép HMM vào CPU rảnh của phiên GPU |
+
+---
+
+## 11. Kết quả triển khai thực tế (28/11/2026) [V]
+
+Mã nguồn: `kaggle/l4x4/`. Gồm `launcher.py`, `worker.py`, `common.py` (hàng đợi file), `task_k11.py`, `task_k09.py`, `build.py`, `monitor.py` và test cục bộ `test_runner_local.py`.
+
+| Phiên | Việc | Khối lượng (phút tương đương T4) | Wall launcher | GPU util trung bình | Merge |
+|---|---|---|---|---|---|
+| `nhatlong1103/hmm-l4-k11` | 6DoF 4 cảnh (cmu1, cmu2, office_loop, old_town), 134 unit | 143.5 | **9.98 phút** | 72–75 % | 0 thiếu / 0 trùng |
+| `quynhtran35/hmm-l4-k09` | Geometry 7 chunk (≈ 51 000 cặp), 89 unit | 86.9 | **8.45 phút** | 81–84 % | 0 thiếu / 0 trùng |
+
+Cấu hình thực nhận đúng như đã xin: 4 × NVIDIA L4 (22 GB), 48 vCPU, 189 GB RAM. Mỗi phiên chạy 12 worker (3 mỗi GPU, vì RANSAC và PnP chạy trên CPU). Stage-in đọc trước 11 246 ảnh (5.6 GB) trong 20 s.
+
+Bài học mới:
+
+1. **Kaggle từ chối script lớn hơn khoảng 1 MB** (HTTP 400). Payload lớn phải đưa lên một dataset riêng (`build.py --payload-dataset`); script chỉ còn khoảng 20 KB.
+2. **Mount dataset ảnh rất lớn làm chậm khởi động phiên.** Phiên k09 gắn CMU (178 GB) và RobotCar (22 GB) nên chậm khoảng 17 phút trước khi launcher chạy. Phiên k11 chỉ chậm khoảng 1 phút. Vì vậy chỉ gắn những dataset thật sự cần cho phiên đó.
+3. **Smoke test trên T4 có thể kẹt hàng đợi hơn 25 phút**, trong khi L4 được cấp sau khoảng 4 phút. Từ nay smoke chạy thẳng trên L4 với tập con nhỏ (`build.py --smoke`, khoảng 0.5 GPU-giờ).
+4. **Việc chỉ dùng CPU (HMM, baseline, đánh giá) đưa sang phiên CPU Kaggle** của 14 tài khoản không dùng GPU (`kaggle/cpu/build_cpu.py`, mỗi job có registry riêng; merge bằng `research/merge_remote_runs.py`). Cách này không tốn quota GPU và không bị ảnh hưởng khi container cục bộ khởi động lại.
+5. **Việc một tiến trình** (k12 SeqVLAD, k13 trích descriptor dataset nhỏ) đặt trên T4. Đặt lên L4 x4 thì 3 GPU ngồi không mà quota vẫn bị trừ cho cả 4.
