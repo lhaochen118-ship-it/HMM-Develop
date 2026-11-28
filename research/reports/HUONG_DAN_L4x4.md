@@ -53,7 +53,30 @@
 | `kaggle.dockerImageVersionId` | `28755` | Image cũ (`language_info` ghi Python 3.6.6) |
 | Cell duy nhất | Mẫu mặc định của Kaggle (liệt kê `/kaggle/input`) | Không có cấu hình phần cứng |
 
-Kết luận: file này không cho biết cách xin L4.
+Kết luận: file này không cho biết cách xin L4. Anh gửi lại lần hai (28/11), file vẫn giống hệt từng byte.
+
+Lý do: khi tải `.ipynb` từ Kaggle, file chỉ chứa template khởi tạo. Hai trường `_uuid` và `_cell_guid` là ID mặc định mà mọi notebook mới đều có. Accelerator mà anh chọn trong Settings **không** được ghi vào file này.
+
+### 1.1b. Cách đọc cấu hình thật của một kernel (đã kiểm chứng 28/11) [V]
+
+Lệnh:
+
+```bash
+kaggle kernels pull <owner>/<slug> -p <dir> -m
+```
+
+Lệnh này tải về `kernel-metadata.json` có đủ thông tin phần cứng. Ví dụ với kernel `hmm-k07-jist` của nhánh này:
+
+```json
+{"enable_gpu": true, "enable_internet": true, "machine_shape": "NvidiaL4",
+ "docker_image": "gcr.io/kaggle-private-byod/python@sha256:9a6b…", "competition_sources": []}
+```
+
+Bài học:
+
+- **`machine_shape` chỉ là cấu hình đã xin, không phải phần cứng thực nhận.** Kernel này ghi `NvidiaL4`, nhưng log cho thấy phiên chạy trên T4, vì không có competition grant.
+- **Bằng chứng duy nhất về phần cứng thực là cell đầu in `torch.cuda.device_count()` và tên GPU** (mục 4.1).
+- Muốn chép cấu hình L4 x4 của một notebook đang chạy được L4 trên web, dùng `pull -m` với slug của notebook đó. Kết quả cho biết `machine_shape`, `docker_image` và `competition_sources` thật. Sau đó dùng làm mẫu cho `kernel-metadata.json` của mình.
 
 Nếu anh tạo notebook trên web, chọn Accelerator "GPU L4 x4" trong Settings (tài khoản phải có quyền), lưu một phiên bản rồi tải `.ipynb` về, thì trường `accelerator` sẽ khác `"none"`. Anh gửi file đó, tôi sẽ đối chiếu.
 
