@@ -4,3 +4,5 @@ velocity bins from calibration quantiles: [0.0, 2.24, 5.88, 8.85, 11.58, 17.1, 2
   seqslam        R@1 0.9372 NLL 6.1528 ECE 0.934 CW 0.0000
   sel fixed (np.float64(0.35379496641483366), (11.056, 8.845), 0.75)
   hmm_fixed      R@1 0.9395 NLL 0.3302 ECE 0.038 CW 0.0321
+  sel LV (np.float64(0.495944920111567), 1.0, 0.75, 0.9)
+  LV             R@1 0.9097 NLL 0.5292 ECE 0.068 CW 0.0591
