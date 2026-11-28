@@ -5,7 +5,7 @@ posterior U top-5 of the HMM posterior (NetVLAD; kaggle/k09_geo/candidates_local
 Geometric log-likelihood ratio (fitted on CALIBRATION candidates only):
     g(x) = logit P(correct | x) - logit P(correct),   x = [log1p n_i, log1p n_m, n_i/(n_m+1)]   (logistic regression)
     = log p(x | correct) / p(x | wrong) under the candidate population; nodes without a measurement get 0 (l(∅)=0).
-HMM emission: L_t(j) = appearance(t, j) + w * g_t(j).  w ∈ {0.25, 0.5, 1, 2} chosen on calibration NLL with the HMM
+HMM emission: L_t(j) = appearance(t, j) + w * g_t(j).  w ∈ {0.25, 0.5, 1, 2, 4, 8} chosen on calibration NLL with the HMM
 hyper-parameters fixed to the appearance-only dev selection (no test information).
 Compared on TEST: single, single+geo (re-rank by the same g), HMM, HMM+geo; paired sequence-block bootstrap CIs.
 Usage: python3 -m hmmloc.exp.e18_geofusion <rc|cmu> <geo_*.json files...>"""
@@ -88,7 +88,7 @@ def emit_geo(ep, rows, kind):
 
 B.emit = emit_geo
 selw = None
-for w in (0.25, 0.5, 1.0, 2.0):
+for w in (0.25, 0.5, 1.0, 2.0, 4.0, 8.0):
     W.update(w=w, sp="calib"); v = B.nll("calib", B.run("calib", "tau", best[1], best[2], best[3]))
     print(f"  calib NLL w={w}: {v:.4f}", flush=True)
     if selw is None or v < selw[0]: selw = (v, w)
