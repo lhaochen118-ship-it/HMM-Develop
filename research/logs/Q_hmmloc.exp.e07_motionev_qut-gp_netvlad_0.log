@@ -1,0 +1,16 @@
+velocity bins from calibration quantiles: [0.0, 1.0]
+[qut-gp/netvlad] motion emission {'vels': [0.0, 1.0], 'mu': [-0.466, -0.603], 'sig': [0.236, 0.236], 'counts': [0, 196]}
+  single         R@1 0.8900 NLL 0.3012 ECE 0.047 CW 0.0150
+  seqslam        R@1 0.9950 NLL 3.0119 ECE 0.943 CW 0.0000
+  sel fixed (np.float64(0.0024573033636617063), (1.0, 0.3), 0.5)
+  hmm_fixed      R@1 0.9950 NLL 0.0161 ECE 0.004 CW 0.0000
+  sel LV (np.float64(0.051857910724074134), 0.6, 0.35, 0.98)
+  LV             R@1 0.9950 NLL 0.0366 ECE 0.018 CW 0.0000
+  sel LV+ME (np.float64(0.039781211148662204), 0.3, 0.2, 1.0, 0.98)
+  LV+ME          R@1 0.9900 NLL 0.0837 ECE 0.040 CW 0.0050
+  sel LV+ME+IA (np.float64(0.024560568684286185), 0.5, np.float64(0.8529980182647707))
+  LV+ME+IA       R@1 0.9850 NLL 0.0378 ECE 0.017 CW 0.0050
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.0024573033636617063), 'LV': np.float64(0.051857910724074134), 'LV+ME': np.float64(0.039781211148662204), 'LV+ME+IA': np.float64(0.024560568684286185)})
+  OURS_leak -> hmm_fixed leak=0.001 (calib NLL {0.001: np.float64(0.0024573033636617063), 0.03: np.float64(0.005005908065365814), 0.1: np.float64(0.011243996972776196), 0.3: np.float64(0.031473732858888305), 1.0: np.float64(0.3822499145659078)})
+{'single': (0.89, [-0.205, -0.04]), 'seqslam': (0.995, [0.0, 0.0]), 'hmm_fixed': (0.995, [0.0, 0.0]), 'LV': (0.995, [0.0, 0.0]), 'LV+ME': (0.99, [-0.015, 0.0]), 'LV+ME+IA': (0.985, [-0.02, 0.0]), 'OURS_devselected': (0.995, [0.0, 0.0]), 'OURS_leak': (0.995, [0.0, 0.0])}
+RUN 20261128-255_E18_qut-gp_netvlad_s0 5s
