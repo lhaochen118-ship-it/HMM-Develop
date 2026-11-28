@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Build a Kaggle CPU kernel that runs hmmloc experiment jobs on the cached feature bank (no GPU quota; immune to
 restarts of the local container). Feature-bank dumps are mounted as kernel_sources (outputs of the owner's kernels).
-Usage: build_cpu.py <out_dir> <owner/slug> <par> <kernel_source,...> JOB [JOB ...]
+Usage: build_cpu.py <out_dir> <owner/slug> <par> <source,...> JOB [JOB ...]
+source = owner/kernel-slug                        (kernel output mounted; its folder name is the feature-bank name)
+       | ds:owner/dataset-slug=fbname1+fbname2   (public dataset with a dump/ folder, aliased under these names;
+         e.g. ds:nhatlong1103/vpr-descriptor-dumps=dive-vpr-nb15a-dump+dive-vpr-nb15c-dump lets OTHER accounts run)
 JOB = "<module> <args...>" e.g. "hmmloc.exp.e07_motionev msls-cph megaloc 0".
 Each job runs in its OWN copy of the repo subset (separate registry, no run-id race); outputs land in
 /kaggle/working/jobs/<i>/research/{runs,registry,logs}. Merge locally with research/merge_remote_runs.py."""
@@ -31,8 +34,10 @@ print("[cpu] vCPU", os.cpu_count(), "| jobs", len(JOBS), "| par", PAR, flush=Tru
 for d, subs, fs in os.walk("/kaggle/input"):
     if d.count(os.sep) > 6: subs[:] = []; continue
     b = os.path.basename(d)
-    if b in SOURCES and "dump" in subs and not os.path.exists(os.path.join(FB, b)):
-        os.symlink(d, os.path.join(FB, b)); subs[:] = []
+    if "dump" not in subs: continue
+    for name in ALIASES.get(b, [b] if b in SOURCES else []):
+        if not os.path.exists(os.path.join(FB, name)): os.symlink(d, os.path.join(FB, name))
+    subs[:] = []
 print("[cpu] feature bank:", sorted(os.listdir(FB)), "missing:", sorted(set(SOURCES) - set(os.listdir(FB))), flush=True)
 def run(i):
     jd = os.path.join(W, "jobs", f"{i:02d}"); os.makedirs(jd, exist_ok=True)
@@ -57,13 +62,15 @@ print("CPU_DONE rc", rcs, f"{(time.time() - T0) / 60:.1f} min", flush=True)
 def main(a):
     out, kid, par, srcs = a[0], a[1], int(a[2]), a[3].split(","); jobs = a[4:]
     os.makedirs(out, exist_ok=True)
-    slugs = [s.split("/")[1] for s in srcs]
+    ksrc = [s for s in srcs if not s.startswith("ds:")]; dsrc = [s[3:] for s in srcs if s.startswith("ds:")]
+    aliases = {d.split("=")[0].split("/")[1]: d.split("=")[1].split("+") for d in dsrc}
+    slugs = [s.split("/")[1] for s in ksrc] + [a for v in aliases.values() for a in v]
     with open(os.path.join(out, "run.py"), "w") as f:
         f.write(f'"""hmmloc CPU jobs (kaggle/cpu/build_cpu.py, branch claude/nice-fermi-l7bzd6)"""\n'
-                f"JOBS = {json.dumps(jobs)}\nPAR = {par}\nSOURCES = {json.dumps(slugs)}\nCODE = \"{pack()}\"\n" + RUNNER)
+                f"JOBS = {json.dumps(jobs)}\nPAR = {par}\nSOURCES = {json.dumps(slugs)}\nALIASES = {json.dumps(aliases)}\nCODE = \"{pack()}\"\n" + RUNNER)
     meta = {"id": kid, "title": kid.split("/")[1], "code_file": "run.py", "language": "python", "kernel_type": "script",
             "is_private": True, "enable_gpu": False, "enable_tpu": False, "enable_internet": False,
-            "dataset_sources": [], "kernel_sources": srcs, "competition_sources": [], "model_sources": []}
+            "dataset_sources": [d.split("=")[0] for d in dsrc], "kernel_sources": ksrc, "competition_sources": [], "model_sources": []}
     json.dump(meta, open(os.path.join(out, "kernel-metadata.json"), "w"), indent=2)
     print(f"built {out}: {len(jobs)} jobs, par {par}, sources {slugs}, run.py {os.path.getsize(os.path.join(out, 'run.py')) / 1e3:.0f} KB")
 
