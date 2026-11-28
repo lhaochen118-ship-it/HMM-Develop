@@ -1,0 +1,12 @@
+python3 -m hmmloc.exp.e21_offline nord jist
+python3 -m hmmloc.exp.e21_offline nord seqvlad
+python3 -m hmmloc.exp.e21_offline rc jist
+python3 -m hmmloc.exp.e21_offline rc seqvlad
+python3 -m hmmloc.exp.e21_offline cmu jist
+python3 -m hmmloc.exp.e21_offline cmu seqvlad
+python3 -m hmmloc.exp.e21_offline 4s jist
+python3 -m hmmloc.exp.e21_offline 4s seqvlad
+python3 -m hmmloc.exp.e21_offline 4s2 jist
+python3 -m hmmloc.exp.e21_offline 4s2 seqvlad
+python3 -m hmmloc.exp.e21_offline 4s3 jist
+python3 -m hmmloc.exp.e21_offline 4s3 seqvlad

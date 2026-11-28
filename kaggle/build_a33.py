@@ -15,6 +15,10 @@ def _native_size(paths, long_side=640, mult=16):
     from PIL import Image as _I
     w, h = _I.open(paths[0]).size; s = long_side / max(w, h)
     return (max(mult, int(round(h * s / mult)) * mult), max(mult, int(round(w * s / mult)) * mult))
+
+def _native_bs(paths, base=48, ref=322 * 322):
+    # batch scaled by pixel count (64 @ 322x322 ran out of T4 memory at 640x480 -> R16)
+    h, w = _native_size(paths); return max(4, int(base * ref / (h * w)))
 '''
 FINAL = '''
 # === A33 — keep the new features apart from the 322-px ones ===
@@ -30,6 +34,7 @@ def patch(code):
     n0 = code
     code = code.replace("T.Resize((sz, sz), antialias=True)", "T.Resize(sz if isinstance(sz, tuple) else (sz, sz), antialias=True)")
     code = code.replace("ImageList(paths, CONFIG.IMG_SIZE)", "ImageList(paths, _native_size(paths))")
+    code = code.replace("ImageList(paths, _native_size(paths)), batch_size=CONFIG.BATCH_SIZE", "ImageList(paths, _native_size(paths)), batch_size=_native_bs(paths)")
     code = re.sub(r'^DESCRIPTORS = \[[^\]]*\]', 'DESCRIPTORS = ["netvlad", "cosplace"]', code, flags=re.M)
     if DUMP: code = re.sub(r'^DUMP = \[[^\]]*\]', f'DUMP = {json.dumps(DUMP)}', code, flags=re.M)
     if CITIES: code = re.sub(r'^CONFIG.MSLS_CITIES = \([^)]*\)', f'CONFIG.MSLS_CITIES = {tuple(CITIES)!r}', code, flags=re.M)

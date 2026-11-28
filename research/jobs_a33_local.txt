@@ -1,0 +1,12 @@
+python3 -m hmmloc.exp.e07_motionev 4s netvlad_nat 0
+python3 -m hmmloc.exp.e21_offline 4s netvlad_nat
+python3 -m hmmloc.exp.e07_motionev 4s cosplace_nat 0
+python3 -m hmmloc.exp.e21_offline 4s cosplace_nat
+python3 -m hmmloc.exp.e07_motionev 4s2 netvlad_nat 0
+python3 -m hmmloc.exp.e21_offline 4s2 netvlad_nat
+python3 -m hmmloc.exp.e07_motionev 4s2 cosplace_nat 0
+python3 -m hmmloc.exp.e21_offline 4s2 cosplace_nat
+python3 -m hmmloc.exp.e07_motionev 4s3 netvlad_nat 0
+python3 -m hmmloc.exp.e21_offline 4s3 netvlad_nat
+python3 -m hmmloc.exp.e07_motionev 4s3 cosplace_nat 0
+python3 -m hmmloc.exp.e21_offline 4s3 cosplace_nat

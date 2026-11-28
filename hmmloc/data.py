@@ -20,6 +20,8 @@ for d in ["dinov2", "netvlad", "cosplace", "mixvpr", "megaloc"]:
     DUMP_OF[("nord", d)] = DUMP_OF[("rc", d)] = "dive-vpr-nb15c-dump"; DUMP_OF[("cmu", d)] = "dive-vpr-nb15d-dump"
 for d in ["salad", "megaloc", "netvlad", "cosplace"]:
     DUMP_OF[("nordseg", d)] = "hmm-k01-nordseg"
+for d in ["netvlad_nat", "cosplace_nat"]:                # A33: native-aspect CNN descriptors (long side 640)
+    DUMP_OF[("nord", d)] = DUMP_OF[("rc", d)] = "dive-vpr-nb15c-dump"; DUMP_OF[("cmu", d)] = "dive-vpr-nb15d-dump"
 for _ds in ("nord", "rc", "cmu"):
     DUMP_OF[(_ds, "jist")] = "hmm-k07-jist"          # JIST (ResNet-18 + SeqGeM) per-frame descriptors
     for _d in ("seqvlad", "seqvlad_raw"):            # SeqVLAD (CCT384, MSLS-trained) per-frame, kernels k12
