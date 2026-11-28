@@ -43,8 +43,11 @@ for n, (q, r) in enumerate(sorted(PAIRS)):
     inl = 0
     if len(m) >= 8:
         a = fq["keypoints"][0].cpu().numpy()[m[:, 0]]; b = fr["keypoints"][0].cpu().numpy()[m[:, 1]]
-        F, mask = cv2.findFundamentalMat(a, b, cv2.USAC_MAGSAC, 3.0, 0.999, 5000)
-        inl = int(mask.sum()) if mask is not None else 0
+        try:
+            F, mask = cv2.findFundamentalMat(a, b, cv2.USAC_MAGSAC, 3.0, 0.999, 5000)
+            inl = int(mask.sum()) if mask is not None else 0
+        except cv2.error:                                   # degenerate configuration -> no geometric support
+            inl = 0
     out.append([q, r, int(len(m)), inl])
     if n % 500 == 0: print(f"  {n}/{len(PAIRS)} ({time.time()-t0:.0f}s)", flush=True)
 os.makedirs("/kaggle/working", exist_ok=True); json.dump(out, open(f"/kaggle/working/geo_{DS}_{CHUNK}.json", "w"))

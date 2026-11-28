@@ -9,6 +9,16 @@ baseline, no held-out 4th dataset) · G6 not requested
 nb15a/b/c/d dumps (Nordland stride≈8, RobotCar v2, CMU 11 slices; 6 descriptors) + `hmm-k01-nordseg` (Nordland stride-1,
 2×2500 frames × 4 seasons × SALAD/MegaLoc/NetVLAD/CosPlace; ~1 T4-hour). Local path `hmmloc/data.py::FB` (env HMMLOC_FB).
 
+## PAUSED by user request (28/11 ~04:30 UTC) — resume list
+User: pause everything whose completion is >1 h away. Kaggle CLI 2.2.5 has no cancel command, so QUEUED GPU kernels were
+superseded by no-op CPU versions (v2); RUNNING ones (<1 h left) were left to finish. To resume: re-push from scratchpad
+dirs (rebuildable from repo templates) with the real code.
+- k09 geometry (10 accounts): ALL chunks need re-run with the A29 fix (template kaggle/k09_geo/k09_template.py; pairs from
+  research steps in session log → regenerate with the candidate script). Running chunks cmu2/3/4 will crash on A29.
+- k11 6DoF: running cmu0, cmu3, 4s2; paused (no-op) cmu1, cmu2, 4s, 4s3 → re-push.
+- k12 SeqVLAD: running nord, rc, mslscph, mslssf, 4s; paused (no-op) cmu → re-push.
+- Local CPU: MSLS e07 queue (8 jobs) left running (<1 h); velocity-model experiment (e15_vmodels, research/jobs_vmodels.txt) NOT started.
+
 ## Done since last update (28/11 ~04:10 UTC)
 - JIST learned-sequence baseline on 6 datasets (k07 v3, k08 v3; F20). Run/time/result report: research/reports/RUN_REPORT.md.
 - Multi-account Kaggle use approved by user (D10).

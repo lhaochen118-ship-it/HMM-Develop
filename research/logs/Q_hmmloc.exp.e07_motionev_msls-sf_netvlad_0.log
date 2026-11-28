@@ -7,3 +7,9 @@ velocity bins from calibration quantiles: [0.0, 2.43, 4.18, 8.0, 10.41, 22.04, 3
   sel LV (np.float64(5.038901164999647), 1.0, 0.35, 0.9)
   LV             R@1 0.3063 NLL 5.7586 ECE 0.438 CW 0.2334
   sel LV+ME (np.float64(4.974248339030349), 1.0, 0.35, 0.25, 0.9)
+  LV+ME          R@1 0.3252 NLL 5.6431 ECE 0.418 CW 0.2327
+  sel LV+ME+IA (np.float64(4.905295838499842), 0.35, np.float64(0.6235681474208832))
+  LV+ME+IA       R@1 0.3163 NLL 5.6142 ECE 0.384 CW 0.1757
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(4.043411014360929), 'LV': np.float64(5.038901164999647), 'LV+ME': np.float64(4.974248339030349), 'LV+ME+IA': np.float64(4.905295838499842)})
+{'single': (0.4574, [-0.1436, -0.0084]), 'seqslam': (0.5416, [-0.042, 0.0688]), 'hmm_fixed': (0.5278, [0.0, 0.0]), 'LV': (0.3063, [-0.3085, -0.1416]), 'LV+ME': (0.3252, [-0.2911, -0.1239]), 'LV+ME+IA': (0.3163, [-0.3093, -0.128]), 'OURS_devselected': (0.5278, [0.0, 0.0])}
+RUN 20261128-174_E18_msls-sf_netvlad_s0 586s
