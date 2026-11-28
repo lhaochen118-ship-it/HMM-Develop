@@ -201,3 +201,20 @@ Fixed-kernel HMM, kernel × β chosen on calibration NLL (same as E18), on delib
    smaller (RobotCar +0.08, old_town/SALAD +0.04) and on MSLS some cells are ≤ SeqSLAM. Report both regimes separately;
    R@1 counts only queries with a positive (identical rows for all methods); hyper-parameters are tuned on calibration
    sequences of the SAME route (optimistic vs a fully held-out environment; E21 transfer is the check).
+
+## F24 [V] Baseline audit against published numbers and official protocols (28/11; sources: papers + official repos)
+Closest published protocol = Berton toolchain MSLS-val (cph+sf, all ~11K non-panoramic queries, 25 m):
+| Baseline | ours | published | verdict |
+|---|---|---|---|
+| SALAD (322×322) | 0.889 | 88.2 (MegaLoc Tab.1) | reproduced |
+| MegaLoc (322×322) | 0.917 | 91.0 (MegaLoc Tab.1) | reproduced |
+| MixVPR (320/322) | 0.837 | 83.2 (MegaLoc Tab.1) | reproduced |
+| SeqVLAD CCT384, L=5, official centred windows + any-frame 25 m rule (research/repro_seqvlad_msls.py) | 0.890 | 89.4 (SeqVLAD Tab.II / JIST Tab.I) | reproduced |
+| NetVLAD VGG16 | 0.476 | 54.5 / 50.9 | **~4–7 pts low** (A33) |
+| CosPlace R50 | 0.797 | 85.0 | **~5 pts low** (A33) |
+| DINOv2 (CLS ⊕ mean patch, naive) | 0.375 | no published row (DINOv2-GeM 85.4 is a different pooling) | naive feature, NOT a published baseline |
+Nordland (ours: winter→summer, 4,500 frames, ±1 subsampled frame ≈ ±8 frames) is consistent with Nordland*/** in the
+literature (SALAD 0.73 vs 76.0; CosPlace 0.46 vs 44–54; NetVLAD 0.12 vs 4–13).
+Sequence baselines: official SeqSLAM / SeqMatch-code / JIST / SeqVLAD use CENTRED windows (future frames) and a
+sequence-level positive rule; ours are CAUSAL (matched to the causal HMM filter) → weaker than published offline numbers
+(A34). Fair offline comparison = centred baselines vs the HMM fixed-lag / forward-backward smoother.
