@@ -81,12 +81,15 @@ _RUN = {"hmm_fixed": lambda sp, lk: B.run(sp, KIND, fk[1][0], fk[1][1], fk[2], l
         "LV+ME+IA": lambda sp, lk: B.run(sp, KIND, None, None, None, vel=VELS, vstd=vs, me_gamma=g, vel_stay=st, leak=lk,
                                          beta_fn=lambda ch, b0=ia[1], k=ia[2]: infoaware.beta_schedule(ch, b0, k))}
 LEAKS = [1e-3, 0.03, 0.1, 0.3, 1.0]
-_lk = {lk: (_cands[_pick] if lk == 1e-3 else B.nll("calib", _RUN[_pick]("calib", lk))) for lk in LEAKS}
+# leak = 1 is the DEGENERATE HMM: uniform transitions -> evidence alone; with beta = 1 it is exactly the calibrated
+# single-image posterior (A32: tempering by the HMM's beta made it over-flat, so selection never fell back).
+_RUN_DEG = lambda sp: [baselines.single_image_post(ep.sim()[r], B.tau) for ep, r in B.split[sp]]
+_lk = {lk: (_cands[_pick] if lk == 1e-3 else B.nll("calib", _RUN_DEG("calib") if lk == 1.0 else _RUN[_pick]("calib", lk))) for lk in LEAKS}
 _best_lk = min(_lk, key=_lk.get)
 if _best_lk == 1e-3:
     RES["OURS_leak"] = dict(RES[_pick]); PER["OURS_leak"] = PER[_pick]
 else:
-    ev("OURS_leak", _RUN[_pick]("test", _best_lk))
+    ev("OURS_leak", _RUN_DEG("test") if _best_lk == 1.0 else _RUN[_pick]("test", _best_lk))
 RES["OURS_leak"].update(picked=_pick, leak=_best_lk, leak_calib_nll={str(k): float(v) for k, v in _lk.items()})
 print(f"  OURS_leak -> {_pick} leak={_best_lk} (calib NLL {_lk})", flush=True)
 if "speed" in B.eps[0].meta:
