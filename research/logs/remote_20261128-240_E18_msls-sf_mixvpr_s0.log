@@ -1,0 +1,17 @@
+velocity bins from calibration quantiles: [0.0, 2.43, 4.18, 8.0, 10.41, 22.04, 37.39]
+[msls-sf/mixvpr] motion emission {'vels': [0.0, 2.43, 4.18, 8.0, 10.41, 22.04, 37.39], 'mu': [-2.793, -1.657, -1.072, -0.857, -0.723, -0.689, -0.658], 'sig': [0.449, 0.509, 0.588, 0.377, 0.258, 0.303, 0.241], 'counts': [11, 325, 126, 281, 311, 153, 47]}
+  single         R@1 0.8489 NLL 1.0025 ECE 0.057 CW 0.0442
+  seqslam        R@1 0.8508 NLL 5.7168 ECE 0.845 CW 0.0000
+  sel fixed (np.float64(0.8111728654159266), (9.997, 7.997), 0.5)
+  hmm_fixed      R@1 0.8604 NLL 1.1177 ECE 0.102 CW 0.0775
+  sel LV (np.float64(1.5360513216628675), 1.0, 1.0, 0.9)
+  LV             R@1 0.8355 NLL 1.5543 ECE 0.140 CW 0.1332
+  sel LV+ME (np.float64(1.542742634365702), 1.0, 1.0, 0.25, 0.9)
+  LV+ME          R@1 0.8351 NLL 1.5815 ECE 0.140 CW 0.1316
+  sel LV+ME+IA (np.float64(1.512561193307781), 1.5, 0.15093900561332704)
+  LV+ME+IA       R@1 0.8419 NLL 1.6500 ECE 0.142 CW 0.1341
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.8111728654159266), 'LV': np.float64(1.5360513216628675), 'LV+ME': np.float64(1.542742634365702), 'LV+ME+IA': np.float64(1.512561193307781)})
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+{'single': (0.8489, [-0.027, 0.0045]), 'seqslam': (0.8508, [-0.0253, 0.0055]), 'hmm_fixed': (0.8604, [0.0, 0.0]), 'LV': (0.8355, [-0.0385, -0.0095]), 'LV+ME': (0.8351, [-0.041, -0.0093]), 'LV+ME+IA': (0.8419, [-0.0346, -0.0014]), 'OURS_devselected': (0.8604, [0.0, 0.0])}
+RUN 20261128-221_E18_msls-sf_mixvpr_s0 863s
