@@ -4,3 +4,12 @@ velocity bins from calibration quantiles: [0.0, 2.43, 4.18, 8.0, 10.41, 22.04, 3
   seqslam        R@1 0.8912 NLL 5.7610 ECE 0.886 CW 0.0000
   sel fixed (np.float64(0.4859600130314017), (9.997, 7.997), 0.75)
   hmm_fixed      R@1 0.9059 NLL 0.7238 ECE 0.072 CW 0.0643
+  sel LV (np.float64(1.0425032122615108), 1.0, 1.0, 0.9)
+  LV             R@1 0.8806 NLL 1.0203 ECE 0.104 CW 0.0970
+  sel LV+ME (np.float64(1.142203198035821), 1.0, 1.0, 0.25, 0.9)
+  LV+ME          R@1 0.8758 NLL 1.1035 ECE 0.110 CW 0.1024
+  sel LV+ME+IA (np.float64(1.049731696613464), 1.5, 0.2657779395580292)
+  LV+ME+IA       R@1 0.8841 NLL 1.1025 ECE 0.106 CW 0.1015
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.4859600130314017), 'LV': np.float64(1.0425032122615108), 'LV+ME': np.float64(1.142203198035821), 'LV+ME+IA': np.float64(1.049731696613464)})
+{'single': (0.9011, [-0.0191, 0.0075]), 'seqslam': (0.8912, [-0.0295, -0.0026]), 'hmm_fixed': (0.9059, [0.0, 0.0]), 'LV': (0.8806, [-0.0377, -0.0138]), 'LV+ME': (0.8758, [-0.0457, -0.016]), 'LV+ME+IA': (0.8841, [-0.0352, -0.01]), 'OURS_devselected': (0.9059, [0.0, 0.0])}
+RUN 20261128-175_E18_msls-sf_megaloc_s0 519s
