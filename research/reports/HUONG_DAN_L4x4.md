@@ -82,6 +82,19 @@ Nếu anh tạo notebook trên web, chọn Accelerator "GPU L4 x4" trong Setting
 
 Khi đẩy bằng CLI, thứ quyết định phần cứng là `kernel-metadata.json`, không phải metadata của file `.ipynb`.
 
+### 1.1c. Cấu hình L4 thật của notebook anh tạo (`nhatlong1103/notebookccddee3658`, đọc bằng `pull -m` ngày 28/11) [V]
+
+```json
+{"enable_gpu": true, "enable_internet": false, "machine_shape": "NvidiaL4",
+ "docker_image": "", "competition_sources": ["gemma-4-developer-agent"]}
+```
+
+Nhận xét:
+
+- Trên web, "GPU L4 x4" tương ứng với `machine_shape: "NvidiaL4"` (không phải `NvidiaL4x4`) cộng competition grant `gemma-4-developer-agent`. Không cần ghim docker image.
+- Tài khoản `nhatlong1103` đã gắn grant, nên các kernel của dự án trên tài khoản này dùng đúng bộ trường trên.
+- Cell đầu vẫn phải in số GPU thực nhận (mục 4.1).
+
 ### 1.2. `kernel-metadata.json` cho L4 x4 (mẫu từ `make_meta.py` nhánh `hmm-2nd-idea`) [R]
 
 ```json
@@ -89,7 +102,7 @@ Khi đẩy bằng CLI, thứ quyết định phần cứng là `kernel-metadata.
   "id": "<account>/<slug>",  "title": "<slug>",  "code_file": "launcher.ipynb",
   "language": "python", "kernel_type": "notebook", "is_private": true,
   "enable_gpu": true, "enable_tpu": false, "enable_internet": false,
-  "machine_shape": "NvidiaL4x4",
+  "machine_shape": "NvidiaL4",
   "dataset_sources": ["<owner>/<feature-or-image-dataset>", "<owner>/<offline-bundle>"],
   "competition_sources": ["<chỉ điền khi điều khoản cuộc thi cho phép>"],
   "kernel_sources": [], "model_sources": []
