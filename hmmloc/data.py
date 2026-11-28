@@ -306,8 +306,13 @@ TRAV = {  # name -> dump dir (Kaggle dataset slug, mounted/copied into FB), file
     "boreas": ("boreas-vpr-dump", "boreas", "boreas-2020-11-26-13-58", 10.0, 30.0),
     "nclt": ("nclt-vpr-dump", "nclt", "2012-01-08", 10.0, 30.0),
     "brisbane": ("hmm-k13-newds", "bris", "daytime", 25.0, None),        # 6 times of day, GPS, 1 fps (kernel k13)
+    "oxford": ("oxford-robotcar-vpr-dump", "oxford", "2014-12-09-13-21-02", 25.0, 30.0),   # INS/GPS UTM, 43 traversals
 }
-HEADING = {"stlucia": None, "boreas": "traj", "nclt": "rpy"}   # Boreas rpy = camera attitude -> use driving direction
+TRAV_QUERIES = {  # standard condition set for Oxford RobotCar (overcast reference 2014-12-09)
+    "oxford": ["2015-05-19-14-06-38", "2015-08-13-16-02-58", "2014-11-14-16-34-33", "2014-12-10-18-10-50",
+               "2014-12-16-18-44-24", "2015-02-03-08-45-10", "2015-10-30-13-52-14"],   # sun, summer, dusk, night, night-rain, snow, rain
+}
+HEADING = {"stlucia": None, "boreas": "traj", "nclt": "rpy", "oxford": "traj", "brisbane": None}   # Boreas rpy = camera attitude -> use driving direction
 
 
 def _heading(meta, ds=None, C=None):
@@ -328,7 +333,7 @@ def load_traversals(ds, desc, map_trav=None, queries=None, dist=None, ang=None, 
     dist = ddist if dist is None else dist; ang = dang if ang is None else ang
     root = os.path.join(FB, kdir); d = os.path.join(root, "dump") if os.path.isdir(os.path.join(root, "dump")) else root
     travs = sorted(os.path.basename(m)[len(pre) + 1:-4] for m in glob.glob(os.path.join(d, "meta", f"{pre}_*.npz")))
-    mp = map_trav or dmap; qs = [t for t in (queries or travs) if t != mp][:max_q]
+    mp = map_trav or dmap; qs = [t for t in (queries or TRAV_QUERIES.get(ds) or travs) if t != mp and t in travs][:max_q]
     def one(t):
         z = np.load(os.path.join(d, "meta", f"{pre}_{t}.npz"), allow_pickle=True)
         X = np.load(os.path.join(d, desc, f"{pre}_{t}.npy")); C = np.asarray(z["C"], float)
