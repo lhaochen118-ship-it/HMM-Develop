@@ -1,0 +1,2 @@
+  single 0.856 | seqslam_causal 0.852 | seqslam_causal_L 10 | seqslam_centred 0.872 | seqslam_centred_L 40 | hmm_filter 0.845 | hmm_lag_h 0.834 | lag_h 20 | hmm_lag_20 0.834
+RUN 20261128-399_E37_kitti_megaloc
