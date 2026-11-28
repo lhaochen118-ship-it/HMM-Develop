@@ -1,0 +1,7 @@
+hmmloc.exp.e14_jist nord 3.0039
+hmmloc.exp.e14_jist cmu 3.0039
+hmmloc.exp.e14_jist rc 3.0039
+hmmloc.exp.e07_motionev nord jist 0
+hmmloc.exp.e07_motionev cmu jist 0
+hmmloc.exp.e07_motionev rc jist 0
+hmmloc.exp.e07_motionev nord-tw jist 1

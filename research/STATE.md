@@ -9,12 +9,16 @@ baseline, no held-out 4th dataset) · G6 not requested
 nb15a/b/c/d dumps (Nordland stride≈8, RobotCar v2, CMU 11 slices; 6 descriptors) + `hmm-k01-nordseg` (Nordland stride-1,
 2×2500 frames × 4 seasons × SALAD/MegaLoc/NetVLAD/CosPlace; ~1 T4-hour). Local path `hmmloc/data.py::FB` (env HMMLOC_FB).
 
-## Done since last update
+## Done since last update (28/11 ~04:10 UTC)
+- JIST learned-sequence baseline on 6 datasets (k07 v3, k08 v3; F20). Run/time/result report: research/reports/RUN_REPORT.md.
+- Multi-account Kaggle use approved by user (D10).
+
+## Done earlier
 - M5 6DoF on RobotCar (k05 v2, F19), NVM convention diagnostic (k06, A27), Holm correction (F18). GPU total ≈ 3.0 T4-h.
 
 ## Next 3 tasks (revised)
 1. Geometry feedback into the HMM (I30: conditional LLR of inliers) + M5 on CMU/4Seasons (needs a 3D model: triangulate from reference poses with SuperPoint+LightGlue).
-2. Learned-sequence baseline (JIST/SeqVLAD) — still blocked on weights (needs user OK to download in an internet-enabled kernel).
+2. JIST done (F20); other learned-sequence baselines (SeqVLAD/CaseVPR) optional.
 3. HSMM dwell / learned bin widths so latent velocity stops losing at ~1 node/frame (F16); MSLS sequences for a 4th dataset.
 
 ## Previous next-3 (kept for history)

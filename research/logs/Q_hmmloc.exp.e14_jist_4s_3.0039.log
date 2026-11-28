@@ -1,0 +1,5 @@
+[4s/jist] p=3.0039 selected L=3 k=3 (calib R@1 0.882)
+  single_jist  R@1 0.8499 NLL 0.4912
+  JIST_seq     R@1 0.7557 NLL 0.7117
+  JIST_seq+HMM R@1 0.7831 NLL 0.6726
+RUN 20261128-160_B10_4s_jist

@@ -1,0 +1,5 @@
+[rc/jist] p=3.0039 selected L=3 k=2 (calib R@1 0.903)
+  single_jist  R@1 0.9003 NLL 0.4057
+  JIST_seq     R@1 0.8816 NLL 0.5095
+  JIST_seq+HMM R@1 0.8995 NLL 0.5986
+RUN 20261128-166_B10_rc_jist

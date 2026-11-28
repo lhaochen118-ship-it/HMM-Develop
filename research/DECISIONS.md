@@ -11,3 +11,5 @@
 | D07 | 2026-11-27 | Model selection among {fixed kernel, LV, LV+ME, LV+ME+IA} by calibration NLL is part of the method (no test info) | F07/F16: latent velocity is regime-dependent |
 | D08 | 2026-11-27 | M5 test (k05): RobotCar, k=3 candidates single vs HMM, SuperPoint+LightGlue+PnP on the dataset SfM model, same budget | STATE next task 1; isolates candidate quality from matcher |
 | D09 | 2026-11-27 | Only Kaggle account nhatlong1103 used; other accounts not touched | Kaggle ToS (one account per person) and Ops Plan §2 |
+| D10 | 2026-11-28 | Use the other lab Kaggle accounts for parallel GPU jobs when needed | user confirmed (28/11) they belong to lab members who allow it; tokens stay in scratchpad only |
+| D11 | 2026-11-28 | JIST downloaded with internet-enabled kernel (user-approved); evaluated at its default 480×640 | 384×384 first pass superseded (A28) |

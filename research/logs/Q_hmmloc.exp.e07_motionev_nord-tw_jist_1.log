@@ -1,0 +1,16 @@
+velocity bins from calibration quantiles: [0.0, 0.5, 1.0, 2.0, 3.0]
+[nord-tw/jist] motion emission {'vels': [0.0, 0.5, 1.0, 2.0, 3.0], 'mu': [-9.21, -5.688, -3.143, -1.748, -1.087], 'sig': [0.15, 3.833, 3.718, 2.078, 1.567], 'counts': [787, 640, 986, 517, 1013]}
+  single         R@1 0.7659 NLL 0.9783 ECE 0.053 CW 0.0028
+  seqslam        R@1 0.7524 NLL 5.6088 ECE 0.747 CW 0.0000
+  sel fixed (np.float64(1.087540272077521), (1.0, 2.0), 0.35)
+  hmm_fixed      R@1 0.8737 NLL 0.4798 ECE 0.072 CW 0.0002
+  sel LV (np.float64(0.8812035113769849), 1.0, 0.2, 0.98)
+  LV             R@1 0.9092 NLL 0.3967 ECE 0.074 CW 0.0002
+  sel LV+ME (np.float64(0.7564361362551585), 0.6, 0.2, 0.25, 0.98)
+  LV+ME          R@1 0.9152 NLL 0.2930 ECE 0.024 CW 0.0022
+  sel LV+ME+IA (np.float64(0.8745789019901846), 1.5, np.float64(0.9288246059417724))
+  LV+ME+IA       R@1 0.9171 NLL 0.3632 ECE 0.074 CW 0.0047
+  OURS_devselected -> LV+ME (calib NLL {'hmm_fixed': np.float64(1.087540272077521), 'LV': np.float64(0.8812035113769849), 'LV+ME': np.float64(0.7564361362551585), 'LV+ME+IA': np.float64(0.8745789019901846)})
+  ORACLE_motion  R@1 0.9668 NLL 0.1169 ECE 0.021 CW 0.0009
+{'single': (0.7659, [-0.1664, -0.0484]), 'seqslam': (0.7524, [-0.1837, -0.049]), 'hmm_fixed': (0.8737, [0.0, 0.0]), 'LV': (0.9092, [0.0215, 0.0517]), 'LV+ME': (0.9152, [0.0261, 0.059]), 'LV+ME+IA': (0.9171, [0.0239, 0.068]), 'OURS_devselected': (0.9152, [0.0261, 0.059]), 'ORACLE_motion': (0.9668, [0.0602, 0.1356])}
+RUN 20261128-172_E18_nord-tw_jist_s1 572s

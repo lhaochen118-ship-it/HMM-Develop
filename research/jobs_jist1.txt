@@ -1,0 +1,6 @@
+hmmloc.exp.e14_jist 4s 3.0039
+hmmloc.exp.e14_jist 4s2 3.0039
+hmmloc.exp.e14_jist 4s3 3.0039
+hmmloc.exp.e07_motionev 4s jist 0
+hmmloc.exp.e07_motionev 4s2 jist 0
+hmmloc.exp.e07_motionev 4s3 jist 0

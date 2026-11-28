@@ -20,6 +20,8 @@ for d in ["dinov2", "netvlad", "cosplace", "mixvpr", "megaloc"]:
     DUMP_OF[("nord", d)] = DUMP_OF[("rc", d)] = "dive-vpr-nb15c-dump"; DUMP_OF[("cmu", d)] = "dive-vpr-nb15d-dump"
 for d in ["salad", "megaloc", "netvlad", "cosplace"]:
     DUMP_OF[("nordseg", d)] = "hmm-k01-nordseg"
+for _ds in ("nord", "rc", "cmu"):
+    DUMP_OF[(_ds, "jist")] = "hmm-k07-jist"          # JIST (ResNet-18 + SeqGeM) per-frame descriptors
 CMU_SLICES = [6, 7, 8, 10, 11, 12, 13, 21, 22, 23, 24]
 
 
@@ -225,11 +227,16 @@ def true_speed(ep: Episode):
     return sp
 
 
+FOURS_SCENE = {"hmm-k02-4s-stopgo": "office_loop", "hmm-k03-4s-scene2": "countryside", "hmm-k04-4s-scene3": "old_town"}
+
+
 def load_4s_stopgo(desc, dist=5.0, ang=30.0, calib_every=3, kdir="hmm-k02-4s-stopgo"):
     """4Seasons, one scene (kernel k02): map = first traversal sampled every >=1 m; queries = the other traversals
     sampled every 0.5 s in TIME (real stops kept). Each query traversal is one sequence (cut at gaps > 2 s)."""
+    scene = FOURS_SCENE[kdir]
+    if desc == "jist": kdir = "hmm-k08-jist4s"       # all three scenes extracted together with JIST
     d = os.path.join(FB, kdir, "dump")
-    metas = sorted(glob.glob(os.path.join(d, "meta", "*.npz")))
+    metas = sorted(m for m in glob.glob(os.path.join(d, "meta", "*.npz")) if f"4s_{scene}_" in os.path.basename(m))
     mp = [m for m in metas if "_map_" in os.path.basename(m)][0]
     zm = np.load(mp); tag = os.path.basename(mp)[:-4]
     R = np.load(os.path.join(d, desc, tag + ".npy")); C = zm["C"]; Rr = zm["R"]

@@ -139,3 +139,17 @@ PnP-RANSAC with the official rear intrinsics; 1284 test queries (134 sequences);
 | SALAD, all | 0.278 / 0.560 / 0.908 | 0.276 / 0.563 / 0.906 | n.s. |
 Local-feature PnP is what raises fine-pose accuracy (retrieval-pose 0.5 m: 0.19–0.25 → PnP 0.48–0.56); the HMM adds on top
 only when retrieval is the bottleneck (weak descriptor). H11 (≥5 pt at tight thresholds at night): NOT met → partial.
+
+## F20 [S] Learned-sequence baseline JIST (official weights, 480×640, SeqGeM p=3.004) vs HMM (B10 runs, E18 jist runs)
+R@1, test sequences; JIST L∈{3,5,10} and DB stride∈{1,2,3,5} chosen on calibration:
+| Dataset | JIST single | JIST seq | JIST seq + HMM | IA-HMM on JIST frames |
+|---|---|---|---|---|
+| Nordland | 0.723 | 0.780 | 0.986 | 0.987 |
+| CMU | 0.927 | 0.923 | 0.939 | 0.950 |
+| RobotCar | 0.900 | 0.882 | 0.899 | 0.918 |
+| 4Seasons office_loop / countryside / old_town | 0.850 / 0.665 / 0.603 | 0.756 / 0.472 / 0.544 | 0.783 / 0.475 / 0.559 | 0.918 / 0.796 / 0.677 |
+With the SAME frame descriptor, HMM inference beats JIST's learned SeqGeM aggregation on every dataset (+0.04 to +0.32);
+JIST's sequence descriptor helps only on Nordland (frame-synchronised, its training-like regime) and hurts on variable
+speed / sparse-query data (4Seasons). Feeding JIST sequence similarity into the HMM recovers part of the gap (Nordland 0.986).
+Caveat: JIST was trained on MSLS; these are out-of-domain transfers, and its official evaluation protocol (sequence
+labelling, sampling) is approximated — causal query windows and stride-matched DB windows (documented in e14_jist.py).
