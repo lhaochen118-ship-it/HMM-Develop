@@ -16,6 +16,8 @@ OWN = "nhatlong1103/dive-vpr-nb15a-dump,nhatlong1103/dive-vpr-nb15b-dump,nhatlon
 
 def sources(ds, desc):
     base = ds.split(":")[0].replace("-tw", "").split("-q")[0]
+    if desc == "jist":                                  # JIST dumps = owner's kernel outputs k07 (nord/rc/cmu) + k08 (4Seasons)
+        return OWN + ",nhatlong1103/hmm-k07-jist,nhatlong1103/hmm-k08-jist4s", "nhatlong1103"
     if desc.startswith("seqvlad"):
         return "ds:nhatlong1103/hmm-seqvlad-frames=hmm-k12-seqvlad," + VDD, None
     if base in ("nord", "msls-cph", "msls-sf") and desc == "salad":
