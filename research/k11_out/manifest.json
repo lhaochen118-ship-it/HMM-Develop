@@ -1,0 +1,100 @@
+{
+ "run_id": "l4k11-20261128",
+ "smoke": false,
+ "gpus": [
+  [
+   "NVIDIA L4",
+   22.0343017578125
+  ],
+  [
+   "NVIDIA L4",
+   22.0343017578125
+  ],
+  [
+   "NVIDIA L4",
+   22.0343017578125
+  ],
+  [
+   "NVIDIA L4",
+   22.0343017578125
+  ]
+ ],
+ "vcpu": 48,
+ "workers": 12,
+ "wpg": 3,
+ "fc_cap": 1885,
+ "events": [],
+ "outputs": {
+  "k11_out_4s.json": {
+   "task": "k11_4s",
+   "sha256": "83d3e6692496a6d1a57be6fc8818411e16158d3965a1f10252a8a6f01832d8dc",
+   "bytes": 425758
+  },
+  "k11_out_4s3.json": {
+   "task": "k11_4s3",
+   "sha256": "9485b1c257d148309f38a22eda91ce8af96f7ce06a1372a338e1fff6e7fdae86",
+   "bytes": 392390
+  },
+  "k11_out_cmu1.json": {
+   "task": "k11_cmu1",
+   "sha256": "9d6356f271ae9ed477937fd43c0c73c937d7714726df92e27ca548bf9dc64ff5",
+   "bytes": 619935
+  },
+  "k11_out_cmu2.json": {
+   "task": "k11_cmu2",
+   "sha256": "4be67a8fdae4f84a5a41800ecf2c01eab309272ad84f3f541b558b1d8da973f0",
+   "bytes": 612017
+  }
+ },
+ "checks": {
+  "k11_4s": {
+   "queries": 1156,
+   "covered_once": 1156,
+   "missing": 0,
+   "dup": 0,
+   "conventions": {
+    "id": 34
+   },
+   "conv_consistent": true
+  },
+  "k11_4s3": {
+   "queries": 1138,
+   "covered_once": 1138,
+   "missing": 0,
+   "dup": 0,
+   "conventions": {
+    "id": 51
+   },
+   "conv_consistent": true
+  },
+  "k11_cmu1": {
+   "queries": 1557,
+   "covered_once": 1557,
+   "missing": 0,
+   "dup": 0,
+   "conventions": {
+    "id": 25
+   },
+   "conv_consistent": true
+  },
+  "k11_cmu2": {
+   "queries": 1554,
+   "covered_once": 1554,
+   "missing": 0,
+   "dup": 0,
+   "conventions": {
+    "id": 24
+   },
+   "conv_consistent": true
+  }
+ },
+ "units": 134,
+ "t4_equiv_min": 143.5,
+ "wall_min": 9.98,
+ "gpu_util_mean": {
+  "0": 72.4,
+  "1": 75.2,
+  "2": 74.3,
+  "3": 75.1
+ }
+}

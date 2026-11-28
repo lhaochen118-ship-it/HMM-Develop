@@ -1,0 +1,13 @@
+[4s3/salad] bins [0.0, 0.46, 3.53, 4.78, 5.87, 6.76, 7.62] P0 [0.09  0.095 0.209 0.199 0.209 0.162 0.037]
+  fixed      sel (np.float64(0.2392898955378433), (4.775, 2.388), 1.0)
+  fixed      R@1 0.8685 NLL 0.3749
+  LV+ME      sel (np.float64(0.21691870174896524), 1.5, 0.5, 0.5, 0.9)
+  LV+ME      R@1 0.8994 NLL 0.3065
+  IMM+ME     sel (np.float64(0.19815885676002087), 1.5, 1.0, 0.5, 0.0)
+  IMM+ME     R@1 0.8806 NLL 0.3538
+  STOP+ME    sel (np.float64(0.20570356393598405), 1.5, 0.5, 0.5, 0.5, 0.8)
+  STOP+ME    R@1 0.8931 NLL 0.3168
+{'fixed': (0.8685, [0.0, 0.0], ''), 'LV+ME': (0.8994, [0.008, 0.057], ''), 'IMM+ME': (0.8806, [0.003, 0.022], ''), 'STOP+ME': (0.8931, [0.009, 0.042], ''), 'devselected': (0.8806, [0.003, 0.022], 'IMM+ME')}
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+RUN 20261128-180_E18c_4s3_salad_s0

@@ -25,6 +25,9 @@ for jd in sorted(glob.glob(os.path.join(out, "jobs", "*"))):
         if os.path.isdir(src):
             shutil.copytree(src, os.path.join(ROOT, "research", "runs", new), dirs_exist_ok=True)
         row.update(run_id=new, remote_run_id=old, remote_kernel=kid, artifacts=f"research/runs/{new}")
+        if not row.get("git_commit"):                   # no git inside the kernel: code = local HEAD at build time
+            import subprocess
+            row["git_commit"] = subprocess.run(["git", "-C", ROOT, "rev-parse", "--short", "HEAD"], capture_output=True, text=True).stdout.strip() + "(remote)"
         with open(REG, "a") as f:
             f.write(json.dumps(row, default=float) + "\n")
         log = os.path.join(jd, "research", "logs", "job.log")

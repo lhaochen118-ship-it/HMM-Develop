@@ -298,3 +298,63 @@ def load_msls(desc, city="cph", dist=25.0, calib_every=3, gap_m=40.0):
     for i, js in enumerate(cKDTree(C).query_ball_point(C, r=dist)): near[i, js] = True
     ep = Episode(f"msls/{city}/{desc}", R, None, Q, seq, z["q_cond"], pos, near, calib, unit="m", C=C, qC=qC)
     ep.graph = "spatial"; ep.heading = z["db_ca"]; return ep
+
+
+# ---------------------------------------------------------------- multi-traversal datasets (research/DATASETS.md, B/C)
+TRAV = {  # name -> dump dir (Kaggle dataset slug, mounted/copied into FB), file prefix, default map traversal, dist m, angle deg
+    "stlucia": ("stlucia-vpr-dump", "stlucia", "190809_0845", 25.0, None),
+    "boreas": ("boreas-vpr-dump", "boreas", "boreas-2020-11-26-13-58", 10.0, 30.0),
+    "nclt": ("nclt-vpr-dump", "nclt", "2012-01-08", 10.0, 30.0),
+}
+
+
+def _heading(meta):
+    if "rpy" in meta.files: return np.asarray(meta["rpy"], float)[:, 2]
+    if "yaw" in meta.files: return np.asarray(meta["yaw"], float)
+    return None
+
+
+def load_traversals(ds, desc, map_trav=None, queries=None, dist=None, ang=None, calib_every=3, jump_m=50.0, max_q=None):
+    """Repeated traversals of one route (St Lucia, Boreas, NCLT, ...): map = one traversal (metric chain, arc length s),
+    queries = the other traversals in time order; one sequence per traversal, cut only at GPS jumps > jump_m.
+    Calibration/test split by WHOLE traversals (traversal k is calibration iff k % calib_every == 0).
+    Positives: centre distance <= dist (and heading difference <= ang when headings exist)."""
+    kdir, pre, dmap, ddist, dang = TRAV[ds]
+    dist = ddist if dist is None else dist; ang = dang if ang is None else ang
+    root = os.path.join(FB, kdir); d = os.path.join(root, "dump") if os.path.isdir(os.path.join(root, "dump")) else root
+    travs = sorted(os.path.basename(m)[len(pre) + 1:-4] for m in glob.glob(os.path.join(d, "meta", f"{pre}_*.npz")))
+    mp = map_trav or dmap; qs = [t for t in (queries or travs) if t != mp][:max_q]
+    def one(t):
+        z = np.load(os.path.join(d, "meta", f"{pre}_{t}.npz"), allow_pickle=True)
+        X = np.load(os.path.join(d, desc, f"{pre}_{t}.npy")); C = np.asarray(z["C"], float)
+        if C.shape[1] == 2: C = np.c_[C, np.zeros(len(C))]
+        assert len(X) == len(C), (t, X.shape, C.shape)
+        ts = np.asarray(z["t"], float) if "t" in z.files else np.array([float(n) for n in z["names"]]) / 1e6
+        return X, C, _heading(z), ts
+    R, C, hm, _ = one(mp)
+    steps = np.linalg.norm(np.diff(C, axis=0), axis=1); s = np.concatenate([[0], np.cumsum(np.minimum(steps, 30.0))])
+    Qs, seq, cond, qC, qh, qt = [], [], [], [], [], []; calib = set(); sid = 0
+    for k, t in enumerate(qs):
+        Q, c, h, ts = one(t); sq = np.full(len(Q), sid)
+        jumps = np.where(np.linalg.norm(np.diff(c, axis=0), axis=1) > jump_m)[0]
+        for j in jumps: sq[j + 1:] += 1
+        for q in np.unique(sq):
+            if k % calib_every == 0: calib.add(int(q))
+        sid = sq.max() + 1
+        Qs.append(Q); seq.append(sq); cond += [t] * len(Q); qC.append(c); qh.append(h); qt.append(ts)
+    Q = np.concatenate(Qs); qC = np.concatenate(qC); seq = np.concatenate(seq)
+    from scipy.spatial import cKDTree
+    tree = cKDTree(C); pos = np.zeros((len(Q), len(R)), bool); near = np.zeros((len(R), len(R)), bool)
+    use_h = ang is not None and hm is not None and all(h is not None for h in qh)
+    qhh = np.concatenate(qh) if use_h else None
+    def hdiff(a, b): return np.degrees(np.abs((a - b + np.pi) % (2 * np.pi) - np.pi))
+    for i, js in enumerate(tree.query_ball_point(qC, r=dist)):
+        js = np.asarray(js, int)
+        if use_h and len(js): js = js[hdiff(qhh[i], hm[js]) <= ang]
+        pos[i, js] = True
+    for i, js in enumerate(tree.query_ball_point(C, r=dist)):
+        js = np.asarray(js, int)
+        if use_h and len(js): js = js[hdiff(hm[i], hm[js]) <= ang]
+        near[i, js] = True
+    return Episode(f"{ds}/{desc}/map{mp}", R, s, Q, seq, np.array(cond), pos, near, calib, unit="m", C=C, qC=qC,
+                   qt=np.concatenate(qt), meta={"map": mp, "queries": qs})

@@ -153,3 +153,19 @@ JIST's sequence descriptor helps only on Nordland (frame-synchronised, its train
 speed / sparse-query data (4Seasons). Feeding JIST sequence similarity into the HMM recovers part of the gap (Nordland 0.986).
 Caveat: JIST was trained on MSLS; these are out-of-domain transfers, and its official evaluation protocol (sequence
 labelling, sampling) is approximated — causal query windows and stride-matched DB windows (documented in e14_jist.py).
+
+## F21 [S] M5 on CMU and 4Seasons: HMM-guided 6DoF without an SfM model (runs 20261128-182..185; kernels k11 + hmm-l4-k11)
+Reference 3D points triangulated from the neighbouring reference with KNOWN pose (SuperPoint+LightGlue), query pose by
+PnP-RANSAC; candidates = top-3 NetVLAD single-image vs top-3 of the HMM posterior (same budget). Test queries (CMU every
+3rd frame; 4Seasons all). Paired sequence-block bootstrap 95% CI of HMM − single:
+| Dataset | (0.25m,2°) single → HMM | (0.5m,5°) | (5m,10°) | CI (0.5m,5°) |
+|---|---|---|---|---|
+| Extended CMU (11 slices) | 0.743 → 0.793 | 0.820 → 0.878 | 0.875 → 0.922 | [+0.036, +0.082] |
+| 4Seasons office_loop | 0.433 → 0.575 | 0.584 → 0.770 | 0.688 → 0.896 | [+0.143, +0.245] |
+| 4Seasons countryside | 0.105 → 0.118 | 0.199 → 0.289 | 0.478 → 0.682 | [+0.046, +0.120] |
+| 4Seasons old_town | 0.279 → 0.298 | 0.401 → 0.448 | 0.517 → 0.549 | [+0.024, +0.074] |
+The HMM's candidate set improves 6DoF accuracy at every threshold on every dataset (CI excludes 0 except countryside
+0.25 m, lower bound 0.000). Gains are largest where single-image retrieval is weakest (office_loop, countryside 5 m). With
+F19 (RobotCar) the M5 claim now holds on 3 benchmarks. Camera-convention self-check: identity on all 7 chunks.
+Engineering: the 4 remaining scenes ran in ONE L4x4 session (12 workers, dynamic queue): 143.5 T4-equivalent minutes in
+9.98 min wall, mean GPU utilisation 72–75 % per GPU, merge checks 0 missing / 0 duplicates (research/k11_out/manifest.json).
