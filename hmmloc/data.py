@@ -212,6 +212,8 @@ def true_speed(ep: Episode):
     T = ep.T; sp = np.full(T, np.nan)
     if "speed" in ep.meta:                        # synthetic time-warp: speed applied after frame t-1
         sp[1:] = ep.meta["speed"][:-1]
+    elif ep.qC is not None and getattr(ep, "graph", None) == "spatial":
+        sp[1:] = np.linalg.norm(np.diff(ep.qC, axis=0), axis=1)      # spatial graph: metric displacement is the state unit
     elif ep.qC is not None:
         # A26: speed in MAP COORDINATES. Map arc-length grows faster than metric distance (noisy reference poses), so
         # metric query steps are rescaled by the LOCAL map ratio  (s[j+w]-s[j-w]) / ||C[j+w]-C[j-w]||  at the nearest
@@ -271,3 +273,24 @@ def subsample_queries(ep: Episode, k: int):
                 C=ep.C, Rrot=ep.Rrot, qC=None if ep.qC is None else ep.qC[r], qR=None if ep.qR is None else ep.qR[r],
                 qt=None if ep.qt is None else ep.qt[r])
     return e
+
+
+def load_msls(desc, city="cph", dist=25.0, calib_every=3, gap_m=40.0):
+    """MSLS (Copenhagen / San Francisco test cities; dumps nb16a/b). Sequences = consecutive rows with the same date and
+    step < gap_m (rows are stored in Mapillary-sequence order). Map is a SPATIAL graph (Episode.graph='spatial')."""
+    kd = {"cph": "dive-vpr-nb16a-msls", "sf": "dive-vpr-nb16b-msls"}[city]
+    d = os.path.join(FB, kd, "dump"); z = np.load(os.path.join(d, "meta", f"msls_{city}.npz"))
+    R = np.load(os.path.join(d, desc, f"msls_{city}_db.npy")); Q = np.load(os.path.join(d, desc, f"msls_{city}_q.npy"))
+    C = np.c_[z["db_C"], np.zeros(len(z["db_C"]))]; qC = np.c_[z["q_C"], np.zeros(len(z["q_C"]))]
+    seq = np.zeros(len(Q), int)
+    for t in range(1, len(Q)):
+        brk = z["q_date"][t] != z["q_date"][t - 1] or np.linalg.norm(qC[t] - qC[t - 1]) > gap_m
+        seq[t] = seq[t - 1] + int(brk)
+    calib = {q for q in np.unique(seq) if q % calib_every == 0}
+    from scipy.spatial import cKDTree
+    pos = np.zeros((len(Q), len(R)), bool)
+    for i, js in enumerate(cKDTree(C).query_ball_point(qC, r=dist)): pos[i, js] = True
+    near = np.zeros((len(R), len(R)), bool)
+    for i, js in enumerate(cKDTree(C).query_ball_point(C, r=dist)): near[i, js] = True
+    ep = Episode(f"msls/{city}/{desc}", R, None, Q, seq, z["q_cond"], pos, near, calib, unit="m", C=C, qC=qC)
+    ep.graph = "spatial"; ep.heading = z["db_ca"]; return ep

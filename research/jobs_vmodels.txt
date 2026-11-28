@@ -1,0 +1,4 @@
+hmmloc.exp.e15_vmodels cmu netvlad 0
+hmmloc.exp.e15_vmodels nord-tw netvlad 1
+hmmloc.exp.e15_vmodels 4s3 salad 0
+hmmloc.exp.e15_vmodels 4s netvlad 0

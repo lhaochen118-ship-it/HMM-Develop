@@ -10,6 +10,7 @@ def load(ds, desc):
     if ds == "rc": return [data.load_robotcar(desc)]
     if ds == "cmu": return data.load_cmu(desc)
     if ds.startswith("nordseg"): return [data.load_nordseg(desc, stride=int(ds[7:] or 1))]
+    if ds in ("msls-cph", "msls-sf"): return [data.load_msls(desc, city=ds.split("-")[1])]
     if ds == "4s": return [data.load_4s_stopgo(desc)]
     if ds == "4s2": return [data.load_4s_stopgo(desc, kdir="hmm-k03-4s-scene2")]
     if ds == "4s3": return [data.load_4s_stopgo(desc, kdir="hmm-k04-4s-scene3")]
@@ -43,7 +44,7 @@ class Bench:
         return self.me
 
     def run(self, split, kind, mean, std, beta, vel=None, vstd=0.5, null=False, beta_fn=None, lag=0, me_gamma=None,
-            vel_stay=0.9, p0v=None, vel_mix="adjacent"):
+            vel_stay=0.9, p0v=None, vel_mix="adjacent", stop_stay=0.9):
         posts = []
         for i, (ep, rows) in enumerate(self.split[split]):
             L, Ln = self.emit(ep, rows, kind)
@@ -60,8 +61,9 @@ class Bench:
                     VL = self.me.loglik(motion.obs(self.change[split][i]), gamma=me_gamma)
                 Pv = None
                 if len(ks) > 1:
-                    Pv = hmm.sticky_velocity(len(ks), vel_stay) if vel_mix == "adjacent" else \
-                        hmm.mixing_velocity(p0v if p0v is not None else np.ones(len(ks)), vel_stay)
+                    if vel_mix == "adjacent": Pv = hmm.sticky_velocity(len(ks), vel_stay)
+                    elif vel_mix == "prior": Pv = hmm.mixing_velocity(p0v if p0v is not None else np.ones(len(ks)), vel_stay)
+                    else: Pv = hmm.stop_aware_velocity(p0v if p0v is not None else np.ones(len(ks)), vel_stay, stop_stay)
                 cfg = hmm.HMMConfig(ks, Pv=Pv,
                                     P0v=p0v if (p0v is not None and len(ks) > 1) else None, exit_prob=0.01 if null else 0.0, null_stay=0.9, null_prior=0.0, leak=1e-3, use_null=null)
                 S_, pos_, seq_, rm = subset(ep, rows)

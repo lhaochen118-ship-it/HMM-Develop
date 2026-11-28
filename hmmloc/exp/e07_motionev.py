@@ -34,7 +34,7 @@ def _seq(split, L):
     for ep, r in B.split[split]:
         S, pos, seq, rm = subset(ep, r)
         # velocities in map NODES per frame: divide metric speeds by the median node spacing
-        sp = np.median(np.diff(ep.s)) if ep.unit != "frame" else 1.0
+        sp = (np.median(np.diff(ep.s)) if ep.s is not None else float(np.median(np.linalg.norm(np.diff(ep.C, axis=0), axis=1)))) if ep.unit != "frame" else 1.0
         sc = baselines.seqslam_causal(S, L=L, vels=tuple(sorted(set(round(v / sp, 2) for v in SV))), enhance=0, reset_mask=rm)
         z = sc * 5.0; z -= z.max(1, keepdims=True); p_ = np.exp(z); out.append(p_ / p_.sum(1, keepdims=True))
     return out

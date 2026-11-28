@@ -223,3 +223,34 @@ def forward_kernel_seq(loglik, kernels, kidx, beta=1.0, leak=1e-3, reset_mask=No
             pred = KT[kidx[t]] @ b; pred = (1 - leak) * pred + leak * pred.sum() / M
         l = beta[t] * loglik[t]; w = np.exp(l - l.max()); b = pred * w; b /= b.sum(); post[t] = b
     return post
+
+
+def spatial_kernel(C, heading, mean, std, width_sd=4.0, heading_penalty=0.1):
+    """Transition over a map that is NOT a single route (e.g. MSLS: many database sequences). Successors of node i are
+    all map nodes within [max(0, mean-4std), mean+4std] metres (2-D/3-D Euclidean), weighted by N(d; mean, std) and by
+    a heading factor (1 if the compass headings differ by <90°, else `heading_penalty`). Rows normalised; empty rows stay."""
+    from scipy.spatial import cKDTree
+    C = np.asarray(C, float); M = len(C); tree = cKDTree(C)
+    rmax = mean + width_sd * std; rmin = max(0.0, mean - width_sd * std)
+    nb = tree.query_ball_point(C, r=rmax)
+    rows, cols, vals = [], [], []
+    for i, js in enumerate(nb):
+        js = np.asarray(js, int); d = np.linalg.norm(C[js] - C[i], axis=1); keep = d >= rmin
+        js, d = js[keep], d[keep]
+        if len(js) == 0: js, d = np.array([i]), np.array([0.0])
+        w = np.exp(-0.5 * ((d - mean) / max(std, 1e-6)) ** 2)
+        if heading is not None:
+            dh = np.abs((heading[js] - heading[i] + 180) % 360 - 180); w = w * np.where(dh < 90, 1.0, heading_penalty)
+        if w.sum() <= 0 or not np.isfinite(w.sum()): js, w = np.array([i]), np.ones(1)
+        rows.append(np.full(len(js), i)); cols.append(js); vals.append(w / w.sum())
+    return sp.csr_matrix((np.concatenate(vals), (np.concatenate(rows), np.concatenate(cols))), shape=(M, M))
+
+
+def stop_aware_velocity(p0, stay_move, stay_stop, stop_index=0):
+    """Semi-Markov approximation for stops: the stop bin keeps itself with prob stay_stop (long dwell), moving bins use
+    IMM mixing toward the stationary speed distribution p0 with persistence stay_move. Rows sum to 1."""
+    p0 = np.asarray(p0, float); p0 = p0 / p0.sum(); K = len(p0)
+    P = stay_move * np.eye(K) + (1 - stay_move) * p0[None, :]
+    mv = p0.copy(); mv[stop_index] = 0; mv = mv / mv.sum()
+    P[stop_index] = (1 - stay_stop) * mv; P[stop_index, stop_index] = stay_stop
+    return P

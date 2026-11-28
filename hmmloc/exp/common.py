@@ -42,6 +42,9 @@ def unit_scale(ep):
 
 
 def make_kernels(ep, mean, std, vels=None, vstd=None, back=None):
+    if getattr(ep, "graph", None) == "spatial":
+        if vels is None: return [hmm.spatial_kernel(ep.C, ep.heading, mean, std)]
+        return [hmm.spatial_kernel(ep.C, ep.heading, v, vstd) for v in vels]
     if vels is None:
         return [hmm.chain_kernel(ep.s, mean=mean, std=std, back=back)]
     return [hmm.chain_kernel(ep.s, mean=v, std=vstd, back=back) for v in vels]
