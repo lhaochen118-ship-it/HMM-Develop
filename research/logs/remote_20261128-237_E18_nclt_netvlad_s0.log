@@ -1,0 +1,17 @@
+velocity bins from calibration quantiles: [0.0, 1.06, 1.1, 1.13, 1.17, 1.27, 1.69]
+[nclt/netvlad] motion emission {'vels': [0.0, 1.06, 1.1, 1.13, 1.17, 1.27, 1.69], 'mu': [-1.546, -1.001, -1.044, -1.07, -1.032, -0.925, -0.909], 'sig': [0.331, 0.336, 0.322, 0.337, 0.329, 0.309, 0.341], 'counts': [0, 2808, 2766, 3044, 3401, 2232, 275]}
+  single         R@1 0.6279 NLL 1.8101 ECE 0.055 CW 0.0073
+  seqslam        R@1 0.7627 NLL 5.2337 ECE 0.756 CW 0.0000
+  sel fixed (np.float64(1.3461949391479568), (1.417, 1.134), 0.2)
+  hmm_fixed      R@1 0.8350 NLL 1.0474 ECE 0.086 CW 0.0440
+  sel LV (np.float64(2.053362116730702), 1.0, 0.2, 0.9)
+  LV             R@1 0.7450 NLL 1.7218 ECE 0.161 CW 0.0945
+  sel LV+ME (np.float64(1.791468369103068), 1.0, 0.2, 1.0, 0.9)
+  LV+ME          R@1 0.7543 NLL 1.6272 ECE 0.165 CW 0.1032
+  sel LV+ME+IA (np.float64(1.6764233484738866), 0.35, np.float64(0.5472966730594635))
+  LV+ME+IA       R@1 0.7457 NLL 1.5799 ECE 0.166 CW 0.0920
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(1.3461949391479568), 'LV': np.float64(2.053362116730702), 'LV+ME': np.float64(1.791468369103068), 'LV+ME+IA': np.float64(1.6764233484738866)})
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+{'single': (0.6279, [-0.2515, -0.1589]), 'seqslam': (0.7627, [-0.096, -0.0461]), 'hmm_fixed': (0.835, [0.0, 0.0]), 'LV': (0.745, [-0.12, -0.0497]), 'LV+ME': (0.7543, [-0.1238, -0.0312]), 'LV+ME+IA': (0.7457, [-0.1358, -0.0356]), 'OURS_devselected': (0.835, [0.0, 0.0])}
+RUN 20261128-188_E18_nclt_netvlad_s0 4325s
