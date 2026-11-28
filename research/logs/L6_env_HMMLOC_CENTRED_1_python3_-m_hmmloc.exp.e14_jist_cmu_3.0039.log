@@ -1,0 +1,5 @@
+[cmu/jist] p=3.0039 selected L=5 k=1 (calib R@1 0.932)
+  single_jist  R@1 0.9274 NLL 0.2390
+  JIST_seq     R@1 0.9272 NLL 0.2983
+  JIST_seq+HMM R@1 0.9387 NLL 0.3353
+RUN 20261128-438_B10c_cmu_jist

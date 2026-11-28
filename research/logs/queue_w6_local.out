@@ -15,3 +15,10 @@ done python3_-m_hmmloc.exp.e21_offline_kitti_cosplace
 done python3_-m_hmmloc.exp.e21_offline_kitti_salad
 done python3_-m_hmmloc.exp.e21_offline_kitti_megaloc
 done env_HMMLOC_CENTRED_1_python3_-m_hmmloc.exp.e14_jist_nord_3.0039
+done env_HMMLOC_CENTRED_1_python3_-m_hmmloc.exp.e17_seqvlad_nord
+done env_HMMLOC_CENTRED_1_python3_-m_hmmloc.exp.e14_jist_rc_3.0039
+done env_HMMLOC_CENTRED_1_python3_-m_hmmloc.exp.e17_seqvlad_rc
+done env_HMMLOC_CENTRED_1_python3_-m_hmmloc.exp.e14_jist_cmu_3.0039
+done env_HMMLOC_CENTRED_1_python3_-m_hmmloc.exp.e17_seqvlad_cmu
+done env_HMMLOC_CENTRED_1_python3_-m_hmmloc.exp.e14_jist_4s_3.0039
+done env_HMMLOC_CENTRED_1_python3_-m_hmmloc.exp.e17_seqvlad_4s
