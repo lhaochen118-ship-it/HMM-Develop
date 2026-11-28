@@ -1,0 +1,11 @@
+{
+ "single": 0.45742637644046097,
+ "seqslam_causal": 0.5416133162612036,
+ "seqslam_causal_L": 5,
+ "seqslam_centred": 0.5646606914212549,
+ "seqslam_centred_L": 10,
+ "hmm_filter": 0.5278489116517285,
+ "hmm_lag_h": 0.5701024327784892,
+ "lag_h": 5,
+ "hmm_lag_20": 0.5854673495518566
+}
