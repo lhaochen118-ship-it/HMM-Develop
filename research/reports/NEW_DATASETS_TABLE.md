@@ -7,11 +7,11 @@
 | Oxford RobotCar (7 conditions vs overcast map) | dinov2 | 0.633 | 0.639 | 0.827 | **0.827** | +0.188 | +0.195 |  | 20261128-272_E18_oxford_dinov2_s0 |
 | Oxford RobotCar (7 conditions vs overcast map) | salad | 0.953 | 0.966 | 0.978 | **0.977** | +0.011 | +0.024 |  | 20261128-270_E18_oxford_salad_s0 |
 | Oxford RobotCar (7 conditions vs overcast map) | megaloc | 0.943 | 0.965 | 0.979 | **0.980** | +0.015 | +0.037 |  | 20261128-271_E18_oxford_megaloc_s0 |
-| Boreas (8 seasonal traversals) | netvlad | 0.793 | 0.965 | 0.983 | **0.968** | +0.003 | +0.174 |  | 20261128-275_E18_boreas:8_netvlad_s0 |
+| Boreas (8 seasonal traversals) | netvlad | 0.793 | 0.965 | 0.983 | **0.968** | +0.003 | +0.174 |  | 20261128-372_E18_boreas:8_netvlad_s0 |
 | Boreas (8 seasonal traversals) | cosplace | 0.990 | 0.993 | 0.995 | **0.990** | -0.003 | +0.000 |  | 20261128-368_E18_boreas:8_cosplace_s0 |
-| Boreas (8 seasonal traversals) | dinov2 | 0.638 | 0.779 | 0.828 | **0.826** | +0.047 | +0.188 |  | 20261128-361_E18_boreas:8_dinov2_s0 |
-| Boreas (8 seasonal traversals) | salad | 0.998 | 0.998 | 0.998 | **0.998** | +0.000 | -0.000 | saturated | 20261128-326_E18_boreas:8_salad_s0 |
-| Boreas (8 seasonal traversals) | megaloc | 0.999 | 0.998 | 0.998 | **0.998** | +0.001 | -0.000 | saturated | 20261128-276_E18_boreas:8_megaloc_s0 |
+| Boreas (8 seasonal traversals) | dinov2 | 0.638 | 0.779 | 0.828 | **0.826** | +0.047 | +0.188 |  | 20261128-369_E18_boreas:8_dinov2_s0 |
+| Boreas (8 seasonal traversals) | salad | 0.998 | 0.998 | 0.998 | **0.998** | +0.000 | -0.000 | saturated | 20261128-373_E18_boreas:8_salad_s0 |
+| Boreas (8 seasonal traversals) | megaloc | 0.999 | 0.998 | 0.998 | **0.998** | +0.001 | -0.000 | saturated | 20261128-370_E18_boreas:8_megaloc_s0 |
 | NCLT (8 campus sessions, off-map parts) | netvlad | 0.628 | 0.763 | 0.835 | **0.819** | +0.056 | +0.191 |  | 20261128-359_E18_nclt_netvlad_s0 |
 | NCLT (8 campus sessions, off-map parts) | cosplace | 0.893 | 0.888 | 0.918 | **0.916** | +0.028 | +0.023 |  | 20261128-362_E18_nclt_cosplace_s0 |
 | NCLT (8 campus sessions, off-map parts) | dinov2 | 0.711 | 0.762 | 0.806 | **0.807** | +0.045 | +0.096 |  | 20261128-314_E18_nclt_dinov2_s0 |

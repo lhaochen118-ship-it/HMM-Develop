@@ -788,15 +788,19 @@
   "fallback_checked": true
  },
  "boreas:8|netvlad|0": {
-  "run_id": "20261128-275_E18_boreas:8_netvlad_s0",
-  "base": "OURS_devselected",
+  "run_id": "20261128-372_E18_boreas:8_netvlad_s0",
+  "base": "OURS_leak",
   "R@1": 0.967722412749647,
+  "single_calib_nll": 1.1892953904714902,
+  "hmm_calib_nll": 0.14286829246726174,
   "fallback_checked": true
  },
  "boreas:8|megaloc|0": {
-  "run_id": "20261128-276_E18_boreas:8_megaloc_s0",
-  "base": "OURS_devselected",
+  "run_id": "20261128-370_E18_boreas:8_megaloc_s0",
+  "base": "OURS_leak",
   "R@1": 0.9984533656109206,
+  "single_calib_nll": 0.004625220906923816,
+  "hmm_calib_nll": 1.2720690407872214e-06,
   "fallback_checked": true
  },
  "nclt|dinov2|0": {
@@ -806,20 +810,24 @@
   "fallback_checked": true
  },
  "boreas:8|cosplace|0": {
-  "run_id": "20261128-315_E18_boreas:8_cosplace_s0",
-  "base": "OURS_devselected",
+  "run_id": "20261128-368_E18_boreas:8_cosplace_s0",
+  "base": "OURS_leak",
   "R@1": 0.9898123865241073,
+  "single_calib_nll": 0.055259749045841904,
+  "hmm_calib_nll": 0.014288286970047673,
   "fallback_checked": true
  },
  "boreas:8|salad|0": {
-  "run_id": "20261128-326_E18_boreas:8_salad_s0",
-  "base": "OURS_devselected",
+  "run_id": "20261128-373_E18_boreas:8_salad_s0",
+  "base": "OURS_leak",
   "R@1": 0.9976800484163809,
+  "single_calib_nll": 0.007909991960572106,
+  "hmm_calib_nll": 2.7973495084743506e-06,
   "fallback_checked": true
  },
  "boreas:8|dinov2|0": {
-  "run_id": "20261128-361_E18_boreas:8_dinov2_s0",
-  "base": "OURS_devselected",
+  "run_id": "20261128-369_E18_boreas:8_dinov2_s0",
+  "base": "OURS_leak",
   "R@1": 0.8259027637684083,
   "fallback_checked": false
  },
