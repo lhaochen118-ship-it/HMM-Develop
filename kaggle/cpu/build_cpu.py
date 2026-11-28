@@ -36,7 +36,9 @@ for d, subs, fs in os.walk("/kaggle/input"):
     b = os.path.basename(d)
     if "dump" not in subs and "meta" not in subs: continue
     for name in ALIASES.get(b, [b] if b in SOURCES else []):
-        if not os.path.exists(os.path.join(FB, name)): os.symlink(d, os.path.join(FB, name))
+        if os.path.exists(os.path.join(FB, name)): continue
+        if "dump" in subs: os.symlink(d, os.path.join(FB, name))
+        else: os.makedirs(os.path.join(FB, name)); os.symlink(d, os.path.join(FB, name, "dump"))   # flat dataset
     subs[:] = []
 print("[cpu] feature bank:", sorted(os.listdir(FB)), "missing:", sorted(set(SOURCES) - set(os.listdir(FB))), flush=True)
 def run(i):

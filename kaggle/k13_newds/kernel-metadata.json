@@ -1,0 +1,22 @@
+{
+  "id": "huyenco/hmm-k13-newds",
+  "title": "hmm-k13-newds",
+  "code_file": "k13-newds.py",
+  "language": "python",
+  "kernel_type": "script",
+  "is_private": true,
+  "enable_gpu": true,
+  "enable_tpu": false,
+  "enable_internet": false,
+  "dataset_sources": [
+    "nhatlong1103/vpr-brisbane-6times-frames",
+    "nhatlong1103/vpr-qut-gardenspoint-southbank",
+    "nhatlong1103/bundle",
+    "nhatlong1103/vpr-descriptor-weights"
+  ],
+  "kernel_sources": [],
+  "competition_sources": [],
+  "model_sources": [],
+  "docker_image": "gcr.io/kaggle-private-byod/python@sha256:9a6bcfda6d03b2cd9aa347ee8c1bae62043328ed0f4afe9bda014e4f8bbf9435",
+  "machine_shape": "NvidiaTeslaT4"
+}
