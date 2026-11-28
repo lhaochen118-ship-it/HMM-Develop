@@ -1,0 +1,5 @@
+hmmloc.exp.e17_seqvlad rc
+hmmloc.exp.e17_seqvlad 4s
+hmmloc.exp.e17_seqvlad 4s2
+hmmloc.exp.e17_seqvlad nord
+hmmloc.exp.e17_seqvlad cmu

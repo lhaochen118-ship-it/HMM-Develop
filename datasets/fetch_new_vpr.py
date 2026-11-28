@@ -54,7 +54,8 @@ def to_local_m(lat, lon, lat0, lon0):
 
 def brisbane():
     root = os.path.join(OUT, "brisbane-event-vpr-frames"); os.makedirs(root, exist_ok=True)
-    ref = None
+    og = os.path.join(root, "origin.json")             # persisted: a resumed run must keep the SAME local frame
+    ref = tuple(json.load(open(og))["local_origin_latlon"]) if os.path.exists(og) else None
     for tr in BRIS:
         d = os.path.join(root, tr.split("-")[1]); fr = os.path.join(d, "frames"); done = os.path.join(d, "frames.csv")
         if os.path.exists(done):
@@ -72,10 +73,10 @@ def brisbane():
         # video and nmea are recorded by the same camera and synchronised (dataset README): video t=0 <-> first fix
         t0 = fixes[0][0]; ts = [(f[0] - t0).total_seconds() for f in fixes]
         if ref is None:
-            ref = (fixes[0][1], fixes[0][2])
+            ref = (fixes[0][1], fixes[0][2]); json.dump({"local_origin_latlon": ref}, open(og, "w"))
         imgs = sorted(os.listdir(fr)); rows = []
         for k, im in enumerate(imgs):
-            tv = (k + 0.5) / FPS
+            tv = k / FPS                                   # ffmpeg fps filter: output frame k has pts k/FPS
             j = min(range(len(ts)), key=lambda i: abs(ts[i] - tv))
             if abs(ts[j] - tv) > 2.0:
                 continue                                   # no GPS within 2 s -> frame kept but unlabeled
@@ -94,13 +95,12 @@ def brisbane():
         f"Frames extracted from *_concat.mp4 at {FPS} fps, width {WID}px; GPS from *_concat.nmea ($GPRMC), nearest fix "
         "(<=2 s). east/north in metres relative to the first fix of the first traversal (equirectangular).\n"
         "Six traversals of the same ~8 km route: sunset1, sunset2, daytime, night, morning, sunrise.\n")
-    json.dump({"local_origin_latlon": ref}, open(os.path.join(root, "origin.json"), "w"))
 
 
 def qut():
     root = os.path.join(OUT, "qut-day-night-lateral"); os.makedirs(root, exist_ok=True)
     for key, probe in (("GardensPointWalking.zip", "day_left"), ("SouthBankBicycle.zip", "frames1")):
-        if os.path.isdir(os.path.join(root, probe)):
+        if os.path.isdir(os.path.join(root, probe)) or os.path.isdir(os.path.join(root, key[:-4], probe)):
             continue
         z = fetch(4590133, key)
         with zipfile.ZipFile(z) as zf:
@@ -112,5 +112,23 @@ def qut():
         "https://zenodo.org/records/4590133 (CC BY 4.0).\n")
 
 
+def rebuild_csv():
+    """Recompute every Brisbane frames.csv from the kept .nmea files (no video download): used after the 28/11 fix
+    of the frame-time convention (k/FPS instead of (k+0.5)/FPS)."""
+    root = os.path.join(OUT, "brisbane-event-vpr-frames"); ref = tuple(json.load(open(os.path.join(root, "origin.json")))["local_origin_latlon"])
+    for tr in BRIS:
+        name = tr.split("-")[1]; d = os.path.join(root, name); nm = os.path.join(DL, tr + "_concat.nmea")
+        fixes = nmea_fixes(nm); t0 = fixes[0][0]; ts = [(f[0] - t0).total_seconds() for f in fixes]; rows = []
+        for k, im in enumerate(sorted(os.listdir(os.path.join(d, "frames")))):
+            tv = k / FPS; j = min(range(len(ts)), key=lambda i: abs(ts[i] - tv))
+            if abs(ts[j] - tv) > 2.0: continue
+            lat, lon, sp = fixes[j][1], fixes[j][2], fixes[j][3]; e, n = to_local_m(lat, lon, *ref)
+            rows.append([im, f"{tv:.2f}", (t0 + datetime.timedelta(seconds=tv)).isoformat(), f"{lat:.7f}", f"{lon:.7f}", f"{e:.2f}", f"{n:.2f}", f"{sp:.2f}"])
+        with open(os.path.join(d, "frames.csv"), "w", newline="") as f:
+            w = csv.writer(f); w.writerow(["name", "t_video_s", "t_utc", "lat", "lon", "east_m", "north_m", "speed_mps"]); w.writerows(rows)
+        print("rebuilt", name, len(rows), flush=True)
+
+
 if __name__ == "__main__":
+    if "--rebuild-csv" in sys.argv: rebuild_csv(); sys.exit(0)
     qut(); brisbane(); print("FETCH_DONE", flush=True)

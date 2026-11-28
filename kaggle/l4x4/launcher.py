@@ -157,6 +157,10 @@ def main(BUNDLE):
             if c["todo"] > 0 and any(r < 2 for r in restarts.values()):
                 i = min(restarts, key=restarts.get); restarts[i] += 1; procs[i] = spawn(i); continue
             break
+        for i, p in list(procs.items()):                  # hung worker: no heartbeat for HB_MAX s while alive -> kill
+            hbp = os.path.join(JOBD, "hb", f"w{i:02d}.json")
+            if p.poll() is None and os.path.exists(hbp) and time.time() - os.path.getmtime(hbp) > OPTS.get("hb_max", 900):
+                print(f"[S4] worker w{i:02d} silent > {OPTS.get('hb_max', 900)} s -> kill", flush=True); p.kill()
         if time.time() - last_print >= 60:
             last_print = time.time(); c = common.counts(); u = nvsmi()
             ut = " ".join(f"g{int(r[0])}:{int(r[1])}%/{r[2] / 1024:.1f}G" for r in u)
@@ -202,6 +206,7 @@ def main(BUNDLE):
     manifest["wall_min"] = round((time.time() - T0) / 60, 2)
     with open(os.path.join(OUT, "manifest.json"), "w") as f:
         json.dump(manifest, f, indent=1)
-    ok = all(ch.get("missing", 1) == 0 and ch.get("dup", 1) == 0 for ch in manifest["checks"].values())
+    ok = all(ch.get("missing", 1) == 0 and ch.get("dup", 1) == 0 and ch.get("conv_consistent", True) and ch.get("order_ok", True)
+             for ch in manifest["checks"].values())
     print(f"L4X4_DONE ok={ok} wall {manifest['wall_min']} min | gpu util mean {manifest['gpu_util_mean']}", flush=True)
     return ok

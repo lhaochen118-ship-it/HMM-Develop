@@ -19,7 +19,7 @@ def main(ds, files):
         d = json.load(open(f)); conv.append(d.get("convention"))
         for m in ("single", "hmm"):
             for r in d["results"][m]:
-                per[m][(os.path.basename(f), r["q"])] = r
+                per[m][(os.path.abspath(f), r["q"])] = r
     keys = sorted(set(per["single"]) & set(per["hmm"]))
     seq = np.array([f"{k[0]}:{per['single'][k]['seq']}" for k in keys]); useq = np.unique(seq)
     rng = np.random.default_rng(0); res = {"n_queries": len(keys), "n_seq": int(len(useq)), "conventions": conv}

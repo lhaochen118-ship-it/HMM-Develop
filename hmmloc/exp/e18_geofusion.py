@@ -65,7 +65,15 @@ print(f"  logistic coef {lr.coef_.round(3).tolist()} b {lr.intercept_.round(3).t
 def gmat(sp):
     G = [np.zeros((len(rows), ep.M), np.float32) for ep, rows in B.split[sp]]; has = [np.zeros(len(rows), bool) for ep, rows in B.split[sp]]
     if not ENT[sp]: return G, has
-    X = np.array([e[3] for e in ENT[sp]]); z = lr.decision_function(X) - prior
+    X = np.array([e[3] for e in ENT[sp]])
+    if sp == "calib":   # cross-fitted (2 folds by sequence): w is chosen with OUT-OF-FOLD g, not with in-sample g
+        fold = np.array([int(B.split["calib"][e[0]][0].seq[B.split["calib"][e[0]][1][e[1]]]) % 2 for e in ENT[sp]])
+        z = np.zeros(len(X))
+        for f_ in (0, 1):
+            tr = fold != f_; m_ = LogisticRegression(C=1.0, max_iter=1000).fit(X[tr], yc[tr])
+            pr = np.log(yc[tr].mean() / (1 - yc[tr].mean())); z[~tr] = m_.decision_function(X[~tr]) - pr
+    else:               # test: g fitted on ALL calibration candidates
+        z = lr.decision_function(X) - prior
     for (k, i, j, _, _), v in zip(ENT[sp], z):
         G[k][i, j] = v; has[k][i] = True
     return G, has

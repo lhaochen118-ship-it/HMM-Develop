@@ -12,8 +12,12 @@ from .common import ROOT, new_run_id, log_run
 from .. import baselines, metrics
 
 DS = sys.argv[1]; P = None
-t00 = time.time(); B = Bench(DS, "seqvlad"); BR = Bench(DS, "seqvlad_raw")
-RAW = {id(ep): epr for (ep, _), (epr, _) in zip(B.split["calib"] + B.split["test"], BR.split["calib"] + BR.split["test"])}
+t00 = time.time(); B = Bench(DS, "seqvlad")
+from .bench import load as _load
+RAW = {}
+for ep, epr in zip(B.eps, _load(DS, "seqvlad_raw")):      # raw residual sums, same loader -> same row order (no Bench/sim)
+    assert len(epr.R) == ep.M and len(epr.Q) == ep.T, (ep.name, epr.R.shape, epr.Q.shape)
+    RAW[id(ep)] = epr
 KC, DC = 64, 384
 
 def _vlad(X):
@@ -53,16 +57,17 @@ best = max(((r1("calib", L, k), L, k) for L, k in itertools.product((3, 5, 10), 
 print(f"[{DS}/seqvlad] selected L={best[1]} k={best[2]} (calib R@1 {best[0]:.3f})", flush=True)
 RES, PER = {}, {}
 RES["single_seqvlad"], PER["single_seqvlad"] = B.evaluate([baselines.single_image_post(ep.sim()[r], B.tau) for ep, r in B.split["test"]])
-posts = []
-for ep, rows in B.split["test"]:
-    S = jist_scores(ep, rows, best[1], best[2]); z = S / B.tau; z -= z.max(1, keepdims=True); p_ = np.exp(z); posts.append(p_ / p_.sum(1, keepdims=True))
+from .. import emission as _em
+SC = {sp: [jist_scores(ep, rows, best[1], best[2]) for ep, rows in B.split[sp]] for sp in ("calib", "test")}
+tau_s, _ = _em.fit_temperature_multi([(S, ep.pos[rows]) for S, (ep, rows) in zip(SC["calib"], B.split["calib"])])
+posts = []                                              # sequence posterior with ITS OWN calibrated temperature
+for S in SC["test"]:
+    z = S / tau_s; z -= z.max(1, keepdims=True); p_ = np.exp(z); posts.append(p_ / p_.sum(1, keepdims=True))
 RES["SeqVLAD_seq"], PER["SeqVLAD_seq"] = B.evaluate(posts)
 RES["SeqVLAD_seq"]["L"], RES["SeqVLAD_seq"]["k"] = best[1], best[2]
 # JIST sequence similarity used as the HMM emission (learned sequence descriptor + HMM inference), dev-tuned
 from .. import hmm, emission
 from .common import subset
-SC = {sp: [jist_scores(ep, rows, best[1], best[2]) for ep, rows in B.split[sp]] for sp in ("calib", "test")}
-tau_s, _ = emission.fit_temperature_multi([(S, ep.pos[rows]) for S, (ep, rows) in zip(SC["calib"], B.split["calib"])])
 def run_seqhmm(sp, m, sd, b):
     out = []
     for S, (ep, rows) in zip(SC[sp], B.split[sp]):

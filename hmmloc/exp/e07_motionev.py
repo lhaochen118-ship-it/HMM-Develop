@@ -73,6 +73,22 @@ _cands = {"hmm_fixed": fk[0], "LV": lv[0], "LV+ME": lvme[0], "LV+ME+IA": ia[0]}
 _pick = min(_cands, key=_cands.get)
 RES["OURS_devselected"] = dict(RES[_pick]); PER["OURS_devselected"] = PER[_pick]; RES["OURS_devselected"]["picked"] = _pick
 print(f"  OURS_devselected -> {_pick} (calib NLL {_cands})", flush=True)
+# A32: calibration-selected leak (uniform re-localisation mass) for the picked variant; leak=1 ~ tempered single image,
+# so the HMM can fall back gracefully when appearance evidence is too weak for the motion model (MSLS-sf + DINOv2).
+_RUN = {"hmm_fixed": lambda sp, lk: B.run(sp, KIND, fk[1][0], fk[1][1], fk[2], leak=lk),
+        "LV": lambda sp, lk: B.run(sp, KIND, None, None, lv[2], vel=VELS, vstd=lv[1], vel_stay=lv[3], leak=lk),
+        "LV+ME": lambda sp, lk: B.run(sp, KIND, None, None, lvme[2], vel=VELS, vstd=lvme[1], me_gamma=lvme[3], vel_stay=lvme[4], leak=lk),
+        "LV+ME+IA": lambda sp, lk: B.run(sp, KIND, None, None, None, vel=VELS, vstd=vs, me_gamma=g, vel_stay=st, leak=lk,
+                                         beta_fn=lambda ch, b0=ia[1], k=ia[2]: infoaware.beta_schedule(ch, b0, k))}
+LEAKS = [1e-3, 0.03, 0.1, 0.3, 1.0]
+_lk = {lk: (_cands[_pick] if lk == 1e-3 else B.nll("calib", _RUN[_pick]("calib", lk))) for lk in LEAKS}
+_best_lk = min(_lk, key=_lk.get)
+if _best_lk == 1e-3:
+    RES["OURS_leak"] = dict(RES[_pick]); PER["OURS_leak"] = PER[_pick]
+else:
+    ev("OURS_leak", _RUN[_pick]("test", _best_lk))
+RES["OURS_leak"].update(picked=_pick, leak=_best_lk, leak_calib_nll={str(k): float(v) for k, v in _lk.items()})
+print(f"  OURS_leak -> {_pick} leak={_best_lk} (calib NLL {_lk})", flush=True)
 if "speed" in B.eps[0].meta:
     ep, rows = B.split["test"][0]; spd = B.eps[0].meta["speed"][rows]
     ks = [hmm.chain_kernel(ep.s, mean=v, std=0.5) for v in sorted(set(spd))]; vals = sorted(set(spd))

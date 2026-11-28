@@ -319,7 +319,12 @@ def _heading(meta, ds=None, C=None):
     mode = HEADING.get(ds, "rpy")
     if mode == "traj" and C is not None:                 # direction of travel, smoothed over +-3 frames
         n = len(C); i = np.arange(n); a = C[np.clip(i + 3, 0, n - 1)] - C[np.clip(i - 3, 0, n - 1)]
-        return np.arctan2(a[:, 1], a[:, 0])
+        h = np.arctan2(a[:, 1], a[:, 0]); ok = np.linalg.norm(a[:, :2], axis=1) >= 1.0    # stopped: arctan2 is noise
+        if ok.any():
+            idx = np.where(ok, i, 0); np.maximum.accumulate(idx, out=idx)           # last valid index (forward fill)
+            first = np.argmax(ok); idx[:first] = first                               # leading stop: next valid
+            h = h[idx]
+        return h
     if mode == "rpy" and "rpy" in meta.files: return np.asarray(meta["rpy"], float)[:, 2]
     return None
 

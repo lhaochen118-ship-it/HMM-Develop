@@ -48,14 +48,14 @@ class Bench:
         return self.me
 
     def run(self, split, kind, mean, std, beta, vel=None, vstd=0.5, null=False, beta_fn=None, lag=0, me_gamma=None,
-            vel_stay=0.9, p0v=None, vel_mix="adjacent", stop_stay=0.9):
+            vel_stay=0.9, p0v=None, vel_mix="adjacent", stop_stay=0.9, leak=1e-3):
         posts = []
         for i, (ep, rows) in enumerate(self.split[split]):
             L, Ln = self.emit(ep, rows, kind)
             ks = make_kernels(ep, mean, std) if vel is None else make_kernels(ep, None, None, vels=vel, vstd=vstd)
             b = beta if beta_fn is None else beta_fn(self.change[split][i])
             if lag > 0:
-                cfg = hmm.HMMConfig(ks, use_null=False, leak=1e-3)
+                cfg = hmm.HMMConfig(ks, use_null=False, leak=leak)
                 S, pos, seq, rm = subset(ep, rows)
                 posts.append(hmm.forward_backward_lag(L, cfg, lag=lag, beta=b, reset_mask=rm).astype(np.float32))
             else:
@@ -69,7 +69,7 @@ class Bench:
                     elif vel_mix == "prior": Pv = hmm.mixing_velocity(p0v if p0v is not None else np.ones(len(ks)), vel_stay)
                     else: Pv = hmm.stop_aware_velocity(p0v if p0v is not None else np.ones(len(ks)), vel_stay, stop_stay)
                 cfg = hmm.HMMConfig(ks, Pv=Pv,
-                                    P0v=p0v if (p0v is not None and len(ks) > 1) else None, exit_prob=0.01 if null else 0.0, null_stay=0.9, null_prior=0.0, leak=1e-3, use_null=null)
+                                    P0v=p0v if (p0v is not None and len(ks) > 1) else None, exit_prob=0.01 if null else 0.0, null_stay=0.9, null_prior=0.0, leak=leak, use_null=null)
                 S_, pos_, seq_, rm = subset(ep, rows)
                 posts.append(hmm.forward(L, cfg, beta=b, reset_mask=rm, loglik_null=Ln if null else None,
                                          vel_loglik=VL)["post"])
