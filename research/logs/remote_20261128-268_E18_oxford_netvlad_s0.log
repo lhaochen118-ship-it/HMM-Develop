@@ -1,0 +1,18 @@
+velocity bins from calibration quantiles: [0.0, 1.96, 5.61, 8.92, 10.62, 14.63, 31.95]
+[oxford/netvlad] motion emission {'vels': [0.0, 1.96, 5.61, 8.92, 10.62, 14.63, 31.95], 'mu': [-1.425, -0.854, -0.555, -0.447, -0.413, -0.361, -0.324], 'sig': [0.375, 0.316, 0.197, 0.155, 0.15, 0.15, 0.154], 'counts': [166, 513, 490, 627, 807, 359, 98]}
+  single         R@1 0.5475 NLL 2.0367 ECE 0.034 CW 0.0101
+  seqslam        R@1 0.6886 NLL 4.5495 ECE 0.676 CW 0.0000
+  sel fixed (np.float64(0.1898485483815669), (8.916, 4.458), 0.35)
+  hmm_fixed      R@1 0.7933 NLL 1.3522 ECE 0.115 CW 0.0461
+  sel LV (np.float64(1.1802998396130502), 1.0, 0.35, 0.9)
+  LV             R@1 0.5605 NLL 3.6226 ECE 0.372 CW 0.3171
+  sel LV+ME (np.float64(0.809001138906714), 1.0, 0.35, 1.0, 0.9)
+  LV+ME          R@1 0.6066 NLL 2.8646 ECE 0.306 CW 0.2198
+  sel LV+ME+IA (np.float64(0.7955921230844901), 0.35, np.float64(0.619036853313446))
+  LV+ME+IA       R@1 0.5862 NLL 2.7882 ECE 0.302 CW 0.1949
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.1898485483815669), 'LV': np.float64(1.1802998396130502), 'LV+ME': np.float64(0.809001138906714), 'LV+ME+IA': np.float64(0.7955921230844901)})
+  OURS_leak -> hmm_fixed leak=0.001 (calib NLL {0.001: np.float64(0.1898485483815669), 0.03: np.float64(0.1910802127406124), 0.1: np.float64(0.22937725186853095), 0.3: np.float64(0.36046387847832595), 1.0: np.float64(1.8888665815399415)})
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+{'single': (0.5475, [-0.454, -0.1092]), 'seqslam': (0.6886, [-0.2406, -0.0215]), 'hmm_fixed': (0.7933, [0.0, 0.0]), 'LV': (0.5605, [-0.4105, -0.0606]), 'LV+ME': (0.6066, [-0.3294, -0.0629]), 'LV+ME+IA': (0.5862, [-0.3683, -0.0644]), 'OURS_devselected': (0.7933, [0.0, 0.0]), 'OURS_leak': (0.7933, [0.0, 0.0])}
+RUN 20261128-264_E18_oxford_netvlad_s0 209s
