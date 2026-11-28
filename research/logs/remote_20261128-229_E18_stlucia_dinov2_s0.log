@@ -1,0 +1,17 @@
+velocity bins from calibration quantiles: [0.0, 10.48, 10.91, 11.31, 11.86, 13.38, 17.53]
+[stlucia/dinov2] motion emission {'vels': [0.0, 10.48, 10.91, 11.31, 11.86, 13.38, 17.53], 'mu': [-8.658, -2.255, -2.222, -2.207, -2.11, -1.865, -1.626], 'sig': [0.431, 0.421, 0.396, 0.387, 0.423, 0.533, 0.551], 'counts': [0, 615, 678, 665, 746, 426, 92]}
+  single         R@1 0.6819 NLL 1.5666 ECE 0.121 CW 0.0012
+  seqslam        R@1 0.9335 NLL 4.3475 ECE 0.918 CW 0.0000
+  sel fixed (np.float64(0.19653542545175995), (11.313, 2.828), 0.2)
+  hmm_fixed      R@1 0.9673 NLL 0.1976 ECE 0.019 CW 0.0066
+  sel LV (np.float64(0.7626041266286154), 1.0, 0.2, 0.9)
+  LV             R@1 0.8956 NLL 0.7765 ECE 0.060 CW 0.0244
+  sel LV+ME (np.float64(0.2107753535135609), 0.3, 0.2, 0.25, 0.98)
+  LV+ME          R@1 0.9696 NLL 0.1862 ECE 0.015 CW 0.0050
+  sel LV+ME+IA (np.float64(0.10390241620285064), 0.35, np.float64(0.326523778438568))
+  LV+ME+IA       R@1 0.9948 NLL 0.0280 ECE 0.010 CW 0.0012
+  OURS_devselected -> LV+ME+IA (calib NLL {'hmm_fixed': np.float64(0.19653542545175995), 'LV': np.float64(0.7626041266286154), 'LV+ME': np.float64(0.2107753535135609), 'LV+ME+IA': np.float64(0.10390241620285064)})
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+{'single': (0.6819, [-0.5836, -0.0402]), 'seqslam': (0.9335, [-0.0973, 0.0]), 'hmm_fixed': (0.9673, [0.0, 0.0]), 'LV': (0.8956, [-0.1933, 0.0]), 'LV+ME': (0.9696, [-0.0012, 0.0093]), 'LV+ME+IA': (0.9948, [-0.0056, 0.0892]), 'OURS_devselected': (0.9948, [-0.0056, 0.0892])}
+RUN 20261128-221_E18_stlucia_dinov2_s0 338s

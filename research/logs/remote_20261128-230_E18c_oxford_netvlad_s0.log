@@ -1,0 +1,13 @@
+[oxford/netvlad] bins [0.0, 1.96, 5.61, 8.92, 10.62, 14.63, 31.95] P0 [0.054 0.168 0.16  0.205 0.263 0.117 0.032]
+  fixed      sel (np.float64(0.1898485466076181), (8.916, 4.458), 0.35)
+  fixed      R@1 0.7933 NLL 1.3522
+  LV+ME      sel (np.float64(0.8772532372518487), 1.0, 0.35, 0.5, 0.9)
+  LV+ME      R@1 0.5750 NLL 3.5048
+  IMM+ME     sel (np.float64(0.15745692525535554), 1.5, 0.35, 0.5, 0.0)
+  IMM+ME     R@1 0.8456 NLL 0.7947
+  STOP+ME    sel (np.float64(0.16700139065723268), 1.5, 0.35, 0.5, 0.0, 0.8)
+  STOP+ME    R@1 0.8202 NLL 0.9886
+{'fixed': (0.7933, [0.0, 0.0], ''), 'LV+ME': (0.575, [-0.376, -0.066], ''), 'IMM+ME': (0.8456, [-0.001, 0.162], ''), 'STOP+ME': (0.8202, [-0.04, 0.132], ''), 'devselected': (0.8456, [-0.001, 0.162], 'IMM+ME')}
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+RUN 20261128-221_E18c_oxford_netvlad_s0
