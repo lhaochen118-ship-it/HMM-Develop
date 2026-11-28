@@ -40,6 +40,7 @@
 | R11 | I30: trọng số chọn ở biên lưới (2 lần) | Mọi tham số chọn trên calibration phải báo cờ `edge` nếu nằm ở biên lưới; biên → mở rộng lưới MỘT lần, ghi rõ, đánh dấu run cũ superseded |
 | R12 | I30: thành phần geometry bị β tempering của HMM làm yếu đi | Bằng chứng ngoài appearance đưa vào emission phải ghi rõ có/không bị temper (thang đo của trọng số) |
 | R13 | A32: HMM tệ hơn ảnh đơn khi descriptor quá yếu trên đồ thị không gian (MSLS-sf DINOv2) | Bộ chọn trên calibration phải có lựa chọn suy biến an toàn (leak lớn ≈ ảnh đơn); thay đổi này áp dụng đồng loạt và chạy lại toàn bộ |
+| R15 | Hai job Boreas (48k query × 6.5k node) song song trong một phiên CPU 30 GB → OOM kill (rc −9) | Job bộ nhớ lớn (Boreas, MSLS-SeqVLAD) chạy 1 job/phiên; runner ghi rc −9 thành lỗi rõ ràng |
 | R14 | Monitor/poller lặp lại sự kiện cũ; merge thủ công quên commit | Đánh dấu `.merged`; `collect.sh` tự merge + commit + push |
 
 ## Bảo mật
