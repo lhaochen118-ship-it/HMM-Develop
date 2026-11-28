@@ -1,0 +1,4 @@
+  single 0.953 | seqslam_causal 0.966 | seqslam_causal_L 5 | seqslam_centred 0.976 | seqslam_centred_L 5 | hmm_filter 0.978 | hmm_lag_h 0.985 | lag_h 2 | hmm_lag_20 0.982
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+RUN 20261128-380_E37_oxford_salad
