@@ -1,0 +1,124 @@
+{
+ "run_id": "l4k09-20261128",
+ "smoke": false,
+ "gpus": [
+  [
+   "NVIDIA L4",
+   22.0343017578125
+  ],
+  [
+   "NVIDIA L4",
+   22.0343017578125
+  ],
+  [
+   "NVIDIA L4",
+   22.0343017578125
+  ],
+  [
+   "NVIDIA L4",
+   22.0343017578125
+  ]
+ ],
+ "vcpu": 48,
+ "workers": 12,
+ "wpg": 3,
+ "fc_cap": 1885,
+ "events": [],
+ "outputs": {
+  "geo_rc_0.json": {
+   "task": "k09_rc_0",
+   "sha256": "ae11b01aa2ae46640c2bc83c3ec425dbfefeaecf98ffe60c4429da27df384955",
+   "bytes": 360022
+  },
+  "geo_rc_1.json": {
+   "task": "k09_rc_1",
+   "sha256": "33494a4c8baae6d39db08b9af2cc62aaba38bb4b3e6664079f6065cc0c492358",
+   "bytes": 364684
+  },
+  "geo_cmu_0.json": {
+   "task": "k09_cmu_0",
+   "sha256": "9c4e527dd4d29d5dbc2c069d7818788288119bb767500e3121b3648679e5b703",
+   "bytes": 619490
+  },
+  "geo_cmu_1.json": {
+   "task": "k09_cmu_1",
+   "sha256": "d71d3d6f2f6dd67629af123defe5749407901f0f280694b386860b5b54b3fbca",
+   "bytes": 619230
+  },
+  "geo_cmu_5.json": {
+   "task": "k09_cmu_5",
+   "sha256": "37c03327dda601743dfbd4eef956bb69cdce3c44d92c7adf431caace1ee11472",
+   "bytes": 614936
+  },
+  "geo_cmu_6.json": {
+   "task": "k09_cmu_6",
+   "sha256": "4758a34d9a83d6734a3a3a3333ee3d75e9a3165910722c7b65f0253ba7d33fbb",
+   "bytes": 612663
+  },
+  "geo_cmu_7.json": {
+   "task": "k09_cmu_7",
+   "sha256": "3772e5bfbd3c0a14a82d02f35b95c962e57f7e7bbf9875eceae434e1e1a93844",
+   "bytes": 611854
+  }
+ },
+ "checks": {
+  "k09_rc_0": {
+   "pairs": 7118,
+   "covered_once": 7118,
+   "missing": 0,
+   "dup": 0,
+   "order_ok": true
+  },
+  "k09_rc_1": {
+   "pairs": 7118,
+   "covered_once": 7118,
+   "missing": 0,
+   "dup": 0,
+   "order_ok": true
+  },
+  "k09_cmu_0": {
+   "pairs": 7584,
+   "covered_once": 7584,
+   "missing": 0,
+   "dup": 0,
+   "order_ok": true
+  },
+  "k09_cmu_1": {
+   "pairs": 7584,
+   "covered_once": 7584,
+   "missing": 0,
+   "dup": 0,
+   "order_ok": true
+  },
+  "k09_cmu_5": {
+   "pairs": 7584,
+   "covered_once": 7584,
+   "missing": 0,
+   "dup": 0,
+   "order_ok": true
+  },
+  "k09_cmu_6": {
+   "pairs": 7584,
+   "covered_once": 7584,
+   "missing": 0,
+   "dup": 0,
+   "order_ok": true
+  },
+  "k09_cmu_7": {
+   "pairs": 7580,
+   "covered_once": 7580,
+   "missing": 0,
+   "dup": 0,
+   "order_ok": true
+  }
+ },
+ "units": 89,
+ "t4_equiv_min": 86.9,
+ "wall_min": 8.45,
+ "gpu_util_mean": {
+  "0": 82.4,
+  "1": 80.8,
+  "2": 83.6,
+  "3": 80.9
+ }
+}

@@ -169,3 +169,18 @@ The HMM's candidate set improves 6DoF accuracy at every threshold on every datas
 F19 (RobotCar) the M5 claim now holds on 3 benchmarks. Camera-convention self-check: identity on all 7 chunks.
 Engineering: the 4 remaining scenes ran in ONE L4x4 session (12 workers, dynamic queue): 143.5 T4-equivalent minutes in
 9.98 min wall, mean GPU utilisation 72–75 % per GPU, merge checks 0 missing / 0 duplicates (research/k11_out/manifest.json).
+
+## F22 [S] I30: geometric verification as an HMM emission term (runs 20261128-193 RobotCar, -194 CMU; kernels k09 + hmm-l4-k09)
+Per candidate (top-5 single ∪ top-5 HMM, NetVLAD): LightGlue matches + MAGSAC fundamental-matrix inliers → logistic
+LLR g fitted on CALIBRATION candidates; HMM emission += (w/β)·g (β = HMM tempering; w on the face-value scale, chosen on
+calibration NLL). R@1 on test sequences, paired sequence-block bootstrap:
+| Dataset (geometry on) | single | single+geo (re-rank) | HMM | **HMM+geo** | HMM+geo − HMM | HMM+geo − single+geo |
+|---|---|---|---|---|---|---|
+| RobotCar v2 (every query) | 0.708 | 0.826 | 0.785 | **0.842** | +0.056 [+0.027, +0.086] | +0.015 [−0.003, +0.035] |
+| Extended CMU (every 3rd query) | 0.701 | 0.773 | 0.820 | **0.933** | +0.113 [+0.085, +0.143] | +0.160 [+0.129, +0.192] |
+On CMU geometry exists for one frame in three: the single-image re-rank can only fix those frames, while the HMM
+PROPAGATES the geometric evidence along the sequence (all frames improve: 0.820 → 0.933). On RobotCar (geometry on every
+frame) HMM+geo ≈ single+geo (CI includes 0), but HMM+geo keeps the better calibration (NLL 0.996 vs 1.022).
+Caveats: w selected at the top of the grid (16) on both datasets — calibration NLL keeps decreasing because inlier counts are
+near-decisive; test R@1 is saturated (RobotCar identical at w=16 and w=64). Confident-wrong rate rises slightly on CMU
+(0.012 → 0.021). Runs 191/192 superseded (grid edge; tempered geometry term).
