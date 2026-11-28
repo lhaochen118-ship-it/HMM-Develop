@@ -227,3 +227,15 @@ the calibration-selected HMM is −0.01…+0.01 vs single and below causal SeqSL
 mass on (wrong) map nodes while off-map and needs several frames to re-acquire at segment starts. This is the regime the
 HMM's null / exit / re-entry state is for (E12) — it was not enabled in E18. Next: E18 with use_null + LLR emission on
 KITTI and NCLT; a protocol whose sequences are revisits only (or a map from a separate traversal) is also needed.
+
+## F26 [S] KITTI with the HMM off-map (null) state (E36, runs 20261128-375/377/378/379)
+LLR emission (l(null)=0), exit / null-stay / beta chosen on calibration by ALL-frame event NLL. R@1 on on-map test frames:
+| Descriptor | single | HMM (no null) | HMM + null | off-map AUROC of the null posterior |
+|---|---|---|---|---|
+| NetVLAD | 0.841 | 0.832 | 0.840 | 0.91 |
+| CosPlace | 0.829 | 0.805 | 0.807 | 0.89 |
+| SALAD | 0.845 | 0.823 | 0.818 | 0.93 |
+| MegaLoc | 0.856 | 0.845 | 0.832 | 0.97 |
+The null state DETECTS leaving the map very well (AUROC 0.89–0.97) but does not raise on-map R@1 above single image on
+KITTI's short same-day revisits; exit probability selected at the top of the (once-widened) grid (0.3). Honest negative
+result: sequence filtering brings no localisation gain when revisit segments are short and appearance change is small.
