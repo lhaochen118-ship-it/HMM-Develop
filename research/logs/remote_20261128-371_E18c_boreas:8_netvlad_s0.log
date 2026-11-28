@@ -1,0 +1,13 @@
+[boreas:8/netvlad] bins [0.0, 1.06, 1.14, 1.24, 1.37, 1.68, 1.96] P0 [0.    0.201 0.215 0.2   0.2   0.144 0.04 ]
+  fixed      sel (np.float64(0.3169223033771277), (1.236, 0.618), 0.2)
+  fixed      R@1 0.9829 NLL 0.1352
+  LV+ME      sel (np.float64(0.32314965899905745), 0.6, 0.2, 0.5, 0.98)
+  LV+ME      R@1 0.9743 NLL 0.1719
+  IMM+ME     sel (np.float64(0.31055290047236506), 0.6, 0.2, 0.25, 0.0)
+  IMM+ME     R@1 0.9842 NLL 0.1293
+  STOP+ME    sel (np.float64(0.3107654324384123), 0.6, 0.2, 0.25, 0.0, 0.8)
+  STOP+ME    R@1 0.9820 NLL 0.1418
+{'fixed': (0.9829, [0.0, 0.0], ''), 'LV+ME': (0.9743, [-0.02, -0.002], ''), 'IMM+ME': (0.9842, [0.0, 0.003], ''), 'STOP+ME': (0.982, [-0.006, 0.002], ''), 'devselected': (0.9842, [0.0, 0.003], 'IMM+ME')}
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+RUN 20261128-221_E18c_boreas:8_netvlad_s0
