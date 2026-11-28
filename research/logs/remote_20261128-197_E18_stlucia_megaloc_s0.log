@@ -1,0 +1,17 @@
+velocity bins from calibration quantiles: [0.0, 10.48, 10.91, 11.31, 11.86, 13.38, 17.53]
+[stlucia/megaloc] motion emission {'vels': [0.0, 10.48, 10.91, 11.31, 11.86, 13.38, 17.53], 'mu': [-2.182, -0.521, -0.512, -0.501, -0.476, -0.415, -0.365], 'sig': [0.151, 0.153, 0.15, 0.15, 0.15, 0.18, 0.204], 'counts': [0, 615, 678, 665, 746, 426, 92]}
+  single         R@1 0.9998 NLL 0.0015 ECE 0.000 CW 0.0000
+  seqslam        R@1 1.0000 NLL 3.4073 ECE 0.959 CW 0.0000
+  sel fixed (np.float64(0.0014959715475528228), (8.485, 2.828), 0.5)
+  hmm_fixed      R@1 1.0000 NLL 0.0000 ECE 0.000 CW 0.0000
+  sel LV (np.float64(0.0014965184326153314), 1.0, 0.5, 0.9)
+  LV             R@1 1.0000 NLL 0.0000 ECE 0.000 CW 0.0000
+  sel LV+ME (np.float64(0.0014961495748784235), 1.0, 0.5, 0.5, 0.98)
+  LV+ME          R@1 1.0000 NLL 0.0000 ECE 0.000 CW 0.0000
+  sel LV+ME+IA (np.float64(0.0014961523176015275), 0.5, 0.5039800941944123)
+  LV+ME+IA       R@1 1.0000 NLL 0.0000 ECE 0.000 CW 0.0000
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.0014959715475528228), 'LV': np.float64(0.0014965184326153314), 'LV+ME': np.float64(0.0014961495748784235), 'LV+ME+IA': np.float64(0.0014961523176015275)})
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+{'single': (0.9998, [-0.0006, 0.0]), 'seqslam': (1.0, [0.0, 0.0]), 'hmm_fixed': (1.0, [0.0, 0.0]), 'LV': (1.0, [0.0, 0.0]), 'LV+ME': (1.0, [0.0, 0.0]), 'LV+ME+IA': (1.0, [0.0, 0.0]), 'OURS_devselected': (1.0, [0.0, 0.0])}
+RUN 20261128-188_E18_stlucia_megaloc_s0 342s

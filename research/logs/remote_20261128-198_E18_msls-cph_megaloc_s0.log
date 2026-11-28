@@ -1,0 +1,17 @@
+velocity bins from calibration quantiles: [0.0, 2.24, 5.88, 8.85, 11.58, 17.1, 28.46]
+[msls-cph/megaloc] motion emission {'vels': [0.0, 2.24, 5.88, 8.85, 11.58, 17.1, 28.46], 'mu': [-1.108, -1.018, -0.8, -0.697, -0.585, -0.46, -0.338], 'sig': [1.343, 0.335, 0.265, 0.208, 0.171, 0.198, 0.172], 'counts': [82, 296, 421, 414, 446, 251, 93]}
+  single         R@1 0.9260 NLL 0.4194 ECE 0.039 CW 0.0259
+  seqslam        R@1 0.9372 NLL 6.1528 ECE 0.934 CW 0.0000
+  sel fixed (np.float64(0.35379497081596284), (11.056, 8.845), 0.75)
+  hmm_fixed      R@1 0.9395 NLL 0.3302 ECE 0.038 CW 0.0321
+  sel LV (np.float64(0.4959449157615861), 1.0, 0.75, 0.9)
+  LV             R@1 0.9097 NLL 0.5292 ECE 0.068 CW 0.0591
+  sel LV+ME (np.float64(0.4713889638243959), 1.0, 0.75, 0.5, 0.9)
+  LV+ME          R@1 0.9127 NLL 0.5129 ECE 0.062 CW 0.0523
+  sel LV+ME+IA (np.float64(0.4358888125576767), 1.0, np.float64(0.7978784251213075))
+  LV+ME+IA       R@1 0.8987 NLL 0.4978 ECE 0.069 CW 0.0637
+  OURS_devselected -> hmm_fixed (calib NLL {'hmm_fixed': np.float64(0.35379497081596284), 'LV': np.float64(0.4959449157615861), 'LV+ME': np.float64(0.4713889638243959), 'LV+ME+IA': np.float64(0.4358888125576767)})
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+{'single': (0.926, [-0.0195, -0.0077]), 'seqslam': (0.9372, [-0.0081, 0.004]), 'hmm_fixed': (0.9395, [0.0, 0.0]), 'LV': (0.9097, [-0.0384, -0.0208]), 'LV+ME': (0.9127, [-0.0358, -0.0181]), 'LV+ME+IA': (0.8987, [-0.0527, -0.0294]), 'OURS_devselected': (0.9395, [0.0, 0.0])}
+RUN 20261128-180_E18_msls-cph_megaloc_s0 2824s

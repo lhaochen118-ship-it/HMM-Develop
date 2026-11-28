@@ -1,0 +1,13 @@
+[cmu/netvlad] bins [0.0, 0.56, 0.75, 0.94, 1.18, 1.84, 3.38] P0 [0.001 0.205 0.188 0.177 0.254 0.161 0.015]
+  fixed      sel (np.float64(0.9689495793722228), (1.5, 1.5), 0.2)
+  fixed      R@1 0.8204 NLL 0.8669
+  LV+ME      sel (np.float64(1.280245808514323), 1.5, 0.2, 0.25, 0.9)
+  LV+ME      R@1 0.7407 NLL 1.2391
+  IMM+ME     sel (np.float64(1.1406467230410402), 1.5, 0.2, 0.5, 0.0)
+  IMM+ME     R@1 0.7738 NLL 1.0762
+  STOP+ME    sel (np.float64(1.1770534377470367), 1.5, 0.2, 0.25, 0.0, 0.8)
+  STOP+ME    R@1 0.7689 NLL 1.1081
+{'fixed': (0.8204, [0.0, 0.0], ''), 'LV+ME': (0.7407, [-0.111, -0.053], ''), 'IMM+ME': (0.7738, [-0.072, -0.024], ''), 'STOP+ME': (0.7689, [-0.077, -0.028], ''), 'devselected': (0.8204, [0.0, 0.0], 'fixed')}
+fatal: not a git repository (or any parent up to mount point /kaggle)
+Stopping at filesystem boundary (GIT_DISCOVERY_ACROSS_FILESYSTEM not set).
+RUN 20261128-180_E18c_cmu_netvlad_s0
