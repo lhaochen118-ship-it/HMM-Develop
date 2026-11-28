@@ -1,0 +1,2 @@
+  single 0.925 | seqslam_causal 1.000 | seqslam_causal_L 40 | seqslam_centred 1.000 | seqslam_centred_L 40 | hmm_filter 0.965 | hmm_lag_h 1.000 | lag_h 20 | hmm_lag_20 1.000
+RUN 20261128-387_E37_qut-gp_megaloc

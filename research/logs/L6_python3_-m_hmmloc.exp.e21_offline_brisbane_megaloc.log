@@ -1,0 +1,2 @@
+  single 0.746 | seqslam_causal 0.796 | seqslam_causal_L 5 | seqslam_centred 0.821 | seqslam_centred_L 5 | hmm_filter 0.878 | hmm_lag_h 0.907 | lag_h 2 | hmm_lag_20 0.934
+RUN 20261128-391_E37_brisbane_megaloc

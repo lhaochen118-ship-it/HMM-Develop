@@ -12,6 +12,7 @@ from .common import ROOT, new_run_id, log_run
 from .. import baselines, metrics
 
 DS = sys.argv[1]; P = None
+CENTRED = os.environ.get("HMMLOC_CENTRED") == "1"
 t00 = time.time(); B = Bench(DS, "seqvlad")
 from .bench import load as _load
 RAW = {}
@@ -34,12 +35,22 @@ def seqvlad(F, idx_lists):
         out[s:s + 1024] = _vlad(acc)
     return out
 
+SEQAGG = lambda F, ix: seqvlad(F, ix); DB_SRC = lambda ep: RAW[id(ep)].R
 def jist_scores(ep, rows, L, k):
     er = RAW[id(ep)]
     M = ep.M; db_idx = [np.clip(np.arange(j - (L - 1) * k, j + 1, k), 0, M - 1) for j in range(M)]
     Dseq = seqvlad(er.R, db_idx)
     seq = ep.seq[rows]; q_idx = []
-    for i in range(len(rows)):
+    if CENTRED:   # A34: official JIST/SeqVLAD protocol = centred windows (h future frames), same for the database
+        h = L // 2; db_idx = [np.clip(np.arange(j - h * k, j + (L - 1 - h) * k + 1, k), 0, M - 1) for j in range(M)]
+        Dseq = SEQAGG(DB_SRC(ep), db_idx)
+        for i in range(len(rows)):
+            lo, hi = i, i
+            while lo > 0 and i - lo < h and seq[lo - 1] == seq[i]: lo -= 1
+            while hi < len(rows) - 1 and hi - i < L - 1 - h and seq[hi + 1] == seq[i]: hi += 1
+            q_idx.append(rows[lo:hi + 1])
+    else:
+      for i in range(len(rows)):
         lo = i
         while lo > 0 and i - lo < L - 1 and seq[lo - 1] == seq[i]: lo -= 1
         q_idx.append(rows[lo:i + 1])
@@ -81,7 +92,7 @@ for (m, sd), b in itertools.product(B.kernel_grid(), [0.1, 0.2, 0.35, 0.5, 0.75,
     if bh is None or v < bh[0]: bh = (v, m, sd, b)
 RES["SeqVLAD_seq+HMM"], PER["SeqVLAD_seq+HMM"] = B.evaluate(run_seqhmm("test", bh[1], bh[2], bh[3])); RES["SeqVLAD_seq+HMM"]["sel"] = bh[1:]
 for k_, r in RES.items(): print(f"  {k_:12s} R@1 {r['R@1']:.4f} NLL {r['NLL']:.4f}", flush=True)
-rid = new_run_id(f"B11_{DS}_seqvlad")
+rid = new_run_id(f"B11{'c' if CENTRED else ''}_{DS}_seqvlad")
 od = os.path.join(ROOT, "research", "runs", rid); os.makedirs(od, exist_ok=True)
 json.dump({"results": RES, "sel": best, "p": P}, open(os.path.join(od, "metrics.json"), "w"), indent=1, default=float)
 log_run({"run_id": rid, "task_id": "T3.5", "experiment_id": "B11", "hypothesis_ids": ["H22"], "dataset": DS, "descriptor": "seqvlad",

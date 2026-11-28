@@ -1,0 +1,2 @@
+  single 0.841 | seqslam_causal 0.859 | seqslam_causal_L 10 | seqslam_centred 0.865 | seqslam_centred_L 20 | hmm_filter 0.832 | hmm_lag_h 0.847 | lag_h 10 | hmm_lag_20 0.843
+RUN 20261128-392_E37_kitti_netvlad

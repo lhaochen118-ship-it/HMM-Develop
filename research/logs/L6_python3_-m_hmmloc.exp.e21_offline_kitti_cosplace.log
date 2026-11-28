@@ -1,0 +1,2 @@
+  single 0.829 | seqslam_causal 0.831 | seqslam_causal_L 5 | seqslam_centred 0.863 | seqslam_centred_L 40 | hmm_filter 0.805 | hmm_lag_h 0.858 | lag_h 20 | hmm_lag_20 0.858
+RUN 20261128-393_E37_kitti_cosplace

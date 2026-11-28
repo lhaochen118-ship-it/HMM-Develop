@@ -1,0 +1,2 @@
+  single 0.267 | seqslam_causal 0.464 | seqslam_causal_L 20 | seqslam_centred 0.517 | seqslam_centred_L 20 | hmm_filter 0.557 | hmm_lag_h 0.582 | lag_h 10 | hmm_lag_20 0.589
+RUN 20261128-388_E37_brisbane_netvlad

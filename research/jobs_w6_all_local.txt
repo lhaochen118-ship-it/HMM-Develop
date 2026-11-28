@@ -1,0 +1,28 @@
+python3 -m hmmloc.exp.e21_offline qut-gp netvlad
+python3 -m hmmloc.exp.e21_offline qut-sb netvlad
+python3 -m hmmloc.exp.e21_offline qut-sb cosplace
+python3 -m hmmloc.exp.e21_offline qut-sb salad
+python3 -m hmmloc.exp.e21_offline qut-sb megaloc
+python3 -m hmmloc.exp.e21_offline qut-gp cosplace
+python3 -m hmmloc.exp.e21_offline qut-gp salad
+python3 -m hmmloc.exp.e21_offline qut-gp megaloc
+python3 -m hmmloc.exp.e21_offline brisbane netvlad
+python3 -m hmmloc.exp.e21_offline brisbane cosplace
+python3 -m hmmloc.exp.e21_offline brisbane salad
+python3 -m hmmloc.exp.e21_offline brisbane megaloc
+python3 -m hmmloc.exp.e21_offline kitti netvlad
+python3 -m hmmloc.exp.e21_offline kitti cosplace
+python3 -m hmmloc.exp.e21_offline kitti salad
+python3 -m hmmloc.exp.e21_offline kitti megaloc
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e14_jist nord 3.0039
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e17_seqvlad nord
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e14_jist rc 3.0039
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e17_seqvlad rc
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e14_jist cmu 3.0039
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e17_seqvlad cmu
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e14_jist 4s 3.0039
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e17_seqvlad 4s
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e14_jist 4s2 3.0039
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e17_seqvlad 4s2
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e14_jist 4s3 3.0039
+env HMMLOC_CENTRED=1 python3 -m hmmloc.exp.e17_seqvlad 4s3

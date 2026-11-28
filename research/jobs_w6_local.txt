@@ -1,0 +1,16 @@
+hmmloc.exp.e21_offline qut-gp netvlad
+hmmloc.exp.e21_offline qut-sb netvlad
+hmmloc.exp.e21_offline qut-sb cosplace
+hmmloc.exp.e21_offline qut-sb salad
+hmmloc.exp.e21_offline qut-sb megaloc
+hmmloc.exp.e21_offline qut-gp cosplace
+hmmloc.exp.e21_offline qut-gp salad
+hmmloc.exp.e21_offline qut-gp megaloc
+hmmloc.exp.e21_offline brisbane netvlad
+hmmloc.exp.e21_offline brisbane cosplace
+hmmloc.exp.e21_offline brisbane salad
+hmmloc.exp.e21_offline brisbane megaloc
+hmmloc.exp.e21_offline kitti netvlad
+hmmloc.exp.e21_offline kitti cosplace
+hmmloc.exp.e21_offline kitti salad
+hmmloc.exp.e21_offline kitti megaloc
