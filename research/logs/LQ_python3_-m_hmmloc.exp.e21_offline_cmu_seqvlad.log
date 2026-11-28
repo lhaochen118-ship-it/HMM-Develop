@@ -1,0 +1,2 @@
+  single 0.820 | seqslam_causal 0.857 | seqslam_causal_L 10 | seqslam_centred 0.945 | seqslam_centred_L 40 | hmm_filter 0.898 | hmm_lag_h 0.942 | lag_h 20 | hmm_lag_20 0.942
+RUN 20261128-459_E37_cmu_seqvlad

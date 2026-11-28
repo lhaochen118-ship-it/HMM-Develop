@@ -1,0 +1,2 @@
+  single 0.502 | seqslam_causal 0.493 | seqslam_causal_L 5 | seqslam_centred 0.588 | seqslam_centred_L 10 | hmm_filter 0.615 | hmm_lag_h 0.671 | lag_h 5 | hmm_lag_20 0.697
+RUN 20261128-465_E37_4s3_seqvlad

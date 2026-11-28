@@ -1,0 +1,2 @@
+  single 0.591 | seqslam_causal 0.751 | seqslam_causal_L 5 | seqslam_centred 0.839 | seqslam_centred_L 10 | hmm_filter 0.782 | hmm_lag_h 0.851 | lag_h 5 | hmm_lag_20 0.868
+RUN 20261128-467_E37_4s_netvlad_nat
