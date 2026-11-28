@@ -393,3 +393,26 @@ def load_qut(desc, which="gp", tol=2, nblocks=4, calib_every=3):
     near = np.abs(idx[:, None] - idx[None, :]) <= tol
     return Episode(f"qut-{which}/{desc}", R, idx.astype(float), np.concatenate(Qs), np.concatenate(seq), np.array(cond),
                    np.concatenate(pos), near, calib, unit="frame")
+
+
+def load_kitti(desc, seqs=("00", "02", "05", "06", "08"), dist=10.0, block=100, calib_every=3):
+    """KITTI Odometry loop sequences (kernel k14, 5 Hz): REVISIT protocol per sequence — map = first half of the
+    sequence (metric chain), queries = second half; positives = map frames within `dist` m (no heading test: sequence 08
+    revisits in the opposite direction). Query frames on new road are off-map (no positive). Queries cut into blocks of
+    `block` frames; calibration = every `calib_every`-th block. Returns one Episode per sequence."""
+    root = os.path.join(FB, "hmm-k14-kitti"); d = os.path.join(root, "dump") if os.path.isdir(os.path.join(root, "dump")) else root
+    from scipy.spatial import cKDTree
+    eps = []
+    for sq in seqs:
+        z = np.load(os.path.join(d, "meta", f"kitti_{sq}.npz")); X = np.load(os.path.join(d, desc, f"kitti_{sq}.npy"))
+        C = np.asarray(z["C"], float); n = len(C); h = n // 2
+        R, Cm, Q, qC = X[:h], C[:h], X[h:], C[h:]
+        steps = np.linalg.norm(np.diff(Cm, axis=0), axis=1); s = np.concatenate([[0], np.cumsum(steps)])
+        seq = int(sq) * 1000 + np.arange(len(Q)) // block
+        calib = {q for q in np.unique(seq) if (q % 1000) % calib_every == 0}
+        tree = cKDTree(Cm); pos = np.zeros((len(Q), h), bool); near = np.zeros((h, h), bool)
+        for i, js in enumerate(tree.query_ball_point(qC, r=dist)): pos[i, js] = True
+        for i, js in enumerate(tree.query_ball_point(Cm, r=dist)): near[i, js] = True
+        eps.append(Episode(f"kitti/{sq}/{desc}", R, s, Q, seq, np.array([sq] * len(Q)), pos, near, calib, unit="m",
+                           C=Cm, qC=qC, qt=np.asarray(z["t"], float)[h:]))
+    return eps
