@@ -306,11 +306,15 @@ TRAV = {  # name -> dump dir (Kaggle dataset slug, mounted/copied into FB), file
     "boreas": ("boreas-vpr-dump", "boreas", "boreas-2020-11-26-13-58", 10.0, 30.0),
     "nclt": ("nclt-vpr-dump", "nclt", "2012-01-08", 10.0, 30.0),
 }
+HEADING = {"stlucia": None, "boreas": "traj", "nclt": "rpy"}   # Boreas rpy = camera attitude -> use driving direction
 
 
-def _heading(meta):
-    if "rpy" in meta.files: return np.asarray(meta["rpy"], float)[:, 2]
-    if "yaw" in meta.files: return np.asarray(meta["yaw"], float)
+def _heading(meta, ds=None, C=None):
+    mode = HEADING.get(ds, "rpy")
+    if mode == "traj" and C is not None:                 # direction of travel, smoothed over +-3 frames
+        n = len(C); i = np.arange(n); a = C[np.clip(i + 3, 0, n - 1)] - C[np.clip(i - 3, 0, n - 1)]
+        return np.arctan2(a[:, 1], a[:, 0])
+    if mode == "rpy" and "rpy" in meta.files: return np.asarray(meta["rpy"], float)[:, 2]
     return None
 
 
@@ -330,7 +334,7 @@ def load_traversals(ds, desc, map_trav=None, queries=None, dist=None, ang=None, 
         if C.shape[1] == 2: C = np.c_[C, np.zeros(len(C))]
         assert len(X) == len(C), (t, X.shape, C.shape)
         ts = np.asarray(z["t"], float) if "t" in z.files else np.array([float(n) for n in z["names"]]) / 1e6
-        return X, C, _heading(z), ts
+        return X, C, _heading(z, ds, C), ts
     R, C, hm, _ = one(mp)
     steps = np.linalg.norm(np.diff(C, axis=0), axis=1); s = np.concatenate([[0], np.cumsum(np.minimum(steps, 30.0))])
     Qs, seq, cond, qC, qh, qt = [], [], [], [], [], []; calib = set(); sid = 0

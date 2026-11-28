@@ -34,7 +34,7 @@ print("[cpu] vCPU", os.cpu_count(), "| jobs", len(JOBS), "| par", PAR, flush=Tru
 for d, subs, fs in os.walk("/kaggle/input"):
     if d.count(os.sep) > 6: subs[:] = []; continue
     b = os.path.basename(d)
-    if "dump" not in subs: continue
+    if "dump" not in subs and "meta" not in subs: continue
     for name in ALIASES.get(b, [b] if b in SOURCES else []):
         if not os.path.exists(os.path.join(FB, name)): os.symlink(d, os.path.join(FB, name))
     subs[:] = []
