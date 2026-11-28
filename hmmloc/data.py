@@ -22,6 +22,8 @@ for d in ["salad", "megaloc", "netvlad", "cosplace"]:
     DUMP_OF[("nordseg", d)] = "hmm-k01-nordseg"
 for _ds in ("nord", "rc", "cmu"):
     DUMP_OF[(_ds, "jist")] = "hmm-k07-jist"          # JIST (ResNet-18 + SeqGeM) per-frame descriptors
+    for _d in ("seqvlad", "seqvlad_raw"):            # SeqVLAD (CCT384, MSLS-trained) per-frame, kernels k12
+        DUMP_OF[(_ds, _d)] = "hmm-k12-seqvlad"
 CMU_SLICES = [6, 7, 8, 10, 11, 12, 13, 21, 22, 23, 24]
 
 
@@ -237,6 +239,7 @@ def load_4s_stopgo(desc, dist=5.0, ang=30.0, calib_every=3, kdir="hmm-k02-4s-sto
     sampled every 0.5 s in TIME (real stops kept). Each query traversal is one sequence (cut at gaps > 2 s)."""
     scene = FOURS_SCENE[kdir]
     if desc == "jist": kdir = "hmm-k08-jist4s"       # all three scenes extracted together with JIST
+    if desc.startswith("seqvlad"): kdir = "hmm-k12-seqvlad"
     d = os.path.join(FB, kdir, "dump")
     metas = sorted(m for m in glob.glob(os.path.join(d, "meta", "*.npz")) if f"4s_{scene}_" in os.path.basename(m))
     mp = [m for m in metas if "_map_" in os.path.basename(m)][0]
@@ -279,6 +282,7 @@ def load_msls(desc, city="cph", dist=25.0, calib_every=3, gap_m=40.0):
     """MSLS (Copenhagen / San Francisco test cities; dumps nb16a/b). Sequences = consecutive rows with the same date and
     step < gap_m (rows are stored in Mapillary-sequence order). Map is a SPATIAL graph (Episode.graph='spatial')."""
     kd = {"cph": "dive-vpr-nb16a-msls", "sf": "dive-vpr-nb16b-msls"}[city]
+    if desc.startswith("seqvlad"): kd = "hmm-k12-seqvlad"
     d = os.path.join(FB, kd, "dump"); z = np.load(os.path.join(d, "meta", f"msls_{city}.npz"))
     R = np.load(os.path.join(d, desc, f"msls_{city}_db.npy")); Q = np.load(os.path.join(d, desc, f"msls_{city}_q.npy"))
     C = np.c_[z["db_C"], np.zeros(len(z["db_C"]))]; qC = np.c_[z["q_C"], np.zeros(len(z["q_C"]))]

@@ -1,0 +1,3 @@
+hmmloc.exp.e07_motionev msls-cph megaloc 0
+hmmloc.exp.e07_motionev msls-cph cosplace 0
+hmmloc.exp.e07_motionev msls-sf cosplace 0
