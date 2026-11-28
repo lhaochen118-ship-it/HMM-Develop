@@ -8,7 +8,7 @@
 | Oxford RobotCar (7 conditions vs overcast map) | salad | 0.953 | 0.966 | 0.978 | **0.977** | +0.011 | +0.024 |  | 20261128-270_E18_oxford_salad_s0 |
 | Oxford RobotCar (7 conditions vs overcast map) | megaloc | 0.943 | 0.965 | 0.979 | **0.980** | +0.015 | +0.037 |  | 20261128-271_E18_oxford_megaloc_s0 |
 | Boreas (8 seasonal traversals) | netvlad | 0.793 | 0.965 | 0.983 | **0.968** | +0.003 | +0.174 |  | 20261128-275_E18_boreas:8_netvlad_s0 |
-| Boreas (8 seasonal traversals) | cosplace | 0.990 | 0.993 | 0.995 | **0.990** | -0.003 | +0.000 |  | 20261128-315_E18_boreas:8_cosplace_s0 |
+| Boreas (8 seasonal traversals) | cosplace | 0.990 | 0.993 | 0.995 | **0.990** | -0.003 | +0.000 |  | 20261128-368_E18_boreas:8_cosplace_s0 |
 | Boreas (8 seasonal traversals) | dinov2 | 0.638 | 0.779 | 0.828 | **0.826** | +0.047 | +0.188 |  | 20261128-361_E18_boreas:8_dinov2_s0 |
 | Boreas (8 seasonal traversals) | salad | 0.998 | 0.998 | 0.998 | **0.998** | +0.000 | -0.000 | saturated | 20261128-326_E18_boreas:8_salad_s0 |
 | Boreas (8 seasonal traversals) | megaloc | 0.999 | 0.998 | 0.998 | **0.998** | +0.001 | -0.000 | saturated | 20261128-276_E18_boreas:8_megaloc_s0 |

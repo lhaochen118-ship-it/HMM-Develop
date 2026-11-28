@@ -218,3 +218,12 @@ literature (SALAD 0.73 vs 76.0; CosPlace 0.46 vs 44–54; NetVLAD 0.12 vs 4–13
 Sequence baselines: official SeqSLAM / SeqMatch-code / JIST / SeqVLAD use CENTRED windows (future frames) and a
 sequence-level positive rule; ours are CAUSAL (matched to the causal HMM filter) → weaker than published offline numbers
 (A34). Fair offline comparison = centred baselines vs the HMM fixed-lag / forward-backward smoother.
+
+## F25 [S] KITTI loop revisits: the HMM does NOT help without its off-map state (runs 20261128-364..367)
+Revisit protocol per sequence (map = first half, queries = second half, 10 m): only 12–78 % of query frames are on-map
+(short revisit segments between long new-road stretches; sequence 08 has no on-map query after the split). Per sequence
+(NetVLAD, fixed-kernel HMM): 00 0.877 → 0.863, 02 0.947 → 0.947, 05 0.509 → 0.500, 06 0.985 → 0.978. Over 4 descriptors
+the calibration-selected HMM is −0.01…+0.01 vs single and below causal SeqSLAM (0.83–0.87). Cause: the filter keeps its
+mass on (wrong) map nodes while off-map and needs several frames to re-acquire at segment starts. This is the regime the
+HMM's null / exit / re-entry state is for (E12) — it was not enabled in E18. Next: E18 with use_null + LLR emission on
+KITTI and NCLT; a protocol whose sequences are revisits only (or a map from a separate traversal) is also needed.
