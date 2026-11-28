@@ -1,1 +1,5 @@
 [nord/jist] p=3.0039 selected L=5 k=1 (calib R@1 0.727)
+  single_jist  R@1 0.7231 NLL 1.1836
+  JIST_seq     R@1 0.7823 NLL 3.0952
+  JIST_seq+HMM R@1 0.9900 NLL 0.0647
+RUN 20261128-425_B10c_nord_jist
